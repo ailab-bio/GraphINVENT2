@@ -98,7 +98,7 @@ parameters = {
     "device"              : "cuda",
     "generation_epoch"    : 30,
     "n_samples"           : 2000,
-    "n_workers"           : 2,
+    "n_workers"           : 0,
     "restart"             : False,
     "max_n_nodes"         : 13,
     "job_type"            : "train",

@@ -42,7 +42,7 @@ else:
 
 # set paths here
 HOME             = str(Path.home())
-PYTHON_PATH      = f"{HOME}/miniconda3/envs/graphinvent/bin/python"
+PYTHON_PATH      = f"{HOME}/opt/anaconda3/envs/graphinvent/bin/python"
 GRAPHINVENT_PATH = "./graphinvent/"
 DATA_PATH        = "./data/pre-training/"
 
@@ -81,7 +81,7 @@ def submit() -> None:
     check_paths()
 
     # create an output directory
-    dataset_output_path = f"{HOME}/GraphINVENT/output_{DATASET}"
+    dataset_output_path = f"./output/output_{DATASET}"
     tensorboard_path    = os.path.join(dataset_output_path, "tensorboard")
     if JOBNAME != "":
         dataset_output_path = os.path.join(dataset_output_path, JOBNAME)
@@ -155,7 +155,7 @@ def submit() -> None:
 
 def write_input_csv(params_dict : dict, filename : str="params.csv") -> None:
     """
-    Writes job parameters/hyperparameters in `params_dict` to CSV using the specified 
+    Writes job parameters/hyperparameters in `params_dict` to CSV using the specified
     `filename`.
     """
     dict_path = params_dict["job_dir"] + filename

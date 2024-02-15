@@ -3,12 +3,9 @@ Defines specific MPNN implementations.
 """
 # load general packages and functions
 from collections import namedtuple
-import math
 import torch
 
 # load GraphINVENT-specific functions
-import gnn.aggregation_mpnn
-import gnn.edge_mpnn
 import gnn.summation_mpnn
 import gnn.modules
 

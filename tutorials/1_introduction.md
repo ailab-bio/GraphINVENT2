@@ -44,7 +44,7 @@ Then, specify the path to the Python binary in the GraphINVENT virtual environme
 ```
 submit.py >
 # set paths here
-python_path = f"../miniconda3/envs/graphinvent/bin/python"  # this is the path to the Python binary to use (change to your own)
+python_path = f"../miniconda3/envs/graphinvent/bin/python"      # this is the path to the Python binary to use (change to your own -- tip: run 'whereis python' from within your activated environment)
 graphinvent_path = f"./graphinvent/"                            # this is the directory containing the source code
 data_path = f"./data/"                                          # this is the directory where all datasets are found
 ```

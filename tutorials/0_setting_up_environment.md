@@ -1,16 +1,22 @@
 ## Setting up the environment
 Before doing anything with GraphINVENT, you will need to configure the GraphINVENT virtual environment, as the code is dependent on very specific versions of packages. You can use [conda](https://docs.conda.io/en/latest/) for this.
 
-The [../environments/graphinvent.yml](../environments/graphinvent.yml) file lists all the packages required for GraphINVENT to run. From within the [GraphINVENT/](../) directory, a virtual environment can be easily created using the YAML file and conda by typing into the terminal:
+GraphINVENT requires PyTorch, RDKit, and XXX to run. A virtual environment can be easily created using conda by typing into the terminal:
 
 ```
-conda env create -f environments/graphinvent.yml
+conda create -n graphinvent python=3.9 pytorch::pytorch torchvision torchaudio -c pytorch
 ```
 
 Then, to activate the environment:
 
 ```
 conda activate graphinvent
+```
+
+To install additional packages to the virtual environment, like RDKit, tqdm, h5py, scikit-learn, matplotlib, and tensorboard, use:
+
+```
+conda install -n graphinvent conda-forge::rdkit conda-forge::tqdm anaconda::h5py anaconda::scikit-learn matplotlib tensorboard
 ```
 
 To install additional packages to the virtual environment, should the need arise, use:
