@@ -9,7 +9,7 @@ import torch
 class SummationMPNN(torch.nn.Module):
     """
     Abstract `SummationMPNN` class. Specific models using this class are
-    defined in `mpnn.py`; these are MNN, S2V, and GGNN.
+    defined in `mpnn.py`; this is the GGNN.
     """
     def __init__(self, constants : namedtuple):
 

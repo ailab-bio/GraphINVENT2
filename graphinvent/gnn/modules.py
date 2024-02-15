@@ -52,62 +52,6 @@ class GraphGather(torch.nn.Module):
         return torch.sum(attention * embedding, dim=1)
 
 
-class Set2Vec(torch.nn.Module):
-    """
-    S2V readout function.
-    """
-    def __init__(self, node_features : int, hidden_node_features : int,
-                 lstm_computations : int, memory_size : int,
-                 constants : namedtuple) -> None:
-
-        super().__init__()
-
-        self.constants         = constants
-        self.lstm_computations = lstm_computations
-        self.memory_size       = memory_size
-
-        self.embedding_matrix = torch.nn.Linear(
-            in_features=node_features + hidden_node_features,
-            out_features=self.memory_size,
-            bias=True
-        )
-
-        self.lstm = torch.nn.LSTMCell(
-            input_size=self.memory_size,
-            hidden_size=self.memory_size,
-            bias=True
-        )
-
-    def forward(self, hidden_output_nodes : torch.Tensor, input_nodes : torch.Tensor,
-                node_mask : torch.Tensor) -> torch.Tensor:
-        """
-        Defines forward pass.
-        """
-        Softmax      = torch.nn.Softmax(dim=1)
-
-        batch_size   = input_nodes.shape[0]
-        energy_mask  = torch.bitwise_not(node_mask).float() * self.C.big_negative
-        lstm_input   = torch.zeros(batch_size, self.memory_size, device=self.constants.device)
-        cat          = torch.cat((hidden_output_nodes, input_nodes), dim=2)
-        memory       = self.embedding_matrix(cat)
-        hidden_state = torch.zeros(batch_size, self.memory_size, device=self.constants.device)
-        cell_state   = torch.zeros(batch_size, self.memory_size, device=self.constants.device)
-
-        for _ in range(self.lstm_computations):
-            query, cell_state = self.lstm(lstm_input, (hidden_state, cell_state))
-
-            # dot product query x memory
-            energies  = (query.view(batch_size, 1, self.memory_size) * memory).sum(dim=-1)
-            attention = Softmax(energies + energy_mask)
-            read      = (attention.unsqueeze(-1) * memory).sum(dim=1)
-
-            hidden_state = query
-            lstm_input   = read
-
-        cat = torch.cat((query, read), dim=1)
-        return cat
-
-
 class MLP(torch.nn.Module):
     """
     Multi-layer perceptron. Applies SELU after every linear layer.
