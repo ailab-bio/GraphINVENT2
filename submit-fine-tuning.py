@@ -59,7 +59,6 @@ params = {
     "dataset_dir"         : f"{DATA_PATH}{DATASET}/",
     "restart"             : RESTART,
     "device"              : DEVICE,
-    "model"               : "GGNN",                      # <-- should match pre-trained model param
     "sample_every"        : 2,
     "init_lr"             : 1e-4,
     "epochs"              : 100,                         # <-- number of fine-tuning steps

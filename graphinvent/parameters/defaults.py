@@ -10,7 +10,6 @@ import sys
 # load GraphINVENT-specific functions
 sys.path.insert(1, "./parameters/")  # search "parameters/" directory
 import parameters.args as args
-import parameters.load as load
 
 
 # default parameters defined below
@@ -88,6 +87,33 @@ General settings for the generative model:
                                 for suitable values.
     alpha (float)             : Can take values between [0.0, 1.0]. Tunes the contribution
                                 from the best agent so far (BASF) in the loss.
+GGNN hyperparameters:
+    enn_depth (int)              : Num layers in 'enn' MLP.
+    enn_dropout_p (float)        : Dropout probability in 'enn' MLP.
+    enn_hidden_dim (int)         : Number of weights (layer width) in 'enn' MLP.
+    mlp1_depth (int)             : Num layers in first-tier MLP in `APDReadout`.
+    mlp1_dropout_p (float)       : Dropout probability in first-tier MLP in `APDReadout`.
+    mlp1_hidden_dim (int)        : Number of weights (layer width) in first-tier
+                                   MLP in `APDReadout`.
+    mlp2_depth (int)             : Num layers in second-tier MLP in `APDReadout`.
+    mlp2_dropout_p (float)       : Dropout probability in second-tier MLP in `APDReadout`.
+    mlp2_hidden_dim (int)        : Number of weights (layer width) in second-tier
+                                   MLP in `APDReadout`.
+    gather_att_depth (int)       : Num layers in 'gather_att' MLP in `GraphGather`.
+    gather_att_dropout_p (float) : Dropout probability in 'gather_att' MLP in
+                                   `GraphGather`.
+    gather_att_hidden_dim (int)  : Number of weights (layer width) in 'gather_att'
+                                   MLP in `GraphGather`.
+    gather_emb_depth (int)       : Num layers in 'gather_emb' MLP in `GraphGather`.
+    gather_emb_dropout_p (float) : Dropout probability in 'gather_emb' MLP in
+                                   `GraphGather`.
+    gather_emb_hidden_dim (int)  : Number of weights (layer width) in 'gather_emb'
+                                   MLP in `GraphGather`.
+    gather_width (int)           : Output size of `GraphGather` block.
+    message_passes (int)         : Number of message passing steps.
+    message_size (int)           : Size of message passed (output size of all
+                                   MLPs in message aggregation step, input size
+                                   to `GRU`).
 """
 # general job parameters
 parameters = {
@@ -125,6 +151,26 @@ parameters = {
     "pretrained_model_dir": "output/",
     "sigma"               : 20,
     "alpha"               : 0.5,
+    # GGNN hyperparameters:
+    "enn_depth"            : 4,
+    "enn_dropout_p"        : 0.0,
+    "enn_hidden_dim"       : 250,
+    "mlp1_depth"           : 4,
+    "mlp1_dropout_p"       : 0.0,
+    "mlp1_hidden_dim"      : 500,
+    "mlp2_depth"           : 4,
+    "mlp2_dropout_p"       : 0.0,
+    "mlp2_hidden_dim"      : 500,
+    "gather_att_depth"     : 4,
+    "gather_att_dropout_p" : 0.0,
+    "gather_att_hidden_dim": 250,
+    "gather_emb_depth"     : 4,
+    "gather_emb_dropout_p" : 0.0,
+    "gather_emb_hidden_dim": 250,
+    "gather_width"         : 100,
+    "hidden_node_features" : 100,
+    "message_passes"       : 3,
+    "message_size"         : 100,
 }
 
 # make sure job dir ends in "/"
@@ -132,71 +178,7 @@ if args.job_dir[-1] != "/":
     print("* Adding '/' to end of `job_dir`.")
     args.job_dir += "/"
 
-# get the model before loading model-specific hyperparameters
-try:
-    input_csv_path  = args.job_dir + "input.csv"
-    model           = load.which_model(input_csv_path=input_csv_path)
-except:
-    model           = "GGNN"  # default model
-parameters["model"] = model
-
-
-if parameters["model"] == "GGNN":
-    """
-    GGNN hyperparameters:
-      enn_depth (int)              : Num layers in 'enn' MLP.
-      enn_dropout_p (float)        : Dropout probability in 'enn' MLP.
-      enn_hidden_dim (int)         : Number of weights (layer width) in 'enn' MLP.
-      mlp1_depth (int)             : Num layers in first-tier MLP in `APDReadout`.
-      mlp1_dropout_p (float)       : Dropout probability in first-tier MLP in `APDReadout`.
-      mlp1_hidden_dim (int)        : Number of weights (layer width) in first-tier
-                                     MLP in `APDReadout`.
-      mlp2_depth (int)             : Num layers in second-tier MLP in `APDReadout`.
-      mlp2_dropout_p (float)       : Dropout probability in second-tier MLP in `APDReadout`.
-      mlp2_hidden_dim (int)        : Number of weights (layer width) in second-tier
-                                     MLP in `APDReadout`.
-      gather_att_depth (int)       : Num layers in 'gather_att' MLP in `GraphGather`.
-      gather_att_dropout_p (float) : Dropout probability in 'gather_att' MLP in
-                                     `GraphGather`.
-      gather_att_hidden_dim (int)  : Number of weights (layer width) in 'gather_att'
-                                     MLP in `GraphGather`.
-      gather_emb_depth (int)       : Num layers in 'gather_emb' MLP in `GraphGather`.
-      gather_emb_dropout_p (float) : Dropout probability in 'gather_emb' MLP in
-                                     `GraphGather`.
-      gather_emb_hidden_dim (int)  : Number of weights (layer width) in 'gather_emb'
-                                     MLP in `GraphGather`.
-      gather_width (int)           : Output size of `GraphGather` block.
-      message_passes (int)         : Number of message passing steps.
-      message_size (int)           : Size of message passed (output size of all
-                                     MLPs in message aggregation step, input size
-                                     to `GRU`).
-    """
-    hyperparameters = {
-        "enn_depth"            : 4,
-        "enn_dropout_p"        : 0.0,
-        "enn_hidden_dim"       : 250,
-        "mlp1_depth"           : 4,
-        "mlp1_dropout_p"       : 0.0,
-        "mlp1_hidden_dim"      : 500,
-        "mlp2_depth"           : 4,
-        "mlp2_dropout_p"       : 0.0,
-        "mlp2_hidden_dim"      : 500,
-        "gather_att_depth"     : 4,
-        "gather_att_dropout_p" : 0.0,
-        "gather_att_hidden_dim": 250,
-        "gather_emb_depth"     : 4,
-        "gather_emb_dropout_p" : 0.0,
-        "gather_emb_hidden_dim": 250,
-        "gather_width"         : 100,
-        "hidden_node_features" : 100,
-        "message_passes"       : 3,
-        "message_size"         : 100,
-    }
-
 # make sure dataset dir ends in "/"
 if parameters["dataset_dir"][-1] != "/":
     print("* Adding '/' to end of `dataset_dir`.")
     parameters["dataset_dir"] += "/"
-
-# join dictionaries
-parameters.update(hyperparameters)

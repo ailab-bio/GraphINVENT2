@@ -1,4 +1,0 @@
-set, avg_likelihood_per_molecule_val, avg_likelihood_per_molecule_train, avg_likelihood_per_molecule_gen, uc_jsd
-Epoch 2, 68.63373, 75.13955, 0.00257, -0.0482386
-Epoch 4, 65.55809, 71.43398, 0.00244, -0.0485239
-Epoch 6, 61.76354, 66.81900, 0.00245, -0.0474068

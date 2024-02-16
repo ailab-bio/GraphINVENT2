@@ -53,7 +53,6 @@ params = {
     "job_type"     : JOB_TYPE,
     "dataset_dir"  : f"{DATA_PATH}{DATASET}/",
     "restart"      : RESTART,
-    "model"        : "GGNN",
     "sample_every" : 2,
     "init_lr"      : 1e-4,
     "epochs"       : 100,

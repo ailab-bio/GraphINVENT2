@@ -240,7 +240,7 @@ class Workflow:
 
             print("* Defining model.", flush=True)
             self.model = self.create_model()
-            
+
             print("-- Defining optimizer.", flush=True)
             self.optimizer = torch.optim.Adam(params=self.model.parameters(),
                                               lr=self.constants.init_lr)
@@ -264,27 +264,14 @@ class Workflow:
 
     def create_model(self) -> torch.nn.Module:
         """
-        Initializes the model to be trained. Possible models are: "MNN", "S2V",
-        "AttS2V", "GGNN", "AttGGNN", or "EMN".
+        Initializes the model to be trained. Only the GGNN option is possible in
+        GraphINVENT-lite.
 
         Returns:
         -------
             net (torch.nn.Module) : Neural net model.
         """
-        if self.constants.model == "MNN":
-            net = gnn.mpnn.MNN(constants=self.constants)
-        elif self.constants.model == "S2V":
-            net = gnn.mpnn.S2V(constants=self.constants)
-        elif self.constants.model == "AttS2V":
-            net = gnn.mpnn.AttentionS2V(constants=self.constants)
-        elif self.constants.model == "GGNN":
-            net = gnn.mpnn.GGNN(constants=self.constants)
-        elif self.constants.model == "AttGGNN":
-            net = gnn.mpnn.AttentionGGNN(constants=self.constants)
-        elif self.constants.model == "EMN":
-            net = gnn.mpnn.EMN(constants=self.constants)
-        else:
-            raise ValueError("Invalid model entered.")
+        net = gnn.mpnn.GGNN(constants=self.constants)
 
         if self.constants.device == "cuda":
             net = net.to("cuda", non_blocking=True)
@@ -307,11 +294,11 @@ class Workflow:
                     "creating new ones, please delete them and rerun the "
                     "program. Otherwise, check your input file."
                 )
-            if os.path.exists(self.valid_smi_path):       
+            if os.path.exists(self.valid_smi_path):
                 self.preprocess_valid_data()
-            if os.path.exists(self.test_smi_path):       
+            if os.path.exists(self.test_smi_path):
                 self.preprocess_test_data()
-            if os.path.exists(self.train_smi_path):       
+            if os.path.exists(self.train_smi_path):
                 self.preprocess_train_data()
 
         else:  # restart existing preprocessing job
@@ -324,7 +311,7 @@ class Workflow:
                     "over 'test.h5' and 'valid.h5' as they seem to be finished).",
                     flush=True,
                 )
-                if os.path.exists(self.train_smi_path):       
+                if os.path.exists(self.train_smi_path):
                     self.preprocess_train_data()
             elif (os.path.exists(self.test_h5_path + ".chunked") or
                   os.path.exists(self.valid_h5_path)):
@@ -332,19 +319,19 @@ class Workflow:
                     "-- Restarting preprocessing job from 'test.h5' (skipping "
                     "over 'valid.h5' as it appears to be finished).",
                     flush=True,
-                ) 
-                if os.path.exists(self.test_smi_path):       
+                )
+                if os.path.exists(self.test_smi_path):
                     self.preprocess_test_data()
-                if os.path.exists(self.train_smi_path):       
+                if os.path.exists(self.train_smi_path):
                     self.preprocess_train_data()
             elif os.path.exists(self.valid_h5_path + ".chunked"):
                 print("-- Restarting preprocessing job from 'valid.h5'",
                       flush=True)
-                if os.path.exists(self.valid_smi_path):       
+                if os.path.exists(self.valid_smi_path):
                     self.preprocess_valid_data()
-                if os.path.exists(self.test_smi_path):       
+                if os.path.exists(self.test_smi_path):
                     self.preprocess_test_data()
-                if os.path.exists(self.train_smi_path):       
+                if os.path.exists(self.train_smi_path):
                     self.preprocess_train_data()
             else:
                 raise ValueError(

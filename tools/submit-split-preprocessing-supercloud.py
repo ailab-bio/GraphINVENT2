@@ -37,7 +37,7 @@ import torch
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                  add_help=False)
 
-# define potential arguments for using this script 
+# define potential arguments for using this script
 parser.add_argument("--type",
                     type=str,
                     default="split",
@@ -78,7 +78,6 @@ params = {
     "max_n_nodes"  : 27,
     "job_type"     : JOB_TYPE,
     "restart"      : RESTART,
-    "model"        : "GGNN",
     "sample_every" : 2,
     "init_lr"      : 1e-4,
     "epochs"       : 100,
@@ -364,8 +363,8 @@ def get_total_n_subgraphs(paths : list) -> int:
 
 def combine_HDFs(paths : list, training_set : bool, split : str) -> None:
     """
-    Combine many small HDF files (their paths defined in `paths`) into one large 
-    HDF file. Works assuming HDFs were created for the preprocessed dataset 
+    Combine many small HDF files (their paths defined in `paths`) into one large
+    HDF file. Works assuming HDFs were created for the preprocessed dataset
     following the following directory structure:
     data/
      |-- {dataset}_1/
@@ -460,7 +459,7 @@ if __name__ == "__main__":
 
     elif args.type == "submit":
         # ---------- MOVE EACH SPLIT INTO ITS OWN DIRECTORY AND SUBMIT EACH AS SEPARATE JOB ----------
-        # first get the number of splits for each train/test/valid split if each 
+        # first get the number of splits for each train/test/valid split if each
         # file is split into files of max 100000 lines
         n_training_splits = get_n_splits(filename=f"{DATA_PATH}{DATASET}/train.smi",
                                          n_lines_per_split=100000)
@@ -468,21 +467,21 @@ if __name__ == "__main__":
         for split_idx in range(n_training_splits):
             if not os.path.exists(f"{DATA_PATH}{dataset}_{split_idx}/"):
                 os.mkdir(f"{DATA_PATH}{dataset}_{split_idx}/")  # make the dir
-            
+
             # moving train split into folder for given index
             try:
                 os.rename(f"{DATA_PATH}{dataset}/train.{split_idx}.smi", f"{DATA_PATH}{dataset}_{split_idx}/train.smi")  # move the file to the dir and rename
             except:
                 pass
-        
+
             # moving test split into folder for given index, if test split exists
             try:
                 os.rename(f"{DATA_PATH}{dataset}/test.{split_idx}.smi", f"{DATA_PATH}{dataset}_{split_idx}/test.smi")  # move the file to the dir and rename
             except:
                 pass
-           
+
             # moving valid split into folder for given index, if valid split exists
-            try:    
+            try:
                 os.rename(f"{DATA_PATH}{dataset}/valid.{split_idx}.smi", f"{DATA_PATH}{dataset}_{split_idx}/valid.smi")  # move the file to the dir and rename
             except:
                 pass
@@ -492,7 +491,7 @@ if __name__ == "__main__":
             submit()
 
     elif args.type == "aggregate":
-        # first get the number of splits for each train/test/valid split if each 
+        # first get the number of splits for each train/test/valid split if each
         # file is split into files of max 100000 lines
         n_training_splits = get_n_splits(filename=f"{DATA_PATH}{DATASET}/train.smi",
                                          n_lines_per_split=100000)

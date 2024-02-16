@@ -32,3 +32,15 @@ conda env export > path/to/environment.yml
 ```
 
 And that's it! To learn how to start training models, go to [1_introduction](1_introduction.md).
+
+
+### Possible issues
+If you are getting the following error message when you try to run the submission script:
+
+*Fatal Python error: config_get_locale_encoding: failed to get the locale encoding: nl_langinfo(CODESET) failed*
+
+try setting LANG and LC_CTYPE with a locale:
+```
+export LANG="en_US.UTF-8"
+export LC_CTYPE="en_US.UTF-8"
+```
