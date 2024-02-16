@@ -1,7 +1,5 @@
 ## Introduction to GraphINVENT
-As shown in our recent [publication]((https://chemrxiv.org/articles/preprint/Graph_Networks_for_Molecular_Design/12843137/1)), GraphINVENT can be used to learn the structure and connectivity of sets of molecular graphs, thus making it a promising tool for the generation of molecules resembling an input dataset. As models in GraphINVENT are probabilistic, they can be used to discover new molecules that are not present in the training set.
-
-There are six GNN-based models implemented in GraphINVENT: the MNN, GGNN, AttGGNN, S2V, AttS2V, and EMN models. The GGNN has shown the best performance when weighed against the computational time required for training, and is as such used as the default model.
+As shown in our recent [publication]((https://chemrxiv.org/articles/preprint/Graph_Networks_for_Molecular_Design/12843137/1)), GraphINVENT can be used to learn the structure and connectivity of sets of molecular graphs, thus making it a promising tool for the generation of molecules resembling an input dataset. As models in GraphINVENT are probabilistic, they can be used to discover new molecules that are not present in the training set. The model uses the GGNN implementation.
 
 To begin using GraphINVENT, we have prepared the following tutorial to guide a new user through the molecular generation workflow using a small example dataset. The example dataset is a 1K random subset of GBD-13. It has already been preprocessed, so you can use it directly for Training and Generation, as we will show in this tutorial. If this is too simple and you would like to learn how to train GraphINVENT models using a new molecular dataset, see [2_using_a_new_dataset](./2_using_a_new_dataset.md).
 

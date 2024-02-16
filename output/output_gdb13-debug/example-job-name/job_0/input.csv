@@ -1,0 +1,16 @@
+atom_types;['C', 'N', 'O', 'S', 'Cl']
+formal_charge;[-1, 0, 1]
+max_n_nodes;13
+job_type;train
+dataset_dir;./data/pre-training/gdb13-debug/
+restart;False
+model;GGNN
+sample_every;2
+init_lr;0.0001
+epochs;100
+batch_size;50
+block_size;1000
+device;cpu
+n_samples;100
+job_dir;./output/output_gdb13-debug/example-job-name/job_0/
+tensorboard_dir;./output/output_gdb13-debug/tensorboard/example-job-name/job_0/

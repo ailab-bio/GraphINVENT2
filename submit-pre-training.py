@@ -17,7 +17,7 @@ import torch
 
 
 # define what you want to do for the specified job(s)
-DATASET          = "gdb13_1K-debug"    # dataset name in "./data/pre-training/"
+DATASET          = "gdb13-debug"       # dataset name in "./data/pre-training/"
 JOB_TYPE         = "train"             # "preprocess", "train", "generate", or "test"
 JOBDIR_START_IDX = 0                   # where to start indexing job dirs
 N_JOBS           = 1                   # number of jobs to run per model
