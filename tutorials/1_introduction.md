@@ -59,7 +59,6 @@ params = {
     "job_type": job_type,
     "dataset_dir": f"{data_path}{dataset}/",
     "restart": restart,
-    "model": "GGNN",
     "sample_every": 10,
     "init_lr": 1e-4,     # (!)
     "epochs": 400,
@@ -122,13 +121,12 @@ params = {
     "job_type": job_type,
     "dataset_dir": f"{data_path}{dataset}/",
     "restart": restart,
-    "model": "GGNN",
     "sample_every": 10,
     "init_lr": 1e-4,          # (!)
     "epochs": 400,
     "batch_size": 1000,
     "block_size": 100000,
-    "generation_epoch": 400,  # <-- which model to use (i.e. which epoch)
+    "generation_epoch": 400,  # <-- which model epoch to use
     "n_samples": 30000,       # <-- how many structures to generate
 }
 ```
@@ -143,7 +141,7 @@ Structures will be generated in batches of size *batch_size*. If you encounter m
 
 Additionally, the *generation.log* file will be updated with the various evaluation metrics for the generated structures.
 
-If you've followed the tutorial up to here, it means you can successfully create new molecules using a trained GNN-based model.
+If you've followed the tutorial up to here, it means you can successfully create new molecules using a trained GGNN-based model.
 
 #### (Optional) Postprocessing
 
