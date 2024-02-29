@@ -7,6 +7,8 @@ GraphINVENT requires PyTorch, RDKit, and XXX to run. A virtual environment can b
 conda create -n graphinvent python=3.9 pytorch::pytorch torchvision torchaudio -c pytorch
 ```
 
+The above command might be Mac specific, in which case you might need to change the syntax a bit to install PyTorch on a different OS (see the [PyTorch documentation](https://pytorch.org/get-started/locally/)).
+
 Then, to activate the environment:
 
 ```
