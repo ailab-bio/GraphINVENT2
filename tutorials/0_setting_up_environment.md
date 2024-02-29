@@ -1,5 +1,5 @@
 ## Setting up the environment
-Before doing anything with GraphINVENT, you will need to configure the GraphINVENT virtual environment, as the code is dependent on very specific versions of packages. You can use [conda](https://docs.conda.io/en/latest/) for this.
+Before doing anything with GraphINVENT, you will need to configure the GraphINVENT virtual environment, as the code is dependent on very specific versions of packages. You can use [conda](https://docs.conda.io/en/latest/) for this. If you do not have conda installed, please check out the installation instructions at [this link](https://docs.anaconda.com/free/miniconda/).
 
 GraphINVENT requires PyTorch, RDKit, and XXX to run. A virtual environment can be easily created using conda by typing into the terminal:
 
@@ -23,12 +23,6 @@ To install additional packages to the virtual environment, should the need arise
 
 ```
 conda install -n graphinvent {package_name}
-```
-
-To save an updated environment as a YAML file using conda, use:
-
-```
-conda env export > path/to/environment.yml
 ```
 
 And that's it! To learn how to start training models, go to [1_introduction](1_introduction.md).
