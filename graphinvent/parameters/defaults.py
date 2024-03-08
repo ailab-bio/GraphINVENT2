@@ -21,6 +21,7 @@ General settings for the generative model:
     imp_H (list)              : Contains number of implicit hydrogens (int) to encode
                                 in node features.
     chirality (list)          : Contains chiral states (str) to encode in node features.
+    accumulation_steps (int)  : Number of gradient accumulation steps.  # TODO come back and make sure this doesn't conflict with larger batch sizes
     device (str)              : Specifies type of architecture to run on. Options:
                                 "cuda" or "cpu").
     generation_epoch (int)    : Epoch to sample during a 'generation' job.
@@ -121,6 +122,7 @@ parameters = {
     "formal_charge"       : [-1, 0, 1],
     "imp_H"               : [0, 1, 2, 3],
     "chirality"           : ["None", "R", "S"],
+    "accumulation_steps"  : 256,
     "device"              : "cuda",
     "generation_epoch"    : 30,
     "n_samples"           : 2000,

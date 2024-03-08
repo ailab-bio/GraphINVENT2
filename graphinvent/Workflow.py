@@ -46,6 +46,9 @@ class Workflow:
         self.start_time = time.time()
         self.constants  = constants
 
+        # define number of accumulation steps
+        self.accumulation_steps = self.constants.accumulation_steps
+
         # define path variables for various datasets
         self.test_h5_path  = self.constants.test_set[:-3] + "h5"
         self.train_h5_path = self.constants.training_set[:-3] + "h5"
@@ -750,7 +753,7 @@ class Workflow:
         elapsed_time = stop_time - self.start_time
         print(f"-- time elapsed: {elapsed_time:.5f} s", flush=True)
 
-    def train_epoch(self) -> float:
+    def train_epoch(self) -> float:  # TODO here come back and create a separate function for when batch size is > than acc steps
         """
         Performs one training epoch.
 
@@ -763,6 +766,7 @@ class Workflow:
                                            device=self.constants.device)
 
         self.model.train()  # ensure model is in train mode
+        accumulation_counter = 0  # initialize the accumulation counter
         for batch_idx, batch in tqdm(enumerate(self.train_dataloader),
                                      total=len(self.train_dataloader)):
             if self.constants.device == "cuda":
@@ -775,12 +779,23 @@ class Workflow:
             self.optimizer.zero_grad()
 
             batch_loss = self.loss(output=output, target_output=target_output)
-            training_loss_tensor[batch_idx] = batch_loss
+            training_loss_tensor[batch_idx] = batch_loss.item()  # use .item() to detach the loss value from the computation graph
 
-            # backpropagate
-            batch_loss.backward()
+            batch_loss = batch_loss / self.accumulation_steps  # Scale the loss down by the number of accumulation steps
+            batch_loss.backward()  # Accumulate gradients
+
+            accumulation_counter += 1
+            if accumulation_counter % self.accumulation_steps == 0:
+                self.optimizer.step()  # update parameters only after `accumulation_steps` batches
+                self.scheduler.step()  # update the learning rate
+                self.optimizer.zero_grad()  # clear gradients after updating
+                accumulation_counter = 0  # reset the counter
+
+        # ensure any remaining gradients are applied
+        if accumulation_counter != 0:
             self.optimizer.step()
             self.scheduler.step()
+            self.optimizer.zero_grad()
 
         return torch.mean(training_loss_tensor)
 
