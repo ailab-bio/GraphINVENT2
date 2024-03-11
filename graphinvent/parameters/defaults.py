@@ -136,7 +136,7 @@ parameters = {
     "use_canon"           : True,
     "use_chirality"       : False,
     "use_explicit_H"      : False,
-    "ignore_H"            : True,
+    "ignore_H"            : False,
     "tensorboard_dir"     : "tensorboard/",
     "batch_size"          : 1000,
     "block_size"          : 100000,
