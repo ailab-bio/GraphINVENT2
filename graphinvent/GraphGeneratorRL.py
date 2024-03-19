@@ -681,7 +681,7 @@ class GraphGeneratorRL:
         invalid_add_empty_idc = uniques[counts > 1].unsqueeze(dim=1)  # set intersection
 
         # get invalid indices for when adding more nodes than possible
-        invalid_madd_idc = torch.nonzero(f_add_idc[5] >= n_max_nodes)
+        invalid_madd_idc = torch.nonzero(f_add_idc[5].float() >= n_max_nodes)
 
         # get invalid indices for when connecting a node to nonexisting node
         invalid_conn_idc = torch.nonzero(f_conn_idc[1] >= self.n_nodes[f_conn_idc[0]])

@@ -30,6 +30,7 @@ class ScoringFunction:
         self.score_thresholds = constants.score_thresholds
 
         self.n_graphs         = None  # placeholder
+        self.constants        = constants
 
         assert len(self.score_components) == len(self.score_thresholds), \
                "`score_components` and `score_thresholds` do not match."
@@ -169,7 +170,7 @@ class ScoringFunction:
         ----
             mols (list) : Contains `rdkit.Mol` objects corresponding to molecular
                           graphs sampled.
-            activity_model (sklearn.svm.SVC) : Pre-trained QSAR model.
+            activity_model (sklearn.svm.classes.SVC) : Pre-trained QSAR model.
 
         Returns:
         -------

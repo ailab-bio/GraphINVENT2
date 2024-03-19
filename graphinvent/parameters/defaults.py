@@ -142,7 +142,7 @@ parameters = {
     "block_size"          : 100000,
     "epochs"              : 100,
     "init_lr"             : 1e-4,
-    "max_rel_lr"          : 1,
+    "max_rel_lr"          : 10,
     "min_rel_lr"          : 0.0001,
     "decoding_route"      : "bfs",
     "activity_model_dir"  : "data/fine-tuning/",

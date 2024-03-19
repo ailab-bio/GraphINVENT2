@@ -238,6 +238,11 @@ class Workflow:
                 steps_per_epoch=n_batches,
                 epochs=self.constants.epochs
             )
+            # self.scheduler = torch.optim.lr_scheduler.StepLR(
+            #     optimizer=self.optimizer,
+            #     step_size=2,
+            #     gamma=0.9,
+            # )
         else:
             self.restart_epoch = 0
 
@@ -353,10 +358,11 @@ class Workflow:
                                                     data_description="validation set")
 
         self.load_training_set_properties()
-        self.create_output_files()
         self.analyzer = Analyzer(valid_dataloader=self.valid_dataloader,
-                                          train_dataloader=self.train_dataloader,
-                                          start_time=self.start_time)
+                            train_dataloader=self.train_dataloader,
+                            start_time=self.start_time,
+                            create_tensorboard=True)  # TODO this can be a default variable
+        self.create_output_files()
 
         start_epoch, end_epoch = self.define_model_and_optimizer()
 
@@ -367,7 +373,8 @@ class Workflow:
             avg_train_loss = self.train_epoch()
             avg_valid_loss = self.validation_epoch()
 
-            util.write_training_status(epoch=self.current_epoch,
+            util.write_training_status(tb_writer=self.analyzer.tb_writer,
+                                       epoch=self.current_epoch,
                                        lr=self.optimizer.param_groups[0]["lr"],
                                        training_loss=avg_train_loss,
                                        validation_loss=avg_valid_loss)
@@ -460,6 +467,7 @@ class Workflow:
                 _, score = self.generate_graphs_rl(
                     model_a=model_to_evaluate,
                     model_b=self.prior_model,
+                    tb_writer = self.analyzer.tb_writer,
                     is_agent=True,
                     model_a_label=label
                 )
@@ -497,7 +505,8 @@ class Workflow:
 
         else:
             # score not computer, so use placeholder
-            util.write_training_status(score="NA")
+            util.write_training_status(tb_writer=self.analyzer.tb_writer,
+                                       score="NA")
             score = None
 
         return score
@@ -571,12 +580,14 @@ class Workflow:
         # genereate molecules with agent model
         loss_a, score_a = self.generate_graphs_rl(model_a=self.agent_model,
                                                   model_b=self.prior_model,
+                                                  tb_writer=self.analyzer.tb_writer,
                                                   is_agent=True,
                                                   model_a_label="agent")
 
         # generate molecules with best agent so far ("basf")
         loss_b, _ = self.generate_graphs_rl(model_a=self.basf_model,
                                             model_b=self.agent_model,
+                                            tb_writer=self.analyzer.tb_writer,
                                             is_agent=True,
                                             model_a_label="BASF")
 
@@ -592,6 +603,7 @@ class Workflow:
         self.scheduler.step()
 
         util.write_training_status(
+            tb_writer=self.analyzer.tb_writer,
             epoch=self.current_epoch,
             lr=self.optimizer.param_groups[0]["lr"],
             training_loss=torch.clone(loss),
@@ -614,10 +626,14 @@ class Workflow:
             util.properties_to_csv(prop_dict=self.ts_properties,
                                    csv_filename=csv_path_and_filename,
                                    epoch_key="Training set",
+                                   tb_writer=self.analyzer.tb_writer,
                                    append=False)
 
             # begin writing `convergence.log` file
-            util.write_training_status(append=False)
+            util.write_training_status(
+                tb_writer=self.analyzer.tb_writer,
+                append=False
+            )
 
             # create `generation/` subdirectory to write generation output to
             os.makedirs(self.constants.job_dir + "generation/", exist_ok=True)
@@ -666,7 +682,9 @@ class Workflow:
                 self.likelihood_per_action = action_likelihoods
 
     def generate_graphs_rl(self, model_a : torch.nn.Module,
-                           model_b : torch.nn.Module, is_agent : bool=False,
+                           model_b : torch.nn.Module,
+                           tb_writer,
+                           is_agent : bool=False,
                            model_a_label : str="") -> \
                            Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -725,6 +743,7 @@ class Workflow:
 
         if is_agent:
             util.tbwrite_loglikelihoods(
+                tb_writer=tb_writer,
                 step=self.current_epoch,
                 agent_loglikelihoods=-torch.clone(model_a_loglikelihoods),
                 prior_loglikelihoods=-torch.clone(model_b_loglikelihoods)
@@ -766,6 +785,8 @@ class Workflow:
                                            device=self.constants.device)
 
         self.model.train()  # ensure model is in train mode
+        self.model.zero_grad()
+        self.optimizer.zero_grad()
         accumulation_counter = 0  # initialize the accumulation counter
         for batch_idx, batch in tqdm(enumerate(self.train_dataloader),
                                      total=len(self.train_dataloader)):
@@ -775,21 +796,18 @@ class Workflow:
             nodes, edges, target_output = batch
             output = self.model(nodes, edges)
 
-            self.model.zero_grad()
-            self.optimizer.zero_grad()
-
             batch_loss = self.loss(output=output, target_output=target_output)
             training_loss_tensor[batch_idx] = batch_loss.item()  # use .item() to detach the loss value from the computation graph
 
-            batch_loss = batch_loss / self.accumulation_steps  # Scale the loss down by the number of accumulation steps
-            batch_loss.backward()  # Accumulate gradients
+            batch_loss = batch_loss / self.accumulation_steps  # scale the loss down by the number of accumulation steps
+            batch_loss.backward()  # accumulate gradients
 
             accumulation_counter += 1
             if accumulation_counter % self.accumulation_steps == 0:
-                self.optimizer.step()  # update parameters only after `accumulation_steps` batches
-                self.scheduler.step()  # update the learning rate
+                self.optimizer.step()       # update parameters only after `accumulation_steps` batches
+                self.scheduler.step()       # update the learning rate
                 self.optimizer.zero_grad()  # clear gradients after updating
-                accumulation_counter = 0  # reset the counter
+                accumulation_counter = 0    # reset the counter
 
         # ensure any remaining gradients are applied
         if accumulation_counter != 0:

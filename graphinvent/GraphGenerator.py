@@ -565,7 +565,7 @@ class GraphGenerator:
         invalid_idc, max_node_idc = self.get_invalid_actions(f_add_idc, f_conn_idc)
 
         # change "connect to" index for graphs trying to add more than max n nodes
-        f_add_idc[5][max_node_idc] = 0
+        f_add_idc[-1][max_node_idc] = 0  # TODO changed this from 5 to -1
 
         return f_add_idc, f_conn_idc, f_term_idc, invalid_idc, likelihoods
 
@@ -615,7 +615,7 @@ class GraphGenerator:
         invalid_add_empty_idc = uniques[counts > 1].unsqueeze(dim=1)  # set intersection
 
         # get invalid indices for when adding more nodes than possible
-        invalid_madd_idc = torch.nonzero(f_add_idc[5] >= n_max_nodes)
+        invalid_madd_idc = torch.nonzero(f_add_idc[-1].float() >= n_max_nodes)  # TODO changed from 5 to -1
 
         # get invalid indices for when connecting a node to nonexisting node
         invalid_conn_idc = torch.nonzero(f_conn_idc[1] >= self.n_nodes[f_conn_idc[0]])
@@ -792,7 +792,7 @@ class GraphGenerator:
             mol = _graph_to_mol(self.generated_nodes[idx],
                                 self.generated_edges[idx],
                                 self.generated_n_nodes[idx])
-        except (IndexError, AttributeError):  # raised when graph is empty
+        except (KeyError, IndexError, AttributeError):  # raised when graph is empty
             mol = None
 
         # use the `rdkit.Mol` object, and node and edge features tensors, to get

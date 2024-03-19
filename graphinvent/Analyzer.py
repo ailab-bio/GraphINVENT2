@@ -26,13 +26,19 @@ class Analyzer:
     def __init__(self,
                  valid_dataloader : Union[torch.utils.data.DataLoader, None]=None,
                  train_dataloader : Union[torch.utils.data.DataLoader, None]=None,
-                 start_time : Union[time.time, None]=None) -> None:
+                 start_time : Union[time.time, None]=None,
+                 create_tensorboard : bool=False) -> None:
 
         self.valid_dataloader = valid_dataloader
         self.train_dataloader = train_dataloader
         self.start_time       = start_time
-        self.tb_writer        = SummaryWriter(log_dir=constants.tensorboard_dir,
+        self.create_tensorboard    = create_tensorboard
+        if self.create_tensorboard:
+            self.tb_writer    = SummaryWriter(log_dir=constants.tensorboard_dir,
                                               flush_secs=10)
+        else:
+            self.tb_writer    = None
+
 
         self.model = None  # placeholder
 
@@ -44,7 +50,7 @@ class Analyzer:
 
         Args:
         ----
-            likelihood_per_action (torch.Tensor) : Contains NLLs per action a
+            likelihood_per_action (torch.Tensor) : Contains NLLs per action for a
               batch of generated graphs.
         """
         def _uc_jsd(likelihood_valid : torch.Tensor,
@@ -134,9 +140,11 @@ class Analyzer:
             output_dir=constants.job_dir,
             epoch_key=epoch_key,
             model_scores=model_scores,
+            tb_writer=self.tb_writer,
             append=bool(epoch_key != f"{epoch_label} {constants.sample_every}")
         )
-        util.write_training_status(score=model_scores["UC-JSD"])
+        util.write_training_status(tb_writer=self.tb_writer,
+                                   score=model_scores["UC-JSD"])
 
     def evaluate_generated_graphs(self, generated_graphs : list,
                                   termination : torch.Tensor,
@@ -179,13 +187,14 @@ class Analyzer:
         prop_dict[(epoch_key, "run_time")]         = round(time.time() - self.start_time, 2)
 
         # calculate validity list now, so as not to write to CSV in previous step
-        epoch_id = epoch_label + " " + str(generation_batch_idx)
+        batch_id = f"batch_{generation_batch_idx}"
+        epoch_id = f"epoch_{epoch_key[6:]}"
         fraction_valid, validity_tensor, _ = util.write_molecules(
             molecules=generated_graphs,
             final_likelihoods=loglikelihoods,
-            epoch=epoch_id,
+            epoch=epoch_key,
             write=True,
-            label="training",
+            label=f"{epoch_id}_{batch_id}",
         )
         prop_dict[(epoch_key, "fraction_valid")]  = fraction_valid
         prop_dict[(epoch_key, "validity_tensor")] = validity_tensor
@@ -196,6 +205,7 @@ class Analyzer:
             util.properties_to_csv(prop_dict=prop_dict,
                                    csv_filename=f"{output}generation.log",
                                    epoch_key=epoch_key,
+                                   tb_writer=self.tb_writer,
                                    append=True)
 
             # join ts properties with prop_dict for plotting
@@ -276,6 +286,7 @@ class Analyzer:
         util.properties_to_csv(prop_dict=prop_dict,
                                csv_filename=f"{output}generation.log",
                                epoch_key=epoch_key,
+                               tb_writer=self.tb_writer,
                                append=True)
 
         # join ts properties with prop_dict for plotting
@@ -893,4 +904,5 @@ class Analyzer:
             with open(constants.job_dir + "fine-tuning.log", "a") as output_file:
                 output_file.write(f"Step {step}, {score:.8f}\n")
 
-        self.tb_writer.add_scalar("Evaluation/score", score, step)
+        if self.create_tensorboard:
+            self.tb_writer.add_scalar("Evaluation/score", score, step)
