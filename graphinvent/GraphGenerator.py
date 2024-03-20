@@ -130,7 +130,7 @@ class GraphGenerator:
             termination_idc = torch.cat((term, invalid))
 
             # never write out the dummy graph at index 0
-            termination_idc = termination_idc[termination_idc != 0]
+            termination_idc = termination_idc[termination_idc != 0]  # TODO does this need to be commented out?
 
             # copy the graphs indicated by `terminated_idc` to the tensors for
             # finished graphs (i.e. `generated_{nodes/edges}`)
@@ -624,7 +624,7 @@ class GraphGenerator:
         invalid_conn_nonex_idc = torch.nonzero(self.n_nodes[f_conn_idc[0]] == 0)
 
         # get invalid indices for when creating self-loops
-        invalid_sconn_idc = torch.nonzero(f_conn_idc[1] == f_conn_idc[3])
+        invalid_sconn_idc = torch.nonzero(f_conn_idc[1] == f_conn_idc[-1])  # TODO changed from 3 to -1
 
         # get invalid indices for when attemting to add multiple edges
         invalid_dconn_idc = torch.nonzero(
