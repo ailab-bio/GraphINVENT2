@@ -4,6 +4,7 @@ Before doing anything with GraphINVENT, you will need to configure the GraphINVE
 GraphINVENT requires PyTorch, RDKit, and XXX to run. A virtual environment can be easily created using conda by typing into the terminal:
 
 ```
+module load Anaconda3  // you may need to load conda first, e.g., if you are creating the environment on the cluster
 conda create -n graphinvent python=3.9 pytorch::pytorch torchvision torchaudio -c pytorch
 ```
 
