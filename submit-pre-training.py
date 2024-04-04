@@ -23,7 +23,8 @@ JOBDIR_START_IDX = 0                   # where to start indexing job dirs
 N_JOBS           = 1                   # number of jobs to run per model
 RESTART          = False               # whether or not this is a restart job
 FORCE_OVERWRITE  = True                # overwrite job directories which already exist
-JOBNAME          = "example-job-name"  # used to create a sub directory
+JOBNAME          = "training-6"  # used to create a sub directory
+ACCOUNT          = "NAISS2023/5-429"   # alvis-specific TODO tmp solution
 
 # if running using SLURM sbatch, specify params below
 USE_SLURM = False                        # use SLURM or not
@@ -59,9 +60,9 @@ params = {
     "job_type"     : JOB_TYPE,
     "dataset_dir"  : f"{DATA_PATH}{DATASET}/",
     "restart"      : RESTART,
-    "sample_every" : 2,
+    "sample_every" : 50,
     "init_lr"      : 1e-4,
-    "epochs"       : 100,
+    "epochs"       : 1000,
     "batch_size"   : 50,
     "block_size"   : 1000,
     "device"       : DEVICE,
@@ -187,6 +188,7 @@ def write_submission_script(job_dir : str, job_idx : int, job_type : str, max_n_
     submit_filename = job_dir + "submit.sh"
     with open(submit_filename, "w") as submit_file:
         submit_file.write("#!/bin/bash\n")
+        submit_file.write(f"#SBATCH --A {ACCOUNT}\n")
         submit_file.write(f"#SBATCH --job-name={job_type}{max_n_nodes}_{job_idx}\n")
         submit_file.write(f"#SBATCH --output={job_type}{max_n_nodes}_{job_idx}o\n")
         submit_file.write(f"#SBATCH --time={runtime}\n")
