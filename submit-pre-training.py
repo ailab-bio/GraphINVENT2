@@ -18,16 +18,17 @@ import torch
 
 # define what you want to do for the specified job(s)
 DATASET          = "gdb13-debug"       # dataset name in "./data/pre-training/"
-JOB_TYPE         = "train"             # "preprocess", "train", "generate", or "test"
+JOB_TYPE         = "preprocess"             # "preprocess", "train", "generate", or "test"
 JOBDIR_START_IDX = 0                   # where to start indexing job dirs
 N_JOBS           = 1                   # number of jobs to run per model
 RESTART          = False               # whether or not this is a restart job
 FORCE_OVERWRITE  = True                # overwrite job directories which already exist
-JOBNAME          = "example-job-name"  # used to create a sub directory
+JOBNAME          = "preprocessing"  # used to create a sub directory
+ACCOUNT          = "NAISS2023-5-429"
 
 # if running using SLURM sbatch, specify params below
-USE_SLURM = False                        # use SLURM or not
-RUN_TIME  = "1-00:00:00"                 # hh:mm:ss
+USE_SLURM = True                        # use SLURM or not
+RUN_TIME  = "0-06:00:00"                 # hh:mm:ss
 MEM_GB    = 20                           # required RAM in GB
 
 # for SLURM jobs, set partition to run job on (preprocessing jobs run entirely on
@@ -42,7 +43,7 @@ else:
 
 # set paths here
 HOME             = str(Path.home())
-PYTHON_PATH      = f"{HOME}/opt/anaconda3/envs/graphinvent/bin/python"
+PYTHON_PATH      = f"{HOME}/.conda/envs/graphinvent/bin/python"
 GRAPHINVENT_PATH = "./graphinvent/"
 DATA_PATH        = "./data/pre-training/"
 
@@ -59,9 +60,9 @@ params = {
     "job_type"     : JOB_TYPE,
     "dataset_dir"  : f"{DATA_PATH}{DATASET}/",
     "restart"      : RESTART,
-    "sample_every" : 2,
+    "sample_every" : 10,
     "init_lr"      : 1e-4,
-    "epochs"       : 100,
+    "epochs"       : 200,
     "batch_size"   : 50,
     "block_size"   : 1000,
     "device"       : DEVICE,
@@ -187,20 +188,16 @@ def write_submission_script(job_dir : str, job_idx : int, job_type : str, max_n_
     submit_filename = job_dir + "submit.sh"
     with open(submit_filename, "w") as submit_file:
         submit_file.write("#!/bin/bash\n")
+        submit_file.write(f"#SBATCH -A {ACCOUNT} -p alvis\n")
         submit_file.write(f"#SBATCH --job-name={job_type}{max_n_nodes}_{job_idx}\n")
         submit_file.write(f"#SBATCH --output={job_type}{max_n_nodes}_{job_idx}o\n")
         submit_file.write(f"#SBATCH --time={runtime}\n")
-        submit_file.write(f"#SBATCH --mem={mem}g\n")
-        submit_file.write(f"#SBATCH --partition={ptn}\n")
-        submit_file.write("#SBATCH --nodes=1\n")
-        submit_file.write(f"#SBATCH --cpus-per-task={cpu_per_task}\n")
-        if ptn == "gpu":
-            submit_file.write("#SBATCH --gres=gpu:1\n")
+        submit_file.write("#SBATCH --gpus-per-node=T4:1\n")
+        submit_file.write("#SBATCH --mail-user=mj2252015@gmail.com --mail-type=end\n")
         submit_file.write("hostname\n")
         submit_file.write("export QT_QPA_PLATFORM='offscreen'\n")
-        submit_file.write(f"{python_bin_path} {GRAPHINVENT_PATH}main.py --job-dir {job_dir}")
+        submit_file.write(f"apptainer exec graphinvent.sif /opt/conda/envs/graphinvent/bin/python3 {GRAPHINVENT_PATH}main.py --job-dir {job_dir}")
         submit_file.write(f" > {job_dir}output.o${{SLURM_JOB_ID}}\n")
-
 
 def check_paths() -> None:
     """
