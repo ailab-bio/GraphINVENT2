@@ -91,19 +91,15 @@ class GraphGeneratorRL:
         graphs = [self.graph_to_graph(idx) for idx in range(self.batch_size)]
 
         # remove extra zero padding from NLLs
-        generated_agent_loglikelihoods = torch.log(
-            torch.sum(self.generated_agent_likelihoods, dim=1)[:self.batch_size]
-        )
-        generated_prior_loglikelihoods = torch.log(
-            torch.sum(self.generated_prior_likelihoods, dim=1)[:self.batch_size]
-        )
+        generated_agent_loglikelihoods_sum = torch.sum(self.generated_agent_loglikelihoods, dim=1)[:self.batch_size]
+        generated_prior_loglikelihoods_sum = torch.sum(self.generated_prior_loglikelihoods, dim=1)[:self.batch_size]
 
         # remove extra padding from `properly_terminated` tensor
         properly_terminated = self.properly_terminated[:self.batch_size]
 
         return (graphs,
-                generated_agent_loglikelihoods,
-                generated_prior_loglikelihoods,
+                generated_agent_loglikelihoods_sum,
+                generated_prior_loglikelihoods_sum,
                 properly_terminated)
 
     def build_graphs(self) ->  int:
@@ -209,11 +205,11 @@ class GraphGeneratorRL:
                                              device=constants.device)
 
         # placeholder for sampled NLLs per action for all finished graphs
-        self.generated_agent_likelihoods = torch.zeros(
+        self.generated_agent_loglikelihoods = torch.zeros(
             (n_allocate, *likelihoods_shape[1:]),
             device=constants.device
         )
-        self.generated_prior_likelihoods = torch.zeros(
+        self.generated_prior_loglikelihoods = torch.zeros(
             (n_allocate, *likelihoods_shape[1:]),
             device=constants.device
         )
@@ -429,8 +425,11 @@ class GraphGeneratorRL:
         self.generated_nodes[begin_idx : end_idx]             = nodes_local
         self.generated_edges[begin_idx : end_idx]             = edges_local
         self.generated_n_nodes[begin_idx : end_idx]           = n_nodes_local
-        self.generated_agent_likelihoods[begin_idx : end_idx] = generated_agent_likelihoods_local
-        self.generated_prior_likelihoods[begin_idx : end_idx] = generated_prior_likelihoods_local
+
+        generated_agent_likelihoods_local[generated_agent_likelihoods_local == 0] = 1e-6
+        generated_prior_likelihoods_local[generated_prior_likelihoods_local == 0] = 1e-6
+        self.generated_agent_loglikelihoods[begin_idx: end_idx] = torch.log(generated_agent_likelihoods_local)
+        self.generated_prior_loglikelihoods[begin_idx: end_idx] = torch.log(generated_prior_likelihoods_local)
 
         n_graphs_generated += n_done_graphs  # update count
 
