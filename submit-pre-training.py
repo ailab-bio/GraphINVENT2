@@ -17,18 +17,18 @@ import torch
 
 
 # define what you want to do for the specified job(s)
-DATASET          = "gdb13-debug"       # dataset name in "./data/pre-training/"
-JOB_TYPE         = "preprocess"             # "preprocess", "train", "generate", or "test"
+DATASET          = "Cages-augmented"       # dataset name in "./data/pre-training/"
+JOB_TYPE         = "train"             # "preprocess", "train", "generate", or "test"
 JOBDIR_START_IDX = 0                   # where to start indexing job dirs
 N_JOBS           = 1                   # number of jobs to run per model
-RESTART          = False               # whether or not this is a restart job
+RESTART          = False           # whether or not this is a restart job
 FORCE_OVERWRITE  = True                # overwrite job directories which already exist
-JOBNAME          = "preprocessing"  # used to create a sub directory
+JOBNAME          = "training_6"          # used to create a sub directory
 ACCOUNT          = "NAISS2023-5-429"
 
 # if running using SLURM sbatch, specify params below
 USE_SLURM = True                        # use SLURM or not
-RUN_TIME  = "0-06:00:00"                 # hh:mm:ss
+RUN_TIME  = "0-24:00:00"                 # hh:mm:ss
 MEM_GB    = 20                           # required RAM in GB
 
 # for SLURM jobs, set partition to run job on (preprocessing jobs run entirely on
@@ -54,22 +54,26 @@ else:
 
 # define dataset-specific parameters
 params = {
-    "atom_types"   : ["C", "N", "O", "S", "Cl"],
-    "formal_charge": [-1, 0, +1],
-    "max_n_nodes"  : 13,
+    "atom_types"   : ['C', 'N', 'O', 'P', 'Fe', 'Co', 'Ni', 'Zn'],
+    "formal_charge": [-1 ,0, +1],
+    "max_n_nodes"  : 220,
     "job_type"     : JOB_TYPE,
     "dataset_dir"  : f"{DATA_PATH}{DATASET}/",
     "restart"      : RESTART,
-    "sample_every" : 10,
-    "init_lr"      : 1e-4,
-    "epochs"       : 200,
+    "use_canon"    : False,
+    "sample_every" : 1,
+    "init_lr"      : 1e-5,
+    "epochs"       : 10,
     "batch_size"   : 50,
-    "block_size"   : 1000,
+    "block_size"   : 100,
     "device"       : DEVICE,
-    "n_samples"    : 100,
+    "n_samples"    : 1000,
     # additional paramaters can be defined here, if different from the "defaults"
     # for instance, for "generate" jobs, don't forget to specify "generation_epoch"
     # and "n_samples"
+    
+    "message_passes"       : 5,
+    
 }
 
 

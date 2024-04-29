@@ -20,12 +20,12 @@ import torch
 
 # define what you want to do for the specified job(s)
 DATASET          = "gdb13_1K-debug"    # dataset name in "./data/pre-training/"
-JOB_TYPE         = "train"             # "preprocess", "train", "generate", or "test"
+JOB_TYPE         = "preprocess"             # "preprocess", "train", "generate", or "test"
 JOBDIR_START_IDX = 0                   # where to start indexing job dirs
 N_JOBS           = 1                   # number of jobs to run per model
 RESTART          = False               # whether or not this is a restart job
 FORCE_OVERWRITE  = True                # overwrite job directories which already exist
-JOBNAME          = "example-job-name"  # used to create a sub directory
+JOBNAME          = "preprocessing"  # used to create a sub directory
 
 # if running using LLsub, specify params below
 USE_LLSUB = True                       # use LLsub or not

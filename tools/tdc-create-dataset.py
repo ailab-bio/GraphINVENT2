@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFo
 # define two potential arguments to use when drawing SMILES from a file
 parser.add_argument("--dataset",
                     type=str,
-                    default="ChEMBL",
+                    default="ZINC",
                     help="Specifies the dataset to use for creating the data. Options "
                          "are: 'ChEMBL', 'MOSES', or 'ZINC'.")
 args = parser.parse_args()
@@ -37,10 +37,13 @@ def save_smiles(smi_file : str, smi_list : list) -> None:
     for smi in smi_list:
         try:
             mol = rdkit.Chem.MolFromSmiles(smi[0])
-            if mol.GetNumAtoms() < 81:  # filter out molecules with >= 81 atoms
+            if 100 < mol.GetNumAtoms() < 220:  # filter out molecules
                 save = True
                 for atom in mol.GetAtoms():
                     if atom.GetFormalCharge() not in [-1, 0, +1]:  # filter out molecules with large formal charge
+                        save = False
+                        break
+                    if atom.GetSymbol() not in ['C', 'N', 'O', 'P', 'Fe', 'Co', 'Ni', 'Zn']:  # filter out molecules with unacceptable (non-cage) atom types
                         save = False
                         break
                 if save:
@@ -55,7 +58,7 @@ if __name__ == "__main__":
     data      = MolGen(name=args.dataset)
     split     = data.get_split()
     HOME      = str(Path.home())
-    DATA_PATH = f"./data/{args.dataset}/"
+    DATA_PATH = f"./data/pre-training/{args.dataset}/"
     try:
         os.mkdir(DATA_PATH)
         print(f"-- Creating dataset at {DATA_PATH}")

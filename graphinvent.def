@@ -9,3 +9,4 @@ From: continuumio/miniconda3
     conda install -n graphinvent numpy -c conda-forge
     conda install -n graphinvent rdkit -c conda-forge
     conda install -n graphinvent tqdm h5py scikit-learn matplotlib tensorboard -c conda-forge
+    apt-get update && apt-get install -y libtiff5
