@@ -518,13 +518,14 @@ class Workflow:
         """
         print("* Setting up RL fine-tuning job.", flush=True)
         self.load_training_set_properties()
-        self.create_output_files()
 
         self.analyzer = Analyzer(
             valid_dataloader=None,
             train_dataloader=None,
             start_time=self.start_time
         )
+
+        self.create_output_files()
 
         # define the scoring function to be used
         self.scoring_function = ScoringFunction(constants=self.constants)
@@ -588,7 +589,7 @@ class Workflow:
         loss_b, _ = self.generate_graphs_rl(model_a=self.basf_model,
                                             model_b=self.agent_model,
                                             tb_writer=self.analyzer.tb_writer,
-                                            is_agent=True,
+                                            is_agent=False,
                                             model_a_label="BASF")
 
         loss = (
@@ -720,9 +721,14 @@ class Workflow:
                                      batch_size=self.constants.batch_size)
 
         # generate one batch of graphs using `model_a`
-        (graphs, model_a_loglikelihoods, model_b_loglikelihoods,
-         termination) = generator.sample(agent_model=model_a,
-                                         prior_model=model_b)
+        if is_agent:
+            (graphs, model_a_loglikelihoods, model_b_loglikelihoods,
+             termination) = generator.sample(agent_model=model_a,
+                                             prior_model=model_b)
+        else:
+            (graphs, model_b_loglikelihoods, model_a_loglikelihoods,
+             termination) = generator.sample(agent_model=model_a,
+                                             prior_model=model_b)
 
         # analyze properties of new graphs and save results
         validity, uniqueness = self.analyzer.evaluate_generated_graphs_rl(
