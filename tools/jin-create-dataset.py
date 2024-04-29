@@ -37,9 +37,9 @@ def save_smiles(smi_file : str, smi_list : list) -> None:
 
 
 if __name__ == "__main__":
-    DATA_PATH = f"./data/pre-training/{args.dataset}/"
+    DATA_PATH = f"./data/pre-training/chembl/"
 
-    print(f"* Re-saving {args.dataset} dataset in a format GraphINVENT can parse.")
+    print(f"* Re-saving CHEMBL dataset in a format GraphINVENT can parse.")
     print("-- Filtering and splitting data...")
     save_smiles(smi_file=f"{DATA_PATH}train.smi", smi_list=split["train"].values)
 
