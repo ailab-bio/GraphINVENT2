@@ -11,6 +11,7 @@ To use script, run:
 import os
 from pathlib import Path
 import shutil
+import rdkit
 from rdkit import Chem
 
 def read_file_as_list(filename):
