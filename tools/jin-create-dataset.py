@@ -11,8 +11,9 @@ To use script, run:
 import os
 from pathlib import Path
 import shutil
-import rdkit
 from rdkit import Chem
+from rdkit.Chem import rdmolfiles
+
 
 def read_file_as_list(filename):
     with open(filename, 'r') as file:
@@ -22,7 +23,7 @@ def read_file_as_list(filename):
 
 def save_smiles(smi_file : str, smi_list : list) -> None:
     """Saves input list of SMILES to the specified file path."""
-    smi_writer = rdkit.Chem.rdmolfiles.SmilesWriter(smi_file)
+    smi_writer = rdmolfiles.SmilesWriter(smi_file)
     for smi in smi_list:
         try:
             mol = rdkit.Chem.MolFromSmiles(smi[0])
