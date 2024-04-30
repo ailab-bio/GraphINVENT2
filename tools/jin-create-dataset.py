@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     print(f"* Re-saving CHEMBL dataset in a format GraphINVENT can parse.")
     print("-- Filtering and splitting data...")
-    smiles_list = read_filea_as_list(filename=f"{DATA_PATH}train.smi")
+    smiles_list = read_file_as_list(filename=f"{DATA_PATH}train.smi")
     save_smiles(smi_file=f"{DATA_PATH}train.smi", smi_list=smiles_list)
 
     print("Done.", flush=True)
