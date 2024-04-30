@@ -11,8 +11,13 @@ To use script, run:
 import os
 from pathlib import Path
 import shutil
-import rdkit
 from rdkit import Chem
+
+def read_file_as_list(filename):
+    with open(filename, 'r') as file:
+        data = file.readlines()
+    return [line.strip() for line in data]
+
 
 def save_smiles(smi_file : str, smi_list : list) -> None:
     """Saves input list of SMILES to the specified file path."""
@@ -41,6 +46,7 @@ if __name__ == "__main__":
 
     print(f"* Re-saving CHEMBL dataset in a format GraphINVENT can parse.")
     print("-- Filtering and splitting data...")
-    save_smiles(smi_file=f"{DATA_PATH}train.smi", smi_list=split["train"].values)
+    smiles_list = read_filea_as_list(filename=f"{DATA_PATH}train.smi")
+    save_smiles(smi_file=f"{DATA_PATH}train.smi", smi_list=smiles_list)
 
     print("Done.", flush=True)
