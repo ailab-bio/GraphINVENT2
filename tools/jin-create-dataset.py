@@ -6,11 +6,9 @@ wget https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_34_chemre
 
 
 To use script, run:
-(graphinvent)$ python jin-create-dataset.py
+(graphinvent)$ apptainer exec graphinvent.sif /opt/conda/envs/graphinvent/bin/python3 tools/jin-create-dataset.py
 """
-import os
-from pathlib import Path
-import shutil
+import rdkit
 from rdkit import Chem
 from rdkit.Chem import rdmolfiles
 
