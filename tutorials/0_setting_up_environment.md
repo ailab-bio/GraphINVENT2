@@ -1,8 +1,19 @@
 ## Setting up the environment
-Before doing anything with GraphINVENT, you will need to configure the GraphINVENT virtual environment, as the code is dependent on very specific versions of packages. You can use [conda](https://docs.conda.io/en/latest/) for this. If you do not have conda installed, please check out the installation instructions at [this link](https://docs.anaconda.com/free/miniconda/).
+Before doing anything with GraphINVENT, you will need to configure the GraphINVENT dependencies, as the code is dependent on very specific versions of packages, like PyTorch and RDKit, to run. You can use one of two approaches for this.
 
-### Approach 1: Using Conda
-GraphINVENT requires PyTorch, RDKit, and various other packages to run. A virtual environment can be easily created using conda by typing into the terminal:
+### Approach 1: Using Docker (recommended)
+The first approach to installing GraphINVENT dependencies involves using Docker. To build the GraphINVENT container using Docker, run:
+```
+apptainer build docker/graphinvent.sif docker/graphinvent.def
+```
+
+Update the `PYTHON_PATH` variable in `submit.py` to run the GraphINVENT container:
+```
+PYTHON_PATH      = "apptainer exec docker/graphinvent.sif"
+```
+
+### Approach 2: Using Conda
+The second approach to installing all GraphINVENT dependencies uses [conda](https://docs.conda.io/en/latest/) for this. If you do not have conda installed, please check out the installation instructions at [this link](https://docs.anaconda.com/free/miniconda/). A virtual environment can be easily created using conda by typing into the terminal:
 
 ```
 module load Anaconda3  // you may need to load conda first, e.g., if you are creating the environment on the cluster
@@ -31,16 +42,6 @@ conda install -n graphinvent {package_name}
 
 And that's it! To learn how to start training models, go to [1_introduction](1_introduction.md).
 
-### Approach 2: Using Docker
-To build the GraphINVENT container using Docker, run:
-```
-apptainer build docker/graphinvent.sif docker/graphinvent.def
-```
-
-Update the `PYTHON_PATH` variable in `submit.py` to run the GraphINVENT container:
-```
-PYTHON_PATH      = "apptainer exec docker/graphinvent.sif"
-```
 
 ### Possible issues
 If you are getting the following error message when you try to run the submission script:
