@@ -1,2 +1,21 @@
+# Ignore the QSAR model to be used for fine-tuning in RL jobs
 data/fine-tuning/qsar_model.pickle
+
+# Ignore the Docker container
+docker/graphinvent.sif
+
+# Ignore all VSCode files in the entire project
 .vscode/*
+
+# Ignore all .h5 files in the entire project
+*.h5
+
+# Ignore CSV files in the data/pre-training/ directory
+data/pre-training/*.csv
+
+# Ignore anything created in the `output/` directory
+output/*
+
+# Ignore Python cache files and directories
+**/__pycache__/
+*.pyc
