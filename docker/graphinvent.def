@@ -1,0 +1,12 @@
+Bootstrap: docker
+From: continuumio/miniconda3
+
+%post
+    # Initialize Conda in this script
+    . /opt/conda/etc/profile.d/conda.sh
+
+    conda create -n graphinvent pytorch=1.8.0 torchvision torchaudio -c pytorch
+    conda install -n graphinvent numpy -c conda-forge
+    conda install -n graphinvent rdkit -c conda-forge
+    conda install -n graphinvent tqdm h5py scikit-learn matplotlib tensorboard -c conda-forge
+    apt-get update && apt-get install -y libtiff5
