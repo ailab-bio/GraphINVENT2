@@ -1,10 +1,10 @@
 """
-Example submission script for a GraphINVENT training job (distribution-
-based training, not fine-tuning/optimization job). This can be used to
-pre-train a model before a fine-tuning (via reinforcement learning) job.
+Example submission script for a GraphINVENT training job (unconditional generation,
+ not fine-tuning/optimization job). This can be used to pre-train a model before
+ a reinforcement learning (fine-tuning) job.
 
 To run, type:
-(graphinvent) ~/GraphINVENT$ python submit-pre-training.py
+ user@cluster GraphINVENT-lite$ python submit.py
 """
 # load general packages and functions
 import csv
@@ -13,8 +13,12 @@ import os
 from pathlib import Path
 import subprocess
 import time
-import torch
 
+########## VARIABLES ##########
+# set paths here
+PYTHON_PATH      = "apptainer exec docker/graphinvent.sif /opt/conda/envs/graphinvent/bin/python"
+GRAPHINVENT_PATH = "./graphinvent/"
+DATA_PATH        = "./data/pre-training/"
 
 # define what you want to do for the specified job(s)
 DATASET          = "gdb13-debug"       # dataset name in "./data/pre-training/"
@@ -25,31 +29,10 @@ RESTART          = False               # whether or not this is a restart job
 FORCE_OVERWRITE  = True                # overwrite job directories which already exist
 JOBNAME          = f"{JOB_TYPE}"       # used to create a sub directory
 
-# if running using SLURM sbatch, specify params below
-USE_SLURM = True                        # use SLURM or not
-RUN_TIME  = "0-06:00:00"                 # hh:mm:ss
-MEM_GB    = 20                           # required RAM in GB
-
-# for SLURM jobs, set partition to run job on (preprocessing jobs run entirely on
-# CPU, so no need to request GPU partition; all other job types benefit from running
-# on a GPU)
-if JOB_TYPE == "preprocess":
-    PARTITION     = "core"
-    CPUS_PER_TASK = 1
-else:
-    PARTITION     = "gpu"
-    CPUS_PER_TASK = 4
-
-# set paths here
-HOME             = str(Path.home())
-PYTHON_PATH      = f"{HOME}/opt/anaconda3/envs/graphinvent/bin/python" # if using docker, replace with: apptainer exec graphinvent.sif
-GRAPHINVENT_PATH = "./graphinvent/"
-DATA_PATH        = "./data/pre-training/"
-
-if torch.cuda.is_available():
-    DEVICE = "cuda"
-else:
-    DEVICE = "cpu"
+# set SLURM params here (if using SLURM)
+USE_SLURM = True                       # use SLURM or not
+RUN_TIME  = "0-06:00:00"               # d-hh:mm:ss
+ACCOUNT   = "XXXXXXXXXXXXXXX"          # if cluster requires specific allocation/account, use here
 
 # define dataset-specific parameters
 params = {
@@ -64,12 +47,13 @@ params = {
     "epochs"       : 1000,
     "batch_size"   : 50,
     "block_size"   : 1000,
-    "device"       : DEVICE,
+    "device"       : "cuda",  # or "cpu" if no CUDA
     "n_samples"    : 100,
     # additional paramaters can be defined here, if different from the "defaults"
     # for instance, for "generate" jobs, don't forget to specify "generation_epoch"
     # and "n_samples"
 }
+###############################
 
 
 def submit() -> None:
@@ -126,9 +110,7 @@ def submit() -> None:
         if USE_SLURM:
             print("* Writing submission script.", flush=True)
             write_submission_script(job_dir=params["job_dir"],
-                                    job_idx=job_idx,
                                     job_type=params["job_type"],
-                                    max_n_nodes=params["max_n_nodes"],
                                     runtime=RUN_TIME,
                                     python_bin_path=PYTHON_PATH)
 
@@ -163,7 +145,7 @@ def write_input_csv(params_dict : dict, filename : str="params.csv") -> None:
             writer.writerow([key, value])
 
 
-def write_submission_script(job_dir : str, job_idx : int, job_type : str, max_n_nodes : int,
+def write_submission_script(job_dir : str, job_type : str,
                             runtime : str, python_bin_path : str) -> None:
     """
     Writes a submission script (`submit.sh`).
@@ -171,17 +153,15 @@ def write_submission_script(job_dir : str, job_idx : int, job_type : str, max_n_
     Args:
     ----
         job_dir (str)         : Job running directory.
-        job_idx (int)         : Job idx.
         job_type (str)        : Type of job to run.
-        max_n_nodes (int)     : Maximum number of nodes in dataset.
         runtime (str)         : Job run-time limit in hh:mm:ss format.
         python_bin_path (str) : Path to Python binary to use.
     """
     submit_filename = job_dir + "submit.sh"
     with open(submit_filename, "w") as submit_file:
         submit_file.write("#!/bin/bash\n")
-        submit_file.write(f"#SBATCH --job-name={job_type}{max_n_nodes}_{job_idx}\n")
-        submit_file.write(f"#SBATCH --output={job_type}{max_n_nodes}_{job_idx}o\n")
+        submit_file.write(f"#SBATCH -A {ACCOUNT}\n")
+        submit_file.write(f"#SBATCH --job-name={job_type}\n")
         submit_file.write(f"#SBATCH --time={runtime}\n")
         submit_file.write("#SBATCH --gpus-per-node=T4:1\n")
         submit_file.write("hostname\n")

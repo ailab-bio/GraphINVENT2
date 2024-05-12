@@ -3,10 +3,12 @@ Main function for running GraphINVENT jobs.
 
 Examples:
 --------
- * If you define an "input.csv" with desired job parameters in job_dir/:
-   (graphinvent) ~/GraphINVENT$ python main.py --job_dir path/to/job_dir/
- * If you instead want to run your job using the submission scripts:
-   (graphinvent) ~/GraphINVENT$ python submit-fine-tuning.py
+ * If you define an "input.csv" with desired job parameters in the job directory,
+   you can run `main.py` as follows:
+   ~/GraphINVENT$ python main.py --job_dir path/to/job_dir/
+ * If you instead want to run your job using the submission script, then modify
+   `submit.py` in the home directory and run:
+   ~/GraphINVENT$ python submit.py
 """
 # load general packages and functions
 import datetime

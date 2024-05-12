@@ -13,8 +13,9 @@ docker/graphinvent.sif
 # Ignore CSV files in the data/pre-training/ directory
 data/pre-training/*.csv
 
-# Ignore anything created in the `output/` directory
+# Ignore anything created in the `output/` directory and any SLURM output files
 output/*
+slurm*.out
 
 # Ignore Python cache files and directories
 **/__pycache__/

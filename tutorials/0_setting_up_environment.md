@@ -9,7 +9,7 @@ apptainer build docker/graphinvent.sif docker/graphinvent.def
 
 Update the `PYTHON_PATH` variable in `submit.py` to run the GraphINVENT container:
 ```
-PYTHON_PATH      = "apptainer exec docker/graphinvent.sif"
+PYTHON_PATH      = "apptainer exec docker/graphinvent.sif /opt/conda/envs/graphinvent/bin/python"
 ```
 
 And that's it! To learn how to start training models, go to [1_introduction](1_introduction.md).
