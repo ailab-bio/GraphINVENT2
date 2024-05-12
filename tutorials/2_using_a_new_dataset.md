@@ -77,56 +77,54 @@ Once you know these values, you can move on to preparing a submission script. A 
 
 ```
 submit.py >
-# define what you want to do for the specified job(s)
-dataset = "your_dataset_name"  # this is the dataset name, which corresponds to the directory containing the data, located in GraphINVENT/data/
-job_type = "preprocess"        # this tells the code that this is a preprocessing job
-jobdir_start_idx = 0           # this is an index used for labeling the first job directory where output will be written
-n_jobs = 1                     # if you want to run multiple jobs (not recommended for preprocessing), set this to >1
-restart = False                # this tells the code that this is not a restart job
-force_overwrite = False        # if `True`, this will overwrite job directories which already exist with this name (recommend `True` only when debugging)
-jobname = "preprocess"         # this is the name of the job, to be used in labeling directories where output will be written
+        # define what you want to do for the specified job(s)
+        self.dataset          = "your_dataset_name"  # this is the dataset name, which corresponds to the directory containing the data, located in ./data/pre-training/ unless otherwise specified
+        self.job_type         = "preprocess"   # this tells the code that this is a preprocessing job
+        self.jobdir_start_idx = 0              # where to start indexing job dirs
+        self.n_jobs           = 1              # number of jobs to run per model
+        self.restart          = False          # this is not a restart job
+        self.force_overwrite  = True           # ok to overwrite job directories which already exist
+        self.jobname          = self.job_type  # just a label used to create a job sub directory (can be anything you want)
 ```
 
 Then, specify whether you want the job to run using [SLURM](https://slurm.schedmd.com/overview.html). In the example below, we specify that we want the job to run as a regular process (i.e. no SLURM). In such cases, any specified run time and memory requirements will be ignored by the script. Note: if you want to use a different scheduler, this can be easily changed in the submission script (search for "sbatch" and change it to your scheduler's submission command).
 
 ```
 submit.py >
-# if running using SLURM, specify the parameters below
-use_slurm = False        # this tells the code to NOT use SLURM
-run_time = "1-00:00:00"  # d-hh:mm:ss (will be ignored here)
-mem_GB = 20              # memory in GB (will be ignored here)
+        # set SLURM params here (if using SLURM)
+        self.use_slurm        = False              # this tells the code to NOT use SLURM
+        self.run_time         = "0-06:00:00"       # run for 6 hrs max
+        self.account          = "XXXXXXXXXX"       # if cluster requires specific allocation/account, use here
 ```
 
 Then, specify the path to the Python binary in the GraphINVENT virtual environment. You probably won't need to change *graphinvent_path* or *data_path*, unless you want to run the code from a different directory.
 
 ```
 submit.py >
-# set paths here
-python_path = f"{home}/miniconda3/envs/graphinvent/bin/python"  # this is the path to the Python binary to use (change to your own)
-graphinvent_path = f"./graphinvent/"                            # this is the directory containing the source code
-data_path = f"./data/"                                          # this is the directory where all datasets are found
+        # set paths here
+        self.python_path      = "apptainer exec docker/graphinvent.sif /opt/conda/envs/graphinvent/bin/python"  # this is the path to the Python binary to use (change to your own)
+        self.graphinvent_path = "./graphinvent/"        # this is the directory containing the source code
+        self.data_path        = "./data/pre-training/"  # this is the directory where all datasets are found
 ```
 
 Finally, details regarding the specific dataset you want to use need to be entered:
 
 ```
 submit.py >
-# define dataset-specific parameters
-params = {
-    "atom_types": ["C", "N", "O", "S", "Cl"],  # <-- change to your dataset's atom types
-    "formal_charge": [-1, 0, +1],              # <-- change to your dataset's formal charges
-    "chirality": ["None", "R", "S"],           # <-- ignored, unless you also specify `use_chirality`=True
-    "max_n_nodes": 13,                         # <-- change to your dataset's value
-    "job_type": job_type,
-    "dataset_dir": f"{data_path}{dataset}/",
-    "restart": restart,
-}
+        # define dataset-specific parameters
+        self.params = {
+            "atom_types"     : ["C", "N", "O", "S", "Cl"],  # <-- change to your dataset's atom types
+            "formal_charge"  : [-1, 0, +1],                 # <-- change to your dataset's formal charges
+            "max_n_nodes"    : 13,                          # <-- change to your dataset's value
+            "job_type"       : self.job_type,
+            "dataset_dir"    : f"{self.data_path}{self.dataset}/",
+        }
 ```
 
 At this point, you are done editing the *submit.py* file and are ready to submit a preprocesing job. You can submit the job from the terminal using the following command:
 
 ```
-(graphinvent)$ python submit.py
+$ python submit.py
 ```
 
 During preprocessing jobs, the following will be written to the specified *dataset_dir*:
@@ -137,41 +135,27 @@ During preprocessing jobs, the following will be written to the specified *datas
 A preprocessing job can take a few seconds to a few hours to finish, depending on the size of your dataset. Once the preprocessing job is done and you have the above files, you are ready to run a training job using your processed dataset.
 
 ### Training models using the new dataset
-You can modify the same *submit.py* script to instead run a training job using your dataset. Begin by changing the *job_type* and *jobname*; all other settings can be kept the same:
+You can modify the same *submit.py* script to instead run a training job using your dataset. Begin by changing the *job_type*; all other settings can be kept the same:
 
 ```
 submit.py >
-# define what you want to do for the specified job(s)
-dataset = "your_dataset_name"
-job_type = "train"             # this tells the code that this is a training job
-jobdir_start_idx = 0
-n_jobs = 1
-restart = False
-force_overwrite = False
-jobname = "train"              # this is the name of the job, to be used in labeling directories where output will be written
+        self.job_type         = "train"        # run a training job
 ```
 
-If you would like to change the SLURM settings, you should do that next, but for this example we will keep them the same. You will then need to specify all parameters that you want to use for training:
+If you would like to change the SLURM settings, you should do that next, but for this example we will keep them the same. You will then need to specify all dataset-specific parameters that you want to use for training in Config as shown in the previous tutorial.
 
 
 ```
 submit.py >
-# define dataset-specific parameters
-params = {
-    "atom_types": ["C", "N", "O", "S", "Cl"],  # change to your dataset's atom types
-    "formal_charge": [-1, 0, +1],              # change to your dataset's formal charges
-    "chirality": ["None", "R", "S"],           # ignored, unless you also specify `use_chirality`=True
-    "max_n_nodes": 13,                         # change to your dataset's value
-    "job_type": job_type,
-    "dataset_dir": f"{data_path}{dataset}/",
-    "restart": restart,
-    "model": "GGNN",                           # <-- which model to use (GGNN is the default, but showing it here to be explicit)
-    "sample_every": 2,                         # <-- how often you want to sample/evaluate your model during training (for larger datasets, we recommend sampling more often)
-    "init_lr": 1e-4,                           # <-- tune the initial learning rate if needed
-    "epochs": 100,                             # <-- how many epochs you want to train for (you can experiment with this)
-    "batch_size": 1000,                        # <-- tune the batch size if needed
-    "block_size": 100000,                      # <-- tune the block size if needed
-}
+        # define dataset-specific parameters
+        self.params = {
+            "sample_every"   : 50,    # <-- how often you want to sample/evaluate your model during training (for larger datasets, we recommend sampling more often)
+            "init_lr"        : 1e-4,  # <-- tune the initial learning rate if needed
+            "epochs"         : 1000,  # <-- how many epochs you want to train for (you can experiment with this)
+            "batch_size"     : 50,    # <-- tune the batch size if needed
+            "block_size"     : 1000,  # <-- tune the block size if needed
+            "n_samples"      : 100,   # <-- how many samples to generate when evaluating the model
+        }
 ```
 
 If any parameters are not specified in *submit.py* before running, the model will use the default values in [../graphinvent/parameters/defaults.py](../graphinvent/parameters/defaults.py), but it is not always the case that the "default" values will work well for your dataset. For instance, the parameters related to the learning rate decay are strongly dependent on the dataset used, and you might have to tune them to get optimal performance using your dataset. Depending on your system, you might also need to tune the mini-batch and/or block size so as to reduce/increase the memory requirement for training jobs.
@@ -179,7 +163,7 @@ If any parameters are not specified in *submit.py* before running, the model wil
 You can then run a GraphINVENT training job from the terminal using the following command:
 
 ```
-(graphinvent)$ python submit.py
+$ python submit.py
 ```
 
 As the models are training, you should see the progress bar updating on the terminal every epoch. The training status will be saved every epoch to the job directory, *output_{your_dataset_name}/{jobname}/job_{jobdir_start_idx}/*, which should be *output_{your_dataset_name}/train/job_0/* if you followed the settings above. Additionally, the evaluation scores will be saved every evaluation epoch to the job directory. Among the files written to this directory will be:
@@ -200,38 +184,25 @@ Once you have trained a model, you can use a saved state (e.g. *model_restart_10
 
 ```
 submit.py >
-# define what you want to do for the specified job(s)
-dataset = "your_dataset_name"
-job_type = "generate"          # this tells the code that this is a generation job
-jobdir_start_idx = 0
-n_jobs = 1
-restart = False
-force_overwrite = False
-jobname = "train"              # don't change the jobname, or the program won't find the saved model
+        # define what you want to do for the specified job(s)
+        self.dataset          = "your_dataset_name"  # dataset name in "./data/pre-training/"
+        self.job_type         = "generate"           # this tells the code that this is a generation job
+        self.jobdir_start_idx = 0                    # where to start indexing job dirs
+        self.n_jobs           = 1                    # number of jobs to run per model
+        self.restart          = False                # whether or not this is a restart job
+        self.force_overwrite  = True                 # overwrite job directories which already exist
+        self.jobname          = "train"              # sub-directory where the saved model can be found
 ```
 
 You will then need to update the *generation_epoch* and *n_samples* parameter in *submit.py*:
 
 ```
 submit.py >
-# define dataset-specific parameters
-params = {
-    "atom_types": ["C", "N", "O", "S", "Cl"],  # change to your dataset's atom types
-    "formal_charge": [-1, 0, +1],              # change to your dataset's formal charges
-    "chirality": ["None", "R", "S"],           # ignored, unless you also specify `use_chirality`=True
-    "max_n_nodes": 13,                         # change to your dataset's value
-    "job_type": job_type,
-    "dataset_dir": f"{data_path}{dataset}/",
-    "restart": restart,
-    "model": "GGNN",
-    "sample_every": 2,                         # how often you want to sample/evaluate your model during training (for larger datasets, we recommend sampling more often)
-    "init_lr": 1e-4,                           # tune the initial learning rate if needed
-    "epochs": 100,                             # how many epochs you want to train for (you can experiment with this)
-    "batch_size": 1000,                        # <-- tune the batch size if needed
-    "block_size": 100000,                      # tune the block size if needed
-    "generation_epoch": 100,                   # <-- specify which saved model (i.e. at which epoch) to use for training)
-    "n_samples": 30000,                        # <-- specify how many structures you want to generate
-}
+        # define dataset-specific parameters
+        self.params = {
+            "generation_epoch": 100,  # <-- specify which saved model (i.e. at which epoch) to use for training)
+            "n_samples": 30000,       # <-- specify how many structures you want to generate
+        }
 ```
 
 The *generation_epoch* should correspond to the saved model state that you want to use for generation, and *n_samples* tells the program how many structures you want to generate. In the example above, the parameters specify that the model saved at Epoch 100 should be used to generate 30,000 structures. All other parameters should be kept the same (if they are related to training, such as *epochs* or *init_lr*, they will be ignored during generation jobs).

@@ -13,58 +13,63 @@ The example dataset is located in [../data/pre-training/gdb13_1K/](../data/pre-t
 
 The last three points of information must be included in the submission script, as well as any additional parameters and hyperparameters to use for the training job.
 
-A sample submission script [submit.py](../submit.py) has been provided. Begin by modifying the submission script to specify where the dataset can be found and what type of job you want to run. For training on the example set, the settings below are recommended:
+A sample submission script [submit.py](../submit.py) has been provided. Begin by modifying the Config parameters in the submission script, you can specify where the dataset can be found and what type of job you want to run. For training on the example set, the settings below are recommended:
 
 ```
 submit.py >
-# define what you want to do for the specified job(s)
-dataset = "gdb13_1K"     # this is the dataset name, which corresponds to the directory containing the data, located in GraphINVENT/data/
-job_type = "train"       # this tells the code that this is a training job
-jobdir_start_idx = 0     # this is an index used for labeling the first job directory where output will be written
-n_jobs = 1               # if you want to run multiple jobs (e.g. for collecting statistics), set this to >1
-restart = False          # this tells the code that this is not a restart job
-force_overwrite = False  # if `True`, this will overwrite job directories which already exist with this name (recommend `True` only when debugging)
-jobname = "example"      # this is the name of the job, to be used in labeling directories where output will be written
+        # define what you want to do for the specified job(s)
+        self.dataset          = "gdb13-debug"  # dataset name in "./data/pre-training/"
+        self.job_type         = "train"        # the type of job to run, in this case a "training" job
+        self.jobdir_start_idx = 0              # where to start indexing job dirs
+        self.n_jobs           = 1              # number of jobs to run per model
+        self.restart          = False          # this is not a restart job
+        self.force_overwrite  = True           # ok to overwrite job directories which already exist
+        self.jobname          = self.job_type  # just a label used to create a job sub directory (can be anything you want)
 ```
 
-Then, specify whether you want the job to run using [SLURM](https://slurm.schedmd.com/overview.html). In the example below, we specify that we want the job to run as a regular process (i.e. no SLURM). In such cases, any specified run time and memory requirements will be ignored by the script. Note: if you want to use a different scheduler, this can be easily changed in the submission script (search for "sbatch" and change it to your scheduler's submission command).
+Then, specify whether you want the job to run using [SLURM](https://slurm.schedmd.com/overview.html). In the example below, we specify that we want the job to run as a regular process (i.e. no SLURM).
 
 ```
 submit.py >
-# if running using SLURM, specify the parameters below
-use_slurm = False        # this tells the code to NOT use SLURM
-run_time = "1-00:00:00"  # d-hh:mm:ss (will be ignored here)
-mem_GB = 20              # memory in GB (will be ignored here)
+        # set SLURM params here (if using SLURM)
+        self.use_slurm        = False              # this tells the code to NOT use SLURM
+        self.run_time         = "0-06:00:00"       # run for 6 hrs max
+        self.account          = "XXXXXXXXXX"       # if cluster requires specific allocation/account, use here
 ```
 
 Then, specify the path to the Python binary in the GraphINVENT virtual environment. You probably won't need to change *graphinvent_path* or *data_path*, unless you want to run the code from a different directory.
 
 ```
 submit.py >
-# set paths here
-python_path = f"../miniconda3/envs/graphinvent/bin/python"      # this is the path to the Python binary to use (change to your own -- tip: run 'whereis python' from within your activated environment)
-graphinvent_path = f"./graphinvent/"                            # this is the directory containing the source code
-data_path = f"./data/"                                          # this is the directory where all datasets are found
+        # set paths here
+        self.python_path      = "apptainer exec docker/graphinvent.sif /opt/conda/envs/graphinvent/bin/python"  # use something similar if using Docker, otherwise just point to the Python binary you want to use here
+        self.graphinvent_path = "./graphinvent/"
+        self.data_path        = "./data/pre-training/"
 ```
 
 Finally, details regarding the specific dataset and parameters you want to use need to be entered. If they are not specified in *submit.py* before running, the model will use the default values in [./graphinvent/parameters/defaults.py](./graphinvent/parameters/defaults.py), but it is not always the case that the "default" values will work well for your dataset. The models are sensitive to the hyperparameters used for each dataset, especially the learning rate and learning rate decay. For the example dataset, the following parameters are recommended:
 
 ```
 submit.py >
-# define dataset-specific parameters
-params = {
-    "atom_types": ["C", "N", "O", "S", "Cl"],
-    "formal_charge": [-1, 0, +1],
-    "max_n_nodes": 13,
-    "job_type": job_type,
-    "dataset_dir": f"{data_path}{dataset}/",
-    "restart": restart,
-    "sample_every": 10,
-    "init_lr": 1e-4,     # (!)
-    "epochs": 400,
-    "batch_size": 1000,
-    "block_size": 100000,
-}
+        # define dataset-specific parameters
+        self.params = {
+            "atom_types"     : ["C", "N", "O", "S", "Cl"],
+            "formal_charge"  : [-1, 0, +1],
+            "max_n_nodes"    : 13,
+            "job_type"       : self.job_type,
+            "dataset_dir"    : f"{self.data_path}{self.dataset}/",
+            "restart"        : self.restart,
+            "sample_every"   : 50,
+            "init_lr"        : 1e-4,  # (!)
+            "epochs"         : 1000,
+            "batch_size"     : 50,
+            "block_size"     : 1000,
+            "device"         : "cuda",  # or "cpu" if no CUDA
+            "n_samples"      : 100,
+            # additional paramaters can be defined here, if different from the "defaults"
+            # for instance, for "generate" jobs, don't forget to specify "generation_epoch"
+            # and "n_samples"
+        }
 ```
 
 Above, (!) indicates that a parameter is strongly dependent on the dataset used. Note that, depending on your system, you might need to tune the mini-batch and/or block size so as to reduce/increase the memory requirement for training jobs. There is an inverse relationship between the batch size and the time required to train a model. As such, only reduce the batch size if necessary, as decreasing the batch size will lead to noticeably slower training.
@@ -75,10 +80,8 @@ At this point, you are done editing the *submit.py* file and are ready to submit
 Using the prepared *submit.py*, you can run a GraphINVENT training job from the terminal using the following command:
 
 ```
-(graphinvent)$ python submit.py
+$ python submit.py
 ```
-
-Note that for the code to run, you need to have configured and activated the GraphINVENT environment (see [0_setting_up_environment](0_setting_up_environment.md) for help with this).
 
 As the models are training, you should see the progress bar updating on the terminal every epoch. The training status will be saved every epoch to the job directory, *output_{dataset}/{jobname}/job_{jobdir_start_idx}/*, which should be *output_gdb13_1K/example/job_0/* if you followed the settings above. Additionally, the evaluation scores will be saved every evaluation epoch to the job directory. Among the files written to this directory will be:
 
@@ -99,35 +102,34 @@ Once you have trained a model, you can use a saved state (e.g. *model_restart_40
 
 ```
 submit.py >
-# define what you want to do for the specified job(s)
-dataset = "gdb13_1K"
-job_type = "generate"    # this tells the code that this is a generation job
-jobdir_start_idx = 0
-n_jobs = 1
-restart = False
-force_overwrite = False
-jobname = "example"
+        self.job_type         = "generate"        # this tells the code this is a generation job
 ```
 
 You will then need to update the *generation_epoch* and *n_samples* parameters in *submit.py*:
 
 ```
 submit.py >
-# define dataset-specific parameters
-params = {
-    "atom_types": ["C", "N", "O", "S", "Cl"],
-    "formal_charge": [-1, 0, +1],
-    "max_n_nodes": 13,
-    "job_type": job_type,
-    "dataset_dir": f"{data_path}{dataset}/",
-    "restart": restart,
-    "sample_every": 10,
-    "init_lr": 1e-4,          # (!)
-    "epochs": 400,
-    "batch_size": 1000,
-    "block_size": 100000,
-    "generation_epoch": 400,  # <-- which model epoch to use
-    "n_samples": 30000,       # <-- how many structures to generate
+        # define dataset-specific parameters
+        self.params = {
+            "atom_types"     : ["C", "N", "O", "S", "Cl"],
+            "formal_charge"  : [-1, 0, +1],
+            "max_n_nodes"    : 13,
+            "job_type"       : self.job_type,
+            "dataset_dir"    : f"{self.data_path}{self.dataset}/",
+            "restart"        : self.restart,
+            "sample_every"   : 50,
+            "init_lr"        : 1e-4,
+            "epochs"         : 1000,
+            "batch_size"     : 50,
+            "block_size"     : 1000,
+            "device"         : "cuda",
+            "n_samples"      : 100,
+            # additional paramaters can be defined here, if different from the "defaults"
+            # for instance, for "generate" jobs, don't forget to specify "generation_epoch"
+            # and "n_samples"
+            "generation_epoch": 400,  # <-- which model epoch to use
+            "n_samples": 30000,       # <-- how many structures to generate
+        }
 }
 ```
 
