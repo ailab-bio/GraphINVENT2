@@ -12,6 +12,8 @@ Update the `PYTHON_PATH` variable in `submit.py` to run the GraphINVENT containe
 PYTHON_PATH      = "apptainer exec docker/graphinvent.sif"
 ```
 
+And that's it! To learn how to start training models, go to [1_introduction](1_introduction.md).
+
 ### Approach 2: Using Conda
 The second approach to installing all GraphINVENT dependencies uses [conda](https://docs.conda.io/en/latest/) for this. If you do not have conda installed, please check out the installation instructions at [this link](https://docs.anaconda.com/free/miniconda/). A virtual environment can be easily created using conda by typing into the terminal:
 
@@ -40,7 +42,7 @@ To install additional packages to the virtual environment, should the need arise
 conda install -n graphinvent {package_name}
 ```
 
-And that's it! To learn how to start training models, go to [1_introduction](1_introduction.md).
+To learn how to start training models, go to [1_introduction](1_introduction.md).
 
 
 ### Possible issues
