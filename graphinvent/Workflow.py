@@ -273,7 +273,7 @@ class Workflow:
     def create_model(self) -> torch.nn.Module:
         """
         Initializes the model to be trained. Only the GGNN option is possible in
-        GraphINVENT-lite.
+        GraphINVENT2.
 
         Returns:
         -------

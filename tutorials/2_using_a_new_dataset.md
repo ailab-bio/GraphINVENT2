@@ -61,7 +61,7 @@ mkdir path/to/GraphINVENT/data/your_dataset_name/
 mv train.smi valid.smi test.smi path/to/GraphINVENT/data/your_dataset_name/.
 ```
 
-You will want to replace *your_dataset_name* above with the actual name for your dataset (e.g. *ChEMBL_subset*, *DRD2_actives*, etc).
+You will want to replace *your_dataset_name* above with the actual name for your dataset (e.g., *ChEMBL_subset*, *DRD2_actives*, etc).
 
 
 ### Preprocessing the new dataset
@@ -130,7 +130,7 @@ $ python submit.py
 During preprocessing jobs, the following will be written to the specified *dataset_dir*:
 * 3 HDF files (*train.h5*, *valid.h5*, and *test.h5*)
 * *preprocessing_params.csv*, containing parameters used in preprocessing the dataset (for later reference)
-* *train.csv*, containing training set properties (e.g. histograms of number of nodes per molecule, number of edges per node, etc)
+* *train.csv*, containing training set properties (e.g., histograms of number of nodes per molecule, number of edges per node, etc)
 
 A preprocessing job can take a few seconds to a few hours to finish, depending on the size of your dataset. Once the preprocessing job is done and you have the above files, you are ready to run a training job using your processed dataset.
 
@@ -170,17 +170,17 @@ As the models are training, you should see the progress bar updating on the term
 
 * *generation.log*, containing various evaluation metrics for the generated set, calculated during evaluation epochs
 * *convergence.log*, containing the loss and learning rate for every epoch
-* *validation.log*, containing model scores (e.g. NLLs, UC-JSD), calculated during evaluation epochs
+* *validation.log*, containing model scores (e.g., NLLs, UC-JSD), calculated during evaluation epochs
 * *model_restart_{epoch}.pth*, which are the model states for use in restarting jobs, or running generation/validation jobs with a trained model
 * *generation/*, a directory containing structures generated during evaluation epochs (\*.smi), as well as information on each structure's NLL (\*.nll) and validity (\*.valid)
 
 It is good to check the *generation.log* to verify that the generated set features indeed converge to those of the training set (first entry). If they do not, then you will have to tune the hyperparameters to get better performance. Furthermore, it is good to check the *convergence.log* to make sure the loss is smoothly decreasing during training.
 
 #### Restarting a training job
-If for any reason you want to restart a training job from a previous epoch (e.g. you cancelled a training job before it reached convergence), then you can do this by setting *restart = True* in *submit.py* and rerunning. While it is possible to change certain parameters in *submit.py* before rerunning (e.g. *init_lr* or *epochs*), parameters related to the model should not be changed, as the program will load an existing model from the last saved *model_restart_{epoch}.pth* file (hence there will be a mismatch between the previous parameters and those you changed). Similarly, any settings related to the file location or job name should not be changed, as the program uses those settings to search in the right directory for the previously saved model. Finally, parameters related to the dataset (e.g. *atom_types*) should not be changed, not only for a restart job but throughout the entire workflow of a dataset. If you want to use different features in the node and edge feature representations, you will have to create a copy of the dataset in [../data/](../data/), give it a unique name, and preprocess it using the desired settings.
+If for any reason you want to restart a training job from a previous epoch (e.g., you cancelled a training job before it reached convergence), then you can do this by setting *restart = True* in *submit.py* and rerunning. While it is possible to change certain parameters in *submit.py* before rerunning (e.g., *init_lr* or *epochs*), parameters related to the model should not be changed, as the program will load an existing model from the last saved *model_restart_{epoch}.pth* file (hence there will be a mismatch between the previous parameters and those you changed). Similarly, any settings related to the file location or job name should not be changed, as the program uses those settings to search in the right directory for the previously saved model. Finally, parameters related to the dataset (e.g., *atom_types*) should not be changed, not only for a restart job but throughout the entire workflow of a dataset. If you want to use different features in the node and edge feature representations, you will have to create a copy of the dataset in [../data/](../data/), give it a unique name, and preprocess it using the desired settings.
 
 ### Generating structures using the newly trained models
-Once you have trained a model, you can use a saved state (e.g. *model_restart_100.pth*) to generate molecules. To do this, *submit.py* needs to be updated to specify a generation job. The first setting that needs to be changed is the *job_type*; all other settings here should be kept fixed so that the program can find the correct job directory:
+Once you have trained a model, you can use a saved state (e.g., *model_restart_100.pth*) to generate molecules. To do this, *submit.py* needs to be updated to specify a generation job. The first setting that needs to be changed is the *job_type*; all other settings here should be kept fixed so that the program can find the correct job directory:
 
 ```
 submit.py >

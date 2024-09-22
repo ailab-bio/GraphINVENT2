@@ -23,7 +23,31 @@ An example training set is available in [./data/gdb13_1K/](./data/gdb13_1K/). It
 Contributions are welcome in the form of issues or pull requests. To report a bug, please submit an issue. Thank you to everyone who has used the code and provided feedback thus far.
 
 ## References
-If you use GraphINVENT-lite in your research, please see the [original GraphINVENT repository](https://github.com/ailab-bio/GraphINVENT) for how to cite the work, author information, and more.
+If you use GraphINVENT2 in your research, please reference our original [publication](https://doi.org/10.1088/2632-2153/abcf91).
+
+Additional details related to the development of GraphINVENT are available in our [technical note](https://doi.org/10.1002/ail2.18). You might find this note useful if you're interested in either exploring different hyperparameters or developing your own generative models.
+
+The references in BibTex format are available below:
+
+```
+@article{mercado2020graph,
+  author = "Rocío Mercado and Tobias Rastemo and Edvard Lindelöf and Günter Klambauer and Ola Engkvist and Hongming Chen and Esben Jannik Bjerrum",
+  title = "{Graph Networks for Molecular Design}",
+  journal = {Machine Learning: Science and Technology},
+  year = {2020},
+  publisher = {IOP Publishing},
+  doi = "10.1088/2632-2153/abcf91"
+}
+
+@article{mercado2020practical,
+  author = "Rocío Mercado and Tobias Rastemo and Edvard Lindelöf and Günter Klambauer and Ola Engkvist and Hongming Chen and Esben Jannik Bjerrum",
+  title = "{Practical Notes on Building Molecular Graph Generative Models}",
+  journal = {Applied AI Letters},
+  year = {2020},
+  publisher = {Wiley Online Library},
+  doi = "10.1002/ail2.18"
+}
+```
 
 ## License
 

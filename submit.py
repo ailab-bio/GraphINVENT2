@@ -27,7 +27,7 @@ class Config:
 
         # define what you want to do for the specified job(s)
         self.dataset          = "gdb13-debug"  # dataset name in "./data/pre-training/"
-        self.job_type         = "train"        # "preprocess", "train", "generate", or "test"
+        self.job_type         = "train"        # "preprocess", "train", "generate", "fine-tune", or "test"
         self.jobdir_start_idx = 0              # where to start indexing job dirs
         self.n_jobs           = 1              # number of jobs to run per model
         self.restart          = False          # whether or not this is a restart job
