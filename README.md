@@ -7,6 +7,8 @@ GraphINVENT2 is a platform for graph-based molecular generation and optimization
 
 This is not only a newer version of GraphINVENT, but it is also the only version being actively maintained. Please use this version in all new uses of GraphINVENT.
 
+The methods used in GraphINVENT are described in the original publication, [*Graph Networks for Molecular Design*](https://iopscience.iop.org/article/10.1088/2632-2153/abcf91) by Mercado et al. (2021).
+
 ## Prerequisites
 * Anaconda or Miniconda with Python 3.6 or 3.8.
 * (for GPU-training only) CUDA-enabled GPU.
@@ -18,7 +20,6 @@ For detailed guides on how to use GraphINVENT, see the [tutorials](./tutorials/)
 An example training set is available in [./data/gdb13_1K/](./data/gdb13_1K/). It is a small (1K) subset of GDB-13 and is already preprocessed.
 
 ## Contributions
-
 Contributions are welcome in the form of issues or pull requests. To report a bug, please submit an issue. Thank you to everyone who has used the code and provided feedback thus far.
 
 ## References
