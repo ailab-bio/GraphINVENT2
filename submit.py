@@ -1,10 +1,10 @@
 """
-Example submission script for a GraphINVENT training job (unconditional generation,
+Example submission script for a GraphINVENT2 training job (unconditional generation,
  not fine-tuning/optimization job). This can be used to pre-train a model before
  a reinforcement learning (fine-tuning) job.
 
 To run, type:
- user@cluster GraphINVENT-lite$ python submit.py
+ user@cluster GraphINVENT2$ python submit.py
 """
 # load general packages and functions
 import csv
@@ -17,7 +17,7 @@ import time
 
 class Config:
     """
-    Configuration for running GraphINVENT jobs. Modify these parameters as necessary.
+    Configuration for running GraphINVENT2 jobs. Modify these parameters as necessary.
     """
     def __init__(self):
         # set paths here

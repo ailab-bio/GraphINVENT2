@@ -7,14 +7,14 @@ GraphINVENT2 is a platform for graph-based molecular generation and optimization
 
 This is not only a newer version of GraphINVENT, but it is also the only version being actively maintained. Please use this version in all new uses of GraphINVENT.
 
-The methods used in GraphINVENT are described in the original publication, [*Graph Networks for Molecular Design*](https://iopscience.iop.org/article/10.1088/2632-2153/abcf91) by Mercado et al. (2021).
+The methods used in GraphINVENT2 are described in the original publication, [*Graph Networks for Molecular Design*](https://iopscience.iop.org/article/10.1088/2632-2153/abcf91) by Mercado et al. (2021).
 
 ## Prerequisites
 * Anaconda or Miniconda with Python 3.6 or 3.8.
 * (for GPU-training only) CUDA-enabled GPU.
 
 ## Instructions and tutorials
-For detailed guides on how to use GraphINVENT, see the [tutorials](./tutorials/).
+For detailed guides on how to use GraphINVENT2, see the [tutorials](./tutorials/).
 
 ## Examples
 An example training set is available in [./data/gdb13_1K/](./data/gdb13_1K/). It is a small (1K) subset of GDB-13 and is already preprocessed.
@@ -23,7 +23,7 @@ An example training set is available in [./data/gdb13_1K/](./data/gdb13_1K/). It
 Contributions are welcome in the form of issues or pull requests. To report a bug, please submit an issue. Thank you to everyone who has used the code and provided feedback thus far.
 
 ## References
-If you use GraphINVENT2 in your research, please reference our original [publication](https://doi.org/10.1088/2632-2153/abcf91).
+If you use GraphINVENT2 in your research, please reference our original GraphINVENT [publication](https://doi.org/10.1088/2632-2153/abcf91).
 
 Additional details related to the development of GraphINVENT are available in our [technical note](https://doi.org/10.1002/ail2.18). You might find this note useful if you're interested in either exploring different hyperparameters or developing your own generative models.
 
@@ -51,7 +51,7 @@ The references in BibTex format are available below:
 
 ## License
 
-GraphINVENT is licensed under the MIT license and is free and provided as-is.
+GraphINVENT2 is licensed under the MIT license and is free and provided as-is.
 
 ## Link
 https://github.com/ailab-bio/GraphINVENT2

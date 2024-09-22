@@ -1,10 +1,10 @@
-## Using a new dataset in GraphINVENT
-In this tutorial, you will be guided through the steps of using a new dataset in GraphINVENT.
+## Using a new dataset in GraphINVENT2
+In this tutorial, you will be guided through the steps of using a new dataset in GraphINVENT2.
 
 ### Selecting a new dataset
-Before getting carried away with the possibilities of molecular graph generative models, it should be clear that the GraphINVENT models are computationally demanding, especially compared to string-based models. As such, you should keep in mind the capabilities of your system when selecting a new dataset to study, such as how much disk space you have available, how much RAM, and how fast is your GPU.
+Before getting carried away with the possibilities of molecular graph generative models, it should be clear that the GraphINVENT2 models are computationally demanding, especially compared to string-based models. As such, you should keep in mind the capabilities of your system when selecting a new dataset to study, such as how much disk space you have available, how much RAM, and how fast is your GPU.
 
-In our recent [publication](https://chemrxiv.org/articles/preprint/Graph_Networks_for_Molecular_Design/12843137/1), we report the computational requirements for Preprocessing, Training, Generation, and Benchmarking jobs using the various GraphINVENT models. We summarize some of the results here for the largest dataset we trained on:
+In our recent [publication](https://chemrxiv.org/articles/preprint/Graph_Networks_for_Molecular_Design/12843137/1), we report the computational requirements for Preprocessing, Training, Generation, and Benchmarking jobs using the various GraphINVENT2 models. We summarize some of the results here for the largest dataset we trained on:
 
 | Dataset                                                          | Train | Test | Valid | Largest Molecule | Atom Types              | Formal Charges |
 |---|---|---|---|---|---|---|
@@ -43,10 +43,10 @@ Increases run time:
 * using a smaller batch size
 * larger group size (Preprocessing jobs only)
 
-Hopefully these guidelines help you in selecting an appropriate dataset to study using GraphINVENT.
+Hopefully these guidelines help you in selecting an appropriate dataset to study using GraphINVENT2.
 
 ### Preparing a new dataset
-Once you have selected a dataset to study, you must prepare it so that it agrees with the format expected by the program. GraphINVENT expects, for each dataset, three splits in SMILES format. Each split should be named as follows:
+Once you have selected a dataset to study, you must prepare it so that it agrees with the format expected by the program. GraphINVENT2 expects, for each dataset, three splits in SMILES format. Each split should be named as follows:
 
 * *train.smi*
 * *test.smi*
@@ -57,15 +57,15 @@ These should contain the training set, test set, and validation set, respectivel
 You should then create a new directory in [../data/](../data/) where the name of this directory corresponds to a unique name for your dataset:
 
 ```
-mkdir path/to/GraphINVENT/data/your_dataset_name/
-mv train.smi valid.smi test.smi path/to/GraphINVENT/data/your_dataset_name/.
+mkdir path/to/GraphINVENT2/data/your_dataset_name/
+mv train.smi valid.smi test.smi path/to/GraphINVENT2/data/your_dataset_name/.
 ```
 
 You will want to replace *your_dataset_name* above with the actual name for your dataset (e.g., *ChEMBL_subset*, *DRD2_actives*, etc).
 
 
 ### Preprocessing the new dataset
-Once you have prepared your dataset in the aforementioned format, you can move on to preprocessing it using GraphINVENT. To preprocess it, you will need to know the following information:
+Once you have prepared your dataset in the aforementioned format, you can move on to preprocessing it using GraphINVENT2. To preprocess it, you will need to know the following information:
 
 * *max_n_nodes*
 * *atom_types*
@@ -97,7 +97,7 @@ submit.py >
         self.account          = "XXXXXXXXXX"       # if cluster requires specific allocation/account, use here
 ```
 
-Then, specify the path to the Python binary in the GraphINVENT virtual environment. You probably won't need to change *graphinvent_path* or *data_path*, unless you want to run the code from a different directory.
+Then, specify the path to the Python binary in the GraphINVENT2 virtual environment. You probably won't need to change *graphinvent_path* or *data_path*, unless you want to run the code from a different directory.
 
 ```
 submit.py >
@@ -160,7 +160,7 @@ submit.py >
 
 If any parameters are not specified in *submit.py* before running, the model will use the default values in [../graphinvent/parameters/defaults.py](../graphinvent/parameters/defaults.py), but it is not always the case that the "default" values will work well for your dataset. For instance, the parameters related to the learning rate decay are strongly dependent on the dataset used, and you might have to tune them to get optimal performance using your dataset. Depending on your system, you might also need to tune the mini-batch and/or block size so as to reduce/increase the memory requirement for training jobs.
 
-You can then run a GraphINVENT training job from the terminal using the following command:
+You can then run a GraphINVENT2 training job from the terminal using the following command:
 
 ```
 $ python submit.py
@@ -237,7 +237,7 @@ sed -i "/^ [0-9]\+$/d" path/to/file.smi  # remove empty graphs from file
 See [3_visualizing_molecules](./3_visualizing_molecules.md) for examples on how to draw grids of molecules.
 
 ### A note about hyperparameters
-If you've reached this part of the tutorial, you now have a good idea of how to train GraphINVENT models on custom datasets. Nonetheless, as hinted above, some hyperparameters are highly dependent on the dataset used, and you may have to do some hyperparameter tuning to obtain the best performance using your specific dataset. In particular, parameters related to the learning rate decay are sensitive to the dataset, so a bit of experimentation here is recommended when using a new dataset as these parameters can make a difference between an "okay" model and a well-trained model. These parameters are:
+If you've reached this part of the tutorial, you now have a good idea of how to train GraphINVENT2 models on custom datasets. Nonetheless, as hinted above, some hyperparameters are highly dependent on the dataset used, and you may have to do some hyperparameter tuning to obtain the best performance using your specific dataset. In particular, parameters related to the learning rate decay are sensitive to the dataset, so a bit of experimentation here is recommended when using a new dataset as these parameters can make a difference between an "okay" model and a well-trained model. These parameters are:
 
 * *init_lr*
 * *min_rel_lr*
@@ -247,6 +247,6 @@ If you've reached this part of the tutorial, you now have a good idea of how to 
 If any parameters are not specified in the submission script, the program will use the default values from [../graphinvent/parameters/defaults.py](../graphinvent/parameters/defaults.py). Have a look there if you want to learn more about any additional hyperparameters that may not have been discussed in this tutorial. Note that not all parameters defined in *../graphinvent/parameters/defaults.py* are model-related hyperparameters; many are simply practical parameters and settings, such as the path to the datasets being studied.
 
 ### Summary
-Hopefully you are now able to train models on custom datasets using GraphINVENT. If anything is unclear in this tutorial, or if you have any questions that have not been addressed by this guide, feel free to contact the authors for assistance. Note that a lot of useful information centered about hyperparameter tuning is available in our [technical note](https://chemrxiv.org/articles/preprint/Practical_Notes_on_Building_Molecular_Graph_Generative_Models/12888383/1).
+Hopefully you are now able to train models on custom datasets using GraphINVENT2. If anything is unclear in this tutorial, or if you have any questions that have not been addressed by this guide, feel free to contact the authors for assistance. Note that a lot of useful information centered about hyperparameter tuning is available in our [technical note](https://chemrxiv.org/articles/preprint/Practical_Notes_on_Building_Molecular_Graph_Generative_Models/12888383/1).
 
 We look forward to seeing the molecules you've generated using GraphINVENT.

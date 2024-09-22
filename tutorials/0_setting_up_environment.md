@@ -1,13 +1,13 @@
 ## Setting up the environment
-Before doing anything with GraphINVENT, you will need to configure the GraphINVENT dependencies, as the code is dependent on very specific versions of packages, like PyTorch and RDKit, to run. You can use one of two approaches for this.
+Before doing anything with GraphINVENT2, you will need to configure the GraphINVENT2 dependencies, as the code is dependent on very specific versions of packages, like PyTorch and RDKit, to run. You can use one of two approaches for this.
 
 ### Approach 1: Using Docker (recommended)
-The first approach to installing GraphINVENT dependencies involves using Docker. To build the GraphINVENT container using Docker, run:
+The first approach to installing GraphINVENT2 dependencies involves using Docker. To build the GraphINVENT2 container using Docker, run:
 ```
 apptainer build docker/graphinvent.sif docker/graphinvent.def
 ```
 
-Update the `PYTHON_PATH` variable in `submit.py` to run the GraphINVENT container:
+Update the `PYTHON_PATH` variable in `submit.py` to run the GraphINVENT2 container:
 ```
 PYTHON_PATH      = "apptainer exec docker/graphinvent.sif /opt/conda/envs/graphinvent/bin/python"
 ```
@@ -15,7 +15,7 @@ PYTHON_PATH      = "apptainer exec docker/graphinvent.sif /opt/conda/envs/graphi
 And that's it! To learn how to start training models, go to [1_introduction](1_introduction.md).
 
 ### Approach 2: Using Conda
-The second approach to installing all GraphINVENT dependencies uses [conda](https://docs.conda.io/en/latest/) for this. If you do not have conda installed, please check out the installation instructions at [this link](https://docs.anaconda.com/free/miniconda/). A virtual environment can be easily created using conda by typing into the terminal:
+The second approach to installing all GraphINVENT2 dependencies uses [conda](https://docs.conda.io/en/latest/) for this. If you do not have conda installed, please check out the installation instructions at [this link](https://docs.anaconda.com/free/miniconda/). A virtual environment can be easily created using conda by typing into the terminal:
 
 ```
 module load Anaconda3  // you may need to load conda first, e.g., if you are creating the environment on the cluster

@@ -1,7 +1,7 @@
-## Introduction to GraphINVENT
-As shown in our recent [publication]((https://chemrxiv.org/articles/preprint/Graph_Networks_for_Molecular_Design/12843137/1)), GraphINVENT can be used to learn the structure and connectivity of sets of molecular graphs, thus making it a promising tool for the generation of molecules resembling an input dataset. As models in GraphINVENT are probabilistic, they can be used to discover new molecules that are not present in the training set. The model uses the GGNN implementation.
+## Introduction to GraphINVENT2
+As shown in our recent [publication]((https://chemrxiv.org/articles/preprint/Graph_Networks_for_Molecular_Design/12843137/1)), GraphINVENT2 can be used to learn the structure and connectivity of sets of molecular graphs, thus making it a promising tool for the generation of molecules resembling an input dataset. As models in GraphINVENT2 are probabilistic, they can be used to discover new molecules that are not present in the training set. The model uses the GGNN implementation.
 
-To begin using GraphINVENT, we have prepared the following tutorial to guide a new user through the molecular generation workflow using a small example dataset. The example dataset is a 1K random subset of GBD-13. It has already been preprocessed, so you can use it directly for Training and Generation, as we will show in this tutorial. If this is too simple and you would like to learn how to train GraphINVENT models using a new molecular dataset, see [2_using_a_new_dataset](./2_using_a_new_dataset.md).
+To begin using GraphINVENT2, we have prepared the following tutorial to guide a new user through the molecular generation workflow using a small example dataset. The example dataset is a 1K random subset of GBD-13. It has already been preprocessed, so you can use it directly for Training and Generation, as we will show in this tutorial. If this is too simple and you would like to learn how to train GraphINVENT2 models using a new molecular dataset, see [2_using_a_new_dataset](./2_using_a_new_dataset.md).
 
 ### Training using the example dataset
 #### Preparing a training job
@@ -37,7 +37,7 @@ submit.py >
         self.account          = "XXXXXXXXXX"       # if cluster requires specific allocation/account, use here
 ```
 
-Then, specify the path to the Python binary in the GraphINVENT virtual environment. You probably won't need to change *graphinvent_path* or *data_path*, unless you want to run the code from a different directory.
+Then, specify the path to the Python binary in the GraphINVENT2 virtual environment. You probably won't need to change *graphinvent_path* or *data_path*, unless you want to run the code from a different directory.
 
 ```
 submit.py >
@@ -77,7 +77,7 @@ Above, (!) indicates that a parameter is strongly dependent on the dataset used.
 At this point, you are done editing the *submit.py* file and are ready to submit a training job.
 
 #### Running a training job
-Using the prepared *submit.py*, you can run a GraphINVENT training job from the terminal using the following command:
+Using the prepared *submit.py*, you can run a GraphINVENT2 training job from the terminal using the following command:
 
 ```
 $ python submit.py
@@ -87,18 +87,18 @@ As the models are training, you should see the progress bar updating on the term
 
 * *generation.log*, containing various evaluation metrics for the generated set, calculated during evaluation epochs
 * *convergence.log*, containing the loss and learning rate for every epoch
-* *validation.log*, containing model scores (e.g. NLLs, UC-JSD), calculated during evaluation epochs
+* *validation.log*, containing model scores (e.g., NLLs, UC-JSD), calculated during evaluation epochs
 * *model_restart_{epoch}.pth*, which are the model states for use in restarting jobs, or running generation/validation jobs with a trained model
 * *generation/*, a directory containing structures generated during evaluation epochs (\*.smi), as well as information on each structure's NLL (\*.nll) and validity (\*.valid)
 
 It is good to check the *generation.log* to verify that the generated set features indeed converge to those of the training set (first entry). If they do not then something is wrong (most likely bad hyperparameters). Furthermore, it is good to check the *convergence.log* to make sure the loss is smoothly decreasing during training.
 
 #### Restarting a training job
-If for any reason you want to restart a training job from a previous epoch (e.g. you cancelled a training job before it reached convergence), then you can do this by setting *restart = True* in *submit.py* and rerunning. While it is possible to change certain parameters in *submit.py* before rerunning (e.g. *init_lr* or *epochs*), parameters related to the model should not be changed, as the program will load an existing model from the last saved *model_restart_{epoch}.pth* file (hence there will be a mismatch between the previous parameters and those you changed). Similarly, any settings related to the file location or job name should not be changed, as the program uses those settings to search in the right directory for the previously saved model. Finally, parameters related to the dataset (e.g. *atom_types*) should not be changed, not only for a restart job but throughout the entire workflow of a dataset. If you want to use different features in the node and edge feature representations, you will have to create a copy of the dataset in [../data/](../data/), give it a unique name, and preprocess it using the desired settings.
+If for any reason you want to restart a training job from a previous epoch (e.g., you cancelled a training job before it reached convergence), then you can do this by setting *restart = True* in *submit.py* and rerunning. While it is possible to change certain parameters in *submit.py* before rerunning (e.g., *init_lr* or *epochs*), parameters related to the model should not be changed, as the program will load an existing model from the last saved *model_restart_{epoch}.pth* file (hence there will be a mismatch between the previous parameters and those you changed). Similarly, any settings related to the file location or job name should not be changed, as the program uses those settings to search in the right directory for the previously saved model. Finally, parameters related to the dataset (e.g., *atom_types*) should not be changed, not only for a restart job but throughout the entire workflow of a dataset. If you want to use different features in the node and edge feature representations, you will have to create a copy of the dataset in [../data/](../data/), give it a unique name, and preprocess it using the desired settings.
 
 ### Generation using a trained model
 #### Running a generation job
-Once you have trained a model, you can use a saved state (e.g. *model_restart_400.pth*) to generate molecules. To do this, *submit.py* needs to be updated to specify a generation job. The first setting that needs to be changed is the *job_type*; all other settings here should be kept fixed so that the program can find the correct job directory:
+Once you have trained a model, you can use a saved state (e.g., *model_restart_400.pth*) to generate molecules. To do this, *submit.py* needs to be updated to specify a generation job. The first setting that needs to be changed is the *job_type*; all other settings here should be kept fixed so that the program can find the correct job directory:
 
 ```
 submit.py >
@@ -165,4 +165,4 @@ sed -i "/^ [0-9]\+$/d" path/to/file.smi  # remove empty graphs from file
 See [3_visualizing_molecules](./3_visualizing_molecules.md) for examples on how to draw grids of molecules.
 
 ### Summary
-Now you know how to train models and generate structures using the example dataset. However, the example dataset structures are not drug-like, and are therefore not the most interesting to study for drug discovery applications. To learn how to train GraphINVENT models on custom datasets, see [2_using_a_new_dataset](./2_using_a_new_dataset.md).
+Now you know how to train models and generate structures using the example dataset. However, the example dataset structures are not drug-like, and are therefore not the most interesting to study for drug discovery applications. To learn how to train GraphINVENT2 models on custom datasets, see [2_using_a_new_dataset](./2_using_a_new_dataset.md).
