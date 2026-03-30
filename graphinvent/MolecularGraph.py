@@ -1,5 +1,10 @@
 """
-`MolecularGraph.py` defines the parent MolecularGraph class and three sub-classes.
+Defines molecular graph representations used at each stage of the pipeline.
+
+  MolecularGraph      -- abstract base class shared by all three representations
+  PreprocessingGraph  -- numpy-based graph used when building the HDF5 datasets
+  TrainingGraph       -- tensor-based graph used as model input during training
+  GenerationGraph     -- tensor-based graph built incrementally during generation
 """
 # load general packages and functions
 from collections import namedtuple
@@ -18,17 +23,29 @@ import util
 
 class MolecularGraph:
     """
-    Parent class for all molecular graphs.
+    Abstract base class for all molecular graph representations.
 
-    This class is then inherited by three subclasses:
-      `PreprocessingGraph`, which is used when preprocessing training data, and
-      `TrainingGraph`, which is used when training structures.
-      `GenerationGraph`, which is used when generating structures.
+    A molecular graph stores a molecule as:
+      - a node feature matrix  (one row per atom, columns = atom type + formal
+        charge + implicit H count + ...)
+      - an edge feature tensor (shape [N, N, bond_types], symmetric, zero on
+        the diagonal)
 
-    The reason for the two classes is that `np.ndarray`s are needed to save
-    test/train/valid sets to HDF file format when preprocessing, but for
-    training it is more efficient to use `torch.Tensor`s since these can be
-    easily used on the GPU for training/generation.
+    Three concrete subclasses serve different parts of the pipeline:
+
+    ``PreprocessingGraph``
+        Built from an ``rdkit.Chem.Mol`` during the preprocessing job.  Stores
+        node/edge features as ``np.ndarray``s so they can be written to HDF5.
+        Generates the *decoding route* — the ordered sequence of subgraphs and
+        target APDs that the model will learn from.
+
+    ``TrainingGraph``
+        Reconstructed from HDF5 data during training.  Uses ``torch.Tensor``s
+        so batches can be moved to GPU.  Read-only; no graph-building methods.
+
+    ``GenerationGraph``
+        Built incrementally during molecule generation by applying successive
+        actions sampled from the model's predicted APD.  Uses ``torch.Tensor``s.
     """
     def __init__(self, constants : namedtuple,
                  molecule : rdkit.Chem.Mol ,
@@ -84,10 +101,12 @@ class MolecularGraph:
         """
         Gets the SMILES representation of the current `MolecularGraph`.
         """
+        mol = self.get_molecule()
+        if mol is None:
+            return None
         try:
-            smiles = MolToSmiles(mol=self.molecule, kekuleSmiles=False)
-        except:
-            # if molecule is invalid, set SMILES to `None`
+            smiles = MolToSmiles(mol, kekuleSmiles=False)
+        except (ValueError, RuntimeError):
             smiles = None
         return smiles
 
@@ -140,7 +159,7 @@ class MolecularGraph:
                                              "of nodes in graph.")
 
         try:  # convert from `rdkit.Chem.RWMol` to Mol object
-            molecule.GetMol()
+            molecule = molecule.GetMol()
         except AttributeError:  # raised if molecules is `None`
             pass
 
@@ -300,14 +319,14 @@ class PreprocessingGraph(MolecularGraph):
             feature_vector (numpy.ndarray) : Corresponding feature vector.
         """
         feature_vector_generator = itertools.chain(
-            util.one_of_k_encoding(atom.GetSymbol(), self.constants.atom_types),
-            util.one_of_k_encoding(atom.GetFormalCharge(),
+            util.one_hot_encode(atom.GetSymbol(), self.constants.atom_types),
+            util.one_hot_encode(atom.GetFormalCharge(),
                                    self.constants.formal_charge)
         )
         if not self.constants.use_explicit_H and not self.constants.ignore_H:
             feature_vector_generator = itertools.chain(
                 feature_vector_generator,
-                util.one_of_k_encoding(atom.GetTotalNumHs(),
+                util.one_hot_encode(atom.GetTotalNumHs(),
                                        self.constants.imp_H)
             )
         if self.constants.use_chirality:
@@ -318,7 +337,7 @@ class PreprocessingGraph(MolecularGraph):
 
             feature_vector_generator = itertools.chain(
                 feature_vector_generator,
-                util.one_of_k_encoding(chiral_state, self.constants.chirality)
+                util.one_hot_encode(chiral_state, self.constants.chirality)
             )
 
         feature_vector = np.fromiter(feature_vector_generator, int)
@@ -509,7 +528,7 @@ class PreprocessingGraph(MolecularGraph):
             degree            = len(bonded_nodes)
             v_idx             = bonded_nodes[-1]  # idx of node to form bond with
             bond_type_forming = int(
-                np.nonzero(self.edge_features[v_idx, last_node_idx, :])[0]
+                np.nonzero(self.edge_features[v_idx, last_node_idx, :])[0][0]
             )
 
             if degree > 1:

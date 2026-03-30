@@ -1,6 +1,19 @@
 """
-This class is used for defining the scoring function(s) which can be used during
-fine-tuning.
+Scoring functions used during reinforcement learning fine-tuning.
+
+The `ScoringFunction` class combines one or more component scores into a single
+scalar reward for each generated molecule.  Component scores currently supported:
+
+  qed          -- Quantitative Estimate of Drug-likeness (RDKit)
+  sa           -- Synthetic Accessibility score (RDKit)
+  activity     -- Predicted activity from a pretrained QSAR model (SVM)
+  qsar         -- Alias for `activity`
+  validity     -- 1.0 if the molecule passes RDKit sanitisation, else 0.0
+  uniqueness   -- 1.0 if the molecule has not been seen before, else 0.0
+
+Each component score can be thresholded: if any component falls below its
+threshold the molecule receives a score of 0.  This lets the RL agent focus
+only on molecules that simultaneously satisfy all criteria.
 """
 # load general packages and functions
 from collections import namedtuple
@@ -13,7 +26,14 @@ from sklearn import svm
 
 class ScoringFunction:
     """
-    A class for defining the scoring function components.
+    Combines multiple property scores into a single RL reward per molecule.
+
+    Each generated molecule is evaluated against the score components listed in
+    ``constants.score_components``.  Component scores are normalised to [0, 1],
+    then multiplied together (after thresholding) to produce a final scalar.
+
+    The score is set to 0 for molecules that were not properly terminated, are
+    chemically invalid, or fail any of the per-component thresholds.
     """
     def __init__(self, constants : namedtuple) -> None:
         """
@@ -113,8 +133,8 @@ class ScoringFunction:
 
                 target_size  = int(score_component[12:])
 
-                assert target_size <= self.max_n_nodes, \
-                       "Target size > largest possible size (`max_n_nodes`)."
+                assert target_size < self.max_n_nodes, \
+                       "Target size must be strictly less than `max_n_nodes` (equal causes division by zero)."
                 assert 0 < target_size, "Target size must be greater than 0."
 
                 target_size *= torch.ones(self.n_graphs, device=self.device)
@@ -137,7 +157,7 @@ class ScoringFunction:
                 for mol in mols:
                     try:
                         qed.append(QED.qed(mol))
-                    except:
+                    except (ValueError, RuntimeError):
                         qed.append(0.0)
                 score = torch.tensor(qed, device=self.device)
 
@@ -187,7 +207,7 @@ class ScoringFunction:
                 ecfp4         = np.zeros((2048,))
                 DataStructs.ConvertToNumpyArray(fingerprint, ecfp4)
                 activity[idx] = activity_model.predict_proba([ecfp4])[0][1]
-            except:
+            except (ValueError, RuntimeError, AttributeError):
                 pass  # activity[idx] will remain 0.0
 
         return activity

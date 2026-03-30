@@ -1,77 +1,64 @@
 """
-Main function for running GraphINVENT jobs.
+Main entry point for GraphINVENT2 jobs.
 
-Examples:
---------
- * If you define an "input.csv" with desired job parameters in the job directory,
-   you can run `main.py` as follows:
-   ~/GraphINVENT$ python main.py --job_dir path/to/job_dir/
- * If you instead want to run your job using the submission script, then modify
-   `submit.py` in the home directory and run:
-   ~/GraphINVENT$ python submit.py
+Supported job types (set via `job_type` in params.json):
+  preprocess  -- convert SMILES datasets to HDF5 format
+  pretrain    -- train a generative model from random weight initialization
+  transfer    -- fine-tune a pretrained model with supervised learning on a new dataset
+  generate    -- sample molecules from a trained model
+  test        -- evaluate a trained model on the test set
+  rl          -- optimize a pretrained model via policy-gradient reinforcement learning
+
+Usage:
+  python graphinvent/main.py --job-dir path/to/job_dir/
+
+The job directory must contain a params.json file written by submit.py.
 """
-# load general packages and functions
 import datetime
 
-# load GraphINVENT-specific functions
 import util
 from parameters.constants import constants
 from Workflow import Workflow
 
-# suppress minor warnings
 util.suppress_warnings()
 
 
 def main():
-    """
-    Defines the type of job (preprocessing, training, generation, testing, or
-    fine-tuning), writes the job parameters (for future reference), and runs
-    the job.
-    """
-    _ = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # fix date/time
+    _ = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     workflow = Workflow(constants=constants)
-
     job_type = constants.job_type
     print(f"* Run mode: '{job_type}'", flush=True)
 
     if job_type == "preprocess":
-        # write preprocessing parameters
         util.write_preprocessing_parameters(params=constants)
-
-        # preprocess all datasets
         workflow.preprocess_phase()
 
-    elif job_type == "train":
-        # write training parameters
+    elif job_type == "pretrain":
         util.write_job_parameters(params=constants)
+        workflow.training_phase()
 
-        # train model and generate graphs
+    elif job_type == "transfer":
+        util.write_job_parameters(params=constants)
         workflow.training_phase()
 
     elif job_type == "generate":
-        # write generation parameters
         util.write_job_parameters(params=constants)
-
-        # generate molecules only
         workflow.generation_phase()
 
     elif job_type == "test":
-        # write testing parameters
         util.write_job_parameters(params=constants)
-
-        # evaluate best model using the test set data
         workflow.testing_phase()
 
-    elif job_type == "fine-tune":
-        # write training parameters
+    elif job_type == "rl":
         util.write_job_parameters(params=constants)
-
-        # fine-tune the model and generate graphs
-        workflow.learning_phase()
+        workflow.rl_training_phase()
 
     else:
-        raise NotImplementedError("Not a valid `job_type`.")
+        raise NotImplementedError(
+            f"Unknown job_type '{job_type}'. "
+            "Valid options: preprocess, pretrain, transfer, generate, test, rl."
+        )
 
 
 if __name__ == "__main__":

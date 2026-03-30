@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graphinvent2"
+version = "2.0.0"
+description = "Graph-based molecular generation and optimization with GGNNs and RL"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+
+# Core dependencies — PyTorch is listed here as a minimum version.
+# For GPU support install the CUDA-specific build first (see README).
+dependencies = [
+    "torch>=2.0",
+    "torchvision",
+    "torchaudio",
+    "rdkit>=2023.3",
+    "numpy",
+    "h5py",
+    "tqdm",
+    "scikit-learn",
+    "matplotlib",
+    "tensorboard",
+]
+
+[project.optional-dependencies]
+# pip install -e ".[tdc]"  — needed only for tools/tdc-create-dataset.py
+tdc = ["PyTDC"]
+
+# pip install -e ".[dev]"  — linting / type checking during development
+dev = ["ruff", "pyright"]
+
+[project.scripts]
+# Run jobs from anywhere in the repo: graphinvent-submit --config jobs/pretrain/params.json
+graphinvent-submit = "submit:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["graphinvent*"]
+
+[tool.setuptools.package-data]
+"graphinvent" = ["tools/*", "parameters/*", "gnn/*"]

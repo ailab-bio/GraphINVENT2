@@ -4,11 +4,16 @@ data/fine-tuning/qsar_model.pickle
 # Ignore the Docker container
 docker/graphinvent.sif
 
-# Ignore all VSCode files in the entire project
+# Ignore all VSCode and Claude Code files in the entire project
 .vscode/*
+.claude/*
+TODO.md
 
 # Ignore all .h5 files in the entire project
 *.h5
+*.h5.chunked
+_previous_run*/
+train.csv
 
 # Ignore CSV files in the data/pre-training/ directory
 data/pre-training/*.csv

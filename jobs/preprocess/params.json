@@ -1,0 +1,32 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "name_of_the_dataset",
+    "smiles_file": null,
+    "n_jobs": 1,
+    "jobdir_start_idx": 0,
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-02:00:00",
+      "gpus_per_node": "T4:1"
+    }
+  },
+  "job": {
+    "job_type": "preprocess",
+    "restart": false,
+    "split_type": "random",
+    "train_frac": 0.8,
+    "valid_frac": 0.1,
+    "use_aromatic_bonds": false,
+    "use_canon": true,
+    "use_chirality": false,
+    "use_explicit_H": false,
+    "ignore_H": false,
+    "batch_size": 1000,
+    "block_size": 100000,
+    "decoding_route": "bfs"
+  }
+}

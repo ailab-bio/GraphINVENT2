@@ -1,9 +1,17 @@
 """
-The `GraphGenerator` class defines how to build molecular graphs during the general
-training process using the following actions:
- * "add" a node to graph
- * "connect" existing nodes in graph
- * "terminate" graph
+Autoregressive molecular graph generation.
+
+The `GraphGenerator` takes a trained GGNN model and repeatedly queries it to
+sample one action at a time per molecule in a batch.  Each action is one of:
+
+  add       -- append a new atom (node) of a given type and bond it to an
+               existing atom in the current graph
+  connect   -- draw a new bond between two atoms that are already in the graph
+  terminate -- declare the molecule complete and stop building it
+
+Generation continues until all molecules in the batch have been terminated
+(or the maximum node count is reached).  The final `GenerationGraph` objects,
+per-action NLLs, and termination flags are returned for downstream analysis.
 """
 # load general packages and functions
 import time
@@ -20,9 +28,18 @@ from MolecularGraph import GenerationGraph
 
 class GraphGenerator:
     """
-    Class for graph generation. Generates graphs in batches using the defined
-    model. Optimized for quick generation on a GPU (sacrificed a bit of
-    readability for speed here).
+    Generates a batch of molecular graphs by autoregressively sampling actions.
+
+    The generator maintains a batch of partially built graphs in parallel.  At
+    each step the current node and edge tensors are fed into the model to obtain
+    an APD, one action is sampled per graph, and the corresponding graph is
+    updated.  Once a graph emits a "terminate" action it is moved to a finished
+    buffer; generation ends when all graphs in the batch have terminated or the
+    maximum number of nodes has been reached.
+
+    Vectorised batch operations are used throughout to keep GPU utilisation high;
+    this does make some methods harder to follow, but the overall flow is:
+    ``__init__`` → ``sample()`` → ``build_graphs()`` (loop) → clean up & return.
     """
     def __init__(self, model : torch.nn.Module, batch_size : int) -> None:
         """
@@ -76,11 +93,15 @@ class GraphGenerator:
         # generated graphs are simply discarded below
         graphs = [self.graph_to_graph(idx) for idx in range(self.batch_size)]
 
-        # sum NLL per action to get the total NLL for each structure; remove
-        # extra zero padding
-        final_loglikelihoods = torch.log(
-            torch.sum(self.generated_likelihoods, dim=1)[:self.batch_size]
-        )
+        # sum log-likelihoods per action to get the total NLL for each structure.
+        # Padding positions are exactly 0 (from zero-initialization); replace
+        # them with 1 so that log(1) = 0 and they contribute nothing to the sum.
+        # Non-zero likelihoods are clamped to 1e-6 to guard against underflow.
+        gen_ll = self.generated_likelihoods[:self.batch_size]
+        gen_ll_safe = torch.where(gen_ll == 0,
+                                  torch.ones_like(gen_ll),
+                                  gen_ll.clamp(min=1e-6))
+        final_loglikelihoods = torch.sum(torch.log(gen_ll_safe), dim=1)
 
         # remove extra zero padding from NLLs
         generated_likelihoods = self.generated_likelihoods[
@@ -112,6 +133,11 @@ class GraphGenerator:
         t_bar = tqdm(total=self.batch_size)
         generation_round = 0
 
+        # Reset properly_terminated so that stale 1s from a previous call to
+        # this method (e.g. when the generator is reused across batches) do not
+        # bleed into the current generation run.
+        self.properly_terminated.zero_()
+
         # generate graphs in a batch, saving graphs when either the terminate
         # action or an invalid action is sampled, until `self.batch_size` number
         # of graphs have been generated
@@ -123,16 +149,23 @@ class GraphGenerator:
             # sample the actions from the predicted APDs
             add, conn, term, invalid, likelihoods_just_sampled = self.get_actions(apd)
 
-            # indicate (with a 1) the structures which have been properly terminated
-            self.properly_terminated[n_generated_so_far:(n_generated_so_far + len(term))] = 1
+            # Exclude the dummy graph at index 0 from both sets before any
+            # counting.  The dummy is a synthetic placeholder that exists only
+            # to prevent all-zero input to the message-passing network; it must
+            # never be written to the output buffer.
+            term_real    = term[term != 0]
+            invalid_real = invalid[invalid != 0]
+            termination_idc = torch.cat((term_real, invalid_real))
 
-            # collect the indices for all structures to write (and reset) this round
-            termination_idc = torch.cat((term, invalid))
+            # Mark the output-buffer slots that will receive properly-terminated
+            # graphs as 1.  The properly-terminated graphs are copied first
+            # (they come from term_real), so the first len(term_real) positions
+            # starting at n_generated_so_far are the correct ones to mark.
+            self.properly_terminated[
+                n_generated_so_far:(n_generated_so_far + len(term_real))
+            ] = 1
 
-            # never write out the dummy graph at index 0
-            termination_idc = termination_idc[termination_idc != 0]  # TODO does this need to be commented out?
-
-            # copy the graphs indicated by `terminated_idc` to the tensors for
+            # copy the graphs indicated by `termination_idc` to the tensors for
             # finished graphs (i.e. `generated_{nodes/edges}`)
             n_generated_so_far = self.copy_terminated_graphs(
                 termination_idc,
@@ -149,7 +182,7 @@ class GraphGenerator:
                                likelihoods_just_sampled)
 
             # after actions are applied, reset graphs which were set to
-            # terminate this round
+            # terminate this round (including the dummy at index 0 if needed)
             self.reset_graphs(termination_idc)
 
             # update variables for tracking the progress

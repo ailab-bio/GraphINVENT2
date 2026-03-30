@@ -2,15 +2,29 @@ Bootstrap: docker
 From: continuumio/miniconda3
 
 %post
-    # Initialize Conda in this script
+    # Initialize Conda
     . /opt/conda/etc/profile.d/conda.sh
 
-    # Install dependencies
-    conda create -n graphinvent pytorch=1.8.0 torchvision torchaudio -c pytorch
-    conda install -n graphinvent numpy -c conda-forge
-    conda install -n graphinvent rdkit -c conda-forge
-    conda install -n graphinvent tqdm h5py scikit-learn matplotlib tensorboard -c conda-forge
-    apt-get update && apt-get install -y libtiff5
-
-    # Activate environment
+    # Create the environment with Python 3.11
+    conda create -n graphinvent python=3.11 -y
     conda activate graphinvent
+
+    # Install PyTorch with CUDA 12.1 support (adjust pytorch-cuda= for your cluster)
+    conda install -n graphinvent pytorch torchvision torchaudio pytorch-cuda=12.1 \
+        -c pytorch -c nvidia -y
+
+    # Install remaining dependencies
+    conda install -n graphinvent -c conda-forge \
+        rdkit h5py tqdm scikit-learn matplotlib tensorboard -y
+
+    # System libraries sometimes needed for headless matplotlib
+    apt-get update && apt-get install -y --no-install-recommends libtiff5 && \
+        rm -rf /var/lib/apt/lists/*
+
+%environment
+    . /opt/conda/etc/profile.d/conda.sh
+    conda activate graphinvent
+    export QT_QPA_PLATFORM=offscreen
+
+%runscript
+    exec python "$@"

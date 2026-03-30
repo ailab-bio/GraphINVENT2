@@ -1,200 +1,343 @@
 """
-Example submission script for a GraphINVENT2 training job (unconditional generation,
- not fine-tuning/optimization job). This can be used to pre-train a model before
- a reinforcement learning (fine-tuning) job.
+GraphINVENT2 job submission script.
 
-To run, type:
- user@cluster GraphINVENT2$ python submit.py
+Each job type has a dedicated config directory under jobs/:
+    jobs/preprocess/params.json   -- data preprocessing
+    jobs/pretrain/params.json     -- prior model training
+    jobs/transfer/params.json     -- supervised fine-tuning
+    jobs/rl/params.json           -- RL fine-tuning
+    jobs/sample/params.json       -- molecule sampling / generation
+
+Edit the relevant params.json, then run:
+    python submit.py --config jobs/preprocess/params.json
+
+Dataset input modes (preprocessing only)
+-----------------------------------------
+Mode A — single SMILES file:
+    Set "smiles_file": "<path/to/molecules.smi>" in the submission block.
+    The preprocessing workflow will split it into train/valid/test according
+    to "split_type", "train_frac", and "valid_frac" in the job block.
+
+Mode B — pre-split directory (default):
+    Leave "smiles_file" absent (or null).  The dataset directory must already
+    contain train.smi, valid.smi, and test.smi; an error is raised otherwise.
 """
-# load general packages and functions
-import csv
-import sys
-import os
-from pathlib import Path
+import argparse
+import json
 import subprocess
-import time
+from pathlib import Path
 
 
-class Config:
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Submit a GraphINVENT2 job.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        required=True,
+        help="Path to the JSON config file, e.g. jobs/preprocess/params.json",
+    )
+    return parser.parse_args()
+
+
+def load_config(config_path: str) -> dict:
+    with open(config_path, "r") as f:
+        return json.load(f)
+
+
+# ---------------------------------------------------------------------------
+# Config validation
+# ---------------------------------------------------------------------------
+
+_VALID_JOB_TYPES = {"preprocess", "pretrain", "transfer", "rl", "generate"}
+
+_VALID_SPLIT_TYPES = {"random", "butina", "custom"}
+
+# Fields required in the submission block for every job
+_REQUIRED_SUBMISSION = {"data_path", "dataset"}
+
+# Fields required in the job block for every job type
+_REQUIRED_JOB: dict = {
+    "preprocess": {"job_type"},
+    "pretrain":   {"job_type", "atom_types", "formal_charge", "imp_H", "max_n_nodes"},
+    "transfer":   {"job_type", "atom_types", "formal_charge", "imp_H", "max_n_nodes",
+                   "pretrained_model_dir", "generation_epoch"},
+    "rl":         {"job_type", "atom_types", "formal_charge", "imp_H", "max_n_nodes",
+                   "pretrained_model_dir", "generation_epoch",
+                   "score_components", "score_thresholds"},
+    "generate":   {"job_type", "atom_types", "formal_charge", "imp_H", "max_n_nodes",
+                   "generation_epoch"},
+}
+
+
+def validate_config(config_path: str, submission: dict, job_params: dict) -> None:
     """
-    Configuration for running GraphINVENT2 jobs. Modify these parameters as necessary.
+    Validate the config before any directories are created or jobs launched.
+    Raises ``ValueError`` with an actionable message describing exactly what
+    needs to be fixed.
     """
-    def __init__(self):
-        # set paths here
-        self.python_path      = "apptainer exec docker/graphinvent.sif /opt/conda/envs/graphinvent/bin/python"
-        self.graphinvent_path = "./graphinvent/"
-        self.data_path        = "./data/pre-training/"
+    errors = []
 
-        # define what you want to do for the specified job(s)
-        self.dataset          = "gdb13-debug"  # dataset name in "./data/pre-training/"
-        self.job_type         = "train"        # "preprocess", "train", "generate", "fine-tune", or "test"
-        self.jobdir_start_idx = 0              # where to start indexing job dirs
-        self.n_jobs           = 1              # number of jobs to run per model
-        self.restart          = False          # whether or not this is a restart job
-        self.force_overwrite  = True           # overwrite job directories which already exist
-        self.jobname          = self.job_type  # label used to create a job sub directory (can be anything)
+    # --- top-level structure ---
+    missing_submission = _REQUIRED_SUBMISSION - set(submission.keys())
+    if missing_submission:
+        errors.append(
+            f'Missing required field(s) in "submission": '
+            + ", ".join(f'"{k}"' for k in sorted(missing_submission))
+        )
 
-        # set SLURM params here (if using SLURM)
-        self.use_slurm        = True               # use SLURM or not
-        self.run_time         = "0-06:00:00"       # d-hh:mm:ss
-        self.account          = "XXXXXXXXXX"       # if cluster requires specific allocation/account, use here
+    job_type = job_params.get("job_type")
+    if not job_type:
+        errors.append(
+            '"job_type" is missing from the "job" block. '
+            f"Valid options: {sorted(_VALID_JOB_TYPES)}"
+        )
+    elif job_type not in _VALID_JOB_TYPES:
+        errors.append(
+            f'"job_type" is "{job_type}", which is not recognised. '
+            f"Valid options: {sorted(_VALID_JOB_TYPES)}"
+        )
 
-        # define dataset-specific parameters
-        self.params = {
-            "atom_types"     : ["C", "N", "O", "S", "Cl"],
-            "formal_charge"  : [-1, 0, +1],
-            "max_n_nodes"    : 13,
-            "job_type"       : self.job_type,
-            "dataset_dir"    : f"{self.data_path}{self.dataset}/",
-            "restart"        : self.restart,
-            "sample_every"   : 50,
-            "init_lr"        : 1e-4,
-            "epochs"         : 1000,
-            "batch_size"     : 50,
-            "block_size"     : 1000,
-            "device"         : "cuda",  # or "cpu" if no CUDA
-            "n_samples"      : 100,
-            # additional paramaters can be defined here, if different from the "defaults"
-            # for instance, for "generate" jobs, don't forget to specify "generation_epoch"
-            # and "n_samples"
-        }
+    # Bail early if we can't even determine job_type
+    if errors:
+        _raise(config_path, errors)
 
-    def update_paths(self, job_dir, tensorboard_dir):
-        """
-        Update dynamic paths for each job in the configuration.
-        """
-        self.params['job_dir'] = str(job_dir)+"/"
-        self.params['tensorboard_dir'] = str(tensorboard_dir)+"/"
+    # --- required job fields ---
+    required = _REQUIRED_JOB.get(job_type, {"job_type"})
+    missing_job = required - set(job_params.keys())
+    if missing_job:
+        errors.append(
+            f'Missing required field(s) in "job" for job_type="{job_type}": '
+            + ", ".join(f'"{k}"' for k in sorted(missing_job))
+        )
 
-def submit(config):
-    """
-    Creates and submits submission scripts based on the provided configuration.
+    # --- path existence checks ---
+    data_path   = submission.get("data_path", "")
+    dataset     = submission.get("dataset", "")
+    dataset_dir = Path(data_path) / dataset
 
-    Args:
-        config: Configuration object containing all settings and parameters.
-    """
-    dataset_output_path, tensorboard_path = create_output_directories(config)
-    submit_jobs(config, dataset_output_path, tensorboard_path)
+    graphinvent_path = Path(submission.get("graphinvent_path", "./graphinvent"))
+    if not (graphinvent_path / "main.py").exists():
+        errors.append(
+            f'"graphinvent_path" points to "{graphinvent_path}", but '
+            f'"{graphinvent_path / "main.py"}" does not exist. '
+            "Check that \"graphinvent_path\" is set to the graphinvent/ source directory."
+        )
 
-def create_output_directories(config):
-    """
-    Creates output and tensorboard directories.
+    # --- preprocessing-specific checks ---
+    if job_type == "preprocess":
+        smiles_file = submission.get("smiles_file") or None
+        split_type  = job_params.get("split_type", "random")
 
-    Args:
-        config: Configuration object containing dataset and jobname.
+        if split_type not in _VALID_SPLIT_TYPES:
+            errors.append(
+                f'"split_type" is "{split_type}". '
+                f"Valid options: {sorted(_VALID_SPLIT_TYPES)}"
+            )
 
-    Returns:
-        A tuple of dataset_output_path and tensorboard_path.
-    """
-    base_path = Path(f"./output/output_{config.dataset}")
-    dataset_output_path = base_path / config.jobname if config.jobname else base_path
-    tensorboard_path = dataset_output_path / "tensorboard"
+        if smiles_file:
+            # Mode A: single file must exist
+            smi_path = Path(smiles_file)
+            if not smi_path.exists():
+                errors.append(
+                    f'"smiles_file" is set to "{smiles_file}", but that file '
+                    "does not exist. Check the path."
+                )
+        else:
+            # Mode B: all three split files must already be in dataset_dir
+            missing_smi = [
+                name for name in ("train.smi", "valid.smi", "test.smi")
+                if not (dataset_dir / name).exists()
+            ]
+            if missing_smi:
+                missing_list = ", ".join(missing_smi)
+                errors.append(
+                    f'"smiles_file" is not set, so the dataset directory '
+                    f'"{dataset_dir}" must already contain train.smi, valid.smi, '
+                    f"and test.smi — but the following are missing: {missing_list}.\n"
+                    "\n"
+                    "  Fix option A — point to your SMILES file for automatic splitting:\n"
+                    '    In params.json, add to the "submission" block:\n'
+                    '      "smiles_file": "path/to/your/molecules.smi"\n'
+                    "\n"
+                    "  Fix option B — provide the pre-split files yourself:\n"
+                    f"    Place train.smi, valid.smi, and test.smi in:\n"
+                    f"      {dataset_dir}/"
+                )
 
-    dataset_output_path.mkdir(parents=True, exist_ok=True)
+        train_frac = float(job_params.get("train_frac", 0.8))
+        valid_frac = float(job_params.get("valid_frac", 0.1))
+        if train_frac + valid_frac > 1.0:
+            errors.append(
+                f'"train_frac" ({train_frac}) + "valid_frac" ({valid_frac}) = '
+                f"{train_frac + valid_frac:.3f}, which exceeds 1.0. "
+                "Reduce one or both values."
+            )
+
+    # --- RL-specific checks ---
+    if job_type == "rl":
+        components = job_params.get("score_components", [])
+        thresholds = job_params.get("score_thresholds", [])
+        if len(components) != len(thresholds):
+            errors.append(
+                f'"score_components" has {len(components)} item(s) but '
+                f'"score_thresholds" has {len(thresholds)}. '
+                "They must have the same length."
+            )
+        max_n = job_params.get("max_n_nodes", 0)
+        for comp in components:
+            if comp.startswith("target_size="):
+                try:
+                    n = int(comp.split("=")[1])
+                    if n >= max_n:
+                        errors.append(
+                            f'"score_components" contains "{comp}", but the target '
+                            f"size ({n}) must be strictly less than \"max_n_nodes\" "
+                            f"({max_n}). Use target_size={max_n - 1} or smaller."
+                        )
+                except ValueError:
+                    errors.append(f'Could not parse target size in "{comp}".')
+
+    # --- generation / training: pretrained model checks ---
+    if job_type in ("transfer", "rl", "generate"):
+        model_dir = job_params.get("pretrained_model_dir", "")
+        epoch     = job_params.get("generation_epoch")
+        if model_dir and epoch is not None:
+            checkpoint = Path(model_dir) / f"model_restart_{epoch}.pth"
+            if not checkpoint.exists():
+                errors.append(
+                    f'Checkpoint "{checkpoint}" does not exist. '
+                    f"Check \"pretrained_model_dir\" (\"{model_dir}\") and "
+                    f"\"generation_epoch\" ({epoch})."
+                )
+
+    if errors:
+        _raise(config_path, errors)
+
+
+def _raise(config_path: str, errors: list) -> None:
+    lines = [f"\nConfig validation failed for: {config_path}\n"]
+    for i, err in enumerate(errors, 1):
+        lines.append(f"  {i}. {err}")
+    lines.append("")
+    raise ValueError("\n".join(lines))
+
+
+def create_output_directories(submission: dict, job_params: dict) -> tuple:
+    """Create the output and tensorboard directories for this job."""
+    dataset  = submission["dataset"]
+    job_type = job_params["job_type"]
+
+    base_path        = Path("output") / dataset / job_type
+    tensorboard_path = base_path / "tensorboard"
+
+    base_path.mkdir(parents=True, exist_ok=True)
     tensorboard_path.mkdir(parents=True, exist_ok=True)
-    print(f"* Creating dataset directory {dataset_output_path}/", flush=True)
 
-    return dataset_output_path, tensorboard_path
+    print(f"* Output directory: {base_path}", flush=True)
+    return base_path, tensorboard_path
 
-def submit_jobs(config, dataset_output_path, tensorboard_path):
-    """
-    Submits the specified number of jobs by creating subdirectories and submission scripts.
 
-    Args:
-        config: Configuration object containing job and execution details.
-        dataset_output_path: Path object for the dataset output directory.
-        tensorboard_path: Path object for the tensorboard directory.
-    """
-    jobdir_end_idx = config.jobdir_start_idx + config.n_jobs
-    for job_idx in range(config.jobdir_start_idx, jobdir_end_idx):
-        job_dir = dataset_output_path / f"job_{job_idx}/"
-        tensorboard_dir = tensorboard_path / f"job_{job_idx}/"
+def submit_jobs(
+    submission: dict,
+    job_params: dict,
+    base_path: Path,
+    tensorboard_path: Path,
+) -> None:
+    n_jobs    = submission.get("n_jobs", 1)
+    start_idx = submission.get("jobdir_start_idx", 0)
 
-        tensorboard_dir.mkdir(parents=True, exist_ok=True)
-        create_job_directory(job_dir, config)
+    for job_idx in range(start_idx, start_idx + n_jobs):
+        job_dir = base_path / f"job_{job_idx}"
+        tb_dir  = tensorboard_path / f"job_{job_idx}"
 
-        config.update_paths(job_dir, tensorboard_dir)
-        write_input_csv(config, job_dir, filename="input.csv")
-        submit_job(config, job_dir)
+        job_dir.mkdir(parents=True, exist_ok=True)
+        tb_dir.mkdir(parents=True, exist_ok=True)
 
-        print("-- Sleeping 2 seconds.")
-        time.sleep(2)
+        # Build the flat params dict that graphinvent/main.py will read.
+        # Path() normalizes slashes; the trailing "/" is added so downstream
+        # code can safely concatenate file names.
+        dataset_dir = Path(submission["data_path"]) / submission["dataset"]
 
-def create_job_directory(job_dir, config):
-    """
-    Creates a job directory, handles overwriting based on configuration.
+        params = dict(job_params)
+        params["job_dir"]         = str(job_dir) + "/"
+        params["tensorboard_dir"] = str(tb_dir) + "/"
+        params["dataset_dir"]     = str(dataset_dir) + "/"
 
-    Args:
-        job_dir: Path object for the job directory.
-        config: Configuration object with job type and overwrite settings.
-    """
-    try:
-        job_dir.mkdir(parents=True, exist_ok=config.force_overwrite or config.job_type in ["generate", "test"])
-        print(f"* Creating model subdirectory {job_dir}/", flush=True)
-    except FileExistsError:
-        print(f"-- Model subdirectory {job_dir} already exists.", flush=True)
-        if not config.restart:
-            return
+        # Pass the smiles_file from the submission block into the job params
+        # so the preprocessing workflow can pick it up.
+        smiles_file = submission.get("smiles_file") or None
+        if smiles_file is not None:
+            params["smiles_file"] = str(Path(smiles_file))
 
-def submit_job(config, job_dir):
-    """
-    Writes and submits a job based on the SLURM configuration or runs directly.
+        params_path = job_dir / "params.json"
+        with open(params_path, "w") as f:
+            json.dump(params, f, indent=2)
 
-    Args:
-        config: Configuration object with paths and SLURM settings.
-        job_dir: Path object for the job directory.
-    """
-    if config.use_slurm:
-        print("* Writing submission script.", flush=True)
-        write_submission_script(config, job_dir)
+        print(f"* Created job directory: {job_dir}", flush=True)
+        _submit_single_job(submission, job_dir)
 
+
+def _submit_single_job(submission: dict, job_dir: Path) -> None:
+    python_path      = submission.get("python_path", "python")
+    graphinvent_path = Path(submission.get("graphinvent_path", "./graphinvent"))
+    main_py          = graphinvent_path / "main.py"
+
+    if submission.get("use_slurm", False):
+        script_path = _write_submission_script(submission, job_dir, main_py)
         print("* Submitting job to SLURM.", flush=True)
-        subprocess.run(["sbatch", str(job_dir / "submit.sh")], check=True)
+        subprocess.run(["sbatch", str(script_path)], check=True)
     else:
-        print("* Running job as a normal process.", flush=True)
-        subprocess.run([config.python_path, config.graphinvent_path + "main.py", "--job-dir", str(job_dir)+"/"], check=True)
+        print("* Running job directly.", flush=True)
+        subprocess.run(
+            [python_path, str(main_py), "--job-dir", str(job_dir) + "/"],
+            check=True,
+        )
 
-def write_input_csv(config, job_dir, filename="params.csv") -> None:
-    """
-    Writes job parameters/hyperparameters from the config object to a CSV file.
-    Args:
-        config: Configuration object containing all settings and parameters.
-        job_dir (Path): The directory where the job will run.
-        filename (str): Filename for the CSV output, default is "params.csv".
-    """
-    dict_path = job_dir / filename
 
-    try:
-        # open the file at dict_path in write mode
-        with dict_path.open(mode="w", newline='') as csv_file:
-            writer = csv.writer(csv_file, delimiter=";")
-            for key, value in config.params.items():
-                writer.writerow([key, value])
-    except IOError as e:
-        # exception handling for any I/O errors
-        print(f"Failed to write file {dict_path}: {e}")
+def _write_submission_script(
+    submission: dict, job_dir: Path, main_py: Path
+) -> Path:
+    slurm       = submission.get("slurm", {})
+    python_path = submission.get("python_path", "python")
+    script_path = job_dir / "submit.sh"
+    output_log  = job_dir / "output.o${SLURM_JOB_ID}"
 
-def write_submission_script(config, job_dir) -> None:
-    """
-    Writes a submission script (`submit.sh`) using settings from the config object.
-    Args:
-        config: Configuration object containing all settings and parameters.
-        job_dir (Path): The directory where the job will run.
-    """
-    submit_filename = job_dir / "submit.sh"
-    output_filename = job_dir / f"output.o${{SLURM_JOB_ID}}"
-    main_py_path = Path(config.graphinvent_path) / "main.py"
+    lines = [
+        "#!/bin/bash",
+        f"#SBATCH -A {slurm.get('account', 'ACCOUNT')}",
+        f"#SBATCH --job-name={submission.get('dataset', 'graphinvent')}",
+        f"#SBATCH --time={slurm.get('run_time', '0-06:00:00')}",
+    ]
+    if "gpus_per_node" in slurm:
+        lines.append(f"#SBATCH --gpus-per-node={slurm['gpus_per_node']}")
+    lines += [
+        "hostname",
+        "export QT_QPA_PLATFORM='offscreen'",
+        f"({python_path} {main_py} --job-dir {job_dir}/ > {output_log})",
+    ]
 
-    with submit_filename.open("w") as submit_file:
-        submit_file.write("#!/bin/bash\n")
-        submit_file.write(f"#SBATCH -A {config.account}\n")
-        submit_file.write(f"#SBATCH --job-name={config.job_type}\n")
-        submit_file.write(f"#SBATCH --time={config.run_time}\n")
-        submit_file.write("#SBATCH --gpus-per-node=T4:1\n")
-        submit_file.write("hostname\n")
-        submit_file.write("export QT_QPA_PLATFORM='offscreen'\n")
-        submit_file.write(f"({config.python_path} {main_py_path} --job-dir {job_dir} > {output_filename})\n")
+    with open(script_path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    print("* Wrote SLURM submission script.", flush=True)
+    return script_path
+
+
+def main():
+    args   = parse_args()
+    config = load_config(args.config)
+
+    submission = config["submission"]
+    job_params = config["job"]
+
+    validate_config(args.config, submission, job_params)
+
+    base_path, tensorboard_path = create_output_directories(submission, job_params)
+    submit_jobs(submission, job_params, base_path, tensorboard_path)
+
 
 if __name__ == "__main__":
-    config = Config()  # create an instance of the Config class
-    submit(config)     # pass the config object to the submit function
+    main()

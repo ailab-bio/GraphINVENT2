@@ -1,6 +1,26 @@
 """
-The `BlockDatasetLoader` defines custom `DataLoader`s and `Dataset`s used to
-efficiently load data from HDF files in this work
+Block-based HDF5 data loading for efficient training.
+
+Directly iterating an HDF5 file one sample at a time is very slow because each
+read incurs disk-access overhead.  This module solves the problem with a
+two-level loading strategy:
+
+  Outer loop (BlockDataLoader / BlockDataset):
+      Reads a large contiguous *block* of rows from the HDF5 file into RAM
+      (default 10 000 rows).
+
+  Inner loop (ShuffleBlockWrapper + DataLoader):
+      Wraps the in-memory block in a standard PyTorch Dataset and yields
+      mini-batches of the requested size, shuffled within the block.
+
+Classes
+-------
+  BlockDataLoader      -- drop-in replacement for torch.utils.data.DataLoader
+  HDFDataset           -- thin wrapper around an HDF5 file exposing the
+                          (nodes, edges, APDs) tensors as a Dataset
+  BlockDataset         -- maps block indices → HDF5 row slices
+  ShuffleBlockWrapper  -- wraps a preloaded block so the inner DataLoader can
+                          shuffle and batch it
 """
 # load general packages and functions
 from typing import Tuple
@@ -10,9 +30,21 @@ import h5py
 
 class BlockDataLoader(torch.utils.data.DataLoader):
     """
-    Main `DataLoader` class which has been modified so as to read training data
-    from disk in blocks, as opposed to a single line at a time (as is done in
-    the original `DataLoader` class).
+    Two-level DataLoader that reads HDF5 data in large blocks for efficiency.
+
+    Instead of hitting disk once per sample (as a vanilla DataLoader would do
+    with an HDF5-backed dataset), ``BlockDataLoader`` reads ``block_size`` rows
+    at a time into RAM and then serves ``batch_size`` mini-batches from that
+    in-memory block before loading the next one.
+
+    Args:
+        dataset:    An ``HDFDataset`` instance.
+        batch_size: Number of samples per training mini-batch.
+        block_size: Number of HDF5 rows loaded into RAM at once.
+        shuffle:    Whether to shuffle blocks and samples within each block.
+        n_workers:  Number of worker processes for the outer block loader.
+        pin_memory: If True, pin loaded tensors in page-locked memory for
+                    faster CPU→GPU transfers (recommended when using CUDA).
     """
     def __init__(self, dataset : torch.utils.data.Dataset, batch_size : int=100,
                 block_size : int=10000, shuffle : bool=True, n_workers : int=0,
@@ -40,7 +72,7 @@ class BlockDataLoader(torch.utils.data.DataLoader):
         # is done if the remainder block is very small (less than a tenth the
         # size of a normal block)
         condition = bool(
-            int(self.block_dataset.__len__()/self.block_size) > 1 &
+            int(self.block_dataset.__len__()/self.block_size) > 1 and
             self.block_dataset.__len__()%self.block_size < self.block_size/10
         )
 

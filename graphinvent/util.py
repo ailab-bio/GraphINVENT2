@@ -1,22 +1,24 @@
 """
 Contains various miscellaneous useful functions.
 """
-# load general packages and functions
+import ast
 import csv
+import json
 from collections import namedtuple
-from typing import Union, Tuple
+from pathlib import Path
+from typing import Iterator, Union, Tuple
 from warnings import filterwarnings
-import numpy as np
+
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
-import torch
+import numpy as np
 import rdkit
+import torch
 from rdkit import RDLogger
 from rdkit.Chem import MolToSmiles
 from torch.utils.tensorboard import SummaryWriter
 
-# load GraphINVENT-specific functions
 from parameters.constants import constants
 
 
@@ -53,12 +55,20 @@ def get_last_epoch() -> str:
           "convergence.log".
     """
 
-    if constants.job_type != "fine-tune":
-        # define the path to the file containing desired information
-        convergence_path = constants.job_dir + "convergence.log"
+    convergence_path = constants.job_dir + "convergence.log"
 
+    if constants.job_type == "rl":
+        # RL logs use "Step N" labels; extract just "Step N"
         try:
-            # epoch_key, lr, avg_loss
+            epoch_key_tmp, _, _ = read_row(path=convergence_path,
+                                           row=-1,
+                                           col=(0, 1, 2))
+            epoch_key = " ".join(epoch_key_tmp.split()[:2])
+        except (ValueError, IndexError):
+            epoch_key = "Step init"
+    else:
+        # All supervised jobs (pretrain, transfer, generate, test) use "Epoch N"
+        try:
             epoch_key, _, _ = read_row(path=convergence_path,
                                        row=-1,
                                        col=(0, 1, 2))
@@ -70,19 +80,6 @@ def get_last_epoch() -> str:
             epoch_key = f"Epoch GEN{generation_epoch}"
         elif constants.job_type == "test":
             epoch_key = f"Epoch EVAL{generation_epoch}"
-    else:
-        # define the path to the file containing desired information
-        convergence_path = constants.job_dir + "convergence.log"
-
-        try:
-            # epoch_key, lr, avg_loss
-            epoch_key_tmp, _, _ = read_row(path=convergence_path,
-                                           row=-1,
-                                           col=(0, 1, 2))
-            epoch_key_tmp       = epoch_key_tmp.split(" ")
-            epoch_key = " ".join(epoch_key_tmp[:2])
-        except (ValueError, IndexError) as e:
-            epoch_key = "Step init"
 
     return epoch_key
 
@@ -119,30 +116,30 @@ def normalize_evaluation_metrics(property_histograms : dict,
     # compute histograms for non-optional features
     norm_n_nodes_hist = [
         round(i, 2) for i in
-        norm(property_histograms[(epoch_key, "n_nodes_hist")]).tolist()
+        normalize(property_histograms[(epoch_key, "n_nodes_hist")]).tolist()
     ]
     norm_atom_type_hist = [
         round(i, 2) for i in
-        norm(property_histograms[(epoch_key, "atom_type_hist")]).tolist()
+        normalize(property_histograms[(epoch_key, "atom_type_hist")]).tolist()
     ]
     norm_charge_hist = [
         round(i, 2) for i in
-        norm(property_histograms[(epoch_key, "formal_charge_hist")]).tolist()
+        normalize(property_histograms[(epoch_key, "formal_charge_hist")]).tolist()
     ]
     norm_n_edges_hist = [
         round(i, 2) for i in
-        norm(property_histograms[(epoch_key, "n_edges_hist")]).tolist()
+        normalize(property_histograms[(epoch_key, "n_edges_hist")]).tolist()
     ]
     norm_edge_feature_hist = [
         round(i, 2) for i in
-        norm(property_histograms[(epoch_key, "edge_feature_hist")]).tolist()
+        normalize(property_histograms[(epoch_key, "edge_feature_hist")]).tolist()
     ]
 
     # compute histograms for optional features
     if not constants.use_explicit_H and not constants.ignore_H:
         norm_numh_hist = [
             round(i, 2) for i in
-            norm(property_histograms[(epoch_key, "numh_hist")]).tolist()
+            normalize(property_histograms[(epoch_key, "numh_hist")]).tolist()
         ]
     else:
         norm_numh_hist = [0] * len(constants.imp_H)
@@ -150,7 +147,7 @@ def normalize_evaluation_metrics(property_histograms : dict,
     if constants.use_chirality:
         norm_chirality_hist = [
             round(i, 2) for i in
-            norm(property_histograms[(epoch_key, "chirality_hist")]).tolist()
+            normalize(property_histograms[(epoch_key, "chirality_hist")]).tolist()
         ]
     else:
         norm_chirality_hist = [1, 0, 0]
@@ -169,8 +166,24 @@ def get_restart_epoch() -> Union[int, str]:
     -------
         epoch (int or str) :
     """
-    if constants.restart or constants.job_type == "test":
-        # define path to output file containing info on last saved state
+    if constants.job_type == "rl" and constants.restart:
+        # RL restart: find the last saved step from fine-tuning.log.
+        # (generation.log for RL uses "Step N label" format, not "Epoch N".)
+        ft_log_path = constants.job_dir + "fine-tuning.log"
+        epoch       = "NA"
+        row         = -1
+        while not isinstance(epoch, int):
+            epoch_key = read_row(path=ft_log_path, row=row, col=0)
+            try:
+                epoch = int(epoch_key.strip()[5:])  # "Step 10" → int("10") = 10
+            except ValueError:
+                epoch = "NA"
+            row -= 1
+    elif constants.job_type == "rl":
+        # Fresh RL start: use the pretrained checkpoint epoch.
+        epoch = constants.generation_epoch
+    elif constants.restart or constants.job_type == "test":
+        # Supervised restart or test: find the last saved epoch from generation.log.
         generation_path = constants.job_dir + "generation.log"
         epoch           = "NA"
         row             = -1
@@ -180,91 +193,81 @@ def get_restart_epoch() -> Union[int, str]:
                 epoch = int(epoch_key[6:])
             except ValueError:
                 epoch = "NA"
-            row      -= 1
-    elif constants.job_type == "fine-tune":
-        epoch = constants.generation_epoch
-
+            row -= 1
     else:
         epoch = 0
 
     return epoch
 
 
-def load_ts_properties(csv_path : str) -> dict:
+def load_training_set_properties(csv_path: str) -> dict:
     """
-    Loads training set properties from CSV, specified by the `csv_path`, and
-    returns them as a dictionary.
+    Loads training set properties from CSV and returns them as a dictionary.
 
     Args:
-    ----
-        csv_path (str) : Path to CSV file from which to read the training set
-          properties.
+        csv_path: Path to the semicolon-delimited CSV file.
 
     Returns:
-    -------
-        properties (dict) : Contains training set properties.
+        properties: Training set properties, with tuple keys and
+                    `torch.Tensor` values where applicable.
     """
     print("* Loading training set properties.", flush=True)
 
-    # read dictionary from CSV
     with open(csv_path, "r") as csv_file:
         reader   = csv.reader(csv_file, delimiter=";")
         csv_dict = dict(reader)
 
-    # create `properties` from `csv_dict`, fix any bad filetypes
-    properties = {}
+    properties: dict = {}
     for key, value in csv_dict.items():
-
-        # first determine if key is a tuple
-        key = eval(key)
-        if len(key) > 1:
-            tuple_key = (str(key[0]), str(key[1]))
+        parsed_key = ast.literal_eval(key)
+        if isinstance(parsed_key, (list, tuple)) and len(parsed_key) > 1:
+            tuple_key = (str(parsed_key[0]), str(parsed_key[1]))
         else:
-            tuple_key = key
+            tuple_key = parsed_key
 
-        # then convert the values to the correct data type
         try:
-            properties[tuple_key] = eval(value)
-        except (SyntaxError, NameError):
-            properties[tuple_key] = value
+            parsed_value = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            parsed_value = value
 
-        # convert any `list`s to `torch.Tensor`s (for consistency)
-        if isinstance(properties[tuple_key], list):
-            properties[tuple_key] = torch.Tensor(properties[tuple_key])
+        if isinstance(parsed_value, list):
+            parsed_value = torch.Tensor(parsed_value)
+
+        properties[tuple_key] = parsed_value
 
     return properties
 
-def norm(list_of_nums : list) -> list:
+def normalize(list_of_nums: list) -> list:
     """
-    Normalizes input list of numbers.
+    Normalizes a list of numbers. Returns the list unchanged if the sum is zero.
 
     Args:
-    ----
-        list_of_nums (list) : Contains `float`s or `int`s.
+        list_of_nums: Numeric list or array to normalize.
 
     Returns:
-    -------
-        norm_list_of_nums (list) : Normalized version of input `list_of_nums`.
+        Normalized version of `list_of_nums`, or the original if the sum is zero.
     """
-    try:
-        norm_list_of_nums = list_of_nums / sum(list_of_nums)
-    except:  # occurs if divide by zero
-        norm_list_of_nums = list_of_nums
-    return norm_list_of_nums
+    total = sum(list_of_nums)
+    if total == 0:
+        return list_of_nums
+    return list_of_nums / total
 
-def one_of_k_encoding(x : Union[str, int], allowable_set : list) -> 'generator':
+def one_hot_encode(x: Union[str, int], allowable_set: list) -> Iterator[int]:
     """
-    Returns the one-of-k encoding of a value `x` having a range of possible
-    values in `allowable_set`.
+    Returns a one-hot encoding of `x` over `allowable_set`.
+
+    Yields a sequence of ints (0 or 1) of length ``len(allowable_set)``, where
+    the position corresponding to `x` is 1 and all others are 0.
 
     Args:
-    ----
-        x (str, int) : Value to be one-hot encoded.
-        allowable_set (list) : Contains all possible values to one-hot encode.
+        x:              The value to encode.  Must be an element of `allowable_set`.
+        allowable_set:  The ordered list of all possible values.
 
     Returns:
-    -------
-        one_hot_generator (generator) : One-hot encoding. A generator of `int`s.
+        Generator of ints representing the one-hot vector.
+
+    Raises:
+        Exception: If `x` is not in `allowable_set`.
     """
     if x not in set(allowable_set):  # use set for speedup over list
         raise Exception(
@@ -345,13 +348,11 @@ def properties_to_csv(prop_dict : dict, csv_filename : str,
             f"{norm_n_edges_hist}, {norm_edge_feature_hist}\n"
         )
 
-    # write to tensorboard
     try:
         epoch = int(epoch_key.split()[1])
-    except:
+    except (IndexError, ValueError):
         pass
     else:
-        # scalars
         if tb_writer is not None:
             tb_writer.add_scalar("Evaluation/fraction_valid", frac_valid, epoch)
             tb_writer.add_scalar("Evaluation/fraction_valid_and_properly_term", frac_valid_pt, epoch)
@@ -476,47 +477,54 @@ def write_last_molecule_idx(last_molecule_idx : int, dataset_size : int,
     with open(restart_file_path + "index.restart", "w") as txt_file:
         txt_file.write(str(last_molecule_idx) + ", " + str(dataset_size))
 
-def write_job_parameters(params : namedtuple) -> None:
+class _ConstantsEncoder(json.JSONEncoder):
+    """JSON encoder that handles non-serializable types gracefully."""
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        # RDKit BondType and other opaque objects → string representation
+        return str(obj)
+
+
+def write_job_parameters(params: namedtuple) -> None:
     """
-    Writes job parameters/hyperparameters to CSV.
+    Writes all resolved job parameters/hyperparameters to `params_all.json`.
+    This file is for reference only; the authoritative config is `params.json`.
 
     Args:
-    ----
-        params (namedtuple) : Contains job parameters and hyperparameters.
+        params: Resolved constants namedtuple.
     """
-    dict_path = params.job_dir + "params.csv"
+    dict_path = Path(params.job_dir) / "params_all.json"
+    params_dict = {field: getattr(params, field) for field in params._fields}
 
-    with open(dict_path, "w") as csv_file:
-        writer = csv.writer(csv_file, delimiter=";")
-        for key, value in enumerate(params._fields):
-            writer.writerow([value, params[key]])
+    with open(dict_path, "w") as f:
+        json.dump(params_dict, f, indent=2, cls=_ConstantsEncoder)
 
-def write_preprocessing_parameters(params : namedtuple) -> None:
+def write_preprocessing_parameters(params: namedtuple) -> None:
     """
-    Writes job parameters/hyperparameters in `params` (`namedtuple`) to
-    CSV, so that parameters used during preprocessing can be referenced later.
+    Writes the subset of parameters needed to verify preprocessing consistency
+    to `preprocessing_params.json` in the dataset directory.
 
     Args:
-    ----
-        params (namedtuple) : Contains job parameters and hyperparameters.
+        params: Resolved constants namedtuple.
     """
-    dict_path = params.dataset_dir + "preprocessing_params.csv"
-    keys_to_write = ["atom_types",
-                     "formal_charge",
-                     "imp_H",
-                     "chirality",
-                     "group_size",
-                     "max_n_nodes",
-                     "use_aromatic_bonds",
-                     "use_chirality",
-                     "use_explicit_H",
-                     "ignore_H"]
-
-    with open(dict_path, "w") as csv_file:
-        writer = csv.writer(csv_file, delimiter=";")
-        for key, value in enumerate(params._fields):
-            if value in keys_to_write:
-                writer.writerow([value, params[key]])
+    dict_path = Path(params.dataset_dir) / "preprocessing_params.json"
+    keys_to_write = {
+        "atom_types", "formal_charge", "imp_H", "chirality",
+        "max_n_nodes", "use_aromatic_bonds", "use_chirality",
+        "use_explicit_H", "ignore_H",
+    }
+    preproc_dict = {
+        key: getattr(params, key)
+        for key in keys_to_write
+        if hasattr(params, key)
+    }
+    with open(dict_path, "w") as f:
+        json.dump(preproc_dict, f, indent=2)
 
 def write_graphs_to_smi(smi_filename : str,
                         molecular_graphs_list : list,
@@ -610,19 +618,15 @@ def write_training_status(tb_writer : Union[SummaryWriter, None],
                                                If False, creates a new file.
     """
     convergence_path = constants.job_dir + "convergence.log"
-    if constants.job_type == "fine-tune":
-        epoch_label = "Step"
-    else:
-        epoch_label = "Epoch"
+    # RL progress is measured in steps; all supervised jobs use epochs
+    epoch_label = "Step" if constants.job_type == "rl" else "Epoch"
 
     if not append:  # create the file
         with open(convergence_path, "w") as output_file:
-            # write the header
             output_file.write(f"{epoch_label.lower()}, lr, avg_train_loss, "
                               f"avg_valid_loss, model_score\n")
     else:  # append to existing file
-        # only write a `convergence.log` when training
-        if constants.job_type in ["train", "fine-tune"]:
+        if constants.job_type in ["pretrain", "transfer", "rl"]:
             if score is None:
                 with open(convergence_path, "a") as output_file:
                     output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
@@ -644,12 +648,9 @@ def write_training_status(tb_writer : Union[SummaryWriter, None],
                                       f"{training_loss:.8f}, "
                                       f"{validation_loss:.8f}, {score:.6f}\n")
 
-            elif score is not None:
+            else:
                 with open(convergence_path, "a") as output_file:
                     output_file.write(f"{score:.6f}\n")
-
-            else:
-                raise NotImplementedError
 
 def write_molecules(molecules : list,
                     final_likelihoods : torch.Tensor,
@@ -683,8 +684,8 @@ def write_molecules(molecules : list,
                                            (unique or first duplicate instance) or
                                            0 (duplicate).
     """
-    # save molecules as SMILE
-    if constants.job_type == "fine-tune":
+    # RL outputs are labelled by step number; supervised jobs by epoch/label
+    if constants.job_type == "rl":
         step         = epoch.split(" ")[1]
         smi_filename = constants.job_dir + f"generation/step{step}_{label}.smi"
     else:
@@ -718,7 +719,7 @@ def write_likelihoods(likelihood_filename : str,
         for likelihood in likelihoods:
             likelihood_file.write(f"{likelihood}\n")
 
-def write_ts_properties(training_set_properties : dict) -> None:
+def save_training_set_properties(training_set_properties : dict) -> None:
     """
     Writes the training set properties to CSV.
 
@@ -784,16 +785,16 @@ def write_validation_scores(output_dir : str, epoch_key : str,
                           f"{avg_likelihood_train:.5f}, "
                           f"{avg_likelihood_gen:.5f}, {uc_jsd:.7f}\n")
 
-    try:  # write to tensorboard
+    try:
         epoch = int(epoch_key.split()[1])
-        # scalars
+    except (IndexError, ValueError):
+        pass
+    else:
         if tb_writer is not None:
             tb_writer.add_scalar("Evaluation/avg_validation_likelihood", avg_likelihood_val, epoch)
             tb_writer.add_scalar("Evaluation/avg_training_likelihood", avg_likelihood_train, epoch)
             tb_writer.add_scalar("Evaluation/avg_generation_likelihood", avg_likelihood_gen, epoch)
             tb_writer.add_scalar("Evaluation/uc_jsd", uc_jsd, epoch)
-    except:
-        pass
 
 def write_validity(validity_file_path : str,
                    validity_tensor : torch.Tensor) -> None:
@@ -812,7 +813,7 @@ def write_validity(validity_file_path : str,
         for valid in validity_tensor:
             valid_file.write(f"{valid}\n")
 
-def tbwrite_loglikelihoods(tb_writer : Union[SummaryWriter, None],
+def log_likelihoods_to_tensorboard(tb_writer : Union[SummaryWriter, None],
                            step : Union[int, None]=None,
                            agent_loglikelihoods : Union[torch.Tensor, None]=None,
                            prior_loglikelihoods : Union[torch.Tensor, None]=None) -> \

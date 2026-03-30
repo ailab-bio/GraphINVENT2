@@ -1,6 +1,13 @@
 """
-The `Analyzer` contains functions for evaluating sets of structures, including
-sets of training, validation, and sampled structures.
+The `Analyzer` evaluates molecular sets produced at various stages of training.
+
+Responsibilities
+----------------
+- Compute and log per-epoch metrics (NLL, UC-JSD, validity, uniqueness) for
+  the validation set and the most recently generated molecules.
+- Compute summary statistics of the training set (used as a reference during
+  model evaluation and for normalising scoring functions).
+- Write scalar metrics and molecular property histograms to TensorBoard.
 """
 # load general packages and functions
 from typing import Union, Tuple
@@ -19,15 +26,33 @@ import util
 
 class Analyzer:
     """
-    Class for analyzing different datasets, including the training set,
-    validation set, and sampled structures.
+    Evaluates and logs molecular generation quality throughout training.
+
+    The Analyzer is used in two contexts:
+
+    1. **During training** (pass all four constructor args): after each epoch,
+       `evaluate_model()` computes NLL on the validation and training sets,
+       NLL on the freshly generated molecules, and the UC-JSD between the
+       training and generated distributions.  All scalars are written to
+       TensorBoard and to `validation.log`.
+
+    2. **During preprocessing** (no constructor args needed): `evaluate_training_set()`
+       computes summary statistics (property histograms, scaffold counts, etc.)
+       for the training set molecules; these are saved alongside the HDF5 data
+       and used as the reference distribution during evaluation.
+
+    Args:
+        valid_dataloader:   DataLoader for the validation split.
+        train_dataloader:   DataLoader for the training split.
+        start_time:         Wall-clock start time of the run (for elapsed-time logs).
+        create_tensorboard: If True, open a TensorBoard `SummaryWriter`.
     """
 
     def __init__(self,
-                 valid_dataloader : Union[torch.utils.data.DataLoader, None]=None,
-                 train_dataloader : Union[torch.utils.data.DataLoader, None]=None,
-                 start_time : Union[time.time, None]=None,
-                 create_tensorboard : bool=False) -> None:
+                 valid_dataloader: Union[torch.utils.data.DataLoader, None] = None,
+                 train_dataloader: Union[torch.utils.data.DataLoader, None] = None,
+                 start_time: Union[time.time, None] = None,
+                 create_tensorboard: bool = False) -> None:
 
         self.valid_dataloader = valid_dataloader
         self.train_dataloader = train_dataloader
@@ -91,16 +116,17 @@ class Analyzer:
                  likelihood_sampled_norm) / 3
             )
 
+            log_likelihood_sum = torch.log(likelihood_sum + 1e-8)
             uc_jsd = (
-                torch.nn.functional.kl_div(likelihood_valid_norm, likelihood_sum)
-                + torch.nn.functional.kl_div(likelihood_train_norm, likelihood_sum)
-                + torch.nn.functional.kl_div(likelihood_sampled_norm, likelihood_sum)
+                torch.nn.functional.kl_div(log_likelihood_sum, likelihood_valid_norm, reduction='sum')
+                + torch.nn.functional.kl_div(log_likelihood_sum, likelihood_train_norm, reduction='sum')
+                + torch.nn.functional.kl_div(log_likelihood_sum, likelihood_sampled_norm, reduction='sum')
             ) / 3
 
             return float(uc_jsd)
 
         epoch_key = util.get_last_epoch()
-        if constants.job_type == "fine-tune":
+        if constants.job_type == "rl":
             epoch_label = "Step"
         else:
             epoch_label = "Epoch"
@@ -149,7 +175,7 @@ class Analyzer:
     def evaluate_generated_graphs(self, generated_graphs : list,
                                   termination : torch.Tensor,
                                   loglikelihoods : torch.Tensor,
-                                  ts_properties : dict,
+                                  training_set_properties : dict,
                                   generation_batch_idx : int) -> None:
         """
         Computes molecular properties for input set of generated graphs, saves
@@ -165,11 +191,11 @@ class Analyzer:
                                          was "properly" terminated, 0 otherwise.
             likelihoods (torch.Tensor) : Contains final NLL of each item in
                                          `generated_graphs`.
-            ts_properties (dict)       : Contains training set properties.
+            training_set_properties (dict)       : Contains training set properties.
             generation_batch_idx (int) : Generation batch index.
         """
         epoch_key = util.get_last_epoch()
-        if constants.job_type == "fine-tune":
+        if constants.job_type == "rl":
             epoch_label = "Step"
         else:
             epoch_label = "Epoch"
@@ -209,7 +235,7 @@ class Analyzer:
                                    append=True)
 
             # join ts properties with prop_dict for plotting
-            merged_properties = {**prop_dict, **ts_properties}
+            merged_properties = {**prop_dict, **training_set_properties}
 
             # plot properties for this epoch
             plot_filename = f"{output}generation/features{epoch_key[6:]}.png"
@@ -220,7 +246,7 @@ class Analyzer:
                                      termination : torch.Tensor,
                                      agent_loglikelihoods : torch.Tensor,
                                      prior_loglikelihoods : torch.Tensor,
-                                     ts_properties : dict,
+                                     training_set_properties : dict,
                                      step : int, is_agent : bool=False,
                                      label : str="") -> \
                                      Union[torch.Tensor, torch.Tensor]:
@@ -241,7 +267,7 @@ class Analyzer:
                                                   in `generated_graphs` (agent).
             prior_loglikelihoods (torch.Tensor) : Contains final NLL of each item
                                                   in `generated_graphs` (prior).
-            ts_properties (dict)                : Contains training set properties.
+            training_set_properties (dict)                : Contains training set properties.
             step (int)                          : Training step.
             is_agent (bool)                     : Indicates whether the `agent_loglikelihoods`
                                                   correspond to the agent.
@@ -290,7 +316,7 @@ class Analyzer:
                                append=True)
 
         # join ts properties with prop_dict for plotting
-        merged_properties = {**prop_dict, **ts_properties}
+        merged_properties = {**prop_dict, **training_set_properties}
 
         # plot properties for this epoch
         plot_label        = epoch_key[5:].replace(" ", "_")
@@ -538,7 +564,7 @@ class Analyzer:
                 try:
                     rdkit.Chem.SanitizeMol(mol)
                     n_valid_and_properly_terminated += int(termination[idx])
-                except:  # invalid molecule
+                except (ValueError, RuntimeError):  # invalid molecule
                     n_invalid += 1
             fraction_valid = (n_graphs - n_invalid) / n_graphs
             if 1 in termination:
@@ -609,7 +635,7 @@ class Analyzer:
 
         return properties
 
-    def combine_ts_properties(self, prev_properties : dict,
+    def merge_training_set_properties(self, prev_properties : dict,
                               next_properties : dict,
                               weight_next : int) -> dict:
         """
@@ -628,7 +654,7 @@ class Analyzer:
 
         Returns:
         -------
-            ts_properties (dict) : Averaged training set properties from the two
+            training_set_properties (dict) : Averaged training set properties from the two
               input dictionaries.
         """
         # convert any CUDA (torch.Tensor)s to CPU tensors
@@ -673,7 +699,7 @@ class Analyzer:
                                                    key="chirality_hist")
 
         # return the weighted averages in a new dictionary
-        ts_properties = {
+        training_set_properties = {
             ("Training set", "n_nodes_hist")      : n_nodes_hist,
             ("Training set", "avg_n_nodes")       : avg_n_nodes,
             ("Training set", "atom_type_hist")    : atom_type_hist,
@@ -686,7 +712,7 @@ class Analyzer:
             ("Training set", "numh_hist")         : numh_hist,
             ("Training set", "chirality_hist")    : chirality_hist
         }
-        return ts_properties
+        return training_set_properties
 
     def weighted_average(self, b : Tuple[dict, dict, int, int], key : str) -> \
         np.ndarray:

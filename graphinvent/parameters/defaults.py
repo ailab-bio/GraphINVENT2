@@ -35,8 +35,8 @@ General settings for the generative model:
     max_n_nodes (int)         : Maximum number of allowed nodes in graph. Must be
                                 greater than or equal to the number of nodes in
                                 largest graph in training set.
-    job_type (str)            : Type of job to run; options: 'preprocess', 'train',
-                                'generate', 'test', or 'fine-tune'.
+    job_type (str)            : Type of job to run; options: 'preprocess', 'pretrain',
+                                'transfer', 'generate', 'test', or 'rl'.
     sample_every (int)        : Specifies when to sample the model (i.e. epochs
                                 between sampling).
     dataset_dir (str)         : Full path to directory containing testing ("test.smi"),
@@ -100,17 +100,17 @@ GGNN hyperparameters:
     mlp2_dropout_p (float)       : Dropout probability in second-tier MLP in `APDReadout`.
     mlp2_hidden_dim (int)        : Number of weights (layer width) in second-tier
                                    MLP in `APDReadout`.
-    gather_att_depth (int)       : Num layers in 'gather_att' MLP in `GraphGather`.
+    gather_att_depth (int)       : Num layers in 'gather_att' MLP in `AttentionReadout`.
     gather_att_dropout_p (float) : Dropout probability in 'gather_att' MLP in
-                                   `GraphGather`.
+                                   `AttentionReadout`.
     gather_att_hidden_dim (int)  : Number of weights (layer width) in 'gather_att'
-                                   MLP in `GraphGather`.
-    gather_emb_depth (int)       : Num layers in 'gather_emb' MLP in `GraphGather`.
+                                   MLP in `AttentionReadout`.
+    gather_emb_depth (int)       : Num layers in 'gather_emb' MLP in `AttentionReadout`.
     gather_emb_dropout_p (float) : Dropout probability in 'gather_emb' MLP in
-                                   `GraphGather`.
+                                   `AttentionReadout`.
     gather_emb_hidden_dim (int)  : Number of weights (layer width) in 'gather_emb'
-                                   MLP in `GraphGather`.
-    gather_width (int)           : Output size of `GraphGather` block.
+                                   MLP in `AttentionReadout`.
+    gather_width (int)           : Output size of `AttentionReadout` block.
     message_passes (int)         : Number of message passing steps.
     message_size (int)           : Size of message passed (output size of all
                                    MLPs in message aggregation step, input size
@@ -129,14 +129,19 @@ parameters = {
     "n_workers"           : 0,
     "restart"             : False,
     "max_n_nodes"         : 13,
-    "job_type"            : "train",
+    "job_type"            : "pretrain",
     "sample_every"        : 10,
     "dataset_dir"         : "data/gdb13_1K/",
+    "smiles_file"         : None,
+    "split_type"          : "random",
+    "train_frac"          : 0.8,
+    "valid_frac"          : 0.1,
     "use_aromatic_bonds"  : False,
     "use_canon"           : True,
     "use_chirality"       : False,
     "use_explicit_H"      : False,
     "ignore_H"            : False,
+    "use_tensorboard"     : False,
     "tensorboard_dir"     : "tensorboard/",
     "batch_size"          : 1000,
     "block_size"          : 100000,
@@ -145,11 +150,11 @@ parameters = {
     "max_rel_lr"          : 10,
     "min_rel_lr"          : 0.0001,
     "decoding_route"      : "bfs",
-    "activity_model_dir"  : "data/fine-tuning/",
-    "score_components"    : ["QED", "drd2_activity", "target_size=13"],
+    "activity_model_dir"  : "data/surrogates/",
+    "score_components"    : ["QED", "drd2_activity", "target_size=12"],
     "score_thresholds"    : [0.5, 0.5, 0.0],  # 0.0 essentially means no threshold
     "score_type"          : "binary",
-    "qsar_models"         : {"drd2_activity": "data/fine-tuning/qsar_model.pickle"},
+    "qsar_models"         : {"drd2_activity": "data/surrogates/QSAR_model_example.pickle"},
     "pretrained_model_dir": "output/",
     "sigma"               : 20,
     "alpha"               : 0.5,

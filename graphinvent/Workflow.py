@@ -1,13 +1,26 @@
 """
-The `Workflow` specifies the recipes for what needs to be carried out for each
-type of task.
+Orchestrates all training, generation, and evaluation jobs in GraphINVENT2.
+
+The `Workflow` class is the single entry point for every run mode supported
+by the framework.  Each public method corresponds to one job type:
+
+  preprocess_phase  -- convert SMILES files to HDF5 format for efficient loading
+  training_phase    -- supervised (KL-divergence) training from random weights
+                       (pretrain) or from a pretrained checkpoint (transfer)
+  generation_phase  -- sample new molecules from a trained model
+  testing_phase     -- evaluate a trained model on the held-out test set
+  rl_training_phase -- optimise a pretrained model via policy-gradient RL
 """
 # load general packages and functions
 from collections import namedtuple
+import datetime
+import json
 import pickle
 from copy import deepcopy
+import shutil
 import time
 import os
+from pathlib import Path
 from typing import Union, Tuple
 import torch
 import torch.utils.tensorboard
@@ -15,7 +28,7 @@ from tqdm import tqdm
 
 # load GraphINVENT-specific functions
 from Analyzer import Analyzer
-from DataProcesser import DataProcesser
+from DataProcessor import DataProcessor, split_smiles_file
 from BlockDatasetLoader import BlockDataLoader, HDFDataset
 from GraphGenerator import GraphGenerator
 from GraphGeneratorRL import GraphGeneratorRL
@@ -26,20 +39,36 @@ import util
 
 class Workflow:
     """
-    Single `Workflow` class for carrying out the following processes:
-        1) preprocessing various molecular datasets
-        2) training generative models
-        3) generating molecules using pre-trained models
-        4) evaluating generative models
-        5) fine-tuning generative models (via RL)
+    Orchestrates all job types for the GraphINVENT2 molecular generation framework.
 
-    The preprocessing step reads a set of molecules and generates training data
-    for each molecule in HDF file format, consisting of decoding routes and APDs.
-    During training, the decoding routes and APDs are used to train graph neural
-    network models to generate new APDs, from which actions are stochastically
-    sampled and used to build new molecular graphs. During generation, a
-    pre-trained model is used to generate a fixed number of structures. During
-    evaluation, metrics are calculated for the test set.
+    Job types
+    ---------
+    preprocess  -- Reads a SMILES file, encodes each molecule as a sequence of
+                   subgraphs (the decoding route), and writes node features, edge
+                   features, and APD targets to an HDF5 file for fast batch loading.
+
+    pretrain    -- Trains a GGNN model from random initialisation using supervised
+                   learning: the model is trained to reproduce the target APD at
+                   each step of the decoding route (KL-divergence loss).
+
+    transfer    -- Same supervised training loop as pretrain, but the model is
+                   initialised from a pretrained checkpoint rather than random
+                   weights.  Useful for fine-tuning on a new chemical series.
+
+    generate    -- Uses a trained model to autoregressively sample new molecular
+                   graphs by repeatedly drawing actions from the predicted APD.
+
+    test        -- Evaluates a trained model on the held-out test set and reports
+                   NLL and related metrics.
+
+    rl          -- Fine-tunes a pretrained model with augmented log-likelihood
+                   policy-gradient RL.  Three model copies are maintained:
+                   the agent (being optimised), a frozen prior (KL anchor), and
+                   the best-agent-so-far (BASF, used to update the prior when the
+                   agent improves).
+
+    Args:
+        constants: Experiment constants namedtuple loaded from params.json.
     """
     def __init__(self, constants : namedtuple) -> None:
 
@@ -67,7 +96,7 @@ class Workflow:
 
         # non-reinforcement learning parameters (placeholders)
         self.model                 = None
-        self.ts_properties         = None
+        self.training_set_properties         = None
         self.test_dataloader       = None
         self.train_dataloader      = None
         self.valid_dataloader      = None
@@ -76,7 +105,7 @@ class Workflow:
         # reinforcement learning parameters (placeholders)
         self.agent_model      = None
         self.prior_model      = None
-        self.basf_model       = None  # basf stands for "best agent so far"
+        self.best_agent_model       = None  # tracks the highest-scoring model seen during RL
         self.best_avg_score   = 0.0
         self.rl_step          = 0.0
         self.scoring_function = None
@@ -86,7 +115,7 @@ class Workflow:
         Converts test dataset to HDF file format.
         """
         print("* Preprocessing test data.", flush=True)
-        test_set_preprocesser = DataProcesser(path=self.constants.test_set)
+        test_set_preprocesser = DataProcessor(path=self.constants.test_set)
         test_set_preprocesser.preprocess()
 
         self.print_time_elapsed()
@@ -96,7 +125,7 @@ class Workflow:
         Converts training dataset to HDF file format.
         """
         print("* Preprocessing training data.", flush=True)
-        train_set_preprocesser = DataProcesser(path=self.constants.training_set,
+        train_set_preprocesser = DataProcessor(path=self.constants.training_set,
                                                is_training_set=True)
         train_set_preprocesser.preprocess()
 
@@ -107,7 +136,7 @@ class Workflow:
         Converts validation dataset to HDF file format.
         """
         print("* Preprocessing validation data.", flush=True)
-        valid_set_preprocesser = DataProcesser(path=self.constants.validation_set)
+        valid_set_preprocesser = DataProcessor(path=self.constants.validation_set)
         valid_set_preprocesser.preprocess()
 
         self.print_time_elapsed()
@@ -133,12 +162,14 @@ class Workflow:
 
         print(f"* Loading preprocessed {data_description}.", flush=True)
         dataset    = HDFDataset(hdf_path)
+        # pin_memory speeds up CPU→GPU transfers; only beneficial when using CUDA
+        pin_memory = (self.constants.device == "cuda")
         dataloader = BlockDataLoader(dataset=dataset,
                                      batch_size=self.constants.batch_size,
                                      block_size=self.constants.block_size,
                                      shuffle=True,
                                      n_workers=self.constants.n_workers,
-                                     pin_memory=True)
+                                     pin_memory=pin_memory)
         self.print_time_elapsed()
 
         return dataloader
@@ -149,7 +180,7 @@ class Workflow:
         training set properties are used during model evaluation.
         """
         filename           = self.constants.training_set[:-3] + "csv"
-        self.ts_properties = util.load_ts_properties(csv_path=filename)
+        self.training_set_properties = util.load_training_set_properties(csv_path=filename)
 
     def define_model_and_optimizer(self) -> Tuple[int, int]:
         """
@@ -162,110 +193,167 @@ class Workflow:
             end_epoch (int)   : Epoch at which to end training.
         """
 
-        job_dir = self.constants.job_dir
+        job_dir  = self.constants.job_dir
+        job_type = self.constants.job_type
 
-        if self.constants.job_type == "fine-tune":
-
-            print("* Defining models.", flush=True)
+        if job_type == "rl":
+            # Reinforcement learning: load a pretrained checkpoint then set up
+            # three model copies (agent, frozen prior, best-agent-so-far).
+            print("* Defining models for RL fine-tuning.", flush=True)
             self.agent_model = self.create_model()
             self.prior_model = self.create_model()
-            self.basf_model  = self.create_model()
-
-            print("-- Loading pre-trained model from previous saved state.",
-                  flush=True)
+            self.best_agent_model  = self.create_model()
 
             self.restart_epoch = util.get_restart_epoch()
-            model_dir          = self.constants.pretrained_model_dir
+            prior_epoch = self.constants.generation_epoch
+            prior_dir   = self.constants.pretrained_model_dir
 
-            try:
+            if self.constants.restart:
+                # Restart: resume the agent from the RL job checkpoint.
+                print("-- Resuming RL agent from checkpoint.", flush=True)
+                agent_dir = self.constants.job_dir
                 self.agent_model = util.load_saved_model(
                     model=self.agent_model,
-                    path=f"{model_dir}model_restart_{self.restart_epoch}.pth"
+                    path=f"{agent_dir}model_restart_{self.restart_epoch}.pth"
                 )
-            except FileNotFoundError:
-                self.agent_model = util.load_saved_model(
-                    model=self.agent_model,
-                    path=f"{self.constants.dataset_dir}pretrained_model.pth"
-                )
-            self.prior_model = deepcopy(self.agent_model)
-            self.basf_model  = deepcopy(self.agent_model)
+                # The prior is always the original pretrained model.
+                print("-- Loading frozen prior from pretrained checkpoint.", flush=True)
+                try:
+                    self.prior_model = util.load_saved_model(
+                        model=self.prior_model,
+                        path=f"{prior_dir}model_restart_{prior_epoch}.pth"
+                    )
+                except FileNotFoundError:
+                    self.prior_model = util.load_saved_model(
+                        model=self.prior_model,
+                        path=f"{self.constants.dataset_dir}pretrained_model.pth"
+                    )
+            else:
+                # Fresh RL start: load pretrained checkpoint as both agent and prior.
+                print("-- Loading pretrained model checkpoint.", flush=True)
+                try:
+                    self.agent_model = util.load_saved_model(
+                        model=self.agent_model,
+                        path=f"{prior_dir}model_restart_{prior_epoch}.pth"
+                    )
+                except FileNotFoundError:
+                    self.agent_model = util.load_saved_model(
+                        model=self.agent_model,
+                        path=f"{self.constants.dataset_dir}pretrained_model.pth"
+                    )
+                self.prior_model = deepcopy(self.agent_model)
+
+            self.best_agent_model = deepcopy(self.agent_model)
 
             print("-- Defining optimizer.", flush=True)
-            self.optimizer = torch.optim.Adam(params=self.agent_model.parameters(),
-                                              lr=self.constants.init_lr)
-
-            start_epoch    = self.restart_epoch + 1
-            end_epoch      = start_epoch + self.constants.epochs
-
-            print("-- Defining scheduler.", flush=True)
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                optimizer=self.optimizer,
-                max_lr= self.constants.max_rel_lr * self.constants.init_lr,
-                div_factor= 1. / self.constants.max_rel_lr,
-                final_div_factor = 1. / self.constants.min_rel_lr,
-                pct_start = 0.05,
-                total_steps=self.constants.epochs,
-                epochs=self.constants.epochs
+            self.optimizer = torch.optim.Adam(
+                params=self.agent_model.parameters(),
+                lr=self.constants.init_lr
             )
-
-        elif self.constants.restart:
-
-            print("* Defining model.", flush=True)
-            self.model = self.create_model()
-
-            print("-- Loading model from previous saved state.", flush=True)
-            self.restart_epoch = util.get_restart_epoch()
-            self.model         = util.load_saved_model(
-                model=self.model,
-                path=f"{job_dir}model_restart_{self.restart_epoch}.pth"
-            )
-
-            print("-- Defining optimizer.", flush=True)
-            self.optimizer = torch.optim.Adam(params=self.model.parameters(),
-                                              lr=self.constants.init_lr)
-
-            start_epoch    = self.restart_epoch + 1
-            end_epoch      = start_epoch + self.constants.epochs
-
-            print("-- Defining scheduler.", flush=True)
-            max_allowable_lr = (
-                self.constants.max_rel_lr * self.constants.init_lr
-            )
-            n_batches = len(self.train_dataloader)
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                optimizer=self.optimizer,
-                max_lr=max_allowable_lr,
-                steps_per_epoch=n_batches,
-                epochs=self.constants.epochs
-            )
-            # self.scheduler = torch.optim.lr_scheduler.StepLR(
-            #     optimizer=self.optimizer,
-            #     step_size=2,
-            #     gamma=0.9,
-            # )
-        else:
-            self.restart_epoch = 0
-
-            print("* Defining model.", flush=True)
-            self.model = self.create_model()
-
-            print("-- Defining optimizer.", flush=True)
-            self.optimizer = torch.optim.Adam(params=self.model.parameters(),
-                                              lr=self.constants.init_lr)
 
             start_epoch = self.restart_epoch + 1
             end_epoch   = start_epoch + self.constants.epochs
 
             print("-- Defining scheduler.", flush=True)
-            max_allowable_lr =  (
-                self.constants.max_rel_lr * self.constants.init_lr
+            n_optimizer_steps = max(
+                1, self.constants.epochs // self.constants.accumulation_steps
             )
+            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+                optimizer=self.optimizer,
+                max_lr=self.constants.max_rel_lr * self.constants.init_lr,
+                div_factor=1.0 / self.constants.max_rel_lr,
+                final_div_factor=1.0 / self.constants.min_rel_lr,
+                pct_start=0.05,
+                total_steps=n_optimizer_steps,
+            )
+
+        elif job_type == "transfer":
+            # Transfer learning: load a pretrained checkpoint, then continue
+            # with supervised (KL-divergence) training on a new dataset.
+            # Epoch counter resets to 1 for the new training run.
+            print("* Defining model for transfer learning.", flush=True)
+            self.model = self.create_model()
+
+            print("-- Loading pretrained model checkpoint.", flush=True)
+            load_epoch = self.constants.generation_epoch
+            model_dir  = self.constants.pretrained_model_dir
+            self.model = util.load_saved_model(
+                model=self.model,
+                path=f"{model_dir}model_restart_{load_epoch}.pth"
+            )
+
+            print("-- Defining optimizer.", flush=True)
+            self.optimizer = torch.optim.Adam(
+                params=self.model.parameters(),
+                lr=self.constants.init_lr
+            )
+
+            self.restart_epoch = 0
+            start_epoch = 1
+            end_epoch   = start_epoch + self.constants.epochs
+
+            print("-- Defining scheduler.", flush=True)
             n_batches = len(self.train_dataloader)
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
                 optimizer=self.optimizer,
-                max_lr=max_allowable_lr,
+                max_lr=self.constants.max_rel_lr * self.constants.init_lr,
                 steps_per_epoch=n_batches,
-                epochs=self.constants.epochs
+                epochs=self.constants.epochs,
+            )
+
+        elif self.constants.restart:
+            # Resume a previously interrupted pretrain or transfer job from
+            # the last saved checkpoint in the same job directory.
+            print("* Defining model (resuming from checkpoint).", flush=True)
+            self.model = self.create_model()
+
+            print("-- Loading model from previous checkpoint.", flush=True)
+            self.restart_epoch = util.get_restart_epoch()
+            self.model = util.load_saved_model(
+                model=self.model,
+                path=f"{job_dir}model_restart_{self.restart_epoch}.pth"
+            )
+
+            print("-- Defining optimizer.", flush=True)
+            self.optimizer = torch.optim.Adam(
+                params=self.model.parameters(),
+                lr=self.constants.init_lr
+            )
+
+            start_epoch = self.restart_epoch + 1
+            end_epoch   = start_epoch + self.constants.epochs
+
+            print("-- Defining scheduler.", flush=True)
+            n_batches = len(self.train_dataloader)
+            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+                optimizer=self.optimizer,
+                max_lr=self.constants.max_rel_lr * self.constants.init_lr,
+                steps_per_epoch=n_batches,
+                epochs=self.constants.epochs,
+            )
+
+        else:
+            # Pretraining from scratch (random weight initialization).
+            print("* Defining model for pretraining from scratch.", flush=True)
+            self.model = self.create_model()
+            self.restart_epoch = 0
+
+            print("-- Defining optimizer.", flush=True)
+            self.optimizer = torch.optim.Adam(
+                params=self.model.parameters(),
+                lr=self.constants.init_lr
+            )
+
+            start_epoch = 1
+            end_epoch   = start_epoch + self.constants.epochs
+
+            print("-- Defining scheduler.", flush=True)
+            n_batches = len(self.train_dataloader)
+            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+                optimizer=self.optimizer,
+                max_lr=self.constants.max_rel_lr * self.constants.init_lr,
+                steps_per_epoch=n_batches,
+                epochs=self.constants.epochs,
             )
 
         return start_epoch, end_epoch
@@ -286,22 +374,141 @@ class Workflow:
 
         return net
 
+    def _backup_stale_preprocessing_files(self, mode_a: bool = False) -> None:
+        """
+        If .h5 or .h5.chunked files left over from a previous (failed or
+        interrupted) preprocessing run are present in the dataset directory,
+        move them into a timestamped backup subdirectory so the new run can
+        start cleanly.
+
+        When ``mode_a`` is True (single SMILES file with auto-split), any
+        existing train/valid/test .smi files are also backed up, since they
+        will be overwritten by the new split.
+        """
+        dataset_dir = self.constants.dataset_dir
+        candidates = [
+            "train.h5", "valid.h5", "test.h5",
+            "train.h5.chunked", "valid.h5.chunked", "test.h5.chunked",
+        ]
+        if mode_a:
+            candidates += ["train.smi", "valid.smi", "test.smi"]
+
+        stale = [
+            dataset_dir + name
+            for name in candidates
+            if os.path.exists(dataset_dir + name)
+        ]
+        if not stale:
+            return
+
+        timestamp  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = dataset_dir + f"_previous_run_{timestamp}/"
+        os.makedirs(backup_dir, exist_ok=True)
+
+        print(
+            f"* Found {len(stale)} leftover file(s) from a previous "
+            "preprocessing run.  Moving them to a backup directory before "
+            "starting fresh.",
+            flush=True,
+        )
+        print(f"  Backup location: {backup_dir}", flush=True)
+        for path in stale:
+            name = os.path.basename(path)
+            shutil.move(path, backup_dir + name)
+            print(f"  Moved: {name}", flush=True)
+
+    def _check_restart_params_match(self, dataset_dir: str) -> bool:
+        """
+        Returns True if ``preprocessing_params.json`` in ``dataset_dir`` exists
+        and all keys it contains match the current constants.
+
+        If the file is absent or any value differs, prints a warning and returns
+        False so the caller can fall back to a fresh start.
+        """
+        preproc_json = Path(dataset_dir) / "preprocessing_params.json"
+        if not preproc_json.exists():
+            print(
+                "* restart=True but no preprocessing_params.json found in "
+                f"{dataset_dir} — starting fresh.",
+                flush=True,
+            )
+            return False
+
+        with open(preproc_json) as f:
+            saved = json.load(f)
+
+        mismatches = {
+            key: (saved[key], getattr(self.constants, key, None))
+            for key in saved
+            if saved[key] != getattr(self.constants, key, None)
+        }
+        if mismatches:
+            lines = "\n".join(
+                f"  {k}: saved={v[0]!r}, current={v[1]!r}"
+                for k, v in mismatches.items()
+            )
+            print(
+                "* restart=True but current parameters differ from the saved "
+                "preprocessing — starting fresh instead.\n"
+                f"  Mismatched keys:\n{lines}",
+                flush=True,
+            )
+            return False
+
+        print(
+            "* restart=True and parameters match — resuming previous preprocessing.",
+            flush=True,
+        )
+        return True
+
     def preprocess_phase(self) -> None:
         """
         Preprocesses all the datasets (validation, training, and testing).
+
+        If ``constants.smiles_file`` is set, the single SMILES file is first
+        split into train/valid/test using the chosen strategy
+        (``constants.split_type``).  Otherwise the three .smi files are expected
+        to already exist in the dataset directory (Mode B).
         """
-        if not self.constants.restart:
-            # start preprocessing job from scratch
-            hdf_files_in_data_dir = bool(os.path.exists(self.valid_h5_path)
-                                         or os.path.exists(self.test_h5_path)
-                                         or os.path.exists(self.train_h5_path))
-            if hdf_files_in_data_dir:
-                raise OSError(
-                    "There currently exist(s) pre-created *.h5 file(s) in the "
-                    "dataset directory. If you would like to proceed with "
-                    "creating new ones, please delete them and rerun the "
-                    "program. Otherwise, check your input file."
+        dataset_dir = self.constants.dataset_dir
+
+        smiles_file = getattr(self.constants, "smiles_file", None)
+        restart = self.constants.restart
+
+        # If restart=True, validate that current params match the saved
+        # preprocessing_params.json.  If they don't match, the dataset was
+        # built with different settings — force a fresh start instead.
+        if restart:
+            restart = self._check_restart_params_match(dataset_dir)
+
+        if not restart:
+            # Move any leftover files from a previous run out of the way.
+            # In Mode A also back up existing .smi files since they'll be overwritten.
+            self._backup_stale_preprocessing_files(mode_a=bool(smiles_file))
+
+            # --- Mode A: split a single SMILES file ---
+            if smiles_file:
+                split_smiles_file(
+                    smiles_file=smiles_file,
+                    dataset_dir=dataset_dir,
+                    split_type=getattr(self.constants, "split_type", "random"),
+                    train_frac=getattr(self.constants, "train_frac", 0.8),
+                    valid_frac=getattr(self.constants, "valid_frac", 0.1),
                 )
+            else:
+                # --- Mode B: verify all three .smi files are present ---
+                missing = [
+                    name for name in ("train.smi", "valid.smi", "test.smi")
+                    if not os.path.exists(dataset_dir + name)
+                ]
+                if missing:
+                    raise FileNotFoundError(
+                        f"The following required file(s) are missing from "
+                        f"{dataset_dir}:\n"
+                        + "".join(f"  - {m}\n" for m in missing)
+                        + "\nSet 'smiles_file' in your params.json for "
+                        "automatic splitting, or provide the missing files."
+                    )
             if os.path.exists(self.valid_smi_path):
                 self.preprocess_valid_data()
             if os.path.exists(self.test_smi_path):
@@ -309,14 +516,19 @@ class Workflow:
             if os.path.exists(self.train_smi_path):
                 self.preprocess_train_data()
 
-        else:  # restart existing preprocessing job
+        else:  # resume an interrupted preprocessing job with matching params
 
-            # first determine where to restart based on which HDF files have been created
-            if (os.path.exists(self.train_h5_path + ".chunked") or
-                os.path.exists(self.test_h5_path)):
+            # Determine where to resume based on which HDF files already exist.
+            if os.path.exists(self.train_h5_path):
                 print(
-                    "-- Restarting preprocessing job from 'train.h5' (skipping "
-                    "over 'test.h5' and 'valid.h5' as they seem to be finished).",
+                    "-- All three HDF files appear complete. Nothing to resume.",
+                    flush=True,
+                )
+            elif (os.path.exists(self.train_h5_path + ".chunked") or
+                  os.path.exists(self.test_h5_path)):
+                print(
+                    "-- Resuming preprocessing from 'train.h5' "
+                    "(valid.h5 and test.h5 appear complete).",
                     flush=True,
                 )
                 if os.path.exists(self.train_smi_path):
@@ -324,8 +536,8 @@ class Workflow:
             elif (os.path.exists(self.test_h5_path + ".chunked") or
                   os.path.exists(self.valid_h5_path)):
                 print(
-                    "-- Restarting preprocessing job from 'test.h5' (skipping "
-                    "over 'valid.h5' as it appears to be finished).",
+                    "-- Resuming preprocessing from 'test.h5' "
+                    "(valid.h5 appears complete).",
                     flush=True,
                 )
                 if os.path.exists(self.test_smi_path):
@@ -333,8 +545,7 @@ class Workflow:
                 if os.path.exists(self.train_smi_path):
                     self.preprocess_train_data()
             elif os.path.exists(self.valid_h5_path + ".chunked"):
-                print("-- Restarting preprocessing job from 'valid.h5'",
-                      flush=True)
+                print("-- Resuming preprocessing from 'valid.h5'.", flush=True)
                 if os.path.exists(self.valid_smi_path):
                     self.preprocess_valid_data()
                 if os.path.exists(self.test_smi_path):
@@ -343,8 +554,8 @@ class Workflow:
                     self.preprocess_train_data()
             else:
                 raise ValueError(
-                    "Warning: Nothing to restart! Check input file and/or "
-                    "submission script."
+                    "restart=True but no in-progress HDF files were found in "
+                    f"{dataset_dir}. Set 'restart': false to start from scratch."
                 )
 
     def training_phase(self) -> None:
@@ -359,9 +570,9 @@ class Workflow:
 
         self.load_training_set_properties()
         self.analyzer = Analyzer(valid_dataloader=self.valid_dataloader,
-                            train_dataloader=self.train_dataloader,
-                            start_time=self.start_time,
-                            create_tensorboard=True)  # TODO this can be a default variable
+                                 train_dataloader=self.train_dataloader,
+                                 start_time=self.start_time,
+                                 create_tensorboard=self.constants.use_tensorboard)
         self.create_output_files()
 
         start_epoch, end_epoch = self.define_model_and_optimizer()
@@ -403,7 +614,7 @@ class Workflow:
 
         self.model.eval()
         with torch.no_grad():
-            self.generate_graphs(n_samples=self.constants.n_samples)
+            self.sample_molecules(n_samples=self.constants.n_samples)
 
         self.print_time_elapsed()
 
@@ -425,7 +636,7 @@ class Workflow:
 
         self.model.eval()
         with torch.no_grad():
-            self.generate_graphs(n_samples=self.constants.n_samples)
+            self.sample_molecules(n_samples=self.constants.n_samples)
 
             print("* Evaluating model.", flush=True)
             self.analyzer.model = self.model
@@ -460,11 +671,11 @@ class Workflow:
         -------
             score (float) : Model score for fine-tuning job, otherwise simply None.
         """
-        if self.constants.job_type == "fine-tune":
-            model_to_evaluate.eval()  # sets layers to eval mode (e.g. norm, dropout)
-            with torch.no_grad():     # deactivates autograd engine
+        if self.constants.job_type == "rl":
+            model_to_evaluate.eval()
+            with torch.no_grad():
 
-                _, score = self.generate_graphs_rl(
+                _, score = self.sample_molecules_rl(
                     model_a=model_to_evaluate,
                     model_b=self.prior_model,
                     tb_writer = self.analyzer.tb_writer,
@@ -484,7 +695,7 @@ class Workflow:
         elif self.current_epoch % self.constants.sample_every == 0:
             model_to_evaluate.eval()  # sets layers to eval mode (e.g. norm, dropout)
             with torch.no_grad():     # deactivates autograd engine
-                self.generate_graphs(n_samples=self.constants.n_samples,
+                self.sample_molecules(n_samples=self.constants.n_samples,
                                      evaluation=True)
                 score = None
 
@@ -511,7 +722,7 @@ class Workflow:
 
         return score
 
-    def learning_phase(self) -> None:
+    def rl_training_phase(self) -> None:
         """
         Fine-tunes model (`self.prior_model`) via policy gradient reinforcement
         learning (`self.agent_model`).
@@ -522,7 +733,8 @@ class Workflow:
         self.analyzer = Analyzer(
             valid_dataloader=None,
             train_dataloader=None,
-            start_time=self.start_time
+            start_time=self.start_time,
+            create_tensorboard=self.constants.use_tensorboard
         )
 
         self.create_output_files()
@@ -532,23 +744,52 @@ class Workflow:
 
         start_step, end_step = self.define_model_and_optimizer()
 
+        # set current_epoch before the pre-fine-tuning evaluation so that the
+        # checkpoint is saved with the correct step number (not None)
+        self.current_epoch = start_step
+
         # evaluate model before fine-tuning
         score = self.evaluate_model(
             model_to_evaluate=self.agent_model,
             label="pre-fine-tuning"
         )
 
-        # save the score to the analyzer
-        self.analyzer.save_metrics(step=start_step, score=score, append=False)
+        # for fresh starts, create the log; for restarts, append to it
+        self.analyzer.save_metrics(step=start_step, score=score,
+                                   append=self.constants.restart)
 
         print("* Begin learning.", flush=True)
+
+        accum = self.constants.accumulation_steps
+        self.agent_model.zero_grad()
+        self.optimizer.zero_grad()
+        accum_counter = 0
 
         for step in range(start_step, end_step):
 
             self.current_epoch = step
-            self.learning_step()
+            loss, score_a = self.rl_training_step()
 
-            # evaluate model every `sample_every` epochs (not every epoch)
+            # scale loss and accumulate gradients
+            (loss / accum).backward()
+            accum_counter += 1
+
+            if accum_counter % accum == 0:
+                self.optimizer.step()
+                self.scheduler.step()
+                self.optimizer.zero_grad()
+                accum_counter = 0
+
+            util.write_training_status(
+                tb_writer=self.analyzer.tb_writer,
+                epoch=step,
+                lr=self.optimizer.param_groups[0]["lr"],
+                training_loss=loss.detach(),
+                validation_loss=0.0,  # placeholder, not meaningful during fine-tuning
+                score=torch.mean(score_a).item()
+            )
+
+            # evaluate model every `sample_every` steps (not every step)
             if step % self.constants.sample_every == 0:
                 score = self.evaluate_model(model_to_evaluate=self.agent_model,
                                             label="eval")
@@ -561,58 +802,51 @@ class Workflow:
                     self.best_avg_score = score
 
                     # update the best agent so far ("basf")
-                    self.basf_model = deepcopy(self.agent_model)
+                    self.best_agent_model = deepcopy(self.agent_model)
                     print("-- Updated best model.", flush=True)
+
+        # flush any remaining accumulated gradients at end of training
+        if accum_counter > 0:
+            self.optimizer.step()
+            self.scheduler.step()
+            self.optimizer.zero_grad()
 
         self.print_time_elapsed()
 
-    def learning_step(self) -> None:
+    def rl_training_step(self) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Performs one fine-tuning step.
+        Computes the RL loss for one training step (one molecule batch).
+
+        Does NOT call backward or update model weights; gradient accumulation
+        and the optimizer step are handled by `rl_training_phase`.
+
+        Returns:
+        -------
+            loss    (torch.Tensor) : Unscaled scalar RL loss for this step.
+            score_a (torch.Tensor) : Per-molecule scores from the agent batch.
         """
         print(f"* Learning step {self.current_epoch}.", flush=True)
-        self.agent_model.train()  # ensure model is in train mode
-        self.agent_model.zero_grad()
-        self.optimizer.zero_grad()
-
+        self.agent_model.train()
         self.prior_model.eval()
-        self.basf_model.eval()
+        self.best_agent_model.eval()
 
-        # genereate molecules with agent model
-        loss_a, score_a = self.generate_graphs_rl(model_a=self.agent_model,
-                                                  model_b=self.prior_model,
-                                                  tb_writer=self.analyzer.tb_writer,
-                                                  is_agent=True,
-                                                  model_a_label="agent")
+        # generate molecules with agent model
+        loss_a, score_a = self.sample_molecules_rl(model_a=self.agent_model,
+                                                   model_b=self.prior_model,
+                                                   tb_writer=self.analyzer.tb_writer,
+                                                   is_agent=True,
+                                                   model_a_label="agent")
 
         # generate molecules with best agent so far ("basf")
-        loss_b, _ = self.generate_graphs_rl(model_a=self.basf_model,
-                                            model_b=self.agent_model,
-                                            tb_writer=self.analyzer.tb_writer,
-                                            is_agent=False,
-                                            model_a_label="BASF")
+        loss_b, _ = self.sample_molecules_rl(model_a=self.best_agent_model,
+                                             model_b=self.agent_model,
+                                             tb_writer=self.analyzer.tb_writer,
+                                             is_agent=False,
+                                             model_a_label="BASF")
 
-        loss = (
-            (1 - self.constants.alpha) * loss_a + self.constants.alpha * loss_b
-        )
-
-        # backpropagate
-        loss.backward()
-        self.optimizer.step()
-
-        # update the learning rate
-        self.scheduler.step()
-
-        util.write_training_status(
-            tb_writer=self.analyzer.tb_writer,
-            epoch=self.current_epoch,
-            lr=self.optimizer.param_groups[0]["lr"],
-            training_loss=torch.clone(loss),
-            validation_loss=0.0,  # placeholder, not meaningful during fine-tuning
-            score=torch.mean(torch.clone(score_a)).item()
-        )
-
+        loss = (1 - self.constants.alpha) * loss_a + self.constants.alpha * loss_b
         self.rl_step += 1
+        return loss, score_a
 
     def create_output_files(self) -> None:
         """
@@ -624,7 +858,7 @@ class Workflow:
             print("* Touching output files.", flush=True)
             # begin writing `generation.log` file
             csv_path_and_filename = self.constants.job_dir + "generation.log"
-            util.properties_to_csv(prop_dict=self.ts_properties,
+            util.properties_to_csv(prop_dict=self.training_set_properties,
                                    csv_filename=csv_path_and_filename,
                                    epoch_key="Training set",
                                    tb_writer=self.analyzer.tb_writer,
@@ -639,7 +873,7 @@ class Workflow:
             # create `generation/` subdirectory to write generation output to
             os.makedirs(self.constants.job_dir + "generation/", exist_ok=True)
 
-    def generate_graphs(self, n_samples : int, evaluation : bool=False) -> None:
+    def sample_molecules(self, n_samples : int, evaluation : bool=False) -> None:
         """
         Generates molecular graphs and evaluates them. Generates the graphs in
         batches of either the size of the mini-batches or `n_samples`, whichever
@@ -672,7 +906,7 @@ class Workflow:
                 generated_graphs=graphs,
                 termination=termination,
                 loglikelihoods=final_loglikelihoods,
-                ts_properties=self.ts_properties,
+                training_set_properties=self.training_set_properties,
                 generation_batch_idx=idx
             )
 
@@ -682,7 +916,7 @@ class Workflow:
             if evaluation and idx == 0:
                 self.likelihood_per_action = action_likelihoods
 
-    def generate_graphs_rl(self, model_a : torch.nn.Module,
+    def sample_molecules_rl(self, model_a : torch.nn.Module,
                            model_b : torch.nn.Module,
                            tb_writer,
                            is_agent : bool=False,
@@ -717,7 +951,9 @@ class Workflow:
         if model_a_label != "":
             print(f"-- Model: {model_a_label}", flush=True)
 
-        generator = GraphGeneratorRL(model=self.model,
+        # GraphGeneratorRL uses agent_model/prior_model passed to .sample();
+        # the constructor's `model` argument is unused during RL generation.
+        generator = GraphGeneratorRL(model=None,
                                      batch_size=self.constants.batch_size)
 
         # generate one batch of graphs using `model_a`
@@ -736,7 +972,7 @@ class Workflow:
             termination=termination,
             agent_loglikelihoods=model_a_loglikelihoods,
             prior_loglikelihoods=model_b_loglikelihoods,
-            ts_properties=self.ts_properties,
+            training_set_properties=self.training_set_properties,
             step=self.current_epoch,
             is_agent=is_agent,
             label=model_a_label
@@ -748,7 +984,7 @@ class Workflow:
                                                     uniqueness=uniqueness)
 
         if is_agent:
-            util.tbwrite_loglikelihoods(
+            util.log_likelihoods_to_tensorboard(
                 tb_writer=tb_writer,
                 step=self.current_epoch,
                 agent_loglikelihoods=-torch.clone(model_a_loglikelihoods),

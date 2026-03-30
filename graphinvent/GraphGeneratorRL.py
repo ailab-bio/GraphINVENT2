@@ -1,9 +1,18 @@
 """
-The `GraphGeneratorRL` class defines how to build molecular graphs during the
-reinforcement learning process using the following actions:
- * "add" a node to graph
- * "connect" existing nodes in graph
- * "terminate" graph
+Autoregressive molecular graph generation for the RL training loop.
+
+`GraphGeneratorRL` extends the supervised-generation logic to also record
+per-action log-likelihoods under the *prior* model in addition to the *agent*
+model.  Both sets of likelihoods are needed to compute the augmented
+log-likelihood RL objective:
+
+    loss = ( log p_agent(a) - log p_prior(a) - σ · score(mol) )²
+
+where σ (sigma) is a scaling constant that controls how strongly the score
+signal pulls the agent away from the prior.
+
+Like `GraphGenerator`, this class processes a whole batch of molecules in
+parallel and supports the same three action types: add, connect, terminate.
 """
 # load general packages and functions
 import time
@@ -20,9 +29,16 @@ from MolecularGraph import GenerationGraph
 
 class GraphGeneratorRL:
     """
-    Class for graph generation during RL. Generates graphs in batches using the
-    defined model. Optimized for quick generation on a GPU (sacrificed a bit of
-    readability for speed here).
+    Generates a batch of molecular graphs while tracking agent *and* prior likelihoods.
+
+    At each generation step both the agent model and the frozen prior model are
+    queried.  The agent's APD is used to sample the next action; both the agent
+    log-probability and the prior log-probability for that action are recorded.
+    These per-action likelihoods are summed at the end and returned alongside
+    the finished molecules so the RL loss can be computed.
+
+    The overall generation flow mirrors `GraphGenerator`:
+    ``__init__`` → ``sample(agent, prior)`` → ``build_graphs()`` (loop) → return.
     """
     def __init__(self, model : torch.nn.Module, batch_size : int) -> None:
         """
@@ -118,6 +134,10 @@ class GraphGeneratorRL:
         t_bar              = tqdm(total=self.batch_size)
         generation_round   = 0
 
+        # Reset properly_terminated so that stale 1s from a previous call do
+        # not bleed into the current generation run.
+        self.properly_terminated.zero_()
+
         # generate graphs in a batch, saving graphs when either the terminate
         # action or an invalid action is sampled, until `self.batch_size` number
         # of graphs have been generated
@@ -131,17 +151,20 @@ class GraphGeneratorRL:
             add, conn, term, invalid, agent_likelihoods, prior_likelihoods = \
                 self.get_actions(agent_apds=agent_apd, prior_apds=prior_apd)
 
-            # indicate (with a 1) the structures which have been properly
-            # terminated
-            self.properly_terminated[n_generated_so_far:(n_generated_so_far + len(term))] = 1
+            # Exclude the dummy graph at index 0 from both sets before any
+            # counting.  The dummy must never be written to the output buffer.
+            term_real    = term[term != 0]
+            invalid_real = invalid[invalid != 0]
+            termination_idc = torch.cat((term_real, invalid_real))
 
-            # collect the indices for all structures to write (and reset) this round
-            termination_idc = torch.cat((term, invalid))
+            # Mark output-buffer slots for properly-terminated graphs as 1.
+            # term_real graphs are copied first, so the first len(term_real)
+            # positions from n_generated_so_far are the correct ones to mark.
+            self.properly_terminated[
+                n_generated_so_far:(n_generated_so_far + len(term_real))
+            ] = 1
 
-            # never write out the dummy graph at index 0
-            termination_idc = termination_idc[termination_idc != 0]
-
-            # copy the graphs indicated by `terminated_idc` to the tensors for
+            # copy the graphs indicated by `termination_idc` to the tensors for
             # finished graphs (i.e. `generated_{nodes/edges}`)
             n_generated_so_far = self.copy_terminated_graphs(termination_idc,
                                                              n_generated_so_far,
@@ -156,7 +179,7 @@ class GraphGeneratorRL:
                                prior_likelihoods_sampled=prior_likelihoods)
 
             # after actions are applied, reset graphs which were set to
-            # terminate this round
+            # terminate this round (including the dummy at index 0 if needed)
             self.reset_graphs(termination_idc)
 
             # update variables for tracking the progress
@@ -426,10 +449,14 @@ class GraphGeneratorRL:
         self.generated_edges[begin_idx : end_idx]             = edges_local
         self.generated_n_nodes[begin_idx : end_idx]           = n_nodes_local
 
-        generated_agent_likelihoods_local[generated_agent_likelihoods_local == 0] = 1e-6
-        generated_prior_likelihoods_local[generated_prior_likelihoods_local == 0] = 1e-6
-        self.generated_agent_loglikelihoods[begin_idx: end_idx] = torch.log(generated_agent_likelihoods_local)
-        self.generated_prior_loglikelihoods[begin_idx: end_idx] = torch.log(generated_prior_likelihoods_local)
+        # Only log-transform actual action steps (0..generation_round inclusive).
+        # Padding positions (generation_round+1 onwards) are left as 0 in the
+        # generated_* tensors so they contribute nothing to the final sum.
+        actual = generation_round + 1
+        agent_actual = generated_agent_likelihoods_local[:, :actual].clamp(min=1e-6)
+        prior_actual = generated_prior_likelihoods_local[:, :actual].clamp(min=1e-6)
+        self.generated_agent_loglikelihoods[begin_idx:end_idx, :actual] = torch.log(agent_actual)
+        self.generated_prior_loglikelihoods[begin_idx:end_idx, :actual] = torch.log(prior_actual)
 
         n_graphs_generated += n_done_graphs  # update count
 
@@ -625,7 +652,7 @@ class GraphGeneratorRL:
         invalid_idc, max_node_idc = self.get_invalid_actions(f_add_idc, f_conn_idc)
 
         # change "connect to" index for graphs trying to add more than max num nodes
-        f_add_idc[5][max_node_idc] = 0
+        f_add_idc[-1][max_node_idc] = 0
 
         return (f_add_idc, f_conn_idc, f_term_idc, invalid_idc,
                 agent_likelihoods, prior_likelihoods)
@@ -680,7 +707,7 @@ class GraphGeneratorRL:
         invalid_add_empty_idc = uniques[counts > 1].unsqueeze(dim=1)  # set intersection
 
         # get invalid indices for when adding more nodes than possible
-        invalid_madd_idc = torch.nonzero(f_add_idc[5].float() >= n_max_nodes)
+        invalid_madd_idc = torch.nonzero(f_add_idc[-1].float() >= n_max_nodes)
 
         # get invalid indices for when connecting a node to nonexisting node
         invalid_conn_idc = torch.nonzero(f_conn_idc[1] >= self.n_nodes[f_conn_idc[0]])

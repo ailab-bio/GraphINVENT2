@@ -1,0 +1,17 @@
+torch>=2.0
+torchvision
+torchaudio
+rdkit>=2023.3
+numpy
+h5py
+tqdm
+scikit-learn
+matplotlib
+tensorboard
+
+[dev]
+ruff
+pyright
+
+[tdc]
+PyTDC
