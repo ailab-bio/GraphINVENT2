@@ -30,7 +30,7 @@ dependencies = [
 tdc = ["PyTDC"]
 
 # pip install -e ".[dev]"  — linting / type checking during development
-dev = ["ruff", "pyright"]
+dev = ["ruff", "pyright", "pytest"]
 
 [project.scripts]
 # Run jobs from anywhere in the repo: graphinvent-submit --config jobs/pretrain/params.json
