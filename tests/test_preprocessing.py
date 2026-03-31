@@ -16,6 +16,7 @@ Configuration:
 Usage:
   pytest tests/test_preprocessing.py -v
 """
+
 import json
 from collections import namedtuple
 from pathlib import Path
@@ -44,6 +45,7 @@ SPLITS = ["train", "valid", "test"]
 # Helpers: reading .smi files
 # ---------------------------------------------------------------------------
 
+
 def read_smiles_file(path: Path) -> List[str]:
     """
     Return a list of SMILES strings from a .smi file.
@@ -63,6 +65,7 @@ def read_smiles_file(path: Path) -> List[str]:
 # ---------------------------------------------------------------------------
 # Helpers: reading HDF5 files
 # ---------------------------------------------------------------------------
+
 
 def load_preprocessing_params(dataset_dir: Path) -> dict:
     params_path = dataset_dir / "preprocessing_params.json"
@@ -93,7 +96,7 @@ def get_complete_graphs(h5_path: Path) -> Tuple[np.ndarray, np.ndarray]:
         edges : (n_molecules, max_n_nodes, max_n_nodes, n_edge_features)  int8
     """
     with h5py.File(h5_path, "r") as fh:
-        action_probs  = fh["action_probs"][:]
+        action_probs = fh["action_probs"][:]
         nodes = fh["nodes"][:]
         edges = fh["edges"][:]
     mask = action_probs[:, -1] == 1
@@ -104,35 +107,44 @@ def get_complete_graphs(h5_path: Path) -> Tuple[np.ndarray, np.ndarray]:
 # Helpers: reconstructing molecules from graph arrays
 # ---------------------------------------------------------------------------
 
+
 def _build_constants(params: dict):
     """
     Build a minimal namedtuple from preprocessing_params sufficient for
     graph-to-molecule reconstruction.
     """
-    atom_types     = params["atom_types"]
-    formal_charge  = params["formal_charge"]
-    imp_H          = params.get("imp_H", [])
-    chirality      = params.get("chirality", [])
+    atom_types = params["atom_types"]
+    formal_charge = params["formal_charge"]
+    imp_H = params.get("imp_H", [])
+    chirality = params.get("chirality", [])
     use_explicit_H = params.get("use_explicit_H", False)
-    ignore_H       = params.get("ignore_H", False)
-    use_chirality  = params.get("use_chirality", False)
-    use_aromatic   = params.get("use_aromatic_bonds", False)
+    ignore_H = params.get("ignore_H", False)
+    use_chirality = params.get("use_chirality", False)
+    use_aromatic = params.get("use_aromatic_bonds", False)
 
     bondtype_to_int = {BondType.SINGLE: 0, BondType.DOUBLE: 1, BondType.TRIPLE: 2}
     if use_aromatic:
         bondtype_to_int[BondType.AROMATIC] = 3
     int_to_bondtype = {v: k for k, v in bondtype_to_int.items()}
 
-    n_atom_types    = len(atom_types)
+    n_atom_types = len(atom_types)
     n_formal_charge = len(formal_charge)
-    n_imp_H         = 0 if (use_explicit_H or ignore_H) else len(imp_H)
+    n_imp_H = 0 if (use_explicit_H or ignore_H) else len(imp_H)
     n_edge_features = len(bondtype_to_int)
 
     fields = [
-        "atom_types", "formal_charge", "imp_H", "chirality",
-        "use_explicit_H", "ignore_H", "use_chirality",
-        "n_atom_types", "n_formal_charge", "n_imp_H",
-        "n_edge_features", "int_to_bondtype",
+        "atom_types",
+        "formal_charge",
+        "imp_H",
+        "chirality",
+        "use_explicit_H",
+        "ignore_H",
+        "use_chirality",
+        "n_atom_types",
+        "n_formal_charge",
+        "n_imp_H",
+        "n_edge_features",
+        "int_to_bondtype",
     ]
     C = namedtuple("C", fields)
     return C(
@@ -189,9 +201,7 @@ def _node_row_to_atom(row: np.ndarray, c) -> Optional[rdkit.Chem.Atom]:
     return atom
 
 
-def graph_to_smiles(
-    nodes: np.ndarray, edges: np.ndarray, c
-) -> Optional[str]:
+def graph_to_smiles(nodes: np.ndarray, edges: np.ndarray, c) -> Optional[str]:
     """
     Reconstruct a canonical SMILES string from node/edge feature arrays.
 
@@ -205,7 +215,7 @@ def graph_to_smiles(
     """
     # Atoms are present where at least one node feature is non-zero.
     atom_mask = np.any(nodes != 0, axis=1)
-    n_nodes   = int(atom_mask.sum())
+    n_nodes = int(atom_mask.sum())
     if n_nodes == 0:
         return None
 
@@ -222,7 +232,8 @@ def graph_to_smiles(
             for j in range(i):
                 if edges[i, j, bond_type]:
                     mol.AddBond(
-                        idx_map[i], idx_map[j],
+                        idx_map[i],
+                        idx_map[j],
                         c.int_to_bondtype[bond_type],
                     )
 
@@ -240,6 +251,7 @@ def graph_to_smiles(
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="session")
 def dataset_dir() -> Path:
@@ -263,18 +275,18 @@ def constants(preprocessing_params):
 # Tests
 # ---------------------------------------------------------------------------
 
+
 class TestSplitFileCounts:
     """Checks on the .smi split files."""
 
     def test_split_files_exist(self, dataset_dir):
         """train.smi, valid.smi, and test.smi must all be present."""
         missing = [
-            name for name in ("train.smi", "valid.smi", "test.smi")
+            name
+            for name in ("train.smi", "valid.smi", "test.smi")
             if not (dataset_dir / name).exists()
         ]
-        assert not missing, (
-            f"Missing split file(s) in {dataset_dir}: {missing}"
-        )
+        assert not missing, f"Missing split file(s) in {dataset_dir}: {missing}"
 
     def test_split_counts_sum_to_original(self, dataset_dir):
         """
@@ -285,14 +297,14 @@ class TestSplitFileCounts:
         if SMILES_FILE is None:
             pytest.skip("SMILES_FILE not configured — skipping total-count check.")
 
-        original_path = SMILES_FILE if isinstance(SMILES_FILE, Path) else Path(SMILES_FILE)
+        original_path = (
+            SMILES_FILE if isinstance(SMILES_FILE, Path) else Path(SMILES_FILE)
+        )
         if not original_path.exists():
             pytest.skip(f"Original SMILES file not found: {original_path}")
 
         n_original = len(read_smiles_file(original_path))
-        n_splits   = sum(
-            len(read_smiles_file(dataset_dir / f"{s}.smi")) for s in SPLITS
-        )
+        n_splits = sum(len(read_smiles_file(dataset_dir / f"{s}.smi")) for s in SPLITS)
         assert n_splits == n_original, (
             f"Split files contain {n_splits} molecules total, "
             f"but original file has {n_original}."
@@ -317,7 +329,7 @@ class TestSplitFileCounts:
             split_smiles[split] = canon
 
         for i, s1 in enumerate(SPLITS):
-            for s2 in SPLITS[i + 1:]:
+            for s2 in SPLITS[i + 1 :]:
                 overlap = split_smiles[s1] & split_smiles[s2]
                 assert not overlap, (
                     f"Overlap between {s1} and {s2} splits "
@@ -341,9 +353,7 @@ class TestHDFFileCounts:
             pytest.skip(f"{split}.h5 not found")
         with h5py.File(h5_path, "r") as fh:
             missing = [k for k in ("nodes", "edges", "action_probs") if k not in fh]
-        assert not missing, (
-            f"{split}.h5 is missing dataset(s): {missing}"
-        )
+        assert not missing, f"{split}.h5 is missing dataset(s): {missing}"
 
     @pytest.mark.parametrize("split", SPLITS)
     def test_hdf_molecule_count_matches_smi(self, dataset_dir, split):
@@ -352,14 +362,14 @@ class TestHDFFileCounts:
         must equal the number of SMILES in <split>.smi.
         """
         smi_path = dataset_dir / f"{split}.smi"
-        h5_path  = dataset_dir / f"{split}.h5"
+        h5_path = dataset_dir / f"{split}.h5"
         if not smi_path.exists():
             pytest.skip(f"{split}.smi not found")
         if not h5_path.exists():
             pytest.skip(f"{split}.h5 not found")
 
         n_smi = len(read_smiles_file(smi_path))
-        n_h5  = count_molecules_in_hdf(h5_path)
+        n_h5 = count_molecules_in_hdf(h5_path)
 
         assert n_h5 == n_smi, (
             f"{split}: HDF5 contains {n_h5} complete molecules, "
@@ -380,9 +390,9 @@ class TestHDFFileCounts:
             n_subgraphs = fh["action_probs"].shape[0]
         n_molecules = count_molecules_in_hdf(h5_path)
 
-        assert n_subgraphs >= n_molecules, (
-            f"{split}: {n_subgraphs} subgraph rows < {n_molecules} molecules."
-        )
+        assert (
+            n_subgraphs >= n_molecules
+        ), f"{split}: {n_subgraphs} subgraph rows < {n_molecules} molecules."
 
 
 class TestSMILESReconstruction:
@@ -413,9 +423,7 @@ class TestSMILESReconstruction:
         )
 
     @pytest.mark.parametrize("split", SPLITS)
-    def test_reconstructed_smiles_match_smi_file(
-        self, dataset_dir, constants, split
-    ):
+    def test_reconstructed_smiles_match_smi_file(self, dataset_dir, constants, split):
         """
         The set of canonical SMILES reconstructed from <split>.h5 must equal
         the set of canonical SMILES in <split>.smi.
@@ -424,7 +432,7 @@ class TestSMILESReconstruction:
         SMILES → graph → HDF5 → graph → SMILES is lossless.
         """
         smi_path = dataset_dir / f"{split}.smi"
-        h5_path  = dataset_dir / f"{split}.h5"
+        h5_path = dataset_dir / f"{split}.h5"
         if not smi_path.exists():
             pytest.skip(f"{split}.smi not found")
         if not h5_path.exists():
@@ -446,7 +454,7 @@ class TestSMILESReconstruction:
                 rec_smiles.add(smi)
 
         only_in_ref = ref_smiles - rec_smiles
-        only_in_h5  = rec_smiles - ref_smiles
+        only_in_h5 = rec_smiles - ref_smiles
 
         assert not only_in_ref and not only_in_h5, (
             f"{split} SMILES mismatch.\n"

@@ -11,30 +11,32 @@ by the framework.  Each public method corresponds to one job type:
   testing_phase     -- evaluate a trained model on the held-out test set
   rl_training_phase -- optimise a pretrained model via policy-gradient RL
 """
+
 # load general packages and functions
-from collections import namedtuple
 import datetime
 import json
+import os
 import pickle
-from copy import deepcopy
 import shutil
 import time
-import os
+from collections import namedtuple
+from copy import deepcopy
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Tuple, Union
+
+import gnn.mpnn
 import torch
 import torch.utils.tensorboard
-from tqdm import tqdm
+import util
 
 # load GraphINVENT-specific functions
 from Analyzer import Analyzer
-from DataProcessor import DataProcessor, split_smiles_file
 from BlockDatasetLoader import BlockDataLoader, HDFDataset
+from DataProcessor import DataProcessor, split_smiles_file
 from GraphGenerator import GraphGenerator
 from GraphGeneratorRL import GraphGeneratorRL
 from ScoringFunction import ScoringFunction
-import gnn.mpnn
-import util
+from tqdm import tqdm
 
 
 class Workflow:
@@ -70,44 +72,45 @@ class Workflow:
     Args:
         constants: Experiment constants namedtuple loaded from params.json.
     """
-    def __init__(self, constants : namedtuple) -> None:
+
+    def __init__(self, constants: namedtuple) -> None:
 
         self.start_time = time.time()
-        self.constants  = constants
+        self.constants = constants
 
         # define number of accumulation steps
         self.accumulation_steps = self.constants.accumulation_steps
 
         # define path variables for various datasets
-        self.test_h5_path  = self.constants.test_set[:-3] + "h5"
+        self.test_h5_path = self.constants.test_set[:-3] + "h5"
         self.train_h5_path = self.constants.training_set[:-3] + "h5"
         self.valid_h5_path = self.constants.validation_set[:-3] + "h5"
 
-        self.test_smi_path  = self.constants.test_set
+        self.test_smi_path = self.constants.test_set
         self.train_smi_path = self.constants.training_set
         self.valid_smi_path = self.constants.validation_set
 
         # general paramters (placeholders)
-        self.optimizer     = None
-        self.scheduler     = None
-        self.analyzer      = None
+        self.optimizer = None
+        self.scheduler = None
+        self.analyzer = None
         self.current_epoch = None
         self.restart_epoch = None
 
         # non-reinforcement learning parameters (placeholders)
-        self.model                 = None
-        self.training_set_properties         = None
-        self.test_dataloader       = None
-        self.train_dataloader      = None
-        self.valid_dataloader      = None
+        self.model = None
+        self.training_set_properties = None
+        self.test_dataloader = None
+        self.train_dataloader = None
+        self.valid_dataloader = None
         self.likelihood_per_action = None
 
         # reinforcement learning parameters (placeholders)
-        self.agent_model      = None
-        self.prior_model      = None
-        self.best_agent_model       = None  # tracks the highest-scoring model seen during RL
-        self.best_avg_score   = 0.0
-        self.rl_step          = 0.0
+        self.agent_model = None
+        self.prior_model = None
+        self.best_agent_model = None  # tracks the highest-scoring model seen during RL
+        self.best_avg_score = 0.0
+        self.rl_step = 0.0
         self.scoring_function = None
 
     def preprocess_test_data(self) -> None:
@@ -125,8 +128,9 @@ class Workflow:
         Converts training dataset to HDF file format.
         """
         print("* Preprocessing training data.", flush=True)
-        train_set_preprocesser = DataProcessor(path=self.constants.training_set,
-                                               is_training_set=True)
+        train_set_preprocesser = DataProcessor(
+            path=self.constants.training_set, is_training_set=True
+        )
         train_set_preprocesser.preprocess()
 
         self.print_time_elapsed()
@@ -141,9 +145,9 @@ class Workflow:
 
         self.print_time_elapsed()
 
-    def get_dataloader(self, hdf_path : str,
-                       data_description : Union[str, None]=None) -> \
-                       torch.utils.data.DataLoader:
+    def get_dataloader(
+        self, hdf_path: str, data_description: Union[str, None] = None
+    ) -> torch.utils.data.DataLoader:
         """
         Loads preprocessed data (training, validation, or test set) into a
         PyTorch Dataloader.
@@ -161,15 +165,17 @@ class Workflow:
             data_description = "data"
 
         print(f"* Loading preprocessed {data_description}.", flush=True)
-        dataset    = HDFDataset(hdf_path)
+        dataset = HDFDataset(hdf_path)
         # pin_memory speeds up CPU→GPU transfers; only beneficial when using CUDA
-        pin_memory = (self.constants.device == "cuda")
-        dataloader = BlockDataLoader(dataset=dataset,
-                                     batch_size=self.constants.batch_size,
-                                     block_size=self.constants.block_size,
-                                     shuffle=True,
-                                     n_workers=self.constants.n_workers,
-                                     pin_memory=pin_memory)
+        pin_memory = self.constants.device == "cuda"
+        dataloader = BlockDataLoader(
+            dataset=dataset,
+            batch_size=self.constants.batch_size,
+            block_size=self.constants.block_size,
+            shuffle=True,
+            n_workers=self.constants.n_workers,
+            pin_memory=pin_memory,
+        )
         self.print_time_elapsed()
 
         return dataloader
@@ -179,8 +185,10 @@ class Workflow:
         Loads the training sets properties from CSV into a dictionary. The
         training set properties are used during model evaluation.
         """
-        filename           = self.constants.training_set[:-3] + "csv"
-        self.training_set_properties = util.load_training_set_properties(csv_path=filename)
+        filename = self.constants.training_set[:-3] + "csv"
+        self.training_set_properties = util.load_training_set_properties(
+            csv_path=filename
+        )
 
     def define_model_and_optimizer(self) -> Tuple[int, int]:
         """
@@ -193,7 +201,7 @@ class Workflow:
             end_epoch (int)   : Epoch at which to end training.
         """
 
-        job_dir  = self.constants.job_dir
+        job_dir = self.constants.job_dir
         job_type = self.constants.job_type
 
         if job_type == "rl":
@@ -202,15 +210,17 @@ class Workflow:
             print("* Defining models for RL fine-tuning.", flush=True)
             self.agent_model = self.create_model()
             self.prior_model = self.create_model()
-            self.best_agent_model  = self.create_model()
+            self.best_agent_model = self.create_model()
 
             self.restart_epoch = util.get_restart_epoch()
 
             if self.constants.pretrained_model_path:
                 prior_checkpoint = self.constants.pretrained_model_path
             else:
-                prior_checkpoint = (f"{self.constants.pretrained_model_dir}"
-                                    f"model_restart_{self.constants.generation_epoch}.pth")
+                prior_checkpoint = (
+                    f"{self.constants.pretrained_model_dir}"
+                    f"model_restart_{self.constants.generation_epoch}.pth"
+                )
 
             if self.constants.restart:
                 # Restart: resume the agent from the RL job checkpoint.
@@ -218,19 +228,18 @@ class Workflow:
                 agent_dir = self.constants.job_dir
                 self.agent_model = util.load_saved_model(
                     model=self.agent_model,
-                    path=f"{agent_dir}model_restart_{self.restart_epoch}.pth"
+                    path=f"{agent_dir}model_restart_{self.restart_epoch}.pth",
                 )
                 # The prior is always the original pretrained model.
                 print("-- Loading frozen prior from pretrained checkpoint.", flush=True)
                 try:
                     self.prior_model = util.load_saved_model(
-                        model=self.prior_model,
-                        path=prior_checkpoint
+                        model=self.prior_model, path=prior_checkpoint
                     )
                 except FileNotFoundError:
                     self.prior_model = util.load_saved_model(
                         model=self.prior_model,
-                        path=f"{self.constants.dataset_dir}pretrained_model.pth"
+                        path=f"{self.constants.dataset_dir}pretrained_model.pth",
                     )
                 self._freeze(self.prior_model)
             else:
@@ -238,13 +247,12 @@ class Workflow:
                 print("-- Loading pretrained model checkpoint.", flush=True)
                 try:
                     self.agent_model = util.load_saved_model(
-                        model=self.agent_model,
-                        path=prior_checkpoint
+                        model=self.agent_model, path=prior_checkpoint
                     )
                 except FileNotFoundError:
                     self.agent_model = util.load_saved_model(
                         model=self.agent_model,
-                        path=f"{self.constants.dataset_dir}pretrained_model.pth"
+                        path=f"{self.constants.dataset_dir}pretrained_model.pth",
                     )
                 self.prior_model = self._freeze(deepcopy(self.agent_model))
 
@@ -252,12 +260,11 @@ class Workflow:
 
             print("-- Defining optimizer.", flush=True)
             self.optimizer = torch.optim.Adam(
-                params=self.agent_model.parameters(),
-                lr=self.constants.init_lr
+                params=self.agent_model.parameters(), lr=self.constants.init_lr
             )
 
             start_epoch = self.restart_epoch + 1
-            end_epoch   = start_epoch + self.constants.epochs
+            end_epoch = start_epoch + self.constants.epochs
 
             print("-- Defining scheduler.", flush=True)
             n_optimizer_steps = max(
@@ -283,22 +290,20 @@ class Workflow:
             if self.constants.pretrained_model_path:
                 checkpoint_path = self.constants.pretrained_model_path
             else:
-                checkpoint_path = (f"{self.constants.pretrained_model_dir}"
-                                   f"model_restart_{self.constants.generation_epoch}.pth")
-            self.model = util.load_saved_model(
-                model=self.model,
-                path=checkpoint_path
-            )
+                checkpoint_path = (
+                    f"{self.constants.pretrained_model_dir}"
+                    f"model_restart_{self.constants.generation_epoch}.pth"
+                )
+            self.model = util.load_saved_model(model=self.model, path=checkpoint_path)
 
             print("-- Defining optimizer.", flush=True)
             self.optimizer = torch.optim.Adam(
-                params=self.model.parameters(),
-                lr=self.constants.init_lr
+                params=self.model.parameters(), lr=self.constants.init_lr
             )
 
             self.restart_epoch = 0
             start_epoch = 1
-            end_epoch   = start_epoch + self.constants.epochs
+            end_epoch = start_epoch + self.constants.epochs
 
             print("-- Defining scheduler.", flush=True)
             n_batches = len(self.train_dataloader)
@@ -319,17 +324,16 @@ class Workflow:
             self.restart_epoch = util.get_restart_epoch()
             self.model = util.load_saved_model(
                 model=self.model,
-                path=f"{job_dir}model_restart_{self.restart_epoch}.pth"
+                path=f"{job_dir}model_restart_{self.restart_epoch}.pth",
             )
 
             print("-- Defining optimizer.", flush=True)
             self.optimizer = torch.optim.Adam(
-                params=self.model.parameters(),
-                lr=self.constants.init_lr
+                params=self.model.parameters(), lr=self.constants.init_lr
             )
 
             start_epoch = self.restart_epoch + 1
-            end_epoch   = start_epoch + self.constants.epochs
+            end_epoch = start_epoch + self.constants.epochs
 
             print("-- Defining scheduler.", flush=True)
             n_batches = len(self.train_dataloader)
@@ -348,12 +352,11 @@ class Workflow:
 
             print("-- Defining optimizer.", flush=True)
             self.optimizer = torch.optim.Adam(
-                params=self.model.parameters(),
-                lr=self.constants.init_lr
+                params=self.model.parameters(), lr=self.constants.init_lr
             )
 
             start_epoch = 1
-            end_epoch   = start_epoch + self.constants.epochs
+            end_epoch = start_epoch + self.constants.epochs
 
             print("-- Defining scheduler.", flush=True)
             n_batches = len(self.train_dataloader)
@@ -402,8 +405,12 @@ class Workflow:
         """
         dataset_dir = self.constants.dataset_dir
         candidates = [
-            "train.h5", "valid.h5", "test.h5",
-            "train.h5.chunked", "valid.h5.chunked", "test.h5.chunked",
+            "train.h5",
+            "valid.h5",
+            "test.h5",
+            "train.h5.chunked",
+            "valid.h5.chunked",
+            "test.h5.chunked",
         ]
         if mode_a:
             candidates += ["train.smi", "valid.smi", "test.smi"]
@@ -416,7 +423,7 @@ class Workflow:
         if not stale:
             return
 
-        timestamp  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_dir = dataset_dir + f"_previous_run_{timestamp}/"
         os.makedirs(backup_dir, exist_ok=True)
 
@@ -456,7 +463,7 @@ class Workflow:
         if not candidates:
             return
 
-        timestamp  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_dir = job_dir + f"_previous_run_{timestamp}/"
         os.makedirs(backup_dir, exist_ok=True)
 
@@ -480,8 +487,9 @@ class Workflow:
         The individual batch files are removed afterwards.
         """
         import re as _re
-        gen_dir  = self.constants.job_dir + "generation/"
-        n        = self.constants.n_samples
+
+        gen_dir = self.constants.job_dir + "generation/"
+        n = self.constants.n_samples
 
         batch_smis = sorted(
             Path(gen_dir).glob("batch_*.smi"),
@@ -525,15 +533,9 @@ class Workflow:
         if job_type == "rl":
             log_names.append("score.log")
 
-        stale = [
-            job_dir + name
-            for name in log_names
-            if os.path.exists(job_dir + name)
-        ]
+        stale = [job_dir + name for name in log_names if os.path.exists(job_dir + name)]
         # Collect any saved model checkpoints.
-        stale += [
-            str(p) for p in Path(job_dir).glob("model_restart_*.pth")
-        ]
+        stale += [str(p) for p in Path(job_dir).glob("model_restart_*.pth")]
         # Include the generation/ subdirectory if it exists.
         generation_dir = job_dir + "generation"
         if os.path.isdir(generation_dir):
@@ -542,7 +544,7 @@ class Workflow:
         if not stale:
             return
 
-        timestamp  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_dir = job_dir + f"_previous_run_{timestamp}/"
         os.makedirs(backup_dir, exist_ok=True)
 
@@ -638,7 +640,8 @@ class Workflow:
             else:
                 # --- Mode B: verify all three .smi files are present ---
                 missing = [
-                    name for name in ("train.smi", "valid.smi", "test.smi")
+                    name
+                    for name in ("train.smi", "valid.smi", "test.smi")
                     if not os.path.exists(dataset_dir + name)
                 ]
                 if missing:
@@ -664,8 +667,9 @@ class Workflow:
                     "-- All three HDF files appear complete. Nothing to resume.",
                     flush=True,
                 )
-            elif (os.path.exists(self.train_h5_path + ".chunked") or
-                  os.path.exists(self.test_h5_path)):
+            elif os.path.exists(self.train_h5_path + ".chunked") or os.path.exists(
+                self.test_h5_path
+            ):
                 print(
                     "-- Resuming preprocessing from 'train.h5' "
                     "(valid.h5 and test.h5 appear complete).",
@@ -673,8 +677,9 @@ class Workflow:
                 )
                 if os.path.exists(self.train_smi_path):
                     self.preprocess_train_data()
-            elif (os.path.exists(self.test_h5_path + ".chunked") or
-                  os.path.exists(self.valid_h5_path)):
+            elif os.path.exists(self.test_h5_path + ".chunked") or os.path.exists(
+                self.valid_h5_path
+            ):
                 print(
                     "-- Resuming preprocessing from 'test.h5' "
                     "(valid.h5 appears complete).",
@@ -703,16 +708,20 @@ class Workflow:
         Trains model and generates graphs.
         """
         print("* Setting up training job.", flush=True)
-        self.train_dataloader = self.get_dataloader(hdf_path=self.train_h5_path,
-                                                    data_description="training set")
-        self.valid_dataloader = self.get_dataloader(hdf_path=self.valid_h5_path,
-                                                    data_description="validation set")
+        self.train_dataloader = self.get_dataloader(
+            hdf_path=self.train_h5_path, data_description="training set"
+        )
+        self.valid_dataloader = self.get_dataloader(
+            hdf_path=self.valid_h5_path, data_description="validation set"
+        )
 
         self.load_training_set_properties()
-        self.analyzer = Analyzer(valid_dataloader=self.valid_dataloader,
-                                 train_dataloader=self.train_dataloader,
-                                 start_time=self.start_time,
-                                 create_tensorboard=self.constants.use_tensorboard)
+        self.analyzer = Analyzer(
+            valid_dataloader=self.valid_dataloader,
+            train_dataloader=self.train_dataloader,
+            start_time=self.start_time,
+            create_tensorboard=self.constants.use_tensorboard,
+        )
         if not self.constants.restart:
             self._backup_stale_job_files()
         self.create_output_files()
@@ -726,11 +735,13 @@ class Workflow:
             avg_train_loss = self.train_epoch()
             avg_valid_loss = self.validation_epoch()
 
-            util.write_training_status(tb_writer=self.analyzer.tb_writer,
-                                       epoch=self.current_epoch,
-                                       lr=self.optimizer.param_groups[0]["lr"],
-                                       training_loss=avg_train_loss,
-                                       validation_loss=avg_valid_loss)
+            util.write_training_status(
+                tb_writer=self.analyzer.tb_writer,
+                epoch=self.current_epoch,
+                lr=self.optimizer.param_groups[0]["lr"],
+                training_loss=avg_train_loss,
+                validation_loss=avg_valid_loss,
+            )
 
             _ = self.evaluate_model(model_to_evaluate=self.model)
 
@@ -743,16 +754,17 @@ class Workflow:
         print("* Setting up generation job.", flush=True)
         self._backup_stale_generation_files()
         self.load_training_set_properties()
-        self.analyzer = Analyzer(valid_dataloader=None,
-                                 train_dataloader=None,
-                                 start_time=self.start_time)
+        self.analyzer = Analyzer(
+            valid_dataloader=None, train_dataloader=None, start_time=self.start_time
+        )
 
         if self.constants.pretrained_model_path:
             model_path = self.constants.pretrained_model_path
         else:
             self.restart_epoch = self.constants.generation_epoch
-            model_path = (f"{self.constants.job_dir}"
-                          f"model_restart_{self.restart_epoch}.pth")
+            model_path = (
+                f"{self.constants.job_dir}" f"model_restart_{self.restart_epoch}.pth"
+            )
 
         os.makedirs(self.constants.job_dir + "generation/", exist_ok=True)
 
@@ -772,15 +784,18 @@ class Workflow:
         """
         Evaluates model using test set data.
         """
-        self.test_dataloader = self.get_dataloader(self.test_h5_path,
-                                                   "test set")
+        self.test_dataloader = self.get_dataloader(self.test_h5_path, "test set")
         self.load_training_set_properties()
         self.restart_epoch = util.get_restart_epoch()
 
-        print(f"* Loading model from previous saved state (Epoch "
-              f"{self.restart_epoch}).", flush=True)
-        model_path = (f"{self.constants.job_dir}"
-                      f"model_restart_{self.restart_epoch}.pth")
+        print(
+            f"* Loading model from previous saved state (Epoch "
+            f"{self.restart_epoch}).",
+            flush=True,
+        )
+        model_path = (
+            f"{self.constants.job_dir}" f"model_restart_{self.restart_epoch}.pth"
+        )
         self.model = self.create_model()
         self.model = util.load_saved_model(model=self.model, path=model_path)
 
@@ -796,8 +811,9 @@ class Workflow:
 
         self.print_time_elapsed()
 
-    def evaluate_model(self, model_to_evaluate : torch.nn.Module,
-                       label : str="") -> Union[float, None]:
+    def evaluate_model(
+        self, model_to_evaluate: torch.nn.Module, label: str = ""
+    ) -> Union[float, None]:
         """
         Evaluates model.
 
@@ -828,35 +844,46 @@ class Workflow:
                 _, score = self.sample_molecules_rl(
                     model_a=model_to_evaluate,
                     model_b=self.prior_model,
-                    tb_writer = self.analyzer.tb_writer,
+                    tb_writer=self.analyzer.tb_writer,
                     is_agent=True,
-                    model_a_label=label
+                    model_a_label=label,
                 )
 
-                print(f"* Saving model state at Epoch {self.current_epoch}.",
-                      flush=True)
+                print(
+                    f"* Saving model state at Epoch {self.current_epoch}.", flush=True
+                )
                 # `pickle.HIGHEST_PROTOCOL` good for large objects
-                model_path = (f"{self.constants.job_dir}"
-                              f"model_restart_{self.current_epoch}.pth")
-                torch.save(obj=model_to_evaluate.state_dict(),
-                           f=model_path,
-                           pickle_protocol=pickle.HIGHEST_PROTOCOL)
+                model_path = (
+                    f"{self.constants.job_dir}"
+                    f"model_restart_{self.current_epoch}.pth"
+                )
+                torch.save(
+                    obj=model_to_evaluate.state_dict(),
+                    f=model_path,
+                    pickle_protocol=pickle.HIGHEST_PROTOCOL,
+                )
 
         elif self.current_epoch % self.constants.sample_every == 0:
             model_to_evaluate.eval()  # sets layers to eval mode (e.g. norm, dropout)
-            with torch.no_grad():     # deactivates autograd engine
-                self.sample_molecules(n_samples=self.constants.n_samples,
-                                     evaluation=True)
+            with torch.no_grad():  # deactivates autograd engine
+                self.sample_molecules(
+                    n_samples=self.constants.n_samples, evaluation=True
+                )
                 score = None
 
-                print(f"* Saving model state at Epoch {self.current_epoch}.",
-                      flush=True)
+                print(
+                    f"* Saving model state at Epoch {self.current_epoch}.", flush=True
+                )
                 # `pickle.HIGHEST_PROTOCOL` good for large objects
-                model_path = (f"{self.constants.job_dir}"
-                              f"model_restart_{self.current_epoch}.pth")
-                torch.save(obj=model_to_evaluate.state_dict(),
-                           f=model_path,
-                           pickle_protocol=pickle.HIGHEST_PROTOCOL)
+                model_path = (
+                    f"{self.constants.job_dir}"
+                    f"model_restart_{self.current_epoch}.pth"
+                )
+                torch.save(
+                    obj=model_to_evaluate.state_dict(),
+                    f=model_path,
+                    pickle_protocol=pickle.HIGHEST_PROTOCOL,
+                )
 
                 print("* Evaluating model.", flush=True)
                 self.analyzer.model = model_to_evaluate
@@ -866,8 +893,7 @@ class Workflow:
 
         else:
             # score not computer, so use placeholder
-            util.write_training_status(tb_writer=self.analyzer.tb_writer,
-                                       score="NA")
+            util.write_training_status(tb_writer=self.analyzer.tb_writer, score="NA")
             score = None
 
         return score
@@ -884,7 +910,7 @@ class Workflow:
             valid_dataloader=None,
             train_dataloader=None,
             start_time=self.start_time,
-            create_tensorboard=self.constants.use_tensorboard
+            create_tensorboard=self.constants.use_tensorboard,
         )
 
         if not self.constants.restart:
@@ -902,13 +928,13 @@ class Workflow:
 
         # evaluate model before fine-tuning
         score = self.evaluate_model(
-            model_to_evaluate=self.agent_model,
-            label="pre-fine-tuning"
+            model_to_evaluate=self.agent_model, label="pre-fine-tuning"
         )
 
         # for fresh starts, create the log; for restarts, append to it
-        self.analyzer.save_metrics(step=start_step, score=score,
-                                   append=self.constants.restart)
+        self.analyzer.save_metrics(
+            step=start_step, score=score, append=self.constants.restart
+        )
 
         print("* Begin learning.", flush=True)
 
@@ -937,13 +963,14 @@ class Workflow:
                 epoch=step,
                 lr=self.optimizer.param_groups[0]["lr"],
                 training_loss=loss.detach(),
-                score=torch.mean(score_a).item()
+                score=torch.mean(score_a).item(),
             )
 
             # evaluate model every `sample_every` steps (not every step)
             if step % self.constants.sample_every == 0:
-                score = self.evaluate_model(model_to_evaluate=self.agent_model,
-                                            label="eval")
+                score = self.evaluate_model(
+                    model_to_evaluate=self.agent_model, label="eval"
+                )
 
                 # save the score to the analyzer
                 self.analyzer.save_metrics(step=step, score=score)
@@ -982,18 +1009,22 @@ class Workflow:
         self.best_agent_model.eval()
 
         # generate molecules with agent model
-        loss_a, score_a = self.sample_molecules_rl(model_a=self.agent_model,
-                                                   model_b=self.prior_model,
-                                                   tb_writer=self.analyzer.tb_writer,
-                                                   is_agent=True,
-                                                   model_a_label="agent")
+        loss_a, score_a = self.sample_molecules_rl(
+            model_a=self.agent_model,
+            model_b=self.prior_model,
+            tb_writer=self.analyzer.tb_writer,
+            is_agent=True,
+            model_a_label="agent",
+        )
 
         # generate molecules with best agent so far ("basf")
-        loss_b, _ = self.sample_molecules_rl(model_a=self.best_agent_model,
-                                             model_b=self.agent_model,
-                                             tb_writer=self.analyzer.tb_writer,
-                                             is_agent=False,
-                                             model_a_label="BASF")
+        loss_b, _ = self.sample_molecules_rl(
+            model_a=self.best_agent_model,
+            model_b=self.agent_model,
+            tb_writer=self.analyzer.tb_writer,
+            is_agent=False,
+            model_a_label="BASF",
+        )
 
         loss = (1 - self.constants.alpha) * loss_a + self.constants.alpha * loss_b
         self.rl_step += 1
@@ -1009,22 +1040,21 @@ class Workflow:
             print("* Touching output files.", flush=True)
             # begin writing `generation.log` file
             csv_path_and_filename = self.constants.job_dir + "generation.log"
-            util.properties_to_csv(prop_dict=self.training_set_properties,
-                                   csv_filename=csv_path_and_filename,
-                                   epoch_key="Training set",
-                                   tb_writer=self.analyzer.tb_writer,
-                                   append=False)
+            util.properties_to_csv(
+                prop_dict=self.training_set_properties,
+                csv_filename=csv_path_and_filename,
+                epoch_key="Training set",
+                tb_writer=self.analyzer.tb_writer,
+                append=False,
+            )
 
             # begin writing `convergence.log` file
-            util.write_training_status(
-                tb_writer=self.analyzer.tb_writer,
-                append=False
-            )
+            util.write_training_status(tb_writer=self.analyzer.tb_writer, append=False)
 
             # create `generation/` subdirectory to write generation output to
             os.makedirs(self.constants.job_dir + "generation/", exist_ok=True)
 
-    def sample_molecules(self, n_samples : int, evaluation : bool=False) -> None:
+    def sample_molecules(self, n_samples: int, evaluation: bool = False) -> None:
         """
         Generates molecular graphs and evaluates them. Generates the graphs in
         batches of either the size of the mini-batches or `n_samples`, whichever
@@ -1039,18 +1069,18 @@ class Workflow:
         """
         print(f"* Generating {n_samples} molecules.", flush=True)
         generation_batch_size = min(self.constants.batch_size, n_samples)
-        n_generation_batches  = int(n_samples/generation_batch_size)
+        n_generation_batches = int(n_samples / generation_batch_size)
 
-        generator = GraphGenerator(model=self.model,
-                                   batch_size=generation_batch_size)
+        generator = GraphGenerator(model=self.model, batch_size=generation_batch_size)
 
         # generate graphs in batches
         for idx in range(0, n_generation_batches + 1):
             print("Batch", idx, "of", n_generation_batches)
 
             # generate one batch of graphs
-            (graphs, action_likelihoods, final_loglikelihoods,
-             termination) = generator.sample()
+            graphs, action_likelihoods, final_loglikelihoods, termination = (
+                generator.sample()
+            )
 
             # analyze properties of new graphs and save results
             self.analyzer.evaluate_generated_graphs(
@@ -1058,7 +1088,7 @@ class Workflow:
                 termination=termination,
                 loglikelihoods=final_loglikelihoods,
                 training_set_properties=self.training_set_properties,
-                generation_batch_idx=idx
+                generation_batch_idx=idx,
             )
 
             # keep track of NLLs per action; note that only NLLs for the first
@@ -1067,12 +1097,14 @@ class Workflow:
             if evaluation and idx == 0:
                 self.likelihood_per_action = action_likelihoods
 
-    def sample_molecules_rl(self, model_a : torch.nn.Module,
-                           model_b : torch.nn.Module,
-                           tb_writer,
-                           is_agent : bool=False,
-                           model_a_label : str="") -> \
-                           Tuple[torch.Tensor, torch.Tensor]:
+    def sample_molecules_rl(
+        self,
+        model_a: torch.nn.Module,
+        model_b: torch.nn.Module,
+        tb_writer,
+        is_agent: bool = False,
+        model_a_label: str = "",
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Generates molecular graphs during fine-tuning using two different models;
         these can be any pair of models, including the "agent", the "prior", or
@@ -1104,18 +1136,17 @@ class Workflow:
 
         # GraphGeneratorRL uses agent_model/prior_model passed to .sample();
         # the constructor's `model` argument is unused during RL generation.
-        generator = GraphGeneratorRL(model=None,
-                                     batch_size=self.constants.batch_size)
+        generator = GraphGeneratorRL(model=None, batch_size=self.constants.batch_size)
 
         # generate one batch of graphs using `model_a`
         if is_agent:
-            (graphs, model_a_loglikelihoods, model_b_loglikelihoods,
-             termination) = generator.sample(agent_model=model_a,
-                                             prior_model=model_b)
+            graphs, model_a_loglikelihoods, model_b_loglikelihoods, termination = (
+                generator.sample(agent_model=model_a, prior_model=model_b)
+            )
         else:
-            (graphs, model_b_loglikelihoods, model_a_loglikelihoods,
-             termination) = generator.sample(agent_model=model_a,
-                                             prior_model=model_b)
+            graphs, model_b_loglikelihoods, model_a_loglikelihoods, termination = (
+                generator.sample(agent_model=model_a, prior_model=model_b)
+            )
 
         # analyze properties of new graphs and save results
         validity, uniqueness = self.analyzer.evaluate_generated_graphs_rl(
@@ -1126,33 +1157,37 @@ class Workflow:
             training_set_properties=self.training_set_properties,
             step=self.current_epoch,
             is_agent=is_agent,
-            label=model_a_label
+            label=model_a_label,
         )
 
-        scores = self.scoring_function.compute_score(graphs=graphs,
-                                                    termination=termination,
-                                                    validity=validity,
-                                                    uniqueness=uniqueness)
+        scores = self.scoring_function.compute_score(
+            graphs=graphs,
+            termination=termination,
+            validity=validity,
+            uniqueness=uniqueness,
+        )
 
         if is_agent:
             util.log_likelihoods_to_tensorboard(
                 tb_writer=tb_writer,
                 step=self.current_epoch,
                 agent_loglikelihoods=-torch.clone(model_a_loglikelihoods),
-                prior_loglikelihoods=-torch.clone(model_b_loglikelihoods)
+                prior_loglikelihoods=-torch.clone(model_b_loglikelihoods),
             )
         else:
-            uniqueness = torch.where(scores > self.best_avg_score,
-                                     uniqueness,
-                                     torch.zeros(len(scores),
-                                     device=self.constants.device))
+            uniqueness = torch.where(
+                scores > self.best_avg_score,
+                uniqueness,
+                torch.zeros(len(scores), device=self.constants.device),
+            )
 
         loss_component = torch.mean(
             self.compute_loss_component(
                 scores=scores,
                 agent_loglikelihoods=model_a_loglikelihoods,
                 prior_loglikelihoods=model_b_loglikelihoods,
-                uniqueness=uniqueness)
+                uniqueness=uniqueness,
+            )
         )
 
         return loss_component, torch.mean(scores)
@@ -1161,11 +1196,15 @@ class Workflow:
         """
         Prints elapsed time since the program started running.
         """
-        stop_time    = time.time()
+        stop_time = time.time()
         elapsed_time = stop_time - self.start_time
         print(f"-- time elapsed: {elapsed_time:.5f} s", flush=True)
 
-    def train_epoch(self) -> float:  # TODO here come back and create a separate function for when batch size is > than acc steps
+    def train_epoch(
+        self,
+    ) -> (
+        float
+    ):  # TODO here come back and create a separate function for when batch size is > than acc steps
         """
         Performs one training epoch.
 
@@ -1174,15 +1213,17 @@ class Workflow:
             torch.Tensor : Average training loss.
         """
         print(f"* Training epoch {self.current_epoch}.", flush=True)
-        training_loss_tensor = torch.zeros(len(self.train_dataloader),
-                                           device=self.constants.device)
+        training_loss_tensor = torch.zeros(
+            len(self.train_dataloader), device=self.constants.device
+        )
 
         self.model.train()  # ensure model is in train mode
         self.model.zero_grad()
         self.optimizer.zero_grad()
         accumulation_counter = 0  # initialize the accumulation counter
-        for batch_idx, batch in tqdm(enumerate(self.train_dataloader),
-                                     total=len(self.train_dataloader)):
+        for batch_idx, batch in tqdm(
+            enumerate(self.train_dataloader), total=len(self.train_dataloader)
+        ):
             if self.constants.device != "cpu":
                 batch = [b.to(self.constants.device) for b in batch]
 
@@ -1190,17 +1231,21 @@ class Workflow:
             output = self.model(nodes, edges)
 
             batch_loss = self.loss(output=output, target_output=target_output)
-            training_loss_tensor[batch_idx] = batch_loss.item()  # use .item() to detach the loss value from the computation graph
+            training_loss_tensor[batch_idx] = (
+                batch_loss.item()
+            )  # use .item() to detach the loss value from the computation graph
 
-            batch_loss = batch_loss / self.accumulation_steps  # scale the loss down by the number of accumulation steps
+            batch_loss = (
+                batch_loss / self.accumulation_steps
+            )  # scale the loss down by the number of accumulation steps
             batch_loss.backward()  # accumulate gradients
 
             accumulation_counter += 1
             if accumulation_counter % self.accumulation_steps == 0:
-                self.optimizer.step()       # update parameters only after `accumulation_steps` batches
-                self.scheduler.step()       # update the learning rate
+                self.optimizer.step()  # update parameters only after `accumulation_steps` batches
+                self.scheduler.step()  # update the learning rate
                 self.optimizer.zero_grad()  # clear gradients after updating
-                accumulation_counter = 0    # reset the counter
+                accumulation_counter = 0  # reset the counter
 
         # ensure any remaining gradients are applied
         if accumulation_counter != 0:
@@ -1224,14 +1269,16 @@ class Workflow:
             torch.Tensor : Average validation loss.
         """
         print(f"* Evaluating epoch {self.current_epoch}.", flush=True)
-        validation_loss_tensor = torch.zeros(len(self.valid_dataloader),
-                                             device=self.constants.device)
+        validation_loss_tensor = torch.zeros(
+            len(self.valid_dataloader), device=self.constants.device
+        )
 
         self.model.eval()
         with torch.no_grad():
 
-            for batch_idx, batch in tqdm(enumerate(self.valid_dataloader),
-                                         total=len(self.valid_dataloader)):
+            for batch_idx, batch in tqdm(
+                enumerate(self.valid_dataloader), total=len(self.valid_dataloader)
+            ):
                 if self.constants.device != "cpu":
                     batch = [b.to(self.constants.device) for b in batch]
 
@@ -1243,8 +1290,7 @@ class Workflow:
 
         return torch.mean(validation_loss_tensor)
 
-    def loss(self, output : torch.Tensor, target_output : torch.Tensor) -> \
-        torch.Tensor:
+    def loss(self, output: torch.Tensor, target_output: torch.Tensor) -> torch.Tensor:
         """
         The graph generation loss is the KL divergence between the target and
         predicted actions.
@@ -1261,22 +1307,24 @@ class Workflow:
         # define activation function; note that one must use the softmax in the
         # KLDiv, never the sigmoid, as the distribution must sum to 1
         LogSoftmax = torch.nn.LogSoftmax(dim=1)
-        output     = LogSoftmax(output)
+        output = LogSoftmax(output)
 
         # normalize the target output (as can contain information on > 1 graph)
-        target_output = target_output/torch.sum(target_output, dim=1, keepdim=True)
+        target_output = target_output / torch.sum(target_output, dim=1, keepdim=True)
 
         # define loss function and calculate the los
         criterion = torch.nn.KLDivLoss(reduction="batchmean")
-        loss      = criterion(target=target_output, input=output)
+        loss = criterion(target=target_output, input=output)
 
         return loss
 
-    def compute_loss_component(self, scores : torch.Tensor,
-                               agent_loglikelihoods : torch.Tensor,
-                               prior_loglikelihoods : torch.Tensor,
-                               uniqueness : torch.Tensor) -> \
-                               torch.Tensor:
+    def compute_loss_component(
+        self,
+        scores: torch.Tensor,
+        agent_loglikelihoods: torch.Tensor,
+        prior_loglikelihoods: torch.Tensor,
+        uniqueness: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Computes the contributions to the loss from the log-likelihoods/scores
         of the two input models.
@@ -1304,8 +1352,8 @@ class Workflow:
         )
 
         difference = agent_loglikelihoods - augmented_prior_loglikelihoods
-        loss       = difference * difference
-        mask       = (uniqueness != 0).int()
-        loss       = loss * mask
+        loss = difference * difference
+        mask = (uniqueness != 0).int()
+        loss = loss * mask
 
         return loss

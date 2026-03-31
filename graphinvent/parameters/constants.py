@@ -5,6 +5,7 @@ depend on the input features, creating a `namedtuple` from them.
 If a `params.json` file exists in the job directory it overrides the defaults
 (falling back to the legacy `input.csv` format for backwards compatibility).
 """
+
 import ast
 import csv
 import json
@@ -17,7 +18,6 @@ from typing import Tuple
 
 import numpy as np
 import torch
-import rdkit
 from rdkit.Chem import AddHs
 from rdkit.Chem.rdchem import BondType
 from rdkit.Chem.rdmolfiles import SmilesMolSupplier
@@ -49,10 +49,10 @@ def scan_smiles_features(
                         (empty list when use_explicit_H or ignore_H is True).
         max_n_nodes   : Maximum heavy-atom count across all scanned molecules.
     """
-    atom_types_set    = set()
+    atom_types_set = set()
     formal_charge_set = set()
-    imp_H_set         = set()
-    max_n_nodes       = 0
+    imp_H_set = set()
+    max_n_nodes = 0
 
     for path in smi_paths:
         if not os.path.exists(path):
@@ -77,20 +77,19 @@ def scan_smiles_features(
                 if not use_explicit_H and not ignore_H:
                     imp_H_set.add(atom.GetTotalNumHs())
 
-    atom_types    = sorted(atom_types_set)
+    atom_types = sorted(atom_types_set)
     formal_charge = sorted(formal_charge_set)
-    imp_H         = sorted(imp_H_set)
+    imp_H = sorted(imp_H_set)
 
     return atom_types, formal_charge, imp_H, max_n_nodes
 
 
 def get_feature_dimensions(parameters: dict) -> Tuple[int, int, int, int]:
     """Returns dimensions for all node feature segments."""
-    n_atom_types    = len(parameters["atom_types"])
+    n_atom_types = len(parameters["atom_types"])
     n_formal_charge = len(parameters["formal_charge"])
-    n_numh          = (
-        int(not parameters["use_explicit_H"] and not parameters["ignore_H"])
-        * len(parameters["imp_H"])
+    n_numh = int(not parameters["use_explicit_H"] and not parameters["ignore_H"]) * len(
+        parameters["imp_H"]
     )
     n_chirality = int(parameters["use_chirality"]) * len(parameters["chirality"])
     return n_atom_types, n_formal_charge, n_numh, n_chirality
@@ -114,20 +113,39 @@ def get_tensor_dimensions(
     dim_nodes = [max_nodes, n_node_features]
     dim_edges = [max_nodes, max_nodes, n_edge_features]
 
-    use_chirality  = parameters["use_chirality"]
+    use_chirality = parameters["use_chirality"]
     use_explicit_H = parameters["use_explicit_H"]
-    ignore_H       = parameters["ignore_H"]
+    ignore_H = parameters["ignore_H"]
 
     if use_chirality:
         if use_explicit_H or ignore_H:
-            dim_f_add = [max_nodes, n_atom_types, n_formal_charge, n_chirality, n_edge_features]
+            dim_f_add = [
+                max_nodes,
+                n_atom_types,
+                n_formal_charge,
+                n_chirality,
+                n_edge_features,
+            ]
         else:
-            dim_f_add = [max_nodes, n_atom_types, n_formal_charge, n_num_h, n_chirality, n_edge_features]
+            dim_f_add = [
+                max_nodes,
+                n_atom_types,
+                n_formal_charge,
+                n_num_h,
+                n_chirality,
+                n_edge_features,
+            ]
     else:
         if use_explicit_H or ignore_H:
             dim_f_add = [max_nodes, n_atom_types, n_formal_charge, n_edge_features]
         else:
-            dim_f_add = [max_nodes, n_atom_types, n_formal_charge, n_num_h, n_edge_features]
+            dim_f_add = [
+                max_nodes,
+                n_atom_types,
+                n_formal_charge,
+                n_num_h,
+                n_edge_features,
+            ]
 
     dim_f_conn = [max_nodes, n_edge_features]
     dim_f_term = 1
@@ -166,9 +184,9 @@ def override_params(all_params: dict) -> dict:
 
     Looks for `params.json` first; falls back to legacy `input.csv`.
     """
-    job_dir  = Path(all_params["job_dir"])
+    job_dir = Path(all_params["job_dir"])
     json_path = job_dir / "params.json"
-    csv_path  = job_dir / "input.csv"
+    csv_path = job_dir / "input.csv"
 
     if json_path.exists():
         overrides = load_params(str(json_path))
@@ -198,7 +216,12 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
 
     # Normalize directory paths so they always end with exactly one '/'
     # regardless of whether the user included a trailing slash.
-    for _path_key in ("dataset_dir", "job_dir", "tensorboard_dir", "pretrained_model_dir"):
+    for _path_key in (
+        "dataset_dir",
+        "job_dir",
+        "tensorboard_dir",
+        "pretrained_model_dir",
+    ):
         if parameters.get(_path_key):
             parameters[_path_key] = str(Path(parameters[_path_key])) + "/"
 
@@ -218,25 +241,45 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
     # preprocessing_params.json (authoritative source written by the preprocessing
     # step).  These never need to be re-specified in the job's params.json.
     _FEATURE_KEYS = (
-        "atom_types", "formal_charge", "imp_H", "chirality",
-        "max_n_nodes", "use_aromatic_bonds", "use_canon",
-        "use_chirality", "use_explicit_H", "ignore_H",
+        "atom_types",
+        "formal_charge",
+        "imp_H",
+        "chirality",
+        "max_n_nodes",
+        "use_aromatic_bonds",
+        "use_canon",
+        "use_chirality",
+        "use_explicit_H",
+        "ignore_H",
     )
     # List/int keys that can be explicitly overridden in non-preprocess job JSONs.
     # An empty list [] or 0 means "inherit from preprocessing_params.json".
     _OVERRIDABLE_LIST_KEYS = ("atom_types", "formal_charge", "imp_H", "chirality")
-    _OVERRIDABLE_INT_KEYS  = ("max_n_nodes",)
+    _OVERRIDABLE_INT_KEYS = ("max_n_nodes",)
 
     # For transfer/RL jobs using pretrained_model_path, load GGNN architecture
     # parameters from the pretrained model's params_all.json so they don't need
     # to be re-specified in the job config.
     _ARCH_KEYS = (
-        "enn_depth", "enn_hidden_dim", "enn_dropout_p",
-        "mlp1_depth", "mlp1_hidden_dim", "mlp1_dropout_p",
-        "mlp2_depth", "mlp2_hidden_dim", "mlp2_dropout_p",
-        "gather_att_depth", "gather_att_hidden_dim", "gather_att_dropout_p",
-        "gather_emb_depth", "gather_emb_hidden_dim", "gather_emb_dropout_p",
-        "gather_width", "hidden_node_features", "message_passes", "message_size",
+        "enn_depth",
+        "enn_hidden_dim",
+        "enn_dropout_p",
+        "mlp1_depth",
+        "mlp1_hidden_dim",
+        "mlp1_dropout_p",
+        "mlp2_depth",
+        "mlp2_hidden_dim",
+        "mlp2_dropout_p",
+        "gather_att_depth",
+        "gather_att_hidden_dim",
+        "gather_att_dropout_p",
+        "gather_emb_depth",
+        "gather_emb_hidden_dim",
+        "gather_emb_dropout_p",
+        "gather_width",
+        "hidden_node_features",
+        "message_passes",
+        "message_size",
     )
     if parameters.get("job_type") in ("transfer", "rl", "generate"):
         _pth_path = parameters.get("pretrained_model_path", "")
@@ -251,7 +294,11 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
                 _pretrain_params = load_params(str(_pretrain_params_path))
                 # Read raw job params to detect any explicit arch overrides.
                 _job_params_path = Path(parameters["job_dir"]) / "params.json"
-                _raw_job = load_params(str(_job_params_path)) if _job_params_path.exists() else {}
+                _raw_job = (
+                    load_params(str(_job_params_path))
+                    if _job_params_path.exists()
+                    else {}
+                )
                 for _k in _ARCH_KEYS:
                     if _k not in _raw_job and _k in _pretrain_params:
                         parameters[_k] = _pretrain_params[_k]
@@ -266,7 +313,9 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
         # Read the raw job params.json before it was merged with defaults, so we
         # can distinguish "user explicitly set a non-empty value" from "default []".
         _job_params_path = Path(parameters["job_dir"]) / "params.json"
-        _raw_job = load_params(str(_job_params_path)) if _job_params_path.exists() else {}
+        _raw_job = (
+            load_params(str(_job_params_path)) if _job_params_path.exists() else {}
+        )
         job_feature_overrides: dict = {}
         for _k in _OVERRIDABLE_LIST_KEYS:
             _v = _raw_job.get(_k, [])
@@ -277,9 +326,9 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
             if _v:  # non-zero → explicit override
                 job_feature_overrides[_k] = _v
 
-        dataset_dir  = parameters.get("dataset_dir", "")
+        dataset_dir = parameters.get("dataset_dir", "")
         json_preproc = Path(dataset_dir) / "preprocessing_params.json"
-        csv_preproc  = Path(dataset_dir) / "preprocessing_params.csv"
+        csv_preproc = Path(dataset_dir) / "preprocessing_params.csv"
 
         if json_preproc.exists():
             preproc_params = load_params(str(json_preproc))
@@ -327,8 +376,11 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
             dataset_dir + "valid.smi",
             dataset_dir + "test.smi",
         ]
-        _primary_paths = [smiles_file] if smiles_file and os.path.exists(smiles_file) \
-                         else split_files
+        _primary_paths = (
+            [smiles_file]
+            if smiles_file and os.path.exists(smiles_file)
+            else split_files
+        )
 
         if parameters.get("auto_detect_features", True):
             smi_paths = list(_primary_paths)
@@ -341,32 +393,47 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
                 extra_path = Path(extra_dataset)
                 if extra_path.is_file():
                     smi_paths.append(str(extra_path))
-                    print(f"* Also scanning extra dataset for features: {extra_dataset}", flush=True)
+                    print(
+                        f"* Also scanning extra dataset for features: {extra_dataset}",
+                        flush=True,
+                    )
                 elif extra_path.is_dir():
                     for _name in ("train.smi", "valid.smi", "test.smi"):
                         _p = extra_path / _name
                         if _p.exists():
                             smi_paths.append(str(_p))
-                    print(f"* Also scanning extra dataset for features: {extra_dataset}", flush=True)
+                    print(
+                        f"* Also scanning extra dataset for features: {extra_dataset}",
+                        flush=True,
+                    )
                 else:
-                    print(f"-- Warning: extra_dataset path not found: {extra_dataset}", flush=True)
+                    print(
+                        f"-- Warning: extra_dataset path not found: {extra_dataset}",
+                        flush=True,
+                    )
 
-            print("* Auto-detecting molecular features from SMILES files...", flush=True)
+            print(
+                "* Auto-detecting molecular features from SMILES files...", flush=True
+            )
             atom_types, formal_charge, imp_H, max_n_nodes = scan_smiles_features(
                 smi_paths=smi_paths,
                 use_explicit_H=parameters.get("use_explicit_H", False),
                 ignore_H=parameters.get("ignore_H", False),
             )
-            parameters["atom_types"]    = atom_types
+            parameters["atom_types"] = atom_types
             parameters["formal_charge"] = formal_charge
-            parameters["max_n_nodes"]   = max_n_nodes
-            if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
+            parameters["max_n_nodes"] = max_n_nodes
+            if not parameters.get("use_explicit_H", False) and not parameters.get(
+                "ignore_H", False
+            ):
                 parameters["imp_H"] = imp_H
             if parameters.get("use_chirality", False):
                 parameters["chirality"] = ["None", "R", "S"]
             print(f"  atom_types    : {atom_types}", flush=True)
             print(f"  formal_charge : {formal_charge}", flush=True)
-            if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
+            if not parameters.get("use_explicit_H", False) and not parameters.get(
+                "ignore_H", False
+            ):
                 print(f"  imp_H         : {imp_H}", flush=True)
             print(f"  max_n_nodes   : {max_n_nodes}", flush=True)
         else:
@@ -376,34 +443,48 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
             for _k in ("atom_types", "formal_charge"):
                 if not parameters.get(_k):
                     needs_auto.append(_k)
-            if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
+            if not parameters.get("use_explicit_H", False) and not parameters.get(
+                "ignore_H", False
+            ):
                 if not parameters.get("imp_H"):
                     needs_auto.append("imp_H")
             if not parameters.get("max_n_nodes"):
                 needs_auto.append("max_n_nodes")
 
             if needs_auto:
-                print(f"* auto_detect_features=false — auto-detecting {needs_auto} from SMILES...",
-                      flush=True)
+                print(
+                    f"* auto_detect_features=false — auto-detecting {needs_auto} from SMILES...",
+                    flush=True,
+                )
                 _auto_at, _auto_fc, _auto_imph, _auto_nn = scan_smiles_features(
                     smi_paths=_primary_paths,
                     use_explicit_H=parameters.get("use_explicit_H", False),
                     ignore_H=parameters.get("ignore_H", False),
                 )
-                if "atom_types"    in needs_auto: parameters["atom_types"]    = _auto_at
-                if "formal_charge" in needs_auto: parameters["formal_charge"] = _auto_fc
-                if "imp_H"         in needs_auto: parameters["imp_H"]         = _auto_imph
-                if "max_n_nodes"   in needs_auto: parameters["max_n_nodes"]   = _auto_nn
+                if "atom_types" in needs_auto:
+                    parameters["atom_types"] = _auto_at
+                if "formal_charge" in needs_auto:
+                    parameters["formal_charge"] = _auto_fc
+                if "imp_H" in needs_auto:
+                    parameters["imp_H"] = _auto_imph
+                if "max_n_nodes" in needs_auto:
+                    parameters["max_n_nodes"] = _auto_nn
             else:
-                print("* auto_detect_features=false — using all feature parameters from params.json.",
-                      flush=True)
+                print(
+                    "* auto_detect_features=false — using all feature parameters from params.json.",
+                    flush=True,
+                )
 
-            if parameters.get("use_chirality", False) and not parameters.get("chirality"):
+            if parameters.get("use_chirality", False) and not parameters.get(
+                "chirality"
+            ):
                 parameters["chirality"] = ["None", "R", "S"]
 
             print(f"  atom_types    : {parameters.get('atom_types')}", flush=True)
             print(f"  formal_charge : {parameters.get('formal_charge')}", flush=True)
-            if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
+            if not parameters.get("use_explicit_H", False) and not parameters.get(
+                "ignore_H", False
+            ):
                 print(f"  imp_H         : {parameters.get('imp_H')}", flush=True)
             print(f"  max_n_nodes   : {parameters.get('max_n_nodes')}", flush=True)
 
@@ -415,53 +496,59 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
     n_edge_features = len(bondtype_to_int)
 
     # Node feature dimensions
-    n_atom_types, n_formal_charge, n_imp_H, n_chirality = get_feature_dimensions(parameters)
+    n_atom_types, n_formal_charge, n_imp_H, n_chirality = get_feature_dimensions(
+        parameters
+    )
     n_node_features = n_atom_types + n_formal_charge + n_imp_H + n_chirality
 
     # Tensor dimensions
-    (dim_nodes, dim_edges, dim_f_add, dim_f_conn, dim_f_term) = get_tensor_dimensions(
-        n_atom_types, n_formal_charge, n_imp_H, n_chirality,
-        n_node_features, n_edge_features, parameters,
+    dim_nodes, dim_edges, dim_f_add, dim_f_conn, dim_f_term = get_tensor_dimensions(
+        n_atom_types,
+        n_formal_charge,
+        n_imp_H,
+        n_chirality,
+        n_node_features,
+        n_edge_features,
+        parameters,
     )
 
-    len_f_add           = int(np.prod(dim_f_add))
-    len_f_add_per_node  = int(np.prod(dim_f_add[1:]))
-    len_f_conn          = int(np.prod(dim_f_conn))
+    len_f_add = int(np.prod(dim_f_add))
+    len_f_add_per_node = int(np.prod(dim_f_add[1:]))
+    len_f_conn = int(np.prod(dim_f_conn))
     len_f_conn_per_node = int(np.prod(dim_f_conn[1:]))
 
     constants_dict = {
-        "big_negative"       : -1e6,
-        "big_positive"       : 1e6,
-        "bondtype_to_int"    : bondtype_to_int,
-        "int_to_bondtype"    : int_to_bondtype,
-        "n_edge_features"    : n_edge_features,
-        "n_atom_types"       : n_atom_types,
-        "n_formal_charge"    : n_formal_charge,
-        "n_imp_H"            : n_imp_H,
-        "n_chirality"        : n_chirality,
-        "n_node_features"    : n_node_features,
-        "dim_nodes"          : dim_nodes,
-        "dim_edges"          : dim_edges,
-        "dim_f_add"          : dim_f_add,
-        "dim_f_conn"         : dim_f_conn,
-        "dim_f_term"         : dim_f_term,
-        "dim_action_probs"            : [int(np.prod(dim_f_add)) + int(np.prod(dim_f_conn)) + 1],
-        "len_f_add"          : len_f_add,
-        "len_f_add_per_node" : len_f_add_per_node,
-        "len_f_conn"         : len_f_conn,
+        "big_negative": -1e6,
+        "big_positive": 1e6,
+        "bondtype_to_int": bondtype_to_int,
+        "int_to_bondtype": int_to_bondtype,
+        "n_edge_features": n_edge_features,
+        "n_atom_types": n_atom_types,
+        "n_formal_charge": n_formal_charge,
+        "n_imp_H": n_imp_H,
+        "n_chirality": n_chirality,
+        "n_node_features": n_node_features,
+        "dim_nodes": dim_nodes,
+        "dim_edges": dim_edges,
+        "dim_f_add": dim_f_add,
+        "dim_f_conn": dim_f_conn,
+        "dim_f_term": dim_f_term,
+        "dim_action_probs": [int(np.prod(dim_f_add)) + int(np.prod(dim_f_conn)) + 1],
+        "len_f_add": len_f_add,
+        "len_f_add_per_node": len_f_add_per_node,
+        "len_f_conn": len_f_conn,
         "len_f_conn_per_node": len_f_conn_per_node,
     }
 
     constants_dict.update(parameters)
 
-    constants_dict["test_set"]       = parameters["dataset_dir"] + "test.smi"
-    constants_dict["training_set"]   = parameters["dataset_dir"] + "train.smi"
+    constants_dict["test_set"] = parameters["dataset_dir"] + "test.smi"
+    constants_dict["training_set"] = parameters["dataset_dir"] + "train.smi"
     constants_dict["validation_set"] = parameters["dataset_dir"] + "valid.smi"
 
     if constants_dict["job_type"] != "preprocess":
         print(
-            "* Running job using HDF datasets located at "
-            + parameters["dataset_dir"],
+            "* Running job using HDF datasets located at " + parameters["dataset_dir"],
             flush=True,
         )
 
@@ -470,7 +557,9 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
         for qsar_model_name, qsar_model_path in constants_dict["qsar_models"].items():
             with open(qsar_model_path, "rb") as f:
                 model_dict = pickle.load(f)
-                constants_dict["qsar_models"][qsar_model_name] = model_dict["classifier_sv"]
+                constants_dict["qsar_models"][qsar_model_name] = model_dict[
+                    "classifier_sv"
+                ]
 
     Constants = namedtuple("CONSTANTS", sorted(constants_dict))
     return Constants(**constants_dict)

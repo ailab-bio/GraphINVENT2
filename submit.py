@@ -40,6 +40,7 @@ length as "dataset" (null entries use Mode B for that dataset, path entries use
 Mode A), or a single path (applies to the first dataset only; remaining datasets
 use Mode B).  Mixed Mode A and Mode B datasets are fully supported.
 """
+
 import argparse
 import json
 import subprocess
@@ -70,6 +71,7 @@ def load_config(config_path: str) -> dict:
 # Dataset normalization helpers
 # ---------------------------------------------------------------------------
 
+
 def _normalize_datasets(submission: dict) -> tuple:
     """
     Returns (datasets, data_paths, smiles_files) as equal-length lists.
@@ -90,7 +92,7 @@ def _normalize_datasets(submission: dict) -> tuple:
         return [None], [raw_dp if isinstance(raw_dp, list) else raw_dp], [None]
     raw_sf = submission.get("smiles_file")
 
-    datasets   = raw_ds if isinstance(raw_ds, list) else [raw_ds]
+    datasets = raw_ds if isinstance(raw_ds, list) else [raw_ds]
     data_paths = raw_dp if isinstance(raw_dp, list) else [raw_dp]
 
     if len(data_paths) == 1 and len(datasets) > 1:
@@ -142,7 +144,7 @@ def _resolve_dataset_from_pretrained(submission: dict, job_params: dict) -> None
         return
     # dataset_dir is like "data/datasets/debug/" → dataset="debug", data_path="data/datasets"
     dataset_path = Path(dataset_dir)
-    submission["dataset"]   = dataset_path.name
+    submission["dataset"] = dataset_path.name
     submission["data_path"] = str(dataset_path.parent)
     print(
         f"* No dataset specified — using pretrained model's dataset: "
@@ -155,17 +157,17 @@ def _resolve_dataset_from_pretrained(submission: dict, job_params: dict) -> None
 # Config validation
 # ---------------------------------------------------------------------------
 
-_VALID_JOB_TYPES   = {"preprocess", "pretrain", "transfer", "rl", "generate"}
+_VALID_JOB_TYPES = {"preprocess", "pretrain", "transfer", "rl", "generate"}
 _VALID_SPLIT_TYPES = {"random", "butina", "custom"}
 
 _REQUIRED_SUBMISSION = set()
 
 _REQUIRED_JOB: dict = {
     "preprocess": {"job_type"},
-    "pretrain":   {"job_type"},
-    "transfer":   {"job_type"},
-    "rl":         {"job_type", "score_components", "score_thresholds"},
-    "generate":   {"job_type"},
+    "pretrain": {"job_type"},
+    "transfer": {"job_type"},
+    "rl": {"job_type", "score_components", "score_thresholds"},
+    "generate": {"job_type"},
 }
 
 
@@ -193,20 +195,32 @@ def validate_config(
         )
     job_type_for_dataset_check = job_params.get("job_type")
     _pretrained_optional_types = ("rl", "transfer", "generate")
-    if not submission.get("data_path") and job_type_for_dataset_check not in _pretrained_optional_types:
+    if (
+        not submission.get("data_path")
+        and job_type_for_dataset_check not in _pretrained_optional_types
+    ):
         errors.append('"data_path" is required in "submission".')
-    if not submission.get("data_path") and job_type_for_dataset_check in _pretrained_optional_types:
+    if (
+        not submission.get("data_path")
+        and job_type_for_dataset_check in _pretrained_optional_types
+    ):
         if not job_params.get("pretrained_model_path"):
             errors.append(
                 '"data_path" is required in "submission" when '
                 '"pretrained_model_path" is not set.'
             )
-    if not submission.get("dataset") and job_type_for_dataset_check not in _pretrained_optional_types:
+    if (
+        not submission.get("dataset")
+        and job_type_for_dataset_check not in _pretrained_optional_types
+    ):
         errors.append(
             '"dataset" is required in "submission" for '
             f'job_type="{job_type_for_dataset_check}".'
         )
-    if not submission.get("dataset") and job_type_for_dataset_check in _pretrained_optional_types:
+    if (
+        not submission.get("dataset")
+        and job_type_for_dataset_check in _pretrained_optional_types
+    ):
         if not job_params.get("pretrained_model_path"):
             errors.append(
                 '"dataset" is required in "submission" when '
@@ -284,7 +298,8 @@ def validate_config(
             else:
                 # Mode B: all three split files must be present
                 missing_smi = [
-                    name for name in ("train.smi", "valid.smi", "test.smi")
+                    name
+                    for name in ("train.smi", "valid.smi", "test.smi")
                     if not (dataset_dir / name).exists()
                 ]
                 if missing_smi:
@@ -293,7 +308,7 @@ def validate_config(
                         f"contain train.smi, valid.smi, and test.smi — "
                         f"missing: {', '.join(missing_smi)}.\n"
                         f'  Place the pre-split files there, or set "smiles_file" '
-                        f'to a .smi path for automatic splitting.'
+                        f"to a .smi path for automatic splitting."
                     )
 
     # --- RL-specific checks ---
@@ -323,7 +338,7 @@ def validate_config(
                     if max_n and n >= max_n:
                         errors.append(
                             f'"score_components" contains "{comp}", but the target '
-                            f"size ({n}) must be strictly less than \"max_n_nodes\" "
+                            f'size ({n}) must be strictly less than "max_n_nodes" '
                             f"({max_n}). Use target_size={max_n - 1} or smaller."
                         )
                 except ValueError:
@@ -332,8 +347,8 @@ def validate_config(
     # --- generation / training: pretrained model checks ---
     if job_type in ("transfer", "rl", "generate"):
         model_path = job_params.get("pretrained_model_path", "")
-        model_dir  = job_params.get("pretrained_model_dir", "")
-        epoch      = job_params.get("generation_epoch")
+        model_dir = job_params.get("pretrained_model_dir", "")
+        epoch = job_params.get("generation_epoch")
         if model_path:
             if not Path(model_path).exists():
                 errors.append(
@@ -388,9 +403,10 @@ def _raise(config_path: str, errors: list) -> None:
 # Output directory creation
 # ---------------------------------------------------------------------------
 
+
 def create_output_directories(dataset: str, job_type: str) -> tuple:
     """Create the output and tensorboard directories for this job."""
-    base_path        = Path("output") / dataset / job_type
+    base_path = Path("output") / dataset / job_type
     tensorboard_path = base_path / "tensorboard"
 
     base_path.mkdir(parents=True, exist_ok=True)
@@ -404,6 +420,7 @@ def create_output_directories(dataset: str, job_type: str) -> tuple:
 # Single-job submission
 # ---------------------------------------------------------------------------
 
+
 def submit_jobs(
     submission: dict,
     job_params: dict,
@@ -414,8 +431,8 @@ def submit_jobs(
 ) -> None:
     """Build a job directory and launch (or schedule) one job."""
     job_name = submission.get("job_name", "job")
-    job_dir  = base_path / job_name
-    tb_dir   = tensorboard_path / job_name
+    job_dir = base_path / job_name
+    tb_dir = tensorboard_path / job_name
 
     job_dir.mkdir(parents=True, exist_ok=True)
     tb_dir.mkdir(parents=True, exist_ok=True)
@@ -424,9 +441,9 @@ def submit_jobs(
     if extra_params:
         params.update(extra_params)
 
-    params["job_dir"]         = str(job_dir) + "/"
+    params["job_dir"] = str(job_dir) + "/"
     params["tensorboard_dir"] = str(tb_dir) + "/"
-    params["dataset_dir"]     = str(dataset_dir) + "/"
+    params["dataset_dir"] = str(dataset_dir) + "/"
 
     smiles_file = submission.get("smiles_file") or None
     if smiles_file is not None:
@@ -441,9 +458,9 @@ def submit_jobs(
 
 
 def _submit_single_job(submission: dict, job_dir: Path) -> None:
-    python_path      = submission.get("python_path", "python")
+    python_path = submission.get("python_path", "python")
     graphinvent_path = Path(submission.get("graphinvent_path", "./graphinvent"))
-    main_py          = graphinvent_path / "main.py"
+    main_py = graphinvent_path / "main.py"
 
     if submission.get("use_slurm", False):
         script_path = _write_submission_script(submission, job_dir, main_py)
@@ -457,13 +474,11 @@ def _submit_single_job(submission: dict, job_dir: Path) -> None:
         )
 
 
-def _write_submission_script(
-    submission: dict, job_dir: Path, main_py: Path
-) -> Path:
-    slurm       = submission.get("slurm", {})
+def _write_submission_script(submission: dict, job_dir: Path, main_py: Path) -> Path:
+    slurm = submission.get("slurm", {})
     python_path = submission.get("python_path", "python")
     script_path = job_dir / "submit.sh"
-    output_log  = job_dir / "output.o${SLURM_JOB_ID}"
+    output_log = job_dir / "output.o${SLURM_JOB_ID}"
 
     lines = [
         "#!/bin/bash",
@@ -489,6 +504,7 @@ def _write_submission_script(
 # ---------------------------------------------------------------------------
 # Multi-dataset preprocessing
 # ---------------------------------------------------------------------------
+
 
 def _compute_union_vocab(
     dataset_dirs: list,
@@ -539,8 +555,8 @@ def submit_multi_preprocess(
     Each dataset may independently use Mode A (smiles_files[i] is a path) or
     Mode B (smiles_files[i] is None).
     """
-    use_explicit_H   = job_params.get("use_explicit_H", False)
-    ignore_H         = job_params.get("ignore_H", False)
+    use_explicit_H = job_params.get("use_explicit_H", False)
+    ignore_H = job_params.get("ignore_H", False)
     graphinvent_path = submission.get("graphinvent_path", "./graphinvent")
 
     print(
@@ -565,9 +581,9 @@ def submit_multi_preprocess(
     # Set auto_detect_features=False so constants.py uses these values as-is.
     vocab_params = {
         "auto_detect_features": False,
-        "atom_types"          : vocab["atom_types"],
-        "formal_charge"       : vocab["formal_charge"],
-        "max_n_nodes"         : vocab["max_n_nodes"],
+        "atom_types": vocab["atom_types"],
+        "formal_charge": vocab["formal_charge"],
+        "max_n_nodes": vocab["max_n_nodes"],
     }
     if not use_explicit_H and not ignore_H:
         vocab_params["imp_H"] = vocab["imp_H"]
@@ -576,7 +592,9 @@ def submit_multi_preprocess(
 
     for dataset, dataset_dir, sf in zip(datasets, dataset_dirs, smiles_files):
         print(f"\n* Preprocessing dataset: {dataset}", flush=True)
-        base_path, tensorboard_path = create_output_directories(dataset, job_params["job_type"])
+        base_path, tensorboard_path = create_output_directories(
+            dataset, job_params["job_type"]
+        )
         # Give each per-dataset submission its own dataset name and smiles_file
         # so that SLURM job names and Mode A splitting are handled correctly.
         single_submission = {**submission, "dataset": dataset, "smiles_file": sf}
@@ -594,8 +612,9 @@ def submit_multi_preprocess(
 # Entry point
 # ---------------------------------------------------------------------------
 
+
 def main():
-    args   = parse_args()
+    args = parse_args()
     config = load_config(args.config)
 
     submission = config["submission"]
@@ -605,9 +624,14 @@ def main():
         _resolve_dataset_from_pretrained(submission, job_params)
 
     datasets, data_paths, smiles_files = _normalize_datasets(submission)
-    dataset_dirs = [Path(dp) / ds if (dp and ds) else Path("") for dp, ds in zip(data_paths, datasets)]
+    dataset_dirs = [
+        Path(dp) / ds if (dp and ds) else Path("")
+        for dp, ds in zip(data_paths, datasets)
+    ]
 
-    validate_config(args.config, submission, job_params, datasets, data_paths, smiles_files)
+    validate_config(
+        args.config, submission, job_params, datasets, data_paths, smiles_files
+    )
 
     is_multi_preprocess = (
         job_params.get("job_type") == "preprocess" and len(datasets) > 1

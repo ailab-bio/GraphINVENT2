@@ -1,7 +1,9 @@
 """
 Defines the `SummationMPNN` base class for message-passing neural networks.
 """
+
 from collections import namedtuple
+
 import torch
 
 
@@ -19,17 +21,19 @@ class SummationMPNN(torch.nn.Module):
     Concrete model classes (e.g. `GGNN`) inherit from this class and implement
     `message_terms`, `update`, and `readout`.
     """
+
     def __init__(self, constants: namedtuple):
         super().__init__()
 
         self.hidden_node_features = constants.hidden_node_features
-        self.edge_features        = constants.n_edge_features
-        self.message_size         = constants.message_size
-        self.message_passes       = constants.message_passes
-        self.constants            = constants
+        self.edge_features = constants.n_edge_features
+        self.message_size = constants.message_size
+        self.message_passes = constants.message_passes
+        self.constants = constants
 
-    def message_terms(self, nodes: torch.Tensor, node_neighbours: torch.Tensor,
-                      edges: torch.Tensor) -> torch.Tensor:
+    def message_terms(
+        self, nodes: torch.Tensor, node_neighbours: torch.Tensor, edges: torch.Tensor
+    ) -> torch.Tensor:
         """
         Computes the outgoing message from each (node, neighbour) edge pair.
 
@@ -66,8 +70,12 @@ class SummationMPNN(torch.nn.Module):
         """
         raise NotImplementedError
 
-    def readout(self, hidden_nodes: torch.Tensor, input_nodes: torch.Tensor,
-                node_mask: torch.Tensor) -> torch.Tensor:
+    def readout(
+        self,
+        hidden_nodes: torch.Tensor,
+        input_nodes: torch.Tensor,
+        node_mask: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Produces the action probabilities prediction from the final node hidden states.
 
@@ -111,39 +119,56 @@ class SummationMPNN(torch.nn.Module):
         adjacency = torch.sum(edges, dim=3)
 
         # Collect all non-zero (batch, src_node, dst_node) index triples
-        (edge_batch_batch_idc,
-         edge_batch_node_idc,
-         edge_batch_nghb_idc) = adjacency.nonzero(as_tuple=True)
+        edge_batch_batch_idc, edge_batch_node_idc, edge_batch_nghb_idc = (
+            adjacency.nonzero(as_tuple=True)
+        )
 
         # Collect all (batch, node) pairs that have at least one neighbour
-        (node_batch_batch_idc, node_batch_node_idc) = adjacency.sum(-1).nonzero(as_tuple=True)
+        node_batch_batch_idc, node_batch_node_idc = adjacency.sum(-1).nonzero(
+            as_tuple=True
+        )
 
         # message_summation_matrix[i, j] = 1 iff edge j is incident to node i
         same_batch = node_batch_batch_idc.view(-1, 1) == edge_batch_batch_idc
-        same_node  = node_batch_node_idc.view(-1, 1)  == edge_batch_node_idc
+        same_node = node_batch_node_idc.view(-1, 1) == edge_batch_node_idc
         message_summation_matrix = (same_batch * same_node).float()
 
-        edge_batch_edges = edges[edge_batch_batch_idc, edge_batch_node_idc, edge_batch_nghb_idc, :]
+        edge_batch_edges = edges[
+            edge_batch_batch_idc, edge_batch_node_idc, edge_batch_nghb_idc, :
+        ]
 
         # Initialise hidden states from input node features (zero-padded to hidden dim)
-        hidden_nodes = torch.zeros(nodes.shape[0], nodes.shape[1],
-                                   self.hidden_node_features,
-                                   device=self.constants.device)
-        hidden_nodes[:nodes.shape[0], :nodes.shape[1], :nodes.shape[2]] = nodes.clone()
+        hidden_nodes = torch.zeros(
+            nodes.shape[0],
+            nodes.shape[1],
+            self.hidden_node_features,
+            device=self.constants.device,
+        )
+        hidden_nodes[: nodes.shape[0], : nodes.shape[1], : nodes.shape[2]] = (
+            nodes.clone()
+        )
         node_batch_nodes = hidden_nodes[node_batch_batch_idc, node_batch_node_idc, :]
 
         for _ in range(self.message_passes):
-            edge_batch_nodes = hidden_nodes[edge_batch_batch_idc, edge_batch_node_idc, :]
-            edge_batch_nghbs  = hidden_nodes[edge_batch_batch_idc, edge_batch_nghb_idc, :]
+            edge_batch_nodes = hidden_nodes[
+                edge_batch_batch_idc, edge_batch_node_idc, :
+            ]
+            edge_batch_nghbs = hidden_nodes[
+                edge_batch_batch_idc, edge_batch_nghb_idc, :
+            ]
 
-            message_terms = self.message_terms(edge_batch_nodes, edge_batch_nghbs, edge_batch_edges)
+            message_terms = self.message_terms(
+                edge_batch_nodes, edge_batch_nghbs, edge_batch_edges
+            )
             if len(message_terms.size()) == 1:
                 message_terms = message_terms.unsqueeze(0)
 
             messages = torch.matmul(message_summation_matrix, message_terms)
 
             node_batch_nodes = self.update(node_batch_nodes, messages)
-            hidden_nodes[node_batch_batch_idc, node_batch_node_idc, :] = node_batch_nodes.clone()
+            hidden_nodes[node_batch_batch_idc, node_batch_node_idc, :] = (
+                node_batch_nodes.clone()
+            )
 
         node_mask = adjacency.sum(-1) != 0
         return self.readout(hidden_nodes, nodes, node_mask)

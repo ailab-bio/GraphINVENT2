@@ -20,14 +20,16 @@ with a list of the paths to all the HDFs to combine.
 Then, run:
 python combine_HDFs.py
 """
+
 import csv
-import numpy as np
-import h5py
-import torch
 from typing import Union
 
+import h5py
+import numpy as np
+import torch
 
-def load_ts_properties_from_csv(csv_path : str) -> Union[dict, None]:
+
+def load_ts_properties_from_csv(csv_path: str) -> Union[dict, None]:
     """
     Loads CSV file containing training set properties and returns contents as a dictionary.
     """
@@ -36,9 +38,9 @@ def load_ts_properties_from_csv(csv_path : str) -> Union[dict, None]:
     # read dictionaries from csv
     try:
         with open(csv_path, "r") as csv_file:
-            reader   = csv.reader(csv_file, delimiter=";")
+            reader = csv.reader(csv_file, delimiter=";")
             csv_dict = dict(reader)
-    except:
+    except Exception:
         return None
 
     # fix file types within dict in going from `csv_dict` --> `properties_dict`
@@ -59,12 +61,13 @@ def load_ts_properties_from_csv(csv_path : str) -> Union[dict, None]:
             properties_dict[tuple_key] = value
 
         # convert any `list`s to `torch.Tensor`s (for consistency)
-        if type(properties_dict[tuple_key]) == list:
+        if isinstance(properties_dict[tuple_key], list):
             properties_dict[tuple_key] = torch.Tensor(properties_dict[tuple_key])
 
     return properties_dict
 
-def write_ts_properties_to_csv(ts_properties_dict : dict) -> None:
+
+def write_ts_properties_to_csv(ts_properties_dict: dict) -> None:
     """
     Writes the training set properties in `ts_properties_dict` to a CSV file.
     """
@@ -76,15 +79,16 @@ def write_ts_properties_to_csv(ts_properties_dict : dict) -> None:
         for key, value in ts_properties_dict.items():
             if "validity_tensor" in key:
                 continue  # skip writing the validity tensor because it is really long
-            elif type(value) == np.ndarray:
+            elif isinstance(value, np.ndarray):
                 csv_writer.writerow([key, list(value)])
-            elif type(value) == torch.Tensor:
+            elif isinstance(value, torch.Tensor):
                 try:
                     csv_writer.writerow([key, float(value)])
                 except ValueError:
                     csv_writer.writerow([key, [float(i) for i in value]])
             else:
                 csv_writer.writerow([key, value])
+
 
 def get_dims() -> dict:
     """
@@ -94,13 +98,14 @@ def get_dims() -> dict:
     dims = {}
     dims["nodes"] = [max_n_nodes, n_atom_types + n_formal_charges]
     dims["edges"] = [max_n_nodes, max_n_nodes, n_bond_types]
-    dim_f_add     = [max_n_nodes, n_atom_types, n_formal_charges, n_bond_types]
-    dim_f_conn    = [max_n_nodes, n_bond_types]
-    dims["action_probs"]  = [np.prod(dim_f_add) + np.prod(dim_f_conn) + 1]
+    dim_f_add = [max_n_nodes, n_atom_types, n_formal_charges, n_bond_types]
+    dim_f_conn = [max_n_nodes, n_bond_types]
+    dims["action_probs"] = [np.prod(dim_f_add) + np.prod(dim_f_conn) + 1]
 
     return dims
 
-def get_total_n_subgraphs(paths : list) -> int:
+
+def get_total_n_subgraphs(paths: list) -> int:
     """
     Gets the total number of subgraphs saved in all the HDF files in the `paths`,
     where `paths` is a list of strings containing the path to each HDF file we want
@@ -109,32 +114,35 @@ def get_total_n_subgraphs(paths : list) -> int:
     total_n_subgraphs = 0
     for path in paths:
         print("path:", path)
-        hdf_file           = h5py.File(path, "r")
-        nodes              = hdf_file.get("nodes")
-        n_subgraphs        = nodes.shape[0]
+        hdf_file = h5py.File(path, "r")
+        nodes = hdf_file.get("nodes")
+        n_subgraphs = nodes.shape[0]
         total_n_subgraphs += n_subgraphs
         hdf_file.close()
 
     return total_n_subgraphs
 
-def main(paths : list, training_set : bool) -> None:
+
+def main(paths: list, training_set: bool) -> None:
     """
     Combine many small HDF files (their paths defined in `paths`) into one large HDF file.
     """
     total_n_subgraphs = get_total_n_subgraphs(paths)
-    dims              = get_dims()
+    dims = get_dims()
 
     print(f"* Creating HDF file to contain {total_n_subgraphs} subgraphs")
     new_hdf_file = h5py.File(f"data/{dataset}/{split}.h5", "a")
-    new_dataset_nodes = new_hdf_file.create_dataset("nodes",
-                                                    (total_n_subgraphs, *dims["nodes"]),
-                                                    dtype=np.dtype("int8"))
-    new_dataset_edges = new_hdf_file.create_dataset("edges",
-                                                    (total_n_subgraphs, *dims["edges"]),
-                                                    dtype=np.dtype("int8"))
-    new_dataset_APDs  = new_hdf_file.create_dataset("action_probs",
-                                                    (total_n_subgraphs, *dims["action_probs"]),
-                                                    dtype=np.dtype("int8"))
+    new_dataset_nodes = new_hdf_file.create_dataset(
+        "nodes", (total_n_subgraphs, *dims["nodes"]), dtype=np.dtype("int8")
+    )
+    new_dataset_edges = new_hdf_file.create_dataset(
+        "edges", (total_n_subgraphs, *dims["edges"]), dtype=np.dtype("int8")
+    )
+    new_dataset_action_probs = new_hdf_file.create_dataset(
+        "action_probs",
+        (total_n_subgraphs, *dims["action_probs"]),
+        dtype=np.dtype("int8"),
+    )
 
     print("* Combining data from smaller HDFs into a new larger HDF.")
     init_index = 0
@@ -144,13 +152,15 @@ def main(paths : list, training_set : bool) -> None:
 
         nodes = hdf_file.get("nodes")
         edges = hdf_file.get("edges")
-        action probabilities  = hdf_file.get("action_probs")
+        action_probs_data = hdf_file.get("action_probs")
 
         n_subgraphs = nodes.shape[0]
 
-        new_dataset_nodes[init_index:(init_index + n_subgraphs)] = nodes
-        new_dataset_edges[init_index:(init_index + n_subgraphs)] = edges
-        new_dataset_APDs[init_index:(init_index + n_subgraphs)]  = action probabilities
+        new_dataset_nodes[init_index : (init_index + n_subgraphs)] = nodes
+        new_dataset_edges[init_index : (init_index + n_subgraphs)] = edges
+        new_dataset_action_probs[init_index : (init_index + n_subgraphs)] = (
+            action_probs_data
+        )
 
         init_index += n_subgraphs
         hdf_file.close()
@@ -164,21 +174,23 @@ def main(paths : list, training_set : bool) -> None:
         ts_properties_old = None
         csv_files_processed = 0
         for path in csv_list:
-            ts_properties     = load_ts_properties_from_csv(csv_path=path)
+            ts_properties = load_ts_properties_from_csv(csv_path=path)
             ts_properties_new = {}
             if ts_properties_old and ts_properties:
                 for key, value in ts_properties_old.items():
-                    if type(value) == float:
+                    if isinstance(value, float):
                         ts_properties_new[key] = (
                             value * csv_files_processed + ts_properties[key]
-                        )/(csv_files_processed + 1)
+                        ) / (csv_files_processed + 1)
                     else:
                         new_list = []
                         for i, value_i in enumerate(value):
                             new_list.append(
                                 float(
-                                    value_i * csv_files_processed + ts_properties[key][i]
-                                )/(csv_files_processed + 1)
+                                    value_i * csv_files_processed
+                                    + ts_properties[key][i]
+                                )
+                                / (csv_files_processed + 1)
                             )
                         ts_properties_new[key] = new_list
             else:
@@ -193,28 +205,28 @@ if __name__ == "__main__":
     # combine the HDFs defined in `path_list`
 
     # set variables
-    dataset          = "ChEMBL"
-    n_atom_types     = 15       # number of atom types used in preprocessing the data
-    n_formal_charges = 3        # number of formal charges used in preprocessing the data
-    n_bond_types     = 3        # number of bond types used in preprocessing the data
-    max_n_nodes      = 40       # maximum number of nodes in the data
+    dataset = "ChEMBL"
+    n_atom_types = 15  # number of atom types used in preprocessing the data
+    n_formal_charges = 3  # number of formal charges used in preprocessing the data
+    n_bond_types = 3  # number of bond types used in preprocessing the data
+    max_n_nodes = 40  # maximum number of nodes in the data
 
     # combine the training files
-    n_dirs           = 12       # how many times was `{split}.smi` split?
-    split            = "train"  # train, test, or valid
-    path_list        = [f"data/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
+    n_dirs = 12  # how many times was `{split}.smi` split?
+    split = "train"  # train, test, or valid
+    path_list = [f"data/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
     main(path_list, training_set=True)
 
     # combine the test files
-    n_dirs           = 4       # how many times was `{split}.smi` split?
-    split            = "test"  # train, test, or valid
-    path_list        = [f"data/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
+    n_dirs = 4  # how many times was `{split}.smi` split?
+    split = "test"  # train, test, or valid
+    path_list = [f"data/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
     main(path_list, training_set=False)
 
     # combine the validation files
-    n_dirs           = 2        # how many times was `{split}.smi` split?
-    split            = "valid"  # train, test, or valid
-    path_list        = [f"data/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
+    n_dirs = 2  # how many times was `{split}.smi` split?
+    split = "valid"  # train, test, or valid
+    path_list = [f"data/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
     main(path_list, training_set=False)
 
     print("Done.", flush=True)

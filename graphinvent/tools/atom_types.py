@@ -8,29 +8,33 @@ in a single pass.
 To use script, run:
     python graphinvent/tools/atom_types.py --smi path/to/file.smi
 """
+
 import argparse
 import os
 import sys
+
 import rdkit
 
 # Allow running directly from the repo root
 sys.path.insert(0, os.path.dirname(__file__))
 from utils import load_molecules
 
-
 # define the argument parser
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                 add_help=False)
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=False
+)
 
 # define two potential arguments to use when drawing SMILES from a file
-parser.add_argument("--smi",
-                    type=str,
-                    default="data/gdb13_1K/train.smi",
-                    help="SMILES file containing molecules to analyse.")
+parser.add_argument(
+    "--smi",
+    type=str,
+    default="data/gdb13_1K/train.smi",
+    help="SMILES file containing molecules to analyse.",
+)
 args = parser.parse_args()
 
 
-def get_atom_types(smi_file : str) -> list:
+def get_atom_types(smi_file: str) -> list:
     """
     Determines the atom types present in an input SMILES file.
 

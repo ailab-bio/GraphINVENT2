@@ -3,11 +3,12 @@ Defines specific MPNN implementations built on `SummationMPNN`.
 
   GGNN  -- Gated Graph Neural Network (Li et al., 2016)
 """
-from collections import namedtuple
-import torch
 
-import gnn.summation_mpnn
+from collections import namedtuple
+
 import gnn.modules
+import gnn.summation_mpnn
+import torch
 
 
 class GGNN(gnn.summation_mpnn.SummationMPNN):
@@ -41,6 +42,7 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
             mlp2_depth, mlp2_dropout_p, len_f_add_per_node, len_f_conn_per_node,
             max_n_nodes, device.
     """
+
     def __init__(self, constants: namedtuple) -> None:
         super().__init__(constants)
 
@@ -51,7 +53,8 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
         self.msg_nns = torch.nn.ModuleList(
             gnn.modules.MLP(
                 in_features=self.constants.hidden_node_features,
-                hidden_layer_sizes=[self.constants.enn_hidden_dim] * self.constants.enn_depth,
+                hidden_layer_sizes=[self.constants.enn_hidden_dim]
+                * self.constants.enn_depth,
                 out_features=self.constants.message_size,
                 dropout_p=self.constants.enn_dropout_p,
             )
@@ -96,8 +99,9 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
             device=self.constants.device,
         )
 
-    def message_terms(self, nodes: torch.Tensor, node_neighbours: torch.Tensor,
-                      edges: torch.Tensor) -> torch.Tensor:
+    def message_terms(
+        self, nodes: torch.Tensor, node_neighbours: torch.Tensor, edges: torch.Tensor
+    ) -> torch.Tensor:
         """
         Computes one message vector per directed edge.
 
@@ -118,7 +122,7 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
             messages: One message vector per edge.
                       Shape: (n_edges, message_size)
         """
-        edges_v           = edges.view(-1, self.constants.n_edge_features, 1)
+        edges_v = edges.view(-1, self.constants.n_edge_features, 1)
         node_neighbours_v = edges_v * node_neighbours.view(
             -1, 1, self.constants.hidden_node_features
         )
@@ -143,8 +147,12 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
         """
         return self.gru(messages, nodes)
 
-    def readout(self, hidden_nodes: torch.Tensor, input_nodes: torch.Tensor,
-                node_mask: torch.Tensor) -> torch.Tensor:
+    def readout(
+        self,
+        hidden_nodes: torch.Tensor,
+        input_nodes: torch.Tensor,
+        node_mask: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Produces the action probabilities logits from the final node hidden states.
 

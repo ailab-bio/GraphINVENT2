@@ -15,10 +15,10 @@ Usage:
     python scan_features.py --smi path/to/file.smi [path/to/other.smi ...]
     python scan_features.py --smi train.smi valid.smi test.smi
 """
+
 import argparse
 import sys
 
-import rdkit
 from rdkit import Chem
 from rdkit.Chem.rdmolfiles import SmilesMolSupplier
 
@@ -28,9 +28,7 @@ def load_molecules(path: str) -> SmilesMolSupplier:
     with open(path) as f:
         first_line = f.readline()
     has_header = "SMILES" in first_line
-    return SmilesMolSupplier(
-        path, sanitize=True, nameColumn=-1, titleLine=has_header
-    )
+    return SmilesMolSupplier(path, sanitize=True, nameColumn=-1, titleLine=has_header)
 
 
 def scan_features(
@@ -49,10 +47,10 @@ def scan_features(
     Returns:
         A dict with keys: atom_types, formal_charge, imp_H, max_n_nodes.
     """
-    atom_types_set    = set()
+    atom_types_set = set()
     formal_charge_set = set()
-    imp_H_set         = set()
-    max_n_nodes       = 0
+    imp_H_set = set()
+    max_n_nodes = 0
 
     for path in smi_paths:
         supplier = load_molecules(path)
@@ -71,10 +69,10 @@ def scan_features(
                     imp_H_set.add(atom.GetTotalNumHs())
 
     return {
-        "atom_types"   : sorted(atom_types_set),
+        "atom_types": sorted(atom_types_set),
         "formal_charge": sorted(formal_charge_set),
-        "imp_H"        : sorted(imp_H_set),
-        "max_n_nodes"  : max_n_nodes,
+        "imp_H": sorted(imp_H_set),
+        "max_n_nodes": max_n_nodes,
     }
 
 
@@ -105,7 +103,10 @@ def main():
     args = parser.parse_args()
 
     if args.use_explicit_H and args.ignore_H:
-        print("Error: --use_explicit_H and --ignore_H are mutually exclusive.", file=sys.stderr)
+        print(
+            "Error: --use_explicit_H and --ignore_H are mutually exclusive.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     print(f"Scanning {len(args.smi)} file(s):", flush=True)

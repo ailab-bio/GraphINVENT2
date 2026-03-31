@@ -10,28 +10,32 @@ See:
 To use script, run:
 (graphinvent)$ python tdc-create-dataset.py --dataset MOSES
 """
-import os
+
 import argparse
-from pathlib import Path
+import os
 import shutil
-from tdc.generation import MolGen
+from pathlib import Path
+
 import rdkit
-from rdkit import Chem
+from tdc.generation import MolGen
 
 # define the argument parser
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                 add_help=False)
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=False
+)
 
 # define two potential arguments to use when drawing SMILES from a file
-parser.add_argument("--dataset",
-                    type=str,
-                    default="ChEMBL",
-                    help="Specifies the dataset to use for creating the data. Options "
-                         "are: 'ChEMBL', 'MOSES', or 'ZINC'.")
+parser.add_argument(
+    "--dataset",
+    type=str,
+    default="ChEMBL",
+    help="Specifies the dataset to use for creating the data. Options "
+    "are: 'ChEMBL', 'MOSES', or 'ZINC'.",
+)
 args = parser.parse_args()
 
 
-def save_smiles(smi_file : str, smi_list : list) -> None:
+def save_smiles(smi_file: str, smi_list: list) -> None:
     """Saves input list of SMILES to the specified file path."""
     smi_writer = rdkit.Chem.rdmolfiles.SmilesWriter(smi_file)
     for smi in smi_list:
@@ -40,21 +44,25 @@ def save_smiles(smi_file : str, smi_list : list) -> None:
             if mol.GetNumAtoms() < 81:  # filter out molecules with >= 81 atoms
                 save = True
                 for atom in mol.GetAtoms():
-                    if atom.GetFormalCharge() not in [-1, 0, +1]:  # filter out molecules with large formal charge
+                    if atom.GetFormalCharge() not in [
+                        -1,
+                        0,
+                        +1,
+                    ]:  # filter out molecules with large formal charge
                         save = False
                         break
                 if save:
                     smi_writer.write(mol)
-        except:  # likely TypeError or AttributeError e.g. "smi[0]" is "nan"
+        except Exception:  # likely TypeError or AttributeError e.g. "smi[0]" is "nan"
             continue
     smi_writer.close()
 
 
 if __name__ == "__main__":
     print(f"* Loading {args.dataset} dataset using the TDC.")
-    data      = MolGen(name=args.dataset)
-    split     = data.get_split()
-    HOME      = str(Path.home())
+    data = MolGen(name=args.dataset)
+    split = data.get_split()
+    HOME = str(Path.home())
     DATA_PATH = f"./data/{args.dataset}/"
     try:
         os.mkdir(DATA_PATH)

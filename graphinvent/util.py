@@ -1,26 +1,27 @@
 """
 Contains various miscellaneous useful functions.
 """
+
 import ast
 import csv
 import json
 import re
 from collections import namedtuple
 from pathlib import Path
-from typing import Iterator, Union, Tuple
+from typing import Iterator, Tuple, Union
 from warnings import filterwarnings
 
 import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
+
+matplotlib.use("Agg")
 import numpy as np
 import rdkit
 import torch
+from matplotlib import pyplot as plt
+from parameters.constants import constants
 from rdkit import RDLogger
 from rdkit.Chem import MolToSmiles
 from torch.utils.tensorboard import SummaryWriter
-
-from parameters.constants import constants
 
 
 def get_feature_vector_indices() -> list:
@@ -46,6 +47,7 @@ def get_feature_vector_indices() -> list:
 
     return np.cumsum(idc).tolist()
 
+
 def get_last_epoch() -> str:
     """
     Gets previous training epoch by reading it from the "convergence.log" file.
@@ -61,26 +63,24 @@ def get_last_epoch() -> str:
     if constants.job_type == "rl":
         # RL logs use "Step N" labels; extract just "Step N"
         try:
-            epoch_key_tmp, _, _ = read_row(path=convergence_path,
-                                           row=-1,
-                                           col=(0, 1, 2))
+            epoch_key_tmp, _, _ = read_row(path=convergence_path, row=-1, col=(0, 1, 2))
             epoch_key = " ".join(epoch_key_tmp.split()[:2])
         except (ValueError, IndexError):
             epoch_key = "Step init"
     else:
         # All supervised jobs (pretrain, transfer, generate, test) use "Epoch N"
         try:
-            epoch_key, _, _ = read_row(path=convergence_path,
-                                       row=-1,
-                                       col=(0, 1, 2))
+            epoch_key, _, _ = read_row(path=convergence_path, row=-1, col=(0, 1, 2))
         except (ValueError, FileNotFoundError):
             epoch_key = "Epoch 1"
 
         if constants.job_type == "generate":
             if constants.pretrained_model_path:
                 import re as _re
-                _m = _re.search(r"model_restart_(\d+)\.pth",
-                                constants.pretrained_model_path)
+
+                _m = _re.search(
+                    r"model_restart_(\d+)\.pth", constants.pretrained_model_path
+                )
                 gen_epoch = int(_m.group(1)) if _m else 0
             else:
                 gen_epoch = constants.generation_epoch
@@ -90,8 +90,10 @@ def get_last_epoch() -> str:
 
     return epoch_key
 
-def normalize_evaluation_metrics(property_histograms : dict,
-                                 epoch_key : str) -> Tuple[list, ...]:
+
+def normalize_evaluation_metrics(
+    property_histograms: dict, epoch_key: str
+) -> Tuple[list, ...]:
     """
     Normalizes histograms in `props_dict`, converts them to `list`s (from
     `torch.Tensor`s) and rounds the elements. This is done for clarity when
@@ -122,46 +124,59 @@ def normalize_evaluation_metrics(property_histograms : dict,
     """
     # compute histograms for non-optional features
     norm_n_nodes_hist = [
-        round(i, 2) for i in
-        normalize(property_histograms[(epoch_key, "n_nodes_hist")]).tolist()
+        round(i, 2)
+        for i in normalize(property_histograms[(epoch_key, "n_nodes_hist")]).tolist()
     ]
     norm_atom_type_hist = [
-        round(i, 2) for i in
-        normalize(property_histograms[(epoch_key, "atom_type_hist")]).tolist()
+        round(i, 2)
+        for i in normalize(property_histograms[(epoch_key, "atom_type_hist")]).tolist()
     ]
     norm_charge_hist = [
-        round(i, 2) for i in
-        normalize(property_histograms[(epoch_key, "formal_charge_hist")]).tolist()
+        round(i, 2)
+        for i in normalize(
+            property_histograms[(epoch_key, "formal_charge_hist")]
+        ).tolist()
     ]
     norm_n_edges_hist = [
-        round(i, 2) for i in
-        normalize(property_histograms[(epoch_key, "n_edges_hist")]).tolist()
+        round(i, 2)
+        for i in normalize(property_histograms[(epoch_key, "n_edges_hist")]).tolist()
     ]
     norm_edge_feature_hist = [
-        round(i, 2) for i in
-        normalize(property_histograms[(epoch_key, "edge_feature_hist")]).tolist()
+        round(i, 2)
+        for i in normalize(
+            property_histograms[(epoch_key, "edge_feature_hist")]
+        ).tolist()
     ]
 
     # compute histograms for optional features
     if not constants.use_explicit_H and not constants.ignore_H:
         norm_numh_hist = [
-            round(i, 2) for i in
-            normalize(property_histograms[(epoch_key, "numh_hist")]).tolist()
+            round(i, 2)
+            for i in normalize(property_histograms[(epoch_key, "numh_hist")]).tolist()
         ]
     else:
         norm_numh_hist = [0] * len(constants.imp_H)
 
     if constants.use_chirality:
         norm_chirality_hist = [
-            round(i, 2) for i in
-            normalize(property_histograms[(epoch_key, "chirality_hist")]).tolist()
+            round(i, 2)
+            for i in normalize(
+                property_histograms[(epoch_key, "chirality_hist")]
+            ).tolist()
         ]
     else:
         norm_chirality_hist = [1, 0, 0]
 
-    return (norm_n_nodes_hist, norm_atom_type_hist, norm_charge_hist,
-            norm_numh_hist, norm_n_edges_hist, norm_edge_feature_hist,
-            norm_chirality_hist)
+    return (
+        norm_n_nodes_hist,
+        norm_atom_type_hist,
+        norm_charge_hist,
+        norm_numh_hist,
+        norm_n_edges_hist,
+        norm_edge_feature_hist,
+        norm_chirality_hist,
+    )
+
 
 def get_restart_epoch() -> Union[int, str]:
     """
@@ -177,8 +192,8 @@ def get_restart_epoch() -> Union[int, str]:
         # RL restart: find the last saved step from score.log.
         # (generation.log for RL uses "Step N label" format, not "Epoch N".)
         ft_log_path = constants.job_dir + "score.log"
-        epoch       = "NA"
-        row         = -1
+        epoch = "NA"
+        row = -1
         while not isinstance(epoch, int):
             epoch_key = read_row(path=ft_log_path, row=row, col=0)
             try:
@@ -197,8 +212,8 @@ def get_restart_epoch() -> Union[int, str]:
     elif constants.restart or constants.job_type == "test":
         # Supervised restart or test: find the last saved epoch from generation.log.
         generation_path = constants.job_dir + "generation.log"
-        epoch           = "NA"
-        row             = -1
+        epoch = "NA"
+        row = -1
         while not isinstance(epoch, int):
             epoch_key = read_row(path=generation_path, row=row, col=0)
             try:
@@ -226,7 +241,7 @@ def load_training_set_properties(csv_path: str) -> dict:
     print("* Loading training set properties.", flush=True)
 
     with open(csv_path, "r") as csv_file:
-        reader   = csv.reader(csv_file, delimiter=";")
+        reader = csv.reader(csv_file, delimiter=";")
         csv_dict = dict(reader)
 
     properties: dict = {}
@@ -255,6 +270,7 @@ def load_training_set_properties(csv_path: str) -> dict:
 
     return properties
 
+
 def normalize(list_of_nums: list) -> list:
     """
     Normalizes a list of numbers. Returns the list unchanged if the sum is zero.
@@ -269,6 +285,7 @@ def normalize(list_of_nums: list) -> list:
     if total == 0:
         return list_of_nums
     return list_of_nums / total
+
 
 def one_hot_encode(x: Union[str, int], allowable_set: list) -> Iterator[int]:
     """
@@ -297,9 +314,13 @@ def one_hot_encode(x: Union[str, int], allowable_set: list) -> Iterator[int]:
     return one_hot_generator
 
 
-def properties_to_csv(prop_dict : dict, csv_filename : str,
-                      epoch_key : str, tb_writer : Union[SummaryWriter, None],
-                      append : bool=True) -> None:
+def properties_to_csv(
+    prop_dict: dict,
+    csv_filename: str,
+    epoch_key: str,
+    tb_writer: Union[SummaryWriter, None],
+    append: bool = True,
+) -> None:
     """
     Writes a CSV summarizing how training is going by comparing the properties
     of the generated structures during evaluation to the training set. Also
@@ -316,34 +337,34 @@ def properties_to_csv(prop_dict : dict, csv_filename : str,
                              the file exists) or start a new one. Default `True`.
     """
     # get all the relevant properties from the dictionary
-    frac_valid  = prop_dict[(epoch_key, "fraction_valid")]
+    frac_valid = prop_dict[(epoch_key, "fraction_valid")]
     avg_n_nodes = prop_dict[(epoch_key, "avg_n_nodes")]
     avg_n_edges = prop_dict[(epoch_key, "avg_n_edges")]
     frac_unique = prop_dict[(epoch_key, "fraction_unique")]
 
     # use the following properties if they exist
     try:
-        run_time      = prop_dict[(epoch_key, "run_time")]
+        run_time = prop_dict[(epoch_key, "run_time")]
         frac_valid_pt = round(
-            float(prop_dict[(epoch_key, "fraction_valid_properly_terminated")]),
-            5
+            float(prop_dict[(epoch_key, "fraction_valid_properly_terminated")]), 5
         )
-        frac_pt       = round(
-            float(prop_dict[(epoch_key, "fraction_properly_terminated")]),
-            5
+        frac_pt = round(
+            float(prop_dict[(epoch_key, "fraction_properly_terminated")]), 5
         )
     except KeyError:
-        run_time      = "NA"
+        run_time = "NA"
         frac_valid_pt = "NA"
-        frac_pt       = "NA"
+        frac_pt = "NA"
 
-    (norm_n_nodes_hist,
-     norm_atom_type_hist,
-     norm_formal_charge_hist,
-     norm_numh_hist,
-     norm_n_edges_hist,
-     norm_edge_feature_hist,
-     norm_chirality_hist) = normalize_evaluation_metrics(prop_dict, epoch_key)
+    (
+        norm_n_nodes_hist,
+        norm_atom_type_hist,
+        norm_formal_charge_hist,
+        norm_numh_hist,
+        norm_n_edges_hist,
+        norm_edge_feature_hist,
+        norm_chirality_hist,
+    ) = normalize_evaluation_metrics(prop_dict, epoch_key)
 
     if not append:
         # file does not exist yet, create it
@@ -373,38 +394,17 @@ def properties_to_csv(prop_dict : dict, csv_filename : str,
     else:
         if tb_writer is not None:
             tb_writer.add_scalar("Evaluation/fraction_valid", frac_valid, epoch)
-            tb_writer.add_scalar("Evaluation/fraction_valid_and_properly_term", frac_valid_pt, epoch)
-            tb_writer.add_scalar("Evaluation/fraction_properly_terminated", frac_pt, epoch)
+            tb_writer.add_scalar(
+                "Evaluation/fraction_valid_and_properly_term", frac_valid_pt, epoch
+            )
+            tb_writer.add_scalar(
+                "Evaluation/fraction_properly_terminated", frac_pt, epoch
+            )
             tb_writer.add_scalar("Evaluation/avg_n_nodes", avg_n_nodes, epoch)
             tb_writer.add_scalar("Evaluation/fraction_unique", frac_unique, epoch)
 
 
-def read_column(path : str, column : int) -> np.ndarray:
-    """
-    Reads a column from a CSV file. Returns column values as a `numpy.ndarray`.
-    Removes missing values ("NA") before returning.
-
-    Args:
-    ----
-        path (str)   : Path to CSV file.
-        column (int) : Column to read from CSV file.
-
-    Returns:
-    -------
-        data (np.ndarray) : Read column.
-    """
-    with open(path, "r") as csv_file:
-        data = np.genfromtxt(csv_file,
-                             dtype=None,
-                             delimiter=",",
-                             skip_header=1,
-                             usecols=column,
-                             missing_values="NA")
-    data = np.array(data)
-    data = data[~np.isnan(data)]  # exclude `nan`
-    return data
-
-def read_last_molecule_idx(restart_file_path : str) -> Tuple[int, int]:
+def read_last_molecule_idx(restart_file_path: str) -> Tuple[int, int]:
     """
     Reads the index of the last preprocessed molecule from a file called
     "index.restart" located in the same directory as the data. Also returns the
@@ -423,7 +423,8 @@ def read_last_molecule_idx(restart_file_path : str) -> Tuple[int, int]:
         last_molecule_idx = np.genfromtxt(txt_file, delimiter=",")
     return int(last_molecule_idx[0]), int(last_molecule_idx[1])
 
-def read_row(path : str, row : int, col : int) -> np.ndarray:
+
+def read_row(path: str, row: int, col: int) -> np.ndarray:
     """
     Reads a row from CSV file. Returns it as a `numpy.ndarray`. Removes "NA"
     missing values from the column before returning.
@@ -438,13 +439,12 @@ def read_row(path : str, row : int, col : int) -> np.ndarray:
         np.ndarray : Desired row from the file.
     """
     with open(path, "r") as csv_file:
-        data = np.genfromtxt(csv_file,
-                             dtype=str,
-                             delimiter=",",
-                             skip_header=1,
-                             usecols=col)
+        data = np.genfromtxt(
+            csv_file, dtype=str, delimiter=",", skip_header=1, usecols=col
+        )
     data = np.array(data)
     return data[:][row]
+
 
 def suppress_warnings() -> None:
     """
@@ -457,7 +457,8 @@ def suppress_warnings() -> None:
     # `filterwarnings(action="ignore")`
     # but choosing not to do this
 
-def turn_off_empty_axes(n_plots_y : int, n_plots_x : int, ax : plt.axes) -> plt.axes:
+
+def turn_off_empty_axes(n_plots_y: int, n_plots_x: int, ax: plt.axes) -> plt.axes:
     """
     Turns off empty axes in a `n_plots_y` by `n_plots_x` grid of plots.
 
@@ -479,8 +480,10 @@ def turn_off_empty_axes(n_plots_y : int, n_plots_x : int, ax : plt.axes) -> plt.
                 ax[vi, vj].axis("off")
     return ax
 
-def write_last_molecule_idx(last_molecule_idx : int, dataset_size : int,
-                            restart_file_path : str) -> None:
+
+def write_last_molecule_idx(
+    last_molecule_idx: int, dataset_size: int, restart_file_path: str
+) -> None:
     """
     Writes the index of the last preprocessed molecule and the current dataset
     size to a file.
@@ -495,8 +498,10 @@ def write_last_molecule_idx(last_molecule_idx : int, dataset_size : int,
     with open(restart_file_path + "index.restart", "w") as txt_file:
         txt_file.write(str(last_molecule_idx) + ", " + str(dataset_size))
 
-class _ConstantsEncoder(json.JSONEncoder):
+
+class _ConstantsEncoder(json.JSONEncoder):  # this might be dead code?
     """JSON encoder that handles non-serializable types gracefully."""
+
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -522,6 +527,7 @@ def write_job_parameters(params: namedtuple) -> None:
     with open(dict_path, "w") as f:
         json.dump(params_dict, f, indent=2, cls=_ConstantsEncoder)
 
+
 def write_preprocessing_parameters(params: namedtuple) -> None:
     """
     Writes the subset of parameters needed to verify preprocessing consistency
@@ -532,22 +538,27 @@ def write_preprocessing_parameters(params: namedtuple) -> None:
     """
     dict_path = Path(params.dataset_dir) / "preprocessing_params.json"
     keys_to_write = {
-        "atom_types", "formal_charge", "imp_H", "chirality",
-        "max_n_nodes", "use_aromatic_bonds", "use_canon",
-        "use_chirality", "use_explicit_H", "ignore_H",
+        "atom_types",
+        "formal_charge",
+        "imp_H",
+        "chirality",
+        "max_n_nodes",
+        "use_aromatic_bonds",
+        "use_canon",
+        "use_chirality",
+        "use_explicit_H",
+        "ignore_H",
     }
     preproc_dict = {
-        key: getattr(params, key)
-        for key in keys_to_write
-        if hasattr(params, key)
+        key: getattr(params, key) for key in keys_to_write if hasattr(params, key)
     }
     with open(dict_path, "w") as f:
         json.dump(preproc_dict, f, indent=2)
 
-def write_graphs_to_smi(smi_filename : str,
-                        molecular_graphs_list : list,
-                        write : bool=False) -> \
-                        Tuple[float, torch.Tensor, torch.Tensor]:
+
+def write_graphs_to_smi(
+    smi_filename: str, molecular_graphs_list: list, write: bool = False
+) -> Tuple[float, torch.Tensor, torch.Tensor]:
     """
     Calculates the validity and uniqueness of input molecular graphs. Then,
     (optional) writes the input molecular graphs a SMILES file.
@@ -573,11 +584,9 @@ def write_graphs_to_smi(smi_filename : str,
                                            (unique or first duplicate instance)
                                            or 0 (duplicate).
     """
-    validity_tensor   = torch.zeros(len(molecular_graphs_list),
-                                    device=constants.device)
-    uniqueness_tensor = torch.ones(len(molecular_graphs_list),
-                                   device=constants.device)
-    smiles            = []
+    validity_tensor = torch.zeros(len(molecular_graphs_list), device=constants.device)
+    uniqueness_tensor = torch.ones(len(molecular_graphs_list), device=constants.device)
+    smiles = []
 
     with open(smi_filename, "w") as smi_file:
 
@@ -591,7 +600,9 @@ def write_graphs_to_smi(smi_filename : str,
                 mol.UpdatePropertyCache(strict=False)
                 rdkit.Chem.SanitizeMol(mol)
                 current_smiles = MolToSmiles(mol)
-                if len(current_smiles) == 0:  # TODO would we rather leave it blank for an empty SMILES?
+                if (
+                    len(current_smiles) == 0
+                ):  # TODO would we rather leave it blank for an empty SMILES?
                     raise ValueError
                 if write:
                     smi_writer.write(mol)
@@ -613,13 +624,16 @@ def write_graphs_to_smi(smi_filename : str,
 
     return fraction_valid, validity_tensor, uniqueness_tensor
 
-def write_training_status(tb_writer : Union[SummaryWriter, None],
-                          epoch : Union[int, None]=None,
-                          lr : Union[float, None]=None,
-                          training_loss : Union[float, None]=None,
-                          validation_loss : Union[float, None]=None,
-                          score : Union[float, None]=None,
-                          append : bool=True) -> None:
+
+def write_training_status(
+    tb_writer: Union[SummaryWriter, None],
+    epoch: Union[int, None] = None,
+    lr: Union[float, None] = None,
+    training_loss: Union[float, None] = None,
+    validation_loss: Union[float, None] = None,
+    score: Union[float, None] = None,
+    append: bool = True,
+) -> None:
     """
     Writes the current epoch, loss, learning rate, and model score to CSV.
 
@@ -644,26 +658,36 @@ def write_training_status(tb_writer : Union[SummaryWriter, None],
     if not append:  # create the file
         with open(convergence_path, "w") as output_file:
             if is_rl:
-                output_file.write(f"{epoch_label.lower()}, lr, avg_train_loss, model_score\n")
+                output_file.write(
+                    f"{epoch_label.lower()}, lr, avg_train_loss, model_score\n"
+                )
             else:
-                output_file.write(f"{epoch_label.lower()}, lr, avg_train_loss, "
-                                  f"avg_valid_loss, model_score\n")
+                output_file.write(
+                    f"{epoch_label.lower()}, lr, avg_train_loss, "
+                    f"avg_valid_loss, model_score\n"
+                )
     else:  # append to existing file
         if constants.job_type in ["pretrain", "transfer", "rl"]:
             if score is None:
                 with open(convergence_path, "a") as output_file:
                     if is_rl:
-                        output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
-                                          f"{training_loss:.8f}, ")
+                        output_file.write(
+                            f"{epoch_label} {epoch}, {lr:.8f}, "
+                            f"{training_loss:.8f}, "
+                        )
                     else:
-                        output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
-                                          f"{training_loss:.8f}, "
-                                          f"{validation_loss:.8f}, ")
+                        output_file.write(
+                            f"{epoch_label} {epoch}, {lr:.8f}, "
+                            f"{training_loss:.8f}, "
+                            f"{validation_loss:.8f}, "
+                        )
                 # write to tensorboard
                 if tb_writer is not None:
                     tb_writer.add_scalar("Training/training_loss", training_loss, epoch)
                     if not is_rl:
-                        tb_writer.add_scalar("Training/validation_loss", validation_loss, epoch)
+                        tb_writer.add_scalar(
+                            "Training/validation_loss", validation_loss, epoch
+                        )
                     tb_writer.add_scalar("Training/lr", lr, epoch)
 
             elif score == "NA":
@@ -673,22 +697,29 @@ def write_training_status(tb_writer : Union[SummaryWriter, None],
             elif score is not None and training_loss is not None:
                 with open(convergence_path, "a") as output_file:
                     if is_rl:
-                        output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
-                                          f"{training_loss:.8f}, {score:.6f}\n")
+                        output_file.write(
+                            f"{epoch_label} {epoch}, {lr:.8f}, "
+                            f"{training_loss:.8f}, {score:.6f}\n"
+                        )
                     else:
-                        output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
-                                          f"{training_loss:.8f}, "
-                                          f"{validation_loss:.8f}, {score:.6f}\n")
+                        output_file.write(
+                            f"{epoch_label} {epoch}, {lr:.8f}, "
+                            f"{training_loss:.8f}, "
+                            f"{validation_loss:.8f}, {score:.6f}\n"
+                        )
 
             else:
                 with open(convergence_path, "a") as output_file:
                     output_file.write(f"{score:.6f}\n")
 
-def write_molecules(molecules : list,
-                    final_likelihoods : torch.Tensor,
-                    epoch : str,
-                    write : bool=False,
-                    label : str="test") -> Tuple[list, list, list]:
+
+def write_molecules(
+    molecules: list,
+    final_likelihoods: torch.Tensor,
+    epoch: str,
+    write: bool = False,
+    label: str = "test",
+) -> Tuple[list, list, list]:
     """
     Writes generated molecular graphs and their NLLs. In writing the structures
     to a SMILES file, determines if structures are valid and returns this
@@ -718,26 +749,27 @@ def write_molecules(molecules : list,
     """
     # RL outputs are labelled by step number; supervised jobs by epoch/label
     if constants.job_type == "rl":
-        step         = epoch.split(" ")[1]
+        step = epoch.split(" ")[1]
         smi_filename = constants.job_dir + f"generation/step{step}_{label}.smi"
     else:
         smi_filename = constants.job_dir + f"generation/{label}.smi"
 
-    (fraction_valid,
-     validity_tensor,
-     uniqueness_tensor) = write_graphs_to_smi(smi_filename=smi_filename,
-                                              molecular_graphs_list=molecules,
-                                              write=write)
+    fraction_valid, validity_tensor, uniqueness_tensor = write_graphs_to_smi(
+        smi_filename=smi_filename, molecular_graphs_list=molecules, write=write
+    )
     # save the NLLs and validity status
-    write_likelihoods(likelihood_filename=f"{smi_filename[:-3]}likelihood",
-                      likelihoods=final_likelihoods)
-    write_validity(validity_file_path=f"{smi_filename[:-3]}valid",
-                   validity_tensor=validity_tensor)
+    write_likelihoods(
+        likelihood_filename=f"{smi_filename[:-3]}likelihood",
+        likelihoods=final_likelihoods,
+    )
+    write_validity(
+        validity_file_path=f"{smi_filename[:-3]}valid", validity_tensor=validity_tensor
+    )
 
     return fraction_valid, validity_tensor, uniqueness_tensor
 
-def write_likelihoods(likelihood_filename : str,
-                      likelihoods : torch.Tensor) -> None:
+
+def write_likelihoods(likelihood_filename: str, likelihoods: torch.Tensor) -> None:
     """
     Writes the final likelihoods of each molecule to a file in the same order as
     the molecules are written in the corresponding SMILES file.
@@ -751,7 +783,8 @@ def write_likelihoods(likelihood_filename : str,
         for likelihood in likelihoods:
             likelihood_file.write(f"{likelihood}\n")
 
-def save_training_set_properties(training_set_properties : dict) -> None:
+
+def save_training_set_properties(training_set_properties: dict) -> None:
     """
     Writes the training set properties to CSV.
 
@@ -760,7 +793,7 @@ def save_training_set_properties(training_set_properties : dict) -> None:
         training_set_properties (dict) : The properties of the training set.
     """
     training_set = constants.training_set  # path to "train.smi"
-    dict_path    = f"{training_set[:-4]}.csv"
+    dict_path = f"{training_set[:-4]}.csv"
 
     with open(dict_path, "w") as csv_file:
 
@@ -780,9 +813,14 @@ def save_training_set_properties(training_set_properties : dict) -> None:
             else:
                 csv_writer.writerow([key, value])
 
-def write_validation_scores(output_dir : str, epoch_key : str,
-                            model_scores : dict, tb_writer : Union[SummaryWriter, None],
-                            append : bool=True) -> None:
+
+def write_validation_scores(
+    output_dir: str,
+    epoch_key: str,
+    model_scores: dict,
+    tb_writer: Union[SummaryWriter, None],
+    append: bool = True,
+) -> None:
     """
     Writes a CSV with the model validation scores as a function of the epoch.
 
@@ -799,23 +837,27 @@ def write_validation_scores(output_dir : str, epoch_key : str,
                               start a new one.
     """
     validation_file_path = output_dir + "validation.log"
-    avg_likelihood_val   = model_scores["avg_likelihood_val"]
+    avg_likelihood_val = model_scores["avg_likelihood_val"]
     avg_likelihood_train = model_scores["avg_likelihood_train"]
-    avg_likelihood_gen   = model_scores["avg_likelihood_gen"]
-    uc_jsd               = model_scores["UC-JSD"]
+    avg_likelihood_gen = model_scores["avg_likelihood_gen"]
+    uc_jsd = model_scores["UC-JSD"]
 
     if not append:  # create file
         with open(validation_file_path, "w") as output_file:
             # write headeres
-            output_file.write("set, avg_likelihood_per_molecule_val, "
-                              "avg_likelihood_per_molecule_train, "
-                              "avg_likelihood_per_molecule_gen, uc_jsd\n")
+            output_file.write(
+                "set, avg_likelihood_per_molecule_val, "
+                "avg_likelihood_per_molecule_train, "
+                "avg_likelihood_per_molecule_gen, uc_jsd\n"
+            )
 
     # append the properties of interest to the CSV file
     with open(validation_file_path, "a") as output_file:
-        output_file.write(f"{epoch_key:}, {avg_likelihood_val:.5f}, "
-                          f"{avg_likelihood_train:.5f}, "
-                          f"{avg_likelihood_gen:.5f}, {uc_jsd:.7f}\n")
+        output_file.write(
+            f"{epoch_key:}, {avg_likelihood_val:.5f}, "
+            f"{avg_likelihood_train:.5f}, "
+            f"{avg_likelihood_gen:.5f}, {uc_jsd:.7f}\n"
+        )
 
     try:
         epoch = int(epoch_key.split()[1])
@@ -823,13 +865,19 @@ def write_validation_scores(output_dir : str, epoch_key : str,
         pass
     else:
         if tb_writer is not None:
-            tb_writer.add_scalar("Evaluation/avg_validation_likelihood", avg_likelihood_val, epoch)
-            tb_writer.add_scalar("Evaluation/avg_training_likelihood", avg_likelihood_train, epoch)
-            tb_writer.add_scalar("Evaluation/avg_generation_likelihood", avg_likelihood_gen, epoch)
+            tb_writer.add_scalar(
+                "Evaluation/avg_validation_likelihood", avg_likelihood_val, epoch
+            )
+            tb_writer.add_scalar(
+                "Evaluation/avg_training_likelihood", avg_likelihood_train, epoch
+            )
+            tb_writer.add_scalar(
+                "Evaluation/avg_generation_likelihood", avg_likelihood_gen, epoch
+            )
             tb_writer.add_scalar("Evaluation/uc_jsd", uc_jsd, epoch)
 
-def write_validity(validity_file_path : str,
-                   validity_tensor : torch.Tensor) -> None:
+
+def write_validity(validity_file_path: str, validity_tensor: torch.Tensor) -> None:
     """
     Writes the validity (0 or 1) of each molecule to a file in the same
     order as the molecules are written in the corresponding SMILES file.
@@ -845,11 +893,13 @@ def write_validity(validity_file_path : str,
         for valid in validity_tensor:
             valid_file.write(f"{valid}\n")
 
-def log_likelihoods_to_tensorboard(tb_writer : Union[SummaryWriter, None],
-                           step : Union[int, None]=None,
-                           agent_loglikelihoods : Union[torch.Tensor, None]=None,
-                           prior_loglikelihoods : Union[torch.Tensor, None]=None) -> \
-                           None:
+
+def log_likelihoods_to_tensorboard(
+    tb_writer: Union[SummaryWriter, None],
+    step: Union[int, None] = None,
+    agent_loglikelihoods: Union[torch.Tensor, None] = None,
+    prior_loglikelihoods: Union[torch.Tensor, None] = None,
+) -> None:
     """
     Writes the current epoch and log-likelihoods to the tensorboard during
     fine-tuning jobs.
@@ -873,7 +923,8 @@ def log_likelihoods_to_tensorboard(tb_writer : Union[SummaryWriter, None],
         tb_writer.add_scalar("Train/agent_loglikelihood", avg_agent_loglikelihood, step)
         tb_writer.add_scalar("Train/prior_loglikelihood", avg_prior_loglikelihood, step)
 
-def load_saved_model(model : torch.nn.Module, path : str) -> torch.nn.Module:
+
+def load_saved_model(model: torch.nn.Module, path: str) -> torch.nn.Module:
     """
     Loads a pre-saved neural net model.
 

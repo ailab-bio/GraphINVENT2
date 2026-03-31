@@ -1,12 +1,13 @@
 """
 Functions for loading molecules from SMILES, as well as loading the model type.
 """
+
 # load general packages and functions
 import rdkit
 from rdkit.Chem.rdmolfiles import SmilesMolSupplier
 
 
-def molecules(path : str) -> rdkit.Chem.rdmolfiles.SmilesMolSupplier:
+def molecules(path: str) -> rdkit.Chem.rdmolfiles.SmilesMolSupplier:
     """
     Reads a SMILES file (full path/filename specified by `path`) and returns
     `rdkit.Mol` objects.
@@ -18,8 +19,7 @@ def molecules(path : str) -> rdkit.Chem.rdmolfiles.SmilesMolSupplier:
     smi_file.close()
 
     # read file
-    molecule_set = SmilesMolSupplier(path,
-                                     sanitize=True,
-                                     nameColumn=-1,
-                                     titleLine=has_header)
+    molecule_set = SmilesMolSupplier(
+        path, sanitize=True, nameColumn=-1, titleLine=has_header
+    )
     return molecule_set

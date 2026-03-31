@@ -6,19 +6,21 @@ Defines molecular graph representations used at each stage of the pipeline.
   TrainingGraph       -- tensor-based graph used as model input during training
   GenerationGraph     -- tensor-based graph built incrementally during generation
 """
+
 # load general packages and functions
-from collections import namedtuple
 import itertools
 import random
+from collections import namedtuple
 from copy import deepcopy
-from typing import Union, Tuple
+from typing import Tuple, Union
+
 import numpy as np
-import torch
 import rdkit
-from rdkit.Chem.rdmolfiles import MolToSmiles
+import torch
 
 # load GraphINVENT-specific functions
 import util
+from rdkit.Chem.rdmolfiles import MolToSmiles
 
 
 class MolecularGraph:
@@ -47,11 +49,15 @@ class MolecularGraph:
         Built incrementally during molecule generation by applying successive
         actions sampled from the model's predicted action probabilities.  Uses ``torch.Tensor``s.
     """
-    def __init__(self, constants : namedtuple,
-                 molecule : rdkit.Chem.Mol ,
-                 node_features : Union[np.ndarray, torch.Tensor],
-                 edge_features : Union[np.ndarray, torch.Tensor],
-                 atom_feature_vector : torch.Tensor) -> None:
+
+    def __init__(
+        self,
+        constants: namedtuple,
+        molecule: rdkit.Chem.Mol,
+        node_features: Union[np.ndarray, torch.Tensor],
+        edge_features: Union[np.ndarray, torch.Tensor],
+        atom_feature_vector: torch.Tensor,
+    ) -> None:
         """
         Args:
         ----
@@ -65,10 +71,10 @@ class MolecularGraph:
         self.constants = constants
 
         # placeholders (these are set in the respective sub-classes)
-        self.molecule      = None
+        self.molecule = None
         self.node_features = None
         self.edge_features = None
-        self.n_nodes       = None
+        self.n_nodes = None
 
     def get_graph_state(self) -> None:
         """
@@ -123,14 +129,14 @@ class MolecularGraph:
         features, and B is the set of available bond types.
         """
         # create empty editable `rdkit.Chem.Mol` object
-        molecule    = rdkit.Chem.RWMol()
+        molecule = rdkit.Chem.RWMol()
 
         # add atoms to `rdkit.Chem.Mol` and keep track of idx
         node_to_idx = {}
 
         for v in range(0, self.n_nodes):
-            atom_to_add    = self.features_to_atom(node_idx=v)
-            molecule_idx   = molecule.AddAtom(atom_to_add)
+            atom_to_add = self.features_to_atom(node_idx=v)
+            molecule_idx = molecule.AddAtom(atom_to_add)
             node_to_idx[v] = molecule_idx
 
         # add bonds between adjacent atoms
@@ -138,8 +144,8 @@ class MolecularGraph:
             # `self.edge_features[:, :, bond_type]` is an adjacency matrix
             #  for that specific `bond_type`
             for bond_idx1, row in enumerate(
-                self.edge_features[:self.n_nodes, :self.n_nodes, bond_type]
-                ):
+                self.edge_features[: self.n_nodes, : self.n_nodes, bond_type]
+            ):
                 # traverse only half adjacency matrix to not duplicate bonds
                 for bond_idx2 in range(bond_idx1):
                     bond = row[bond_idx2]
@@ -148,15 +154,17 @@ class MolecularGraph:
                             molecule.AddBond(
                                 node_to_idx[bond_idx1],
                                 node_to_idx[bond_idx2],
-                                self.constants.int_to_bondtype[bond_type]
+                                self.constants.int_to_bondtype[bond_type],
                             )
                         except (TypeError, RuntimeError, AttributeError):
                             # errors occur if the above `AddBond()` action tries
                             # to add multiple bonds to a node pair (should not
                             # happen, but kept here as a safety)
-                            raise ValueError("MolecularGraphError: Multiple "
-                                             "edges connecting a single pair "
-                                             "of nodes in graph.")
+                            raise ValueError(
+                                "MolecularGraphError: Multiple "
+                                "edges connecting a single pair "
+                                "of nodes in graph."
+                            )
 
         try:  # convert from `rdkit.Chem.RWMol` to Mol object
             molecule = molecule.GetMol()
@@ -174,7 +182,7 @@ class MolecularGraph:
 
         return molecule
 
-    def features_to_atom(self, node_idx : int) -> rdkit.Chem.Atom:
+    def features_to_atom(self, node_idx: int) -> rdkit.Chem.Atom:
         """
         Converts the atomic feature vector corresponding to the atom indicated
         by input `node_idx` into an `rdkit.Atom` object.
@@ -203,12 +211,12 @@ class MolecularGraph:
             nonzero_idc = np.nonzero(feature_vector)[0]
 
         # determine atom symbol
-        atom_idx  = nonzero_idc[0]
+        atom_idx = nonzero_idc[0]
         atom_type = self.constants.atom_types[atom_idx]
-        new_atom  = rdkit.Chem.Atom(atom_type)
+        new_atom = rdkit.Chem.Atom(atom_type)
 
         # determine formal charge
-        fc_idx        = nonzero_idc[1] - self.constants.n_atom_types
+        fc_idx = nonzero_idc[1] - self.constants.n_atom_types
         formal_charge = self.constants.formal_charge[fc_idx]
 
         new_atom.SetFormalCharge(formal_charge)
@@ -231,34 +239,33 @@ class MolecularGraph:
         # determine chirality
         if self.constants.use_chirality:
             cip_code_idx = (
-                    nonzero_idc[-1]
-                    - self.constants.n_atom_types
-                    - self.constants.n_formal_charge
-                    - bool(not self.constants.use_explicit_H and
-                           not self.constants.ignore_H)
-                    * self.constants.n_imp_H
+                nonzero_idc[-1]
+                - self.constants.n_atom_types
+                - self.constants.n_formal_charge
+                - bool(
+                    not self.constants.use_explicit_H and not self.constants.ignore_H
+                )
+                * self.constants.n_imp_H
             )
             cip_code = self.constants.chirality[cip_code_idx]
             new_atom.SetProp("_CIPCode", cip_code)
 
         return new_atom
 
-    def mol_to_graph(self, molecule : rdkit.Chem.Mol) -> None:
+    def mol_to_graph(self, molecule: rdkit.Chem.Mol) -> None:
         """
         Generates the graph representation (`self.node_features` and
         `self.edge_features`) when creating a new `PreprocessingGraph`.
         """
         n_atoms = self.n_nodes
-        atoms   = map(molecule.GetAtomWithIdx, range(n_atoms))
+        atoms = map(molecule.GetAtomWithIdx, range(n_atoms))
 
         # build the node features matrix using a Numpy array
-        node_features = np.array(list(map(self.atom_features, atoms)),
-                                 dtype=np.int32)
+        node_features = np.array(list(map(self.atom_features, atoms)), dtype=np.int32)
 
         # build the edge features tensor using a Numpy array
         edge_features = np.zeros(
-            [n_atoms, n_atoms, self.constants.n_edge_features],
-            dtype=np.int32
+            [n_atoms, n_atoms, self.constants.n_edge_features], dtype=np.int32
         )
         for bond in molecule.GetBonds():
             i = bond.GetBeginAtomIdx()
@@ -280,10 +287,15 @@ class PreprocessingGraph(MolecularGraph):
     Uses `np.ndarray`s for the graph attributes, so they can be stored as HDF5
     datasets. These are never loaded onto the GPU.
     """
-    def __init__(self, constants : namedtuple,
-                 molecule : rdkit.Chem.Mol) -> None:
-        super().__init__(constants, molecule=False, node_features=False,
-                         edge_features=False, atom_feature_vector=False)
+
+    def __init__(self, constants: namedtuple, molecule: rdkit.Chem.Mol) -> None:
+        super().__init__(
+            constants,
+            molecule=False,
+            node_features=False,
+            edge_features=False,
+            atom_feature_vector=False,
+        )
 
         # define values previously set to `None` or undefined
         self.node_ordering = None  # to be defined in `self.node_remap()`
@@ -302,7 +314,7 @@ class PreprocessingGraph(MolecularGraph):
         # pad up to size of largest graph in dataset (`self.constants.max_n_nodes`)
         self.pad_graph_representation()
 
-    def atom_features(self, atom : rdkit.Chem.Atom) -> np.ndarray:
+    def atom_features(self, atom: rdkit.Chem.Atom) -> np.ndarray:
         """
         Generates the feature vector for a given node on a molecular graph. Uses
         the following descriptors to recreate the molecular graph: atom type,
@@ -320,14 +332,12 @@ class PreprocessingGraph(MolecularGraph):
         """
         feature_vector_generator = itertools.chain(
             util.one_hot_encode(atom.GetSymbol(), self.constants.atom_types),
-            util.one_hot_encode(atom.GetFormalCharge(),
-                                   self.constants.formal_charge)
+            util.one_hot_encode(atom.GetFormalCharge(), self.constants.formal_charge),
         )
         if not self.constants.use_explicit_H and not self.constants.ignore_H:
             feature_vector_generator = itertools.chain(
                 feature_vector_generator,
-                util.one_hot_encode(atom.GetTotalNumHs(),
-                                       self.constants.imp_H)
+                util.one_hot_encode(atom.GetTotalNumHs(), self.constants.imp_H),
             )
         if self.constants.use_chirality:
             try:
@@ -337,15 +347,14 @@ class PreprocessingGraph(MolecularGraph):
 
             feature_vector_generator = itertools.chain(
                 feature_vector_generator,
-                util.one_hot_encode(chiral_state, self.constants.chirality)
+                util.one_hot_encode(chiral_state, self.constants.chirality),
             )
 
         feature_vector = np.fromiter(feature_vector_generator, int)
 
         return feature_vector
 
-    def breadth_first_search(self, node_ranking : list,
-                             node_init : int=0) -> list:
+    def breadth_first_search(self, node_ranking: list, node_init: int = 0) -> list:
         """
         Starting from the specified `node_init` in the graph, uses a breadth-
         first search (BFS) algorithm to find all adjacent nodes, returning an
@@ -364,7 +373,7 @@ class PreprocessingGraph(MolecularGraph):
         -------
             nodes_visited (list) : BFS ordering for nodes in the molecular graph.
         """
-        nodes_visited      = [node_init]
+        nodes_visited = [node_init]
         last_nodes_visited = [node_init]
 
         # loop until all nodes have been visited
@@ -374,14 +383,15 @@ class PreprocessingGraph(MolecularGraph):
             for node in last_nodes_visited:
                 neighbor_nodes = []
                 for bond_type in range(self.constants.n_edge_features):
-                    neighbor_nodes.extend(list(
-                        np.nonzero(self.edge_features[node, :, bond_type])[0]
-                    ))
+                    neighbor_nodes.extend(
+                        list(np.nonzero(self.edge_features[node, :, bond_type])[0])
+                    )
                 new_neighbor_nodes = list(
                     set(neighbor_nodes) - (set(neighbor_nodes) & set(nodes_visited))
                 )
-                node_importance    = [node_ranking[neighbor_node] for
-                                      neighbor_node in new_neighbor_nodes]
+                node_importance = [
+                    node_ranking[neighbor_node] for neighbor_node in new_neighbor_nodes
+                ]
 
                 # check all neighboring nodes and sort in order of importance
                 while sum(node_importance) != -len(node_importance):
@@ -397,7 +407,7 @@ class PreprocessingGraph(MolecularGraph):
 
         return nodes_visited
 
-    def depth_first_search(self, node_ranking : list, node_init : int=0) -> list:
+    def depth_first_search(self, node_ranking: list, node_init: int = 0) -> list:
         """
         Starting from the specified `node_init` in the graph, uses a depth-first
         search (DFS) algorithm to find the longest branch nodes, returning an
@@ -416,7 +426,7 @@ class PreprocessingGraph(MolecularGraph):
         -------
             nodes_visited (list) : DFS ordering for nodes in the molecular graph.
         """
-        nodes_visited     = [node_init]
+        nodes_visited = [node_init]
         last_node_visited = node_init
 
         # loop until all nodes have been visited
@@ -424,21 +434,26 @@ class PreprocessingGraph(MolecularGraph):
 
             neighbor_nodes = []
             for bond_type in range(self.constants.n_edge_features):
-                neighbor_nodes.extend(list(
-                    np.nonzero(self.edge_features[last_node_visited, :, bond_type])[0]
-                ))
+                neighbor_nodes.extend(
+                    list(
+                        np.nonzero(self.edge_features[last_node_visited, :, bond_type])[
+                            0
+                        ]
+                    )
+                )
             new_neighbor_nodes = list(
                 set(neighbor_nodes) - (set(neighbor_nodes) & set(nodes_visited))
             )
 
             if not new_neighbor_nodes:  # list is empty
                 # backtrack if there are no "new" neighbor nodes i.e. reached end of branch
-                current_node_idx  = nodes_visited.index(last_node_visited)
+                current_node_idx = nodes_visited.index(last_node_visited)
                 last_node_visited = nodes_visited[current_node_idx - 1]
                 continue
 
-            node_importance = [node_ranking[neighbor_node] for
-                               neighbor_node in new_neighbor_nodes]
+            node_importance = [
+                node_ranking[neighbor_node] for neighbor_node in new_neighbor_nodes
+            ]
 
             # get the most important of the neighboring nodes
             most_important_neighbor_node = node_importance.index(max(node_importance))
@@ -451,7 +466,7 @@ class PreprocessingGraph(MolecularGraph):
 
         return nodes_visited
 
-    def node_remap(self, molecule : rdkit.Chem.Mol) -> None:
+    def node_remap(self, molecule: rdkit.Chem.Mol) -> None:
         """
         Remaps nodes in `rdkit.Chem.Mol` object (`molecule`) either randomly, or
         using RDKit's canonical node ordering. This depends on if `use_canon` is
@@ -463,18 +478,18 @@ class PreprocessingGraph(MolecularGraph):
             random.shuffle(atom_ranking)
         else:
             # get RDKit canonical ranking
-            atom_ranking = list(
-                rdkit.Chem.CanonicalRankAtoms(molecule, breakTies=True)
-            )
+            atom_ranking = list(rdkit.Chem.CanonicalRankAtoms(molecule, breakTies=True))
 
         # using a random node as a starting point, get a new node ranking that
         # does not leave isolated fragments in graph traversal
         if self.constants.decoding_route == "bfs":
-            self.node_ordering = self.breadth_first_search(node_ranking=atom_ranking,
-                                                           node_init=atom_ranking[0])
+            self.node_ordering = self.breadth_first_search(
+                node_ranking=atom_ranking, node_init=atom_ranking[0]
+            )
         elif self.constants.decoding_route == "dfs":
-            self.node_ordering = self.depth_first_search(node_ranking=atom_ranking,
-                                                         node_init=atom_ranking[0])
+            self.node_ordering = self.depth_first_search(
+                node_ranking=atom_ranking, node_init=atom_ranking[0]
+            )
 
         # reorder all nodes according to new node ranking
         self.reorder_nodes()
@@ -510,23 +525,23 @@ class PreprocessingGraph(MolecularGraph):
             is the set of bond types.
         """
         # determine the indices of the atom descriptors (e.g. atom type)
-        last_node_idx  = self.n_nodes - 1  # zero-indexing
+        last_node_idx = self.n_nodes - 1  # zero-indexing
         fv_nonzero_idc = self.get_nonzero_feature_indices(node_idx=last_node_idx)
 
         # initialize action probability distribution (action probabilities)
-        f_add  = np.zeros(self.constants.dim_f_add, dtype=np.int32)
+        f_add = np.zeros(self.constants.dim_f_add, dtype=np.int32)
         f_conn = np.zeros(self.constants.dim_f_conn, dtype=np.int32)
 
         # determine which nodes are bonded
         bonded_nodes = []
         for bond_type in range(self.constants.n_edge_features):
-            bonded_nodes.extend(list(
-                np.nonzero(self.edge_features[:, last_node_idx, bond_type])[0]
-            ))
+            bonded_nodes.extend(
+                list(np.nonzero(self.edge_features[:, last_node_idx, bond_type])[0])
+            )
 
         if bonded_nodes:
-            degree            = len(bonded_nodes)
-            v_idx             = bonded_nodes[-1]  # idx of node to form bond with
+            degree = len(bonded_nodes)
+            v_idx = bonded_nodes[-1]  # idx of node to form bond with
             bond_type_forming = int(
                 np.nonzero(self.edge_features[v_idx, last_node_idx, :])[0][0]
             )
@@ -566,7 +581,7 @@ class PreprocessingGraph(MolecularGraph):
                                      the graph generation.
         """
         # initialize action probability distribution (action probabilities)
-        f_add  = np.zeros(self.constants.dim_f_add, dtype=np.int32)
+        f_add = np.zeros(self.constants.dim_f_add, dtype=np.int32)
         f_conn = np.zeros(self.constants.dim_f_conn, dtype=np.int32)
 
         # concatenate `f_add`, `f_conn`, and `f_term` (`f_term`==0)
@@ -579,7 +594,7 @@ class PreprocessingGraph(MolecularGraph):
         """
         return self.node_features, self.edge_features
 
-    def get_nonzero_feature_indices(self, node_idx : int) -> list:
+    def get_nonzero_feature_indices(self, node_idx: int) -> list:
         """
         Gets indices of the nonzero values in a one-hot encoded atomic feature
         vector (for converting a feature vector into an `rdkit.Chem.Atom`
@@ -598,7 +613,7 @@ class PreprocessingGraph(MolecularGraph):
                                  segment.
         """
         fv_idc = util.get_feature_vector_indices()
-        idc    = np.nonzero(self.node_features[node_idx])[0]
+        idc = np.nonzero(self.node_features[node_idx])[0]
 
         # correct for the concatenation of the different segments of each node
         # feature vector
@@ -615,18 +630,17 @@ class PreprocessingGraph(MolecularGraph):
         """
         # first remap the node features matrix
         node_features_remapped = np.array(
-            [self.node_features[node] for node in self.node_ordering],
-            dtype=np.int32
+            [self.node_features[node] for node in self.node_ordering], dtype=np.int32
         )
 
         # then remap the edge features tensor
         edge_features_rows_done = np.array(
             [self.edge_features[node, :, :] for node in self.node_ordering],
-            dtype=np.int32
+            dtype=np.int32,
         )
         edge_features_remapped = np.array(
             [edge_features_rows_done[:, node, :] for node in self.node_ordering],
-            dtype=np.int32
+            dtype=np.int32,
         )
 
         self.node_features = node_features_remapped
@@ -638,15 +652,20 @@ class PreprocessingGraph(MolecularGraph):
         and validation datasets.
         """
         # initialize the padded graph representation arrays
-        node_features_padded = np.zeros((self.constants.max_n_nodes,
-                                         self.constants.n_node_features))
-        edge_features_padded = np.zeros((self.constants.max_n_nodes,
-                                         self.constants.max_n_nodes,
-                                         self.constants.n_edge_features))
+        node_features_padded = np.zeros(
+            (self.constants.max_n_nodes, self.constants.n_node_features)
+        )
+        edge_features_padded = np.zeros(
+            (
+                self.constants.max_n_nodes,
+                self.constants.max_n_nodes,
+                self.constants.n_edge_features,
+            )
+        )
 
         # pad up to size of largest graph
-        node_features_padded[:self.n_nodes, :]                = self.node_features
-        edge_features_padded[:self.n_nodes, :self.n_nodes, :] = self.edge_features
+        node_features_padded[: self.n_nodes, :] = self.node_features
+        edge_features_padded[: self.n_nodes, : self.n_nodes, :] = self.edge_features
 
         self.node_features = node_features_padded
         self.edge_features = edge_features_padded
@@ -666,15 +685,13 @@ class PreprocessingGraph(MolecularGraph):
         if self.n_nodes == 1:
             # remove the last atom
             self.node_features[last_atom_idx, :] = 0
-            self.n_nodes                        -= 1
+            self.n_nodes -= 1
         else:
             # determine how many bonds on the least important atom
             bond_idc = []
             for bond_type in range(self.constants.n_edge_features):
                 bond_idc.extend(
-                    list(
-                        np.nonzero(self.edge_features[:, last_atom_idx, bond_type])[0]
-                    )
+                    list(np.nonzero(self.edge_features[:, last_atom_idx, bond_type])[0])
                 )
 
             degree = len(bond_idc)
@@ -707,8 +724,7 @@ class PreprocessingGraph(MolecularGraph):
         """
         return int(self.get_n_edges() + 2)
 
-    def get_decoding_route_state(self, subgraph_idx : int) -> \
-                                 Tuple[list, np.ndarray]:
+    def get_decoding_route_state(self, subgraph_idx: int) -> Tuple[list, np.ndarray]:
         """
         Starting from the specified graph, returns the state (subgraph and
         decoding action probabilities) indicated by `subgraph_idx` along the decoding route.
@@ -736,12 +752,12 @@ class PreprocessingGraph(MolecularGraph):
             # to the next graph, need to truncate once more after obtaining action probabilities)
             action_probs = molecular_graph.get_action_probs()
             molecular_graph.truncate_graph()
-            X, E         = molecular_graph.get_graph_state()
+            X, E = molecular_graph.get_graph_state()
 
         elif subgraph_idx == 0:
             # return the first subgraph
             action_probs = molecular_graph.get_final_action_probs()
-            X, E         = molecular_graph.get_graph_state()
+            X, E = molecular_graph.get_graph_state()
 
         else:
             raise ValueError("`subgraph_idx` not a valid value.")
@@ -757,10 +773,17 @@ class TrainingGraph(MolecularGraph):
     `torch.Tensor`s for the graph attributes, so they can be conveniently used
     on the GPU.
     """
-    def __init__(self, constants : namedtuple,
-                 atom_feature_vector : torch.Tensor) -> None:
-        super().__init__(constants, molecule=False, node_features=False,
-                         edge_features=False, atom_feature_vector=False)
+
+    def __init__(
+        self, constants: namedtuple, atom_feature_vector: torch.Tensor
+    ) -> None:
+        super().__init__(
+            constants,
+            molecule=False,
+            node_features=False,
+            edge_features=False,
+            atom_feature_vector=False,
+        )
 
         # define values previously set to `None` or undefined
         self.n_nodes = int(bool(1 in atom_feature_vector))
@@ -768,21 +791,27 @@ class TrainingGraph(MolecularGraph):
         # define graph attributes
         self.node_features = atom_feature_vector.unsqueeze(dim=0)
 
-        self.edge_features = torch.Tensor([[[0] * self.constants.n_edge_features]],
-                                          device=self.constants.device)
+        self.edge_features = torch.Tensor(
+            [[[0] * self.constants.n_edge_features]], device=self.constants.device
+        )
 
         # initialize the padded graph representation arrays
-        node_features_padded = torch.zeros((self.constants.max_n_nodes,
-                                            self.constants.n_node_features),
-                                           device=self.constants.device)
-        edge_features_padded = torch.zeros((self.constants.max_n_nodes,
-                                            self.constants.max_n_nodes,
-                                            self.constants.n_edge_features),
-                                           device=self.constants.device)
+        node_features_padded = torch.zeros(
+            (self.constants.max_n_nodes, self.constants.n_node_features),
+            device=self.constants.device,
+        )
+        edge_features_padded = torch.zeros(
+            (
+                self.constants.max_n_nodes,
+                self.constants.max_n_nodes,
+                self.constants.n_edge_features,
+            ),
+            device=self.constants.device,
+        )
 
         # pad up to size of largest graph
-        node_features_padded[:self.n_nodes, :]                = self.node_features
-        edge_features_padded[:self.n_nodes, :self.n_nodes, :] = self.edge_features
+        node_features_padded[: self.n_nodes, :] = self.node_features
+        edge_features_padded[: self.n_nodes, : self.n_nodes, :] = self.edge_features
 
         self.node_features = node_features_padded
         self.edge_features = edge_features_padded
@@ -795,7 +824,7 @@ class TrainingGraph(MolecularGraph):
         """
         # convert to torch.Tensors
         node_features_tensor = torch.Tensor(self.node_features)
-        adjacency_tensor     = torch.Tensor(self.edge_features)
+        adjacency_tensor = torch.Tensor(self.edge_features)
         return node_features_tensor, adjacency_tensor
 
 
@@ -805,19 +834,28 @@ class GenerationGraph(MolecularGraph):
     `torch.Tensor`s for the graph attributes, so they can be conveniently used
     on the GPU.
     """
-    def __init__(self, constants : namedtuple,
-                 molecule : rdkit.Chem.Mol,
-                 node_features : torch.Tensor,
-                 edge_features : torch.Tensor) -> None:
-        super().__init__(constants, molecule=False, node_features=False,
-                         edge_features=False, atom_feature_vector=False)
+
+    def __init__(
+        self,
+        constants: namedtuple,
+        molecule: rdkit.Chem.Mol,
+        node_features: torch.Tensor,
+        edge_features: torch.Tensor,
+    ) -> None:
+        super().__init__(
+            constants,
+            molecule=False,
+            node_features=False,
+            edge_features=False,
+            atom_feature_vector=False,
+        )
 
         try:
             self.n_nodes = molecule.GetNumAtoms()
         except AttributeError:
             self.n_nodes = 0
 
-        self.molecule      = molecule
+        self.molecule = molecule
         self.node_features = node_features
         self.edge_features = edge_features
 

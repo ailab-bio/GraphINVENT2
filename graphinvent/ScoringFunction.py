@@ -15,14 +15,16 @@ Each component score can be thresholded: if any component falls below its
 threshold the molecule receives a score of 0.  This lets the RL agent focus
 only on molecules that simultaneously satisfy all criteria.
 """
+
 # load general packages and functions
 from collections import namedtuple
+
+import numpy as np
+import sklearn
 import torch
 from rdkit import DataStructs
 from rdkit.Chem import QED, AllChem
-import numpy as np
-import sklearn
-from sklearn import svm
+
 
 class ScoringFunction:
     """
@@ -35,7 +37,8 @@ class ScoringFunction:
     The score is set to 0 for molecules that were not properly terminated, are
     chemically invalid, or fail any of the per-component thresholds.
     """
-    def __init__(self, constants : namedtuple) -> None:
+
+    def __init__(self, constants: namedtuple) -> None:
         """
         Args:
         ----
@@ -43,21 +46,26 @@ class ScoringFunction:
                                      constants.
         """
         self.score_components = constants.score_components  # list
-        self.score_type       = constants.score_type        # list
-        self.qsar_models      = constants.qsar_models       # dict
-        self.device           = constants.device
-        self.max_n_nodes      = constants.max_n_nodes
+        self.score_type = constants.score_type  # list
+        self.qsar_models = constants.qsar_models  # dict
+        self.device = constants.device
+        self.max_n_nodes = constants.max_n_nodes
         self.score_thresholds = constants.score_thresholds
 
-        self.n_graphs         = None  # placeholder
-        self.constants        = constants
+        self.n_graphs = None  # placeholder
+        self.constants = constants
 
-        assert len(self.score_components) == len(self.score_thresholds), \
-               "`score_components` and `score_thresholds` do not match."
+        assert len(self.score_components) == len(
+            self.score_thresholds
+        ), "`score_components` and `score_thresholds` do not match."
 
-    def compute_score(self, graphs : list, termination : torch.Tensor,
-                      validity : torch.Tensor, uniqueness : torch.Tensor) -> \
-                      torch.Tensor:
+    def compute_score(
+        self,
+        graphs: list,
+        termination: torch.Tensor,
+        validity: torch.Tensor,
+        uniqueness: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Computes the overall score for the input molecular graphs.
 
@@ -73,7 +81,7 @@ class ScoringFunction:
         -------
             final_score (torch.Tensor) : The final scores for each input graph.
         """
-        self.n_graphs          = len(graphs)
+        self.n_graphs = len(graphs)
         contributions_to_score = self.get_contributions_to_score(graphs=graphs)
 
         if len(self.score_components) == 1:
@@ -90,14 +98,14 @@ class ScoringFunction:
                 component_mask = torch.where(
                     score_component > self.score_thresholds[idx],
                     torch.ones(self.n_graphs, device=self.device, dtype=torch.uint8),
-                    torch.zeros(self.n_graphs, device=self.device, dtype=torch.uint8)
+                    torch.zeros(self.n_graphs, device=self.device, dtype=torch.uint8),
                 )
                 component_masks.append(component_mask)
 
             final_score = component_masks[0]
             for mask in component_masks[1:]:
                 final_score *= mask
-                final_score  = final_score.float()
+                final_score = final_score.float()
 
         else:
             raise NotImplementedError
@@ -113,7 +121,7 @@ class ScoringFunction:
 
         return final_score
 
-    def get_contributions_to_score(self, graphs : list) -> list:
+    def get_contributions_to_score(self, graphs: list) -> list:
         """
         Returns the different elements of the score.
 
@@ -131,21 +139,21 @@ class ScoringFunction:
         for score_component in self.score_components:
             if "target_size" in score_component:
 
-                target_size  = int(score_component[12:])
+                target_size = int(score_component[12:])
 
-                assert target_size < self.max_n_nodes, \
-                       "Target size must be strictly less than `max_n_nodes` (equal causes division by zero)."
+                assert (
+                    target_size < self.max_n_nodes
+                ), "Target size must be strictly less than `max_n_nodes` (equal causes division by zero)."
                 assert 0 < target_size, "Target size must be greater than 0."
 
                 target_size *= torch.ones(self.n_graphs, device=self.device)
-                n_nodes      = torch.tensor([graph.n_nodes for graph in graphs],
-                                            device=self.device)
-                max_nodes    = self.max_n_nodes
-                score        = (
-                    torch.ones(self.n_graphs, device=self.device)
-                    - torch.abs(n_nodes - target_size)
-                    / (max_nodes - target_size)
+                n_nodes = torch.tensor(
+                    [graph.n_nodes for graph in graphs], device=self.device
                 )
+                max_nodes = self.max_n_nodes
+                score = torch.ones(self.n_graphs, device=self.device) - torch.abs(
+                    n_nodes - target_size
+                ) / (max_nodes - target_size)
 
                 contributions_to_score.append(score)
 
@@ -169,19 +177,20 @@ class ScoringFunction:
                 # `score_component` has to be the key to the QSAR model in the
                 # `self.qsar_models` dict
                 qsar_model = self.qsar_models[score_component]
-                score      = self.compute_activity(mols, qsar_model)
+                score = self.compute_activity(mols, qsar_model)
 
                 contributions_to_score.append(score)
 
             else:
-                raise NotImplementedError("The score component is not defined. "
-                                          "You can define it in "
-                                          "`ScoringFunction.py`.")
+                raise NotImplementedError(
+                    "The score component is not defined. "
+                    "You can define it in "
+                    "`ScoringFunction.py`."
+                )
 
         return contributions_to_score
 
-    def compute_activity(self, mols : list,
-                         activity_model : sklearn.svm.SVC) -> list:
+    def compute_activity(self, mols: list, activity_model: sklearn.svm.SVC) -> list:
         """
         Note: this function may have to be tuned/replicated depending on how
         the activity model is saved.
@@ -196,15 +205,13 @@ class ScoringFunction:
         -------
             activity (list) : Contains predicted activities for input molecules.
         """
-        n_mols   = len(mols)
+        n_mols = len(mols)
         activity = torch.zeros(n_mols, device=self.device)
 
         for idx, mol in enumerate(mols):
             try:
-                fingerprint   = AllChem.GetMorganFingerprintAsBitVect(mol,
-                                                                      2,
-                                                                      nBits=2048)
-                ecfp4         = np.zeros((2048,))
+                fingerprint = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048)
+                ecfp4 = np.zeros((2048,))
                 DataStructs.ConvertToNumpyArray(fingerprint, ecfp4)
                 activity[idx] = activity_model.predict_proba([ecfp4])[0][1]
             except (ValueError, RuntimeError, AttributeError):

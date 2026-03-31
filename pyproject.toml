@@ -30,7 +30,7 @@ dependencies = [
 tdc = ["PyTDC"]
 
 # pip install -e ".[dev]"  — linting / type checking during development
-dev = ["ruff", "pyright", "pytest"]
+dev = ["black", "ruff", "mypy", "pytest", "pre-commit"]
 
 [project.scripts]
 # Run jobs from anywhere in the repo: graphinvent-submit --config jobs/pretrain/params.json
@@ -42,3 +42,32 @@ include = ["graphinvent*"]
 
 [tool.setuptools.package-data]
 "graphinvent" = ["tools/*", "parameters/*", "gnn/*"]
+
+# ---------------------------------------------------------------------------
+# Tool configuration
+# ---------------------------------------------------------------------------
+
+[tool.black]
+line-length = 88
+target-version = ["py39", "py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]   # pycodestyle errors/warnings, pyflakes, isort
+ignore = [
+    "E501",   # line too long — black handles this
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_return_any = false   # too noisy for ML code with Any-typed tensors

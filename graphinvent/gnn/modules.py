@@ -5,7 +5,7 @@ Reusable neural network modules used by the GGNN model.
   AttentionReadout -- attention-weighted graph-level pooling
   ActionProbReadout       -- predicts the full Action Probability Distribution (action probabilities)
 """
-from collections import namedtuple
+
 import torch
 
 
@@ -34,10 +34,20 @@ class AttentionReadout(torch.nn.Module):
                                before the softmax (prevents padded positions from
                                receiving attention weight).
     """
-    def __init__(self, node_features: int, hidden_node_features: int,
-                 out_features: int, att_depth: int, att_hidden_dim: int,
-                 att_dropout_p: float, emb_depth: int, emb_hidden_dim: int,
-                 emb_dropout_p: float, big_positive: float) -> None:
+
+    def __init__(
+        self,
+        node_features: int,
+        hidden_node_features: int,
+        out_features: int,
+        att_depth: int,
+        att_hidden_dim: int,
+        att_dropout_p: float,
+        emb_depth: int,
+        emb_hidden_dim: int,
+        emb_dropout_p: float,
+        big_positive: float,
+    ) -> None:
         super().__init__()
 
         self.big_positive = big_positive
@@ -55,8 +65,12 @@ class AttentionReadout(torch.nn.Module):
             dropout_p=emb_dropout_p,
         )
 
-    def forward(self, hidden_nodes: torch.Tensor, input_nodes: torch.Tensor,
-                node_mask: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        hidden_nodes: torch.Tensor,
+        input_nodes: torch.Tensor,
+        node_mask: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Args:
             hidden_nodes: Final hidden states from message passing.
@@ -69,11 +83,11 @@ class AttentionReadout(torch.nn.Module):
         Returns:
             Graph-level embedding. Shape: (batch, out_features)
         """
-        cat          = torch.cat((hidden_nodes, input_nodes), dim=2)
-        energy_mask  = (node_mask == 0).float() * self.big_positive
-        energies     = self.att_nn(cat) - energy_mask.unsqueeze(-1)
-        attention    = torch.nn.functional.softmax(energies, dim=1)
-        embedding    = self.emb_nn(hidden_nodes)
+        cat = torch.cat((hidden_nodes, input_nodes), dim=2)
+        energy_mask = (node_mask == 0).float() * self.big_positive
+        energies = self.att_nn(cat) - energy_mask.unsqueeze(-1)
+        attention = torch.nn.functional.softmax(energies, dim=1)
+        embedding = self.emb_nn(hidden_nodes)
         return torch.sum(attention * embedding, dim=1)
 
 
@@ -93,11 +107,17 @@ class MLP(torch.nn.Module):
         out_features:        Number of output features.
         dropout_p:           AlphaDropout probability (0.0 = no dropout).
     """
-    def __init__(self, in_features: int, hidden_layer_sizes: list,
-                 out_features: int, dropout_p: float) -> None:
+
+    def __init__(
+        self,
+        in_features: int,
+        hidden_layer_sizes: list,
+        out_features: int,
+        dropout_p: float,
+    ) -> None:
         super().__init__()
 
-        sizes  = [in_features, *hidden_layer_sizes, out_features]
+        sizes = [in_features, *hidden_layer_sizes, out_features]
         layers = [
             self._linear_block(in_f, out_f, dropout_p)
             for in_f, out_f in zip(sizes, sizes[1:])
@@ -107,11 +127,14 @@ class MLP(torch.nn.Module):
             *[module for sq in layers for module in sq.children()]
         )
 
-    def _linear_block(self, in_f: int, out_f: int,
-                      dropout_p: float) -> torch.nn.Sequential:
+    def _linear_block(
+        self, in_f: int, out_f: int, dropout_p: float
+    ) -> torch.nn.Sequential:
         linear = torch.nn.Linear(in_f, out_f, bias=True)
         torch.nn.init.xavier_uniform_(linear.weight)
-        return torch.nn.Sequential(linear, torch.nn.SELU(), torch.nn.AlphaDropout(dropout_p))
+        return torch.nn.Sequential(
+            linear, torch.nn.SELU(), torch.nn.AlphaDropout(dropout_p)
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.seq(x)
@@ -161,11 +184,23 @@ class ActionProbReadout(torch.nn.Module):
         node_emb_size:    Dimension of each node's hidden state.
         device:           'cuda' or 'cpu'.
     """
-    def __init__(self, f_add_elems: int, f_conn_elems: int, f_term_elems: int,
-                 mlp1_depth: int, mlp1_dropout_p: float, mlp1_hidden_dim: int,
-                 mlp2_depth: int, mlp2_dropout_p: float, mlp2_hidden_dim: int,
-                 graph_emb_size: int, max_n_nodes: int, node_emb_size: int,
-                 device: str) -> None:
+
+    def __init__(
+        self,
+        f_add_elems: int,
+        f_conn_elems: int,
+        f_term_elems: int,
+        mlp1_depth: int,
+        mlp1_dropout_p: float,
+        mlp1_hidden_dim: int,
+        mlp2_depth: int,
+        mlp2_dropout_p: float,
+        mlp2_hidden_dim: int,
+        graph_emb_size: int,
+        max_n_nodes: int,
+        node_emb_size: int,
+        device: str,
+    ) -> None:
         super().__init__()
 
         self.device = device
@@ -204,8 +239,9 @@ class ActionProbReadout(torch.nn.Module):
             dropout_p=mlp2_dropout_p,
         )
 
-    def forward(self, node_level_output: torch.Tensor,
-                graph_embedding_batch: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, node_level_output: torch.Tensor, graph_embedding_batch: torch.Tensor
+    ) -> torch.Tensor:
         """
         Args:
             node_level_output:    Hidden states for all nodes in the batch.
@@ -218,16 +254,16 @@ class ActionProbReadout(torch.nn.Module):
             Shape: (batch, len_f_add + len_f_conn + 1)
         """
         # Tier-1: per-node preliminary f_add and f_conn
-        f_add_1  = self.fAddNet1(node_level_output)
+        f_add_1 = self.fAddNet1(node_level_output)
         f_conn_1 = self.fConnNet1(node_level_output)
 
         # Flatten (batch, nodes, features) → (batch, nodes * features)
-        f_add_1  = f_add_1.view(f_add_1.size(0),   f_add_1.size(1)  * f_add_1.size(2))
-        f_conn_1 = f_conn_1.view(f_conn_1.size(0),  f_conn_1.size(1) * f_conn_1.size(2))
+        f_add_1 = f_add_1.view(f_add_1.size(0), f_add_1.size(1) * f_add_1.size(2))
+        f_conn_1 = f_conn_1.view(f_conn_1.size(0), f_conn_1.size(1) * f_conn_1.size(2))
 
         # Tier-2: condition on graph embedding to produce final action probabilities components
-        f_add_2  = self.fAddNet2(
-            torch.cat((f_add_1,  graph_embedding_batch), dim=1).unsqueeze(dim=1)
+        f_add_2 = self.fAddNet2(
+            torch.cat((f_add_1, graph_embedding_batch), dim=1).unsqueeze(dim=1)
         )
         f_conn_2 = self.fConnNet2(
             torch.cat((f_conn_1, graph_embedding_batch), dim=1).unsqueeze(dim=1)
@@ -235,4 +271,6 @@ class ActionProbReadout(torch.nn.Module):
         f_term_2 = self.fTermNet2(graph_embedding_batch)
 
         # Flatten and concatenate: [f_add | f_conn | f_term]
-        return torch.cat((f_add_2.squeeze(dim=1), f_conn_2.squeeze(dim=1), f_term_2), dim=1)
+        return torch.cat(
+            (f_add_2.squeeze(dim=1), f_conn_2.squeeze(dim=1), f_term_2), dim=1
+        )
