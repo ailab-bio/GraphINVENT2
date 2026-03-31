@@ -2,7 +2,7 @@
 
 Before training any model, your raw SMILES data must be converted into HDF5 format.
 This step encodes each molecule as a sequence of subgraphs (its **decoding route**) and
-stores the node features, edge features, and target Action Probability Distributions (APDs)
+stores the node features, edge features, and target Action Probability Distributions (action probabilities)
 in a compact binary format that the data loader can stream efficiently during training.
 
 ---

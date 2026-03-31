@@ -32,7 +32,7 @@ class GraphGeneratorRL:
     Generates a batch of molecular graphs while tracking agent *and* prior likelihoods.
 
     At each generation step both the agent model and the frozen prior model are
-    queried.  The agent's APD is used to sample the next action; both the agent
+    queried.  The agent's action probabilities is used to sample the next action; both the agent
     log-probability and the prior log-probability for that action are recorded.
     These per-action likelihoods are summed at the end and returned alongside
     the finished molecules so the RL loss can be computed.
@@ -143,13 +143,13 @@ class GraphGeneratorRL:
         # of graphs have been generated
         while n_generated_so_far < self.batch_size:
 
-            # predict the APDs for this batch of graphs
-            agent_apd = softmax(self.agent_model(self.nodes, self.edges))
-            prior_apd = softmax(self.prior_model(self.nodes, self.edges))
+            # predict the action probabilities for this batch of graphs
+            agent_action_probs = softmax(self.agent_model(self.nodes, self.edges))
+            prior_action_probs = softmax(self.prior_model(self.nodes, self.edges))
 
-            # sample the actions from the predicted APDs
+            # sample the actions from the predicted action probabilities
             add, conn, term, invalid, agent_likelihoods, prior_likelihoods = \
-                self.get_actions(agent_apds=agent_apd, prior_apds=prior_apd)
+                self.get_actions(agent_action_probs=agent_action_probs, prior_action_probs=prior_action_probs)
 
             # Exclude the dummy graph at index 0 from both sets before any
             # counting.  The dummy must never be written to the output buffer.
@@ -544,16 +544,16 @@ class GraphGeneratorRL:
         self.edges[0, 0, 0, 0] = 1
         self.n_nodes[0]        = 1
 
-    def get_actions(self, agent_apds : torch.Tensor,
-                    prior_apds : torch.Tensor) -> Tuple[torch.Tensor, ...]:
+    def get_actions(self, agent_action_probs : torch.Tensor,
+                    prior_action_probs : torch.Tensor) -> Tuple[torch.Tensor, ...]:
         """
-        Samples the input batch of APDs for a batch of actions to apply to the
+        Samples the input batch of action probabilities for a batch of actions to apply to the
         graphs, and separates the action indices.
 
         Args:
         ----
-            agent_apds (torch.Tensor) : APDs for a batch of graphs (agent).
-            prior_apds (torch.Tensor) : APDs for a batch of graphs (prior).
+            agent_action_probs (torch.Tensor) : action probabilities for a batch of graphs (agent).
+            prior_action_probs (torch.Tensor) : action probabilities for a batch of graphs (prior).
 
         Returns:
         -------
@@ -567,45 +567,45 @@ class GraphGeneratorRL:
             prior_likelihoods (torch.Tensor) : Likelihoods per action corresponding
                                                to graphs in batch (prior).
         """
-        def _reshape_apd(apds : torch.Tensor, batch_size : int) -> \
+        def _reshape_action_probs(action_probs : torch.Tensor, batch_size : int) -> \
                          Tuple[torch.Tensor, ...]:
             """
-            Reshapes the input batch of APDs (inverse to flattening).
+            Reshapes the input batch of action probabilities (inverse to flattening).
 
             Args:
             ----
-                apds (torch.Tensor) : APDs for a batch of graphs.
+                action_probs (torch.Tensor) : action probabilities for a batch of graphs.
                 batch_size (int)    : Batch size.
 
             Returns:
             -------
-                f_add (torch.Tensor)  : Reshaped APD segment for "add" action.
-                f_conn (torch.Tensor) : Reshaped APD segment for "connect" action.
-                f_term (torch.Tensor) : Reshaped APD segment for "terminate" action.
+                f_add (torch.Tensor)  : Reshaped action probabilities segment for "add" action.
+                f_conn (torch.Tensor) : Reshaped action probabilities segment for "connect" action.
+                f_term (torch.Tensor) : Reshaped action probabilities segment for "terminate" action.
             """
             # get shapes of "add" and "connect" actions
             f_add_shape  = (batch_size, *constants.dim_f_add)
             f_conn_shape = (batch_size, *constants.dim_f_conn)
 
-            # get length of flattened segment of APD corresponding to "add"
+            # get length of flattened segment of action probabilities corresponding to "add"
             # action
             f_add_size = np.prod(constants.dim_f_add)
 
-            # reshape the various APD components
-            f_add  = torch.reshape(apds[:, :f_add_size], f_add_shape)
-            f_conn = torch.reshape(apds[:, f_add_size:-1], f_conn_shape)
-            f_term = apds[:, -1]
+            # reshape the various action probabilities components
+            f_add  = torch.reshape(action_probs[:, :f_add_size], f_add_shape)
+            f_conn = torch.reshape(action_probs[:, f_add_size:-1], f_conn_shape)
+            f_term = action_probs[:, -1]
 
             return f_add, f_conn, f_term
 
-        def _sample_apd(agent_apds : torch.Tensor, prior_apds : torch.Tensor,
+        def _sample_action_probs(agent_action_probs : torch.Tensor, prior_action_probs : torch.Tensor,
                         batch_size : int) -> Tuple[torch.Tensor, ...]:
             """
-            Samples the input APDs for all graphs in the batch.
+            Samples the input action probabilities for all graphs in the batch.
 
             Args:
             ----
-                apds (torch.Tensor) : APDs for a batch of graphs.
+                action_probs (torch.Tensor) : action probabilities for a batch of graphs.
                 batch_size (int)    : Batch size.
 
             Returns:
@@ -618,15 +618,15 @@ class GraphGeneratorRL:
                 prior_likelihoods (torch.Tensor) : Contains prior likelihoods
                                                    for sampled actions.
             """
-            action_probability_distribution = torch.distributions.Multinomial(
+            action_dist = torch.distributions.Multinomial(
                 1,
-                probs=agent_apds
+                probs=agent_action_probs
             )
-            apd_one_hot           = action_probability_distribution.sample()
-            f_add, f_conn, f_term = _reshape_apd(apd_one_hot, batch_size)
+            action_probs_one_hot           = action_dist.sample()
+            f_add, f_conn, f_term = _reshape_action_probs(action_probs_one_hot, batch_size)
 
-            agent_likelihoods = agent_apds[apd_one_hot == 1]
-            prior_likelihoods = prior_apds[apd_one_hot == 1]
+            agent_likelihoods = agent_action_probs[action_probs_one_hot == 1]
+            prior_likelihoods = prior_action_probs[action_probs_one_hot == 1]
 
             add_idc  = torch.nonzero(f_add, as_tuple=True)
             conn_idc = torch.nonzero(f_conn, as_tuple=True)
@@ -634,10 +634,10 @@ class GraphGeneratorRL:
 
             return add_idc, conn_idc, term_idc, agent_likelihoods, prior_likelihoods
 
-        # sample the APD for all graphs in the batch for action indices
+        # sample the action probabilities for all graphs in the batch for action indices
         (f_add_idc, f_conn_idc, f_term_idc,
-         agent_likelihoods, prior_likelihoods) = _sample_apd(agent_apds=agent_apds,
-                                                             prior_apds=prior_apds,
+         agent_likelihoods, prior_likelihoods) = _sample_action_probs(agent_action_probs=agent_action_probs,
+                                                             prior_action_probs=prior_action_probs,
                                                              batch_size=self.batch_size)
 
         # get indices for the "add" action

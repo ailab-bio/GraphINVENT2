@@ -445,7 +445,7 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
         "dim_f_add"          : dim_f_add,
         "dim_f_conn"         : dim_f_conn,
         "dim_f_term"         : dim_f_term,
-        "dim_apd"            : [int(np.prod(dim_f_add)) + int(np.prod(dim_f_conn)) + 1],
+        "dim_action_probs"            : [int(np.prod(dim_f_add)) + int(np.prod(dim_f_conn)) + 1],
         "len_f_add"          : len_f_add,
         "len_f_add_per_node" : len_f_add_per_node,
         "len_f_conn"         : len_f_conn,

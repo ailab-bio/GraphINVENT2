@@ -25,10 +25,10 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
     2. **Graph readout**:
        - `AttentionReadout` (graph gather) computes a single graph-level embedding
          by soft-weighting each node's hidden state by a learned attention score.
-       - `APDReadout` maps the per-node hidden states *and* the graph embedding to
-         the flat, unnormalised Action Probability Distribution (APD) logits.
+       - `ActionProbReadout` maps the per-node hidden states *and* the graph embedding to
+         the flat, unnormalised Action Probability Distribution (action probabilities) logits.
 
-    The APD logits are later normalised (softmax) and used to sample the next
+    The action probabilities logits are later normalised (softmax) and used to sample the next
     construction step: add a new node, connect two existing nodes, or terminate.
 
     Args:
@@ -79,8 +79,8 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
             big_positive=self.constants.big_positive,
         )
 
-        # Two-tier readout that predicts the full APD from node + graph embeddings.
-        self.APDReadout = gnn.modules.APDReadout(
+        # Two-tier readout that predicts the full action probabilities from node + graph embeddings.
+        self.ActionProbReadout = gnn.modules.ActionProbReadout(
             node_emb_size=self.constants.hidden_node_features,
             graph_emb_size=self.constants.gather_width,
             mlp1_hidden_dim=self.constants.mlp1_hidden_dim,
@@ -146,7 +146,7 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
     def readout(self, hidden_nodes: torch.Tensor, input_nodes: torch.Tensor,
                 node_mask: torch.Tensor) -> torch.Tensor:
         """
-        Produces the APD logits from the final node hidden states.
+        Produces the action probabilities logits from the final node hidden states.
 
         Args:
             hidden_nodes: Final hidden states after all message-passing rounds.
@@ -157,8 +157,8 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
                           Shape: (batch, max_n_nodes)
 
         Returns:
-            Flat, unnormalised APD logits.
+            Flat, unnormalised action probabilities logits.
             Shape: (batch, len_f_add + len_f_conn + 1)
         """
         graph_embeddings = self.gather(hidden_nodes, input_nodes, node_mask)
-        return self.APDReadout(hidden_nodes, graph_embeddings)
+        return self.ActionProbReadout(hidden_nodes, graph_embeddings)

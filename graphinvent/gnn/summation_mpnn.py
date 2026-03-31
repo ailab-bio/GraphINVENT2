@@ -13,7 +13,7 @@ class SummationMPNN(torch.nn.Module):
     and uses a gating mechanism (GRU) to update its own hidden state.  After a
     fixed number of message-passing rounds the hidden states are pooled into a
     single graph-level embedding and passed to a readout network that predicts the
-    Action Probability Distribution (APD) — the probability of each next
+    Action Probability Distribution (action probabilities) — the probability of each next
     construction step (add a node, connect two nodes, or terminate the graph).
 
     Concrete model classes (e.g. `GGNN`) inherit from this class and implement
@@ -69,7 +69,7 @@ class SummationMPNN(torch.nn.Module):
     def readout(self, hidden_nodes: torch.Tensor, input_nodes: torch.Tensor,
                 node_mask: torch.Tensor) -> torch.Tensor:
         """
-        Produces the APD prediction from the final node hidden states.
+        Produces the action probabilities prediction from the final node hidden states.
 
         Must be implemented by every subclass.
 
@@ -82,21 +82,21 @@ class SummationMPNN(torch.nn.Module):
                           Shape: (batch, max_n_nodes)
 
         Returns:
-            apd: Flat, unnormalised APD logits (softmax is applied externally).
+            action_probs: Flat, unnormalised action probabilities logits (softmax is applied externally).
                  Shape: (batch, len_f_add + len_f_conn + 1)
         """
         raise NotImplementedError
 
     def forward(self, nodes: torch.Tensor, edges: torch.Tensor) -> torch.Tensor:
         """
-        Runs the full message-passing loop and returns the APD logits.
+        Runs the full message-passing loop and returns the action probabilities logits.
 
         Steps:
           1. Build a sparse representation of all (batch, node, neighbour) triples
              from the adjacency matrix.
           2. Run `message_passes` rounds of: compute messages → sum messages per node
              → update hidden state with GRU.
-          3. Call `readout` on the final hidden states to produce the APD.
+          3. Call `readout` on the final hidden states to produce the action probabilities.
 
         Args:
             nodes: Node feature matrices, one per graph.
@@ -105,7 +105,7 @@ class SummationMPNN(torch.nn.Module):
                    Shape: (batch, max_n_nodes, max_n_nodes, n_edge_features)
 
         Returns:
-            apd: Flat, unnormalised APD logits.
+            action_probs: Flat, unnormalised action probabilities logits.
                  Shape: (batch, len_f_add + len_f_conn + 1)
         """
         adjacency = torch.sum(edges, dim=3)

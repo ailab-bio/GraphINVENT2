@@ -333,14 +333,14 @@ def write_ts_properties_to_csv(ts_properties_dict : dict, split : str) -> None:
 def get_dims() -> dict:
     """
     Gets the dims corresponding to the three datasets in each preprocessed HDF
-    file: "nodes", "edges", and "APDs".
+    file: "nodes", "edges", and "action_probs".
     """
     dims = {}
     dims["nodes"] = [max_n_nodes, n_atom_types + n_formal_charges]
     dims["edges"] = [max_n_nodes, max_n_nodes, n_bond_types]
     dim_f_add     = [max_n_nodes, n_atom_types, n_formal_charges, n_bond_types]
     dim_f_conn    = [max_n_nodes, n_bond_types]
-    dims["APDs"]  = [np.prod(dim_f_add) + np.prod(dim_f_conn) + 1]
+    dims["action_probs"]  = [np.prod(dim_f_add) + np.prod(dim_f_conn) + 1]
 
     return dims
 
@@ -384,8 +384,8 @@ def combine_HDFs(paths : list, training_set : bool, split : str) -> None:
     new_dataset_edges = new_hdf_file.create_dataset("edges",
                                                     (total_n_subgraphs, *dims["edges"]),
                                                     dtype=np.dtype("int8"))
-    new_dataset_APDs  = new_hdf_file.create_dataset("APDs",
-                                                    (total_n_subgraphs, *dims["APDs"]),
+    new_dataset_APDs  = new_hdf_file.create_dataset("action_probs",
+                                                    (total_n_subgraphs, *dims["action_probs"]),
                                                     dtype=np.dtype("int8"))
 
     print("* Combining data from smaller HDFs into a new larger HDF.")
@@ -396,13 +396,13 @@ def combine_HDFs(paths : list, training_set : bool, split : str) -> None:
 
         nodes = hdf_file.get("nodes")
         edges = hdf_file.get("edges")
-        APDs  = hdf_file.get("APDs")
+        action probabilities  = hdf_file.get("action_probs")
 
         n_subgraphs = nodes.shape[0]
 
         new_dataset_nodes[init_index:(init_index + n_subgraphs)] = nodes
         new_dataset_edges[init_index:(init_index + n_subgraphs)] = edges
-        new_dataset_APDs[init_index:(init_index + n_subgraphs)]  = APDs
+        new_dataset_APDs[init_index:(init_index + n_subgraphs)]  = action probabilities
 
         init_index += n_subgraphs
         hdf_file.close()

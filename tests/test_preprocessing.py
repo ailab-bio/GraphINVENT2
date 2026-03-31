@@ -5,7 +5,7 @@ Checks:
   1. The three split .smi files together contain the same number of molecules
      as the original SMILES file (only when SMILES_FILE is set in config.py).
   2. Each HDF5 file contains the same number of complete molecules as its
-     corresponding .smi file (determined via the termination flag in the APD).
+     corresponding .smi file (determined via the termination flag in the action probabilities).
   3. Every complete molecule in each HDF5 can be decoded back to a valid,
      non-empty SMILES string.
 
@@ -76,12 +76,12 @@ def count_molecules_in_hdf(h5_path: Path) -> int:
     """
     Count complete molecules in an HDF5 file.
 
-    A molecule is 'complete' when the last element of its APD vector
+    A molecule is 'complete' when the last element of its action probabilities vector
     (the termination flag f_term) equals 1.
     """
     with h5py.File(h5_path, "r") as fh:
-        apds = fh["APDs"][:]
-    return int((apds[:, -1] == 1).sum())
+        action_probs = fh["action_probs"][:]
+    return int((action_probs[:, -1] == 1).sum())
 
 
 def get_complete_graphs(h5_path: Path) -> Tuple[np.ndarray, np.ndarray]:
@@ -93,10 +93,10 @@ def get_complete_graphs(h5_path: Path) -> Tuple[np.ndarray, np.ndarray]:
         edges : (n_molecules, max_n_nodes, max_n_nodes, n_edge_features)  int8
     """
     with h5py.File(h5_path, "r") as fh:
-        apds  = fh["APDs"][:]
+        action_probs  = fh["action_probs"][:]
         nodes = fh["nodes"][:]
         edges = fh["edges"][:]
-    mask = apds[:, -1] == 1
+    mask = action_probs[:, -1] == 1
     return nodes[mask], edges[mask]
 
 
@@ -335,12 +335,12 @@ class TestHDFFileCounts:
 
     @pytest.mark.parametrize("split", SPLITS)
     def test_hdf_has_required_datasets(self, dataset_dir, split):
-        """HDF5 file must contain 'nodes', 'edges', and 'APDs' datasets."""
+        """HDF5 file must contain 'nodes', 'edges', and 'action probabilities' datasets."""
         h5_path = dataset_dir / f"{split}.h5"
         if not h5_path.exists():
             pytest.skip(f"{split}.h5 not found")
         with h5py.File(h5_path, "r") as fh:
-            missing = [k for k in ("nodes", "edges", "APDs") if k not in fh]
+            missing = [k for k in ("nodes", "edges", "action_probs") if k not in fh]
         assert not missing, (
             f"{split}.h5 is missing dataset(s): {missing}"
         )
@@ -348,7 +348,7 @@ class TestHDFFileCounts:
     @pytest.mark.parametrize("split", SPLITS)
     def test_hdf_molecule_count_matches_smi(self, dataset_dir, split):
         """
-        The number of complete molecules in <split>.h5 (rows where APD[-1]==1)
+        The number of complete molecules in <split>.h5 (rows where action probabilities[-1]==1)
         must equal the number of SMILES in <split>.smi.
         """
         smi_path = dataset_dir / f"{split}.smi"
@@ -377,7 +377,7 @@ class TestHDFFileCounts:
             pytest.skip(f"{split}.h5 not found")
 
         with h5py.File(h5_path, "r") as fh:
-            n_subgraphs = fh["APDs"].shape[0]
+            n_subgraphs = fh["action_probs"].shape[0]
         n_molecules = count_molecules_in_hdf(h5_path)
 
         assert n_subgraphs >= n_molecules, (

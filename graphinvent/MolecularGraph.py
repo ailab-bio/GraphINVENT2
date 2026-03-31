@@ -37,7 +37,7 @@ class MolecularGraph:
         Built from an ``rdkit.Chem.Mol`` during the preprocessing job.  Stores
         node/edge features as ``np.ndarray``s so they can be written to HDF5.
         Generates the *decoding route* — the ordered sequence of subgraphs and
-        target APDs that the model will learn from.
+        target action probabilities that the model will learn from.
 
     ``TrainingGraph``
         Reconstructed from HDF5 data during training.  Uses ``torch.Tensor``s
@@ -45,7 +45,7 @@ class MolecularGraph:
 
     ``GenerationGraph``
         Built incrementally during molecule generation by applying successive
-        actions sampled from the model's predicted APD.  Uses ``torch.Tensor``s.
+        actions sampled from the model's predicted action probabilities.  Uses ``torch.Tensor``s.
     """
     def __init__(self, constants : namedtuple,
                  molecule : rdkit.Chem.Mol ,
@@ -479,17 +479,17 @@ class PreprocessingGraph(MolecularGraph):
         # reorder all nodes according to new node ranking
         self.reorder_nodes()
 
-    def get_decoding_APD(self) -> np.ndarray:
+    def get_action_probs(self) -> np.ndarray:
         """
         For a given subgraph along a decoding route for a `PreprocessingGraph`,
-        computes the target decoding APD that would take you to the next
+        computes the target decoding action probabilities that would take you to the next
         subgraph (adding one edge/node). Used when generating the training data.
 
         Returns:
         -------
-            The graph decoding APD, comprised of the following probability values:
+            The graph decoding action probabilities, comprised of the following probability values:
 
-            f_add (numpy.ndarray)  : Add APD. Size Mx|A|x|F|x|H|x|B| tensor whose
+            f_add (numpy.ndarray)  : Add action probabilities. Size Mx|A|x|F|x|H|x|B| tensor whose
                                      elements are the probabilities of adding a new
                                      atom of type a with formal charge f and implicit
                                      Hs h to existing atom v with a new bond of type
@@ -497,11 +497,11 @@ class PreprocessingGraph(MolecularGraph):
                                      size Mx|A|x|F|x|H|x|C|x|B| tensor, whose elements
                                      are the probabilities of adding such an atom
                                      with chiral state c.
-            f_conn (numpy.ndarray) : Connect APD. Size |V|x|B| matrix, whose
+            f_conn (numpy.ndarray) : Connect action probabilities. Size |V|x|B| matrix, whose
                                      elements are the probability of connecting
                                      the last appended atom with existing atom v
                                      using a new bond of type b.
-            f_term (int)           : Terminate APD. Scalar indicating probability
+            f_term (int)           : Terminate action probabilities. Scalar indicating probability
                                      of terminating the graph.
 
             M is the maximum number of nodes in a graph in any set (train, test,
@@ -513,7 +513,7 @@ class PreprocessingGraph(MolecularGraph):
         last_node_idx  = self.n_nodes - 1  # zero-indexing
         fv_nonzero_idc = self.get_nonzero_feature_indices(node_idx=last_node_idx)
 
-        # initialize action probability distribution (APD)
+        # initialize action probability distribution (action probabilities)
         f_add  = np.zeros(self.constants.dim_f_add, dtype=np.int32)
         f_conn = np.zeros(self.constants.dim_f_conn, dtype=np.int32)
 
@@ -545,33 +545,33 @@ class PreprocessingGraph(MolecularGraph):
             f_add[tuple([0] + fv_nonzero_idc + [0])] = 1
 
         # concatenate `f_add`, `f_conn`, and `f_term` (`f_term`==0)
-        apd = np.concatenate((f_add.ravel(), f_conn.ravel(), np.array([0])))
-        return apd
+        action_probs = np.concatenate((f_add.ravel(), f_conn.ravel(), np.array([0])))
+        return action_probs
 
-    def get_final_decoding_APD(self) -> np.ndarray:
+    def get_final_action_probs(self) -> np.ndarray:
         """
         For a given subgraph along a decoding route for a `PreprocessingGraph`,
-        computes the target decoding APD that would indicate termination. Used
+        computes the target decoding action probabilities that would indicate termination. Used
         when generating the training data.
 
         Returns:
         -------
-            The graph decoding APD, comprised of the following probability
-            values (see `get_decoding_APD()` docstring above):
+            The graph decoding action probabilities, comprised of the following probability
+            values (see `get_action_probs()` docstring above):
 
-            f_add (numpy.ndarray)  : Add APD.
-            f_conn (numpy.ndarray) : Connect APD.
-            f_term (int)           : Terminate APD. Scalar (1, since terminating)
+            f_add (numpy.ndarray)  : Add action probabilities.
+            f_conn (numpy.ndarray) : Connect action probabilities.
+            f_term (int)           : Terminate action probabilities. Scalar (1, since terminating)
                                      indicating the probability of terminating
                                      the graph generation.
         """
-        # initialize action probability distribution (APD)
+        # initialize action probability distribution (action probabilities)
         f_add  = np.zeros(self.constants.dim_f_add, dtype=np.int32)
         f_conn = np.zeros(self.constants.dim_f_conn, dtype=np.int32)
 
         # concatenate `f_add`, `f_conn`, and `f_term` (`f_term`==0)
-        apd = np.concatenate((f_add.ravel(), f_conn.ravel(), np.array([1])))
-        return apd
+        action_probs = np.concatenate((f_add.ravel(), f_conn.ravel(), np.array([1])))
+        return action_probs
 
     def get_graph_state(self) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -658,7 +658,7 @@ class PreprocessingGraph(MolecularGraph):
 
         If the last atom is bound to multiple atoms on the graph (i.e. a ring
         atom), then only deletes the least "important" bond, as determined from
-        the breadth-first ordering. This is so as to allow the APD to be broken
+        the breadth-first ordering. This is so as to allow the action probabilities to be broken
         up into multiple steps (add, connect, terminate).
         """
         last_atom_idx = self.n_nodes - 1
@@ -711,7 +711,7 @@ class PreprocessingGraph(MolecularGraph):
                                  Tuple[list, np.ndarray]:
         """
         Starting from the specified graph, returns the state (subgraph and
-        decoding APD) indicated by `subgraph_idx` along the decoding route.
+        decoding action probabilities) indicated by `subgraph_idx` along the decoding route.
 
         Args:
         ----
@@ -720,7 +720,7 @@ class PreprocessingGraph(MolecularGraph):
         Returns:
         -------
             decoding_graph (list)      : Graph representation, structured as [X, E].
-            decoding_APDs (np.ndarray) : Contains the decoding APD, structured as
+            action_probs (np.ndarray) : Contains the decoding action probabilities, structured as
                                          a concatenation of flattened (f_add, f_conn,
                                          f_term).
         """
@@ -732,15 +732,15 @@ class PreprocessingGraph(MolecularGraph):
             for _ in range(1, subgraph_idx):
                 molecular_graph.truncate_graph()
 
-            # get the APD before the last truncation (since APD says how to get
-            # to the next graph, need to truncate once more after obtaining APD)
-            decoding_APD = molecular_graph.get_decoding_APD()
+            # get the action probabilities before the last truncation (since action probabilities says how to get
+            # to the next graph, need to truncate once more after obtaining action probabilities)
+            action_probs = molecular_graph.get_action_probs()
             molecular_graph.truncate_graph()
             X, E         = molecular_graph.get_graph_state()
 
         elif subgraph_idx == 0:
             # return the first subgraph
-            decoding_APD = molecular_graph.get_final_decoding_APD()
+            action_probs = molecular_graph.get_final_action_probs()
             X, E         = molecular_graph.get_graph_state()
 
         else:
@@ -748,7 +748,7 @@ class PreprocessingGraph(MolecularGraph):
 
         decoding_graph = [X, E]
 
-        return decoding_graph, decoding_APD
+        return decoding_graph, action_probs
 
 
 class TrainingGraph(MolecularGraph):

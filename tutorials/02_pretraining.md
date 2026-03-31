@@ -3,7 +3,7 @@
 Pretraining trains the GGNN generative model **from random weight initialisation** using
 supervised learning.  At each step the model receives a partial molecular graph and must
 predict the probability of every possible next action (the Action Probability Distribution,
-or APD).  The loss is the KL divergence between the predicted APD and the target APD
+or action probabilities).  The loss is the KL divergence between the predicted action probabilities and the target action probabilities
 derived from the training data during preprocessing.
 
 ---
@@ -22,9 +22,9 @@ derived from the training data during preprocessing.
 1. **Data loading** — training data is loaded in large blocks (controlled by `block_size`)
    from the HDF5 file into RAM, then served as mini-batches (`batch_size`) to the GPU.
 2. **Forward pass** — the GGNN runs message passing on the partial graph, pools node
-   embeddings via attention, and predicts APD logits.
+   embeddings via attention, and predicts action probabilities logits.
 3. **Loss** — KL divergence between log-softmax of the model output and the normalised
-   target APD.
+   target action probabilities.
 4. **Gradient accumulation** — gradients are accumulated over `accumulation_steps` batches
    before the optimiser step, allowing effective batch sizes larger than GPU memory permits.
 5. **Learning rate schedule** — a one-cycle scheduler ramps the LR up from
@@ -96,12 +96,12 @@ well for drug-like molecules with up to ~30 heavy atoms.
 | `enn_depth` | `4` | Layers in the edge network (message) MLP |
 | `enn_hidden_dim` | `250` | Width of the edge network MLP |
 | `enn_dropout_p` | `0.0` | Dropout in the edge network MLP |
-| `mlp1_depth` | `4` | Layers in the tier-1 APD readout MLP |
-| `mlp1_hidden_dim` | `500` | Width of the tier-1 APD readout MLP |
-| `mlp1_dropout_p` | `0.0` | Dropout in the tier-1 APD readout MLP |
-| `mlp2_depth` | `4` | Layers in the tier-2 APD readout MLP |
-| `mlp2_hidden_dim` | `500` | Width of the tier-2 APD readout MLP |
-| `mlp2_dropout_p` | `0.0` | Dropout in the tier-2 APD readout MLP |
+| `mlp1_depth` | `4` | Layers in the tier-1 action probabilities readout MLP |
+| `mlp1_hidden_dim` | `500` | Width of the tier-1 action probabilities readout MLP |
+| `mlp1_dropout_p` | `0.0` | Dropout in the tier-1 action probabilities readout MLP |
+| `mlp2_depth` | `4` | Layers in the tier-2 action probabilities readout MLP |
+| `mlp2_hidden_dim` | `500` | Width of the tier-2 action probabilities readout MLP |
+| `mlp2_dropout_p` | `0.0` | Dropout in the tier-2 action probabilities readout MLP |
 | `gather_att_depth` | `4` | Layers in the attention MLP (graph pooling) |
 | `gather_att_hidden_dim` | `250` | Width of the attention MLP |
 | `gather_att_dropout_p` | `0.0` | Dropout in the attention MLP |

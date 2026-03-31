@@ -3,7 +3,7 @@ Reusable neural network modules used by the GGNN model.
 
   MLP              -- multi-layer perceptron with SELU activations
   AttentionReadout -- attention-weighted graph-level pooling
-  APDReadout       -- predicts the full Action Probability Distribution (APD)
+  ActionProbReadout       -- predicts the full Action Probability Distribution (action probabilities)
 """
 from collections import namedtuple
 import torch
@@ -117,11 +117,11 @@ class MLP(torch.nn.Module):
         return self.seq(x)
 
 
-class APDReadout(torch.nn.Module):
+class ActionProbReadout(torch.nn.Module):
     """
-    Predicts the Action Probability Distribution (APD) for a batch of molecular graphs.
+    Predicts the Action Probability Distribution (action probabilities) for a batch of molecular graphs.
 
-    The APD encodes, for each graph, the probability of every possible next
+    The action probabilities encodes, for each graph, the probability of every possible next
     construction step:
 
       f_add[v, atom_type, charge, n_imp_H, bond_type]
@@ -137,7 +137,7 @@ class APDReadout(torch.nn.Module):
 
     The readout uses a two-tier MLP architecture:
       Tier 1 (per-node):  fAddNet1 and fConnNet1 map each node's hidden state
-                          to preliminary per-node APD components.
+                          to preliminary per-node action probabilities components.
       Tier 2 (per-graph): fAddNet2, fConnNet2, fTermNet2 refine the flattened
                           tier-1 outputs by also conditioning on the global
                           graph embedding from `AttentionReadout`.
@@ -214,7 +214,7 @@ class APDReadout(torch.nn.Module):
                                   Shape: (batch, graph_emb_size)
 
         Returns:
-            Flat, unnormalised APD logits.
+            Flat, unnormalised action probabilities logits.
             Shape: (batch, len_f_add + len_f_conn + 1)
         """
         # Tier-1: per-node preliminary f_add and f_conn
@@ -225,7 +225,7 @@ class APDReadout(torch.nn.Module):
         f_add_1  = f_add_1.view(f_add_1.size(0),   f_add_1.size(1)  * f_add_1.size(2))
         f_conn_1 = f_conn_1.view(f_conn_1.size(0),  f_conn_1.size(1) * f_conn_1.size(2))
 
-        # Tier-2: condition on graph embedding to produce final APD components
+        # Tier-2: condition on graph embedding to produce final action probabilities components
         f_add_2  = self.fAddNet2(
             torch.cat((f_add_1,  graph_embedding_batch), dim=1).unsqueeze(dim=1)
         )

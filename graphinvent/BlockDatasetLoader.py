@@ -17,7 +17,7 @@ Classes
 -------
   BlockDataLoader      -- drop-in replacement for torch.utils.data.DataLoader
   HDFDataset           -- thin wrapper around an HDF5 file exposing the
-                          (nodes, edges, APDs) tensors as a Dataset
+                          (nodes, edges, action probabilities) tensors as a Dataset
   BlockDataset         -- maps block indices → HDF5 row slices
   ShuffleBlockWrapper  -- wraps a preloaded block so the inner DataLoader can
                           shuffle and batch it
@@ -149,7 +149,7 @@ class ShuffleBlockWrapper:
 class HDFDataset(torch.utils.data.Dataset):
     """
     Reads and collects data from an HDF file with three datasets: "nodes",
-    "edges", and "APDs".
+    "edges", and "action_probs".
     """
     def __init__(self, path : str) -> None:
 
@@ -159,7 +159,7 @@ class HDFDataset(torch.utils.data.Dataset):
         # load each HDF dataset
         self.nodes = hdf_file.get("nodes")
         self.edges = hdf_file.get("edges")
-        self.apds  = hdf_file.get("APDs")
+        self.action_probs  = hdf_file.get("action_probs")
 
         # get the number of elements in the dataset
         self.n_subgraphs = self.nodes.shape[0]
@@ -170,9 +170,9 @@ class HDFDataset(torch.utils.data.Dataset):
         # returns specific graph elements
         nodes_i = torch.from_numpy(self.nodes[idx]).type(torch.float32)
         edges_i = torch.from_numpy(self.edges[idx]).type(torch.float32)
-        apd_i   = torch.from_numpy(self.apds[idx]).type(torch.float32)
+        action_probs_i   = torch.from_numpy(self.action_probs[idx]).type(torch.float32)
 
-        return (nodes_i, edges_i, apd_i)
+        return (nodes_i, edges_i, action_probs_i)
 
     def __len__(self) -> int:
         # returns the number of graphs in the dataset

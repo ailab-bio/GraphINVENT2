@@ -225,7 +225,7 @@ pytest tests/ -v
 | Test class | Checks |
 |------------|--------|
 | `TestSplitFileCounts` | `train/valid/test.smi` exist; molecule counts sum to the original file; no overlap between splits |
-| `TestHDFFileCounts` | `train/valid/test.h5` exist and contain `nodes`, `edges`, `APDs`; HDF5 molecule count matches `.smi` count; subgraph count ≥ molecule count |
+| `TestHDFFileCounts` | `train/valid/test.h5` exist and contain `nodes`, `edges`, `action probabilities`; HDF5 molecule count matches `.smi` count; subgraph count ≥ molecule count |
 | `TestSMILESReconstruction` | Every graph in each HDF5 decodes to a valid SMILES; reconstructed SMILES set matches the `.smi` file (lossless round-trip) |
 
 ---

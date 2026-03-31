@@ -45,10 +45,10 @@ class Workflow:
     ---------
     preprocess  -- Reads a SMILES file, encodes each molecule as a sequence of
                    subgraphs (the decoding route), and writes node features, edge
-                   features, and APD targets to an HDF5 file for fast batch loading.
+                   features, and action probabilities targets to an HDF5 file for fast batch loading.
 
     pretrain    -- Trains a GGNN model from random initialisation using supervised
-                   learning: the model is trained to reproduce the target APD at
+                   learning: the model is trained to reproduce the target action probabilities at
                    each step of the decoding route (KL-divergence loss).
 
     transfer    -- Same supervised training loop as pretrain, but the model is
@@ -56,7 +56,7 @@ class Workflow:
                    weights.  Useful for fine-tuning on a new chemical series.
 
     generate    -- Uses a trained model to autoregressively sample new molecular
-                   graphs by repeatedly drawing actions from the predicted APD.
+                   graphs by repeatedly drawing actions from the predicted action probabilities.
 
     test        -- Evaluates a trained model on the held-out test set and reports
                    NLL and related metrics.
@@ -1251,8 +1251,8 @@ class Workflow:
 
         Args:
         ----
-            output (torch.Tensor)        : Predicted APD tensor.
-            target_output (torch.Tensor) : Target APD tensor.
+            output (torch.Tensor)        : Predicted action probabilities tensor.
+            target_output (torch.Tensor) : Target action probabilities tensor.
 
         Returns:
         -------

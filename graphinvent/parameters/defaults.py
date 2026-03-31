@@ -92,14 +92,14 @@ GGNN hyperparameters:
     enn_depth (int)              : Num layers in 'enn' MLP.
     enn_dropout_p (float)        : Dropout probability in 'enn' MLP.
     enn_hidden_dim (int)         : Number of weights (layer width) in 'enn' MLP.
-    mlp1_depth (int)             : Num layers in first-tier MLP in `APDReadout`.
-    mlp1_dropout_p (float)       : Dropout probability in first-tier MLP in `APDReadout`.
+    mlp1_depth (int)             : Num layers in first-tier MLP in `ActionProbReadout`.
+    mlp1_dropout_p (float)       : Dropout probability in first-tier MLP in `ActionProbReadout`.
     mlp1_hidden_dim (int)        : Number of weights (layer width) in first-tier
-                                   MLP in `APDReadout`.
-    mlp2_depth (int)             : Num layers in second-tier MLP in `APDReadout`.
-    mlp2_dropout_p (float)       : Dropout probability in second-tier MLP in `APDReadout`.
+                                   MLP in `ActionProbReadout`.
+    mlp2_depth (int)             : Num layers in second-tier MLP in `ActionProbReadout`.
+    mlp2_dropout_p (float)       : Dropout probability in second-tier MLP in `ActionProbReadout`.
     mlp2_hidden_dim (int)        : Number of weights (layer width) in second-tier
-                                   MLP in `APDReadout`.
+                                   MLP in `ActionProbReadout`.
     gather_att_depth (int)       : Num layers in 'gather_att' MLP in `AttentionReadout`.
     gather_att_dropout_p (float) : Dropout probability in 'gather_att' MLP in
                                    `AttentionReadout`.

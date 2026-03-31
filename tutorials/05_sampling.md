@@ -23,8 +23,8 @@ parameter validation; no actual loading of training data occurs during generatio
 ## How generation works
 
 1. A batch of empty graphs is initialised.
-2. At each generation step the GGNN predicts an APD for every graph in the batch.
-3. An action is sampled from the APD for each graph (multinomial sampling).
+2. At each generation step the GGNN predicts an action probabilities for every graph in the batch.
+3. An action is sampled from the action probabilities for each graph (multinomial sampling).
 4. The action is applied: a node is added, a bond is added, or the graph is terminated.
 5. Terminated graphs are moved to the output buffer; generation continues until
    `batch_size` graphs have been collected.

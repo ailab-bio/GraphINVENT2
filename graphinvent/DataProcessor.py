@@ -257,7 +257,7 @@ class DataProcessor:
         # define some variables for later use
         self.path            = path
         self.is_training_set = is_training_set
-        self.dataset_names   = ["nodes", "edges", "APDs"]
+        self.dataset_names   = ["nodes", "edges", "action_probs"]
         self.get_dataset_dims()  # creates `self.dims`
 
         # load the molecules
@@ -284,7 +284,7 @@ class DataProcessor:
     def preprocess(self) -> None:
         """
         Prepares an HDF file to save three different datasets to it (`nodes`,
-        `edges`, `APDs`), and slowly fills it in by looping over all the
+        `edges`, `action probabilities`), and slowly fills it in by looping over all the
         molecules in the data in groups (or "mini-batches").
         """
         with h5py.File(f"{self.path[:-3]}h5.chunked", "a") as self.hdf_file:
@@ -401,7 +401,7 @@ class DataProcessor:
                              the start index for the next block/slice to be taken
                              from `self.molecule_subset`.
         """
-        data_subgraphs, data_apds, molecular_graph_list = [], [], []  # initialize
+        data_subgraphs, data_action_probs, molecular_graph_list = [], [], []  # initialize
 
         # convert all molecules in `self.molecules_subset` to `PreprocessingGraphs`
         molecular_graph_generator = map(self.get_graph, self.molecule_subset)
@@ -420,20 +420,20 @@ class DataProcessor:
 
             for new_subgraph_idx in range(n_subgraphs):
 
-                # `get_decoding_route_state() returns a list of [`subgraph`, `apd`],
-                subgraph, apd = graph.get_decoding_route_state(
+                # `get_decoding_route_state() returns a list of [`subgraph`, `action_probs`],
+                subgraph, action_probs = graph.get_decoding_route_state(
                     subgraph_idx=new_subgraph_idx
                 )
 
-                # "collect" all APDs corresponding to pre-existing subgraphs,
-                # otherwise append both new subgraph and new APD
+                # "collect" all action probabilities corresponding to pre-existing subgraphs,
+                # otherwise append both new subgraph and new action probabilities
                 count = 0
                 for idx, existing_subgraph in enumerate(data_subgraphs):
 
                     count += 1
                     # check if subgraph `subgraph` is "already" in
                     # `data_subgraphs` as `existing_subgraph`, and if so, add
-                    # the "new" APD to the "old"
+                    # the "new" action probabilities to the "old"
                     try:  # first compare the node feature matrices
                         nodes_equal = (subgraph[0] == existing_subgraph[0]).all()
                     except AttributeError:
@@ -445,21 +445,21 @@ class DataProcessor:
 
                     # if both matrices have a match, then subgraphs are the same
                     if nodes_equal and edges_equal:
-                        existing_apd = data_apds[idx]
-                        existing_apd += apd
+                        existing_action_probs = data_action_probs[idx]
+                        existing_action_probs += action_probs
                         break
 
                 # if subgraph is not already in `data_subgraphs`, append it
                 if count == len(data_subgraphs) or count == 0:
                     data_subgraphs.append(subgraph)
-                    data_apds.append(apd)
+                    data_action_probs.append(action_probs)
 
                 # if `constants.batch_size` unique subgraphs have been
                 # processed, save group to the HDF dataset
                 len_data_subgraphs = len(data_subgraphs)
                 if len_data_subgraphs == constants.batch_size:
                     self.save_group(data_subgraphs=data_subgraphs,
-                                    data_apds=data_apds,
+                                    data_action_probs=data_action_probs,
                                     group_size=len_data_subgraphs,
                                     init_idx=init_idx)
 
@@ -480,7 +480,7 @@ class DataProcessor:
 
         # save group with < `constants.batch_size` subgraphs (e.g. last block)
         self.save_group(data_subgraphs=data_subgraphs,
-                        data_apds=data_apds,
+                        data_action_probs=data_action_probs,
                         group_size=n_processed_subgraphs,
                         init_idx=init_idx)
 
@@ -527,7 +527,7 @@ class DataProcessor:
 
     def get_dataset_dims(self) -> None:
         """
-        Calculates the dimensions of the node features, edge features, and APDs,
+        Calculates the dimensions of the node features, edge features, and action probabilities,
         and stores them as lists in a dict (`self.dims`), where keys are the
         dataset name.
 
@@ -535,12 +535,12 @@ class DataProcessor:
         ------
             dims["nodes"] : [max N nodes, N atom types + N formal charges]
             dims["edges"] : [max N nodes, max N nodes, N bond types]
-            dims["APDs"]  : [APD length = f_add length + f_conn length + f_term length]
+            dims["action_probs"]  : [action probabilities length = f_add length + f_conn length + f_term length]
         """
         self.dims = {}
         self.dims["nodes"] = constants.dim_nodes
         self.dims["edges"] = constants.dim_edges
-        self.dims["APDs"]  = constants.dim_apd
+        self.dims["action_probs"]  = constants.dim_action_probs
 
     def get_graph(self, mol : rdkit.Chem.Mol) -> PreprocessingGraph:
         """
@@ -655,27 +655,27 @@ class DataProcessor:
         for ds_name in self.dataset_names:
             self.dataset[ds_name] = hdf_file.get(ds_name)
 
-    def save_group(self, data_subgraphs : list, data_apds : list,
+    def save_group(self, data_subgraphs : list, data_action_probs : list,
                    group_size : int, init_idx : int) -> None:
         """
-        Saves a group of padded subgraphs and their corresponding APDs to the HDF
+        Saves a group of padded subgraphs and their corresponding action probabilities to the HDF
         datasets as `numpy.ndarray`s.
 
         Args:
         ----
             data_subgraphs (list) : Contains molecular subgraphs.
-            data_apds (list)      : Contains APDs.
+            data_action_probs (list)      : Contains action probabilities.
             group_size (int)      : Size of HDF "slice".
             init_idx (int)        : Index to begin slicing.
         """
         # convert to `np.ndarray`s
         nodes = np.array([graph_tuple[0] for graph_tuple in data_subgraphs])
         edges = np.array([graph_tuple[1] for graph_tuple in data_subgraphs])
-        apds  = np.array(data_apds)
+        action_probs  = np.array(data_action_probs)
 
         end_idx = init_idx + group_size  # idx to end slicing
 
         # once data is padded, save it to dataset slice
         self.dataset["nodes"][init_idx:end_idx] = nodes
         self.dataset["edges"][init_idx:end_idx] = edges
-        self.dataset["APDs"][init_idx:end_idx]  = apds
+        self.dataset["action_probs"][init_idx:end_idx]  = action_probs
