@@ -26,3 +26,4 @@ slurm*.out
 # Ignore Python cache files and directories
 **/__pycache__/
 *.pyc
+graphinvent2.egg-info/

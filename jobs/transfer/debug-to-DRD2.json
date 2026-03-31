@@ -3,8 +3,8 @@
     "python_path": "python",
     "graphinvent_path": "./graphinvent/",
     "data_path": "./data/datasets/",
-    "dataset": "new-dataset",
-    "job_name": "run",
+    "dataset": "DRD2_actives",
+    "job_name": "transfer-debug-to-DRD2",
     "use_slurm": false,
     "slurm": {
       "account": "XXXXXXXXXX",
