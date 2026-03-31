@@ -158,6 +158,7 @@ parameters = {
     "score_type"          : "binary",
     "qsar_models"         : {"drd2_activity": "data/surrogates/QSAR_model_example.pickle"},
     "pretrained_model_dir": "output/",
+    "pretrained_model_path": "",
     "sigma"               : 20,
     "alpha"               : 0.5,
     # GGNN hyperparameters:

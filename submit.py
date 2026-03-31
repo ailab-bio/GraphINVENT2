@@ -129,9 +129,8 @@ _REQUIRED_SUBMISSION = {"data_path", "dataset"}
 _REQUIRED_JOB: dict = {
     "preprocess": {"job_type"},
     "pretrain":   {"job_type"},
-    "transfer":   {"job_type", "pretrained_model_dir", "generation_epoch"},
-    "rl":         {"job_type", "pretrained_model_dir", "generation_epoch",
-                   "score_components", "score_thresholds"},
+    "transfer":   {"job_type"},
+    "rl":         {"job_type", "score_components", "score_thresholds"},
     "generate":   {"job_type", "generation_epoch"},
 }
 
@@ -268,9 +267,35 @@ def validate_config(
 
     # --- generation / training: pretrained model checks ---
     if job_type in ("transfer", "rl", "generate"):
-        model_dir = job_params.get("pretrained_model_dir", "")
-        epoch     = job_params.get("generation_epoch")
-        if model_dir and epoch is not None:
+        model_path = job_params.get("pretrained_model_path", "")
+        model_dir  = job_params.get("pretrained_model_dir", "")
+        epoch      = job_params.get("generation_epoch")
+        if model_path:
+            if not Path(model_path).exists():
+                errors.append(
+                    f'Checkpoint "{model_path}" does not exist. '
+                    f'Check "pretrained_model_path".'
+                )
+        elif job_type in ("transfer", "rl"):
+            if not model_dir:
+                errors.append(
+                    'Specify either "pretrained_model_path" (direct path to a .pth file) '
+                    'or both "pretrained_model_dir" and "generation_epoch".'
+                )
+            elif epoch is None:
+                errors.append(
+                    'Specify either "pretrained_model_path" (direct path to a .pth file) '
+                    'or both "pretrained_model_dir" and "generation_epoch".'
+                )
+            else:
+                checkpoint = Path(model_dir) / f"model_restart_{epoch}.pth"
+                if not checkpoint.exists():
+                    errors.append(
+                        f'Checkpoint "{checkpoint}" does not exist. '
+                        f'Check "pretrained_model_dir" ("{model_dir}") and '
+                        f'"generation_epoch" ({epoch}).'
+                    )
+        elif model_dir and epoch is not None:
             checkpoint = Path(model_dir) / f"model_restart_{epoch}.pth"
             if not checkpoint.exists():
                 errors.append(

@@ -227,6 +227,41 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
     _OVERRIDABLE_LIST_KEYS = ("atom_types", "formal_charge", "imp_H", "chirality")
     _OVERRIDABLE_INT_KEYS  = ("max_n_nodes",)
 
+    # For transfer/RL jobs using pretrained_model_path, load GGNN architecture
+    # parameters from the pretrained model's params_all.json so they don't need
+    # to be re-specified in the job config.
+    _ARCH_KEYS = (
+        "enn_depth", "enn_hidden_dim", "enn_dropout_p",
+        "mlp1_depth", "mlp1_hidden_dim", "mlp1_dropout_p",
+        "mlp2_depth", "mlp2_hidden_dim", "mlp2_dropout_p",
+        "gather_att_depth", "gather_att_hidden_dim", "gather_att_dropout_p",
+        "gather_emb_depth", "gather_emb_hidden_dim", "gather_emb_dropout_p",
+        "gather_width", "hidden_node_features", "message_passes", "message_size",
+    )
+    if parameters.get("job_type") in ("transfer", "rl"):
+        _pth_path = parameters.get("pretrained_model_path", "")
+        if _pth_path:
+            _pretrain_params_path = Path(_pth_path).parent / "params_all.json"
+            if _pretrain_params_path.exists():
+                print(
+                    f"* Loading model architecture from pretrained model params: "
+                    f"{_pretrain_params_path}",
+                    flush=True,
+                )
+                _pretrain_params = load_params(str(_pretrain_params_path))
+                # Read raw job params to detect any explicit arch overrides.
+                _job_params_path = Path(parameters["job_dir"]) / "params.json"
+                _raw_job = load_params(str(_job_params_path)) if _job_params_path.exists() else {}
+                for _k in _ARCH_KEYS:
+                    if _k not in _raw_job and _k in _pretrain_params:
+                        parameters[_k] = _pretrain_params[_k]
+            else:
+                print(
+                    f"-- Warning: pretrained model params_all.json not found at "
+                    f"{_pretrain_params_path}. Architecture params must be specified manually.",
+                    flush=True,
+                )
+
     if parameters.get("job_type") != "preprocess":
         # Read the raw job params.json before it was merged with defaults, so we
         # can distinguish "user explicitly set a non-empty value" from "default []".

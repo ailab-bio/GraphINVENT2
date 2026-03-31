@@ -205,8 +205,12 @@ class Workflow:
             self.best_agent_model  = self.create_model()
 
             self.restart_epoch = util.get_restart_epoch()
-            prior_epoch = self.constants.generation_epoch
-            prior_dir   = self.constants.pretrained_model_dir
+
+            if self.constants.pretrained_model_path:
+                prior_checkpoint = self.constants.pretrained_model_path
+            else:
+                prior_checkpoint = (f"{self.constants.pretrained_model_dir}"
+                                    f"model_restart_{self.constants.generation_epoch}.pth")
 
             if self.constants.restart:
                 # Restart: resume the agent from the RL job checkpoint.
@@ -221,7 +225,7 @@ class Workflow:
                 try:
                     self.prior_model = util.load_saved_model(
                         model=self.prior_model,
-                        path=f"{prior_dir}model_restart_{prior_epoch}.pth"
+                        path=prior_checkpoint
                     )
                 except FileNotFoundError:
                     self.prior_model = util.load_saved_model(
@@ -234,7 +238,7 @@ class Workflow:
                 try:
                     self.agent_model = util.load_saved_model(
                         model=self.agent_model,
-                        path=f"{prior_dir}model_restart_{prior_epoch}.pth"
+                        path=prior_checkpoint
                     )
                 except FileNotFoundError:
                     self.agent_model = util.load_saved_model(
@@ -275,11 +279,14 @@ class Workflow:
             self.model = self.create_model()
 
             print("-- Loading pretrained model checkpoint.", flush=True)
-            load_epoch = self.constants.generation_epoch
-            model_dir  = self.constants.pretrained_model_dir
+            if self.constants.pretrained_model_path:
+                checkpoint_path = self.constants.pretrained_model_path
+            else:
+                checkpoint_path = (f"{self.constants.pretrained_model_dir}"
+                                   f"model_restart_{self.constants.generation_epoch}.pth")
             self.model = util.load_saved_model(
                 model=self.model,
-                path=f"{model_dir}model_restart_{load_epoch}.pth"
+                path=checkpoint_path
             )
 
             print("-- Defining optimizer.", flush=True)
