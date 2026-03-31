@@ -82,8 +82,12 @@ def _normalize_datasets(submission: dict) -> tuple:
     - a single path  → [path, None, ...]   (Mode A for first dataset only)
     - a list         → used as-is (None entries = Mode B, path entries = Mode A)
     """
-    raw_ds = submission["dataset"]
+    raw_ds = submission.get("dataset") or None
     raw_dp = submission["data_path"]
+
+    if raw_ds is None:
+        # dataset will be resolved later (e.g. from pretrained model params)
+        return [None], [raw_dp if isinstance(raw_dp, list) else raw_dp], [None]
     raw_sf = submission.get("smiles_file")
 
     datasets   = raw_ds if isinstance(raw_ds, list) else [raw_ds]
@@ -117,6 +121,36 @@ def _normalize_datasets(submission: dict) -> tuple:
     return datasets, data_paths, smiles_files
 
 
+def _resolve_dataset_from_pretrained(submission: dict, job_params: dict) -> None:
+    """
+    For RL/transfer jobs with ``pretrained_model_path`` and no explicit
+    ``dataset``, infer ``dataset`` and ``data_path`` from the pretrained
+    model's ``params_all.json``.  Mutates ``submission`` in-place.
+    """
+    if submission.get("dataset"):
+        return
+    pth = job_params.get("pretrained_model_path", "")
+    if not pth:
+        return
+    params_all = Path(pth).parent / "params_all.json"
+    if not params_all.exists():
+        return
+    with open(params_all) as f:
+        pretrain_params = json.load(f)
+    dataset_dir = pretrain_params.get("dataset_dir", "")
+    if not dataset_dir:
+        return
+    # dataset_dir is like "data/datasets/debug/" → dataset="debug", data_path="data/datasets"
+    dataset_path = Path(dataset_dir)
+    submission["dataset"]   = dataset_path.name
+    submission["data_path"] = str(dataset_path.parent)
+    print(
+        f"* No dataset specified — using pretrained model's dataset: "
+        f"'{submission['dataset']}' ({dataset_dir})",
+        flush=True,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Config validation
 # ---------------------------------------------------------------------------
@@ -124,7 +158,7 @@ def _normalize_datasets(submission: dict) -> tuple:
 _VALID_JOB_TYPES   = {"preprocess", "pretrain", "transfer", "rl", "generate"}
 _VALID_SPLIT_TYPES = {"random", "butina", "custom"}
 
-_REQUIRED_SUBMISSION = {"data_path", "dataset"}
+_REQUIRED_SUBMISSION = {"data_path"}
 
 _REQUIRED_JOB: dict = {
     "preprocess": {"job_type"},
@@ -157,6 +191,18 @@ def validate_config(
             'Missing required field(s) in "submission": '
             + ", ".join(f'"{k}"' for k in sorted(missing_submission))
         )
+    job_type_for_dataset_check = job_params.get("job_type")
+    if not submission.get("dataset") and job_type_for_dataset_check not in ("rl", "transfer"):
+        errors.append(
+            '"dataset" is required in "submission" for '
+            f'job_type="{job_type_for_dataset_check}".'
+        )
+    if not submission.get("dataset") and job_type_for_dataset_check in ("rl", "transfer"):
+        if not job_params.get("pretrained_model_path"):
+            errors.append(
+                '"dataset" is required in "submission" when '
+                '"pretrained_model_path" is not set.'
+            )
 
     job_type = job_params.get("job_type")
     if not job_type:
@@ -252,11 +298,20 @@ def validate_config(
                 "They must have the same length."
             )
         max_n = job_params.get("max_n_nodes", 0)
+        # If max_n_nodes isn't in the job params, try to resolve it from the
+        # pretrained model's params_all.json or the dataset's preprocessing_params.json.
+        if not max_n:
+            _pth = job_params.get("pretrained_model_path", "")
+            if _pth:
+                _pa = Path(_pth).parent / "params_all.json"
+                if _pa.exists():
+                    with open(_pa) as _f:
+                        max_n = json.load(_f).get("max_n_nodes", 0)
         for comp in components:
             if comp.startswith("target_size="):
                 try:
                     n = int(comp.split("=")[1])
-                    if n >= max_n:
+                    if max_n and n >= max_n:
                         errors.append(
                             f'"score_components" contains "{comp}", but the target '
                             f"size ({n}) must be strictly less than \"max_n_nodes\" "
@@ -532,6 +587,9 @@ def main():
 
     submission = config["submission"]
     job_params = config["job"]
+
+    if job_params.get("job_type") in ("rl", "transfer"):
+        _resolve_dataset_from_pretrained(submission, job_params)
 
     datasets, data_paths, smiles_files = _normalize_datasets(submission)
     dataset_dirs = [Path(dp) / ds for dp, ds in zip(data_paths, datasets)]

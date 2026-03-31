@@ -424,6 +424,55 @@ class Workflow:
             shutil.move(path, backup_dir + name)
             print(f"  Moved: {name}", flush=True)
 
+    def _backup_stale_job_files(self) -> None:
+        """
+        If output files from a previous (non-restart) training, transfer, or RL
+        job exist in the job directory, move them to a timestamped backup
+        subdirectory so the new run starts cleanly.
+
+        Backs up: convergence.log, generation.log, validation.log,
+        fine-tuning.log (RL only), all model_restart_*.pth checkpoints, and
+        the generation/ subdirectory.
+        """
+        job_dir = self.constants.job_dir
+        job_type = self.constants.job_type
+
+        log_names = ["convergence.log", "generation.log", "validation.log"]
+        if job_type == "rl":
+            log_names.append("fine-tuning.log")
+
+        stale = [
+            job_dir + name
+            for name in log_names
+            if os.path.exists(job_dir + name)
+        ]
+        # Collect any saved model checkpoints.
+        stale += [
+            str(p) for p in Path(job_dir).glob("model_restart_*.pth")
+        ]
+        # Include the generation/ subdirectory if it exists.
+        generation_dir = job_dir + "generation"
+        if os.path.isdir(generation_dir):
+            stale.append(generation_dir)
+
+        if not stale:
+            return
+
+        timestamp  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = job_dir + f"_previous_run_{timestamp}/"
+        os.makedirs(backup_dir, exist_ok=True)
+
+        print(
+            f"* Found {len(stale)} file(s)/dir(s) from a previous job run. "
+            "Moving them to a backup directory before starting fresh.",
+            flush=True,
+        )
+        print(f"  Backup location: {backup_dir}", flush=True)
+        for path in stale:
+            name = os.path.basename(path)
+            shutil.move(path, backup_dir + name)
+            print(f"  Moved: {name}", flush=True)
+
     def _check_restart_params_match(self, dataset_dir: str) -> bool:
         """
         Returns True if ``preprocessing_params.json`` in ``dataset_dir`` exists
@@ -580,6 +629,8 @@ class Workflow:
                                  train_dataloader=self.train_dataloader,
                                  start_time=self.start_time,
                                  create_tensorboard=self.constants.use_tensorboard)
+        if not self.constants.restart:
+            self._backup_stale_job_files()
         self.create_output_files()
 
         start_epoch, end_epoch = self.define_model_and_optimizer()
@@ -744,6 +795,8 @@ class Workflow:
             create_tensorboard=self.constants.use_tensorboard
         )
 
+        if not self.constants.restart:
+            self._backup_stale_job_files()
         self.create_output_files()
 
         # define the scoring function to be used

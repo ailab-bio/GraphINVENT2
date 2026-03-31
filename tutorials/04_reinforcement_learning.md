@@ -60,14 +60,13 @@ fingerprint as input.
 ```python
 # Example: training a simple SVM classifier and saving it
 from sklearn.svm import SVC
-from sklearn.pipeline import Pipeline
 import pickle
 
 clf = SVC(probability=True)
 # ... fit clf on labelled fingerprints ...
 
 model_dict = {"classifier_sv": clf}
-with open("qsar_model.pickle", "wb") as f:
+with open("data/surrogates/my_qsar_model.pickle", "wb") as f:
     pickle.dump(model_dict, f)
 ```
 
@@ -75,10 +74,18 @@ The `qsar_models` dict maps the component name (as used in `score_components`) t
 path of the corresponding pickle file:
 
 ```json
-"qsar_models": {"drd2_activity": "data/surrogates/QSAR_model_example.pickle"}
+"score_components": ["QED", "drd2_activity"],
+"score_thresholds": [0.5, 0.5],
+"qsar_models": {"drd2_activity": "data/surrogates/my_qsar_model.pickle"}
 ```
 
 The path is resolved relative to the working directory where `submit.py` is executed.
+
+> **Note:** The repository ships with an empty placeholder at
+> `data/surrogates/QSAR_model_example.pickle` (0 bytes).  Loading it will raise
+> `EOFError`.  Replace it with a real trained model, or set `"qsar_models": {}` and
+> remove any `"*_activity"` entries from `score_components` if you don't need
+> activity-based scoring.
 
 ---
 
@@ -86,8 +93,7 @@ The path is resolved relative to the working directory where `submit.py` is exec
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `generation_epoch` | `100` | Which pretrained checkpoint to load: reads `model_restart_<generation_epoch>.pth` from `pretrained_model_dir` |
-| `pretrained_model_dir` | `"output/"` | Directory containing the pretrained model checkpoint |
+| `pretrained_model_path` | — | Direct path to the `.pth` checkpoint to load (e.g. `"./output/debug/pretrain/job/model_restart_100.pth"`).  Model architecture is loaded automatically from `params_all.json` in the same directory. |
 | `score_components` | `["QED"]` | List of scoring components |
 | `score_thresholds` | `[0.5]` | Per-component threshold for binary scoring |
 | `score_type` | `"binary"` | `"binary"` or `"continuous"` |
@@ -126,9 +132,7 @@ Edit `jobs/rl/params.json`:
     "python_path": "python",
     "graphinvent_path": "./graphinvent/",
     "data_path": "./data/datasets/",
-    "dataset": "gdb13-debug",
-    "n_jobs": 1,
-    "jobdir_start_idx": 0,
+    "job_name": "run",
     "use_slurm": false,
     "slurm": {
       "account": "XXXXXXXXXX",
@@ -138,16 +142,6 @@ Edit `jobs/rl/params.json`:
   },
   "job": {
     "job_type": "rl",
-    "atom_types": ["C", "N", "O", "S", "Cl"],
-    "formal_charge": [-1, 0, 1],
-    "imp_H": [0, 1, 2, 3],
-    "chirality": ["None", "R", "S"],
-    "max_n_nodes": 13,
-    "use_aromatic_bonds": false,
-    "use_canon": true,
-    "use_chirality": false,
-    "use_explicit_H": false,
-    "ignore_H": false,
     "device": "cuda",
     "batch_size": 50,
     "accumulation_steps": 1,
@@ -159,43 +153,31 @@ Edit `jobs/rl/params.json`:
     "n_samples": 100,
     "n_workers": 0,
     "restart": false,
-    "generation_epoch": 100,
-    "pretrained_model_dir": "./output/gdb13-debug/pretrain/job_0/",
-    "score_components": ["QED", "drd2_activity", "target_size=12"],
-    "score_thresholds": [0.5, 0.5, 0.0],
+    "pretrained_model_path": "./output/pretrain/job/model_restart_100.pth",
+    "score_components": ["QED", "target_size=12"],
+    "score_thresholds": [0.5, 0.0],
     "score_type": "binary",
-    "qsar_models": {"drd2_activity": "data/surrogates/QSAR_model_example.pickle"},
+    "qsar_models": {},
     "sigma": 20,
     "alpha": 0.5,
-    "use_tensorboard": true,
-    "enn_depth": 4,
-    "enn_dropout_p": 0.0,
-    "enn_hidden_dim": 250,
-    "mlp1_depth": 4,
-    "mlp1_dropout_p": 0.0,
-    "mlp1_hidden_dim": 500,
-    "mlp2_depth": 4,
-    "mlp2_dropout_p": 0.0,
-    "mlp2_hidden_dim": 500,
-    "gather_att_depth": 4,
-    "gather_att_dropout_p": 0.0,
-    "gather_att_hidden_dim": 250,
-    "gather_emb_depth": 4,
-    "gather_emb_dropout_p": 0.0,
-    "gather_emb_hidden_dim": 250,
-    "gather_width": 100,
-    "hidden_node_features": 100,
-    "message_passes": 3,
-    "message_size": 100
+    "use_tensorboard": true
   }
 }
 ```
 
-> **Note on `target_size`:** `target_size=N` requires N < `max_n_nodes` (strictly less
-> than).  If N equals `max_n_nodes` the denominator in the scoring formula is zero.
-> In the example above `max_n_nodes = 13` so `target_size=12` is valid.
-> Setting `score_threshold = 0.0` for `target_size` means any molecule score passes the
-> threshold; you can raise it to e.g. `0.8` to demand molecules close to the target size.
+> **`dataset` is optional** for RL jobs that specify `pretrained_model_path`.
+> When omitted, the dataset directory is inferred automatically from the pretrained
+> model's `params_all.json`.  Set `dataset` explicitly in the `submission` block only if
+> you want to evaluate UC-JSD against a different dataset than the one used for pretraining.
+
+> **Model architecture** (`enn_depth`, `hidden_node_features`, etc.) is loaded
+> automatically from `params_all.json` in the same directory as the `.pth` file.
+> You do not need to repeat these in your RL config.
+
+> **`target_size=N`** requires N strictly less than `max_n_nodes` (the denominator in the
+> scoring formula becomes zero otherwise).  Setting `score_threshold = 0.0` means any
+> molecule passes regardless of its actual size; raise it (e.g. `0.8`) to demand molecules
+> that are close to the target.
 
 ---
 
@@ -277,5 +259,5 @@ Once RL training has converged (or after a fixed number of steps), generate a la
 set of molecules using the best checkpoint:
 [Tutorial 5: Sampling](./05_sampling.md).
 
-Set `"pretrained_model_dir"` to the RL job output directory and `"generation_epoch"` to
-the best-performing step number (as identified from `fine-tuning.log`).
+Set `"pretrained_model_path"` in your sampling config to the best checkpoint from the RL
+job (e.g. `"output/debug/rl/run/model_restart_50.pth"`), identified from `fine-tuning.log`.

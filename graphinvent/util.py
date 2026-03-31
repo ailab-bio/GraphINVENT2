@@ -181,8 +181,13 @@ def get_restart_epoch() -> Union[int, str]:
                 epoch = "NA"
             row -= 1
     elif constants.job_type == "rl":
-        # Fresh RL start: use the pretrained checkpoint epoch.
-        epoch = constants.generation_epoch
+        # Fresh RL start: if a direct checkpoint path was given, the epoch
+        # number is meaningless for step counting — start from 0.
+        # Otherwise use generation_epoch (only set when using pretrained_model_dir).
+        if constants.pretrained_model_path:
+            epoch = 0
+        else:
+            epoch = constants.generation_epoch
     elif constants.restart or constants.job_type == "test":
         # Supervised restart or test: find the last saved epoch from generation.log.
         generation_path = constants.job_dir + "generation.log"
