@@ -14,8 +14,8 @@
   "job": {
     "job_type": "rl",
     "device": "cuda",
-    "batch_size": 50,
-    "accumulation_steps": 1,
+    "batch_size": 5,
+    "accumulation_steps": 5,
     "epochs": 10,
     "init_lr": 1e-5,
     "max_rel_lr": 10,

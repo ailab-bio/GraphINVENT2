@@ -238,7 +238,7 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
         "gather_emb_depth", "gather_emb_hidden_dim", "gather_emb_dropout_p",
         "gather_width", "hidden_node_features", "message_passes", "message_size",
     )
-    if parameters.get("job_type") in ("transfer", "rl"):
+    if parameters.get("job_type") in ("transfer", "rl", "generate"):
         _pth_path = parameters.get("pretrained_model_path", "")
         if _pth_path:
             _pretrain_params_path = Path(_pth_path).parent / "params_all.json"

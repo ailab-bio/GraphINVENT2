@@ -232,6 +232,7 @@ class Workflow:
                         model=self.prior_model,
                         path=f"{self.constants.dataset_dir}pretrained_model.pth"
                     )
+                self._freeze(self.prior_model)
             else:
                 # Fresh RL start: load pretrained checkpoint as both agent and prior.
                 print("-- Loading pretrained model checkpoint.", flush=True)
@@ -245,9 +246,9 @@ class Workflow:
                         model=self.agent_model,
                         path=f"{self.constants.dataset_dir}pretrained_model.pth"
                     )
-                self.prior_model = deepcopy(self.agent_model)
+                self.prior_model = self._freeze(deepcopy(self.agent_model))
 
-            self.best_agent_model = deepcopy(self.agent_model)
+            self.best_agent_model = self._freeze(deepcopy(self.agent_model))
 
             print("-- Defining optimizer.", flush=True)
             self.optimizer = torch.optim.Adam(
@@ -365,6 +366,13 @@ class Workflow:
 
         return start_epoch, end_epoch
 
+    @staticmethod
+    def _freeze(model: torch.nn.Module) -> torch.nn.Module:
+        """Disable gradient tracking for all parameters of a frozen model."""
+        for p in model.parameters():
+            p.requires_grad_(False)
+        return model
+
     def create_model(self) -> torch.nn.Module:
         """
         Initializes the model to be trained. Only the GGNN option is possible in
@@ -423,6 +431,82 @@ class Workflow:
             name = os.path.basename(path)
             shutil.move(path, backup_dir + name)
             print(f"  Moved: {name}", flush=True)
+
+    def _backup_stale_generation_files(self) -> None:
+        """
+        Before a fresh generation run, move any existing output (generation/
+        directory, *_samples.* files, generation.log) to a timestamped backup
+        subdirectory, matching the pattern used by preprocessing and training.
+        """
+        job_dir = self.constants.job_dir
+
+        candidates = []
+        gen_dir = job_dir + "generation"
+        if os.path.isdir(gen_dir):
+            candidates.append(gen_dir)
+        for p in Path(job_dir).glob("*_samples.smi"):
+            stem = p.stem
+            for ext in (".smi", ".likelihood", ".valid"):
+                f = job_dir + stem + ext
+                if os.path.exists(f):
+                    candidates.append(f)
+        if os.path.exists(job_dir + "generation.log"):
+            candidates.append(job_dir + "generation.log")
+
+        if not candidates:
+            return
+
+        timestamp  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = job_dir + f"_previous_run_{timestamp}/"
+        os.makedirs(backup_dir, exist_ok=True)
+
+        print(
+            f"* Found {len(candidates)} file(s)/dir(s) from a previous generation "
+            "run — moving to backup before starting fresh.",
+            flush=True,
+        )
+        print(f"  Backup location: {backup_dir}", flush=True)
+        for path in candidates:
+            name = os.path.basename(path)
+            shutil.move(path, backup_dir + name)
+            print(f"  Moved: {name}", flush=True)
+
+    def _concatenate_generation_batches(self) -> None:
+        """
+        After all generation batches are written, concatenate the per-batch
+        batch_N.{smi,likelihood,valid} files into a single trio named
+        {n_samples}_samples.{smi,likelihood,valid}, preserving line order
+        (i.e. each line index corresponds to the same molecule across files).
+        The individual batch files are removed afterwards.
+        """
+        import re as _re
+        gen_dir  = self.constants.job_dir + "generation/"
+        n        = self.constants.n_samples
+
+        batch_smis = sorted(
+            Path(gen_dir).glob("batch_*.smi"),
+            key=lambda p: int(_re.search(r"batch_(\d+)\.smi", p.name).group(1)),
+        )
+        if not batch_smis:
+            return
+
+        out_base = self.constants.job_dir + f"{n}_samples"
+        for ext in (".smi", ".likelihood", ".valid"):
+            with open(out_base + ext, "w") as out_f:
+                for batch_smi in batch_smis:
+                    batch_path = gen_dir + batch_smi.stem + ext
+                    if os.path.exists(batch_path):
+                        with open(batch_path) as in_f:
+                            out_f.write(in_f.read())
+
+        # remove individual batch files
+        for batch_smi in batch_smis:
+            for ext in (".smi", ".likelihood", ".valid"):
+                p = gen_dir + batch_smi.stem + ext
+                if os.path.exists(p):
+                    os.remove(p)
+
+        print(f"* Generated molecules written to: {out_base}.smi", flush=True)
 
     def _backup_stale_job_files(self) -> None:
         """
@@ -657,22 +741,30 @@ class Workflow:
         Generates molecules using a pre-trained model.
         """
         print("* Setting up generation job.", flush=True)
+        self._backup_stale_generation_files()
         self.load_training_set_properties()
-        self.restart_epoch = self.constants.generation_epoch
         self.analyzer = Analyzer(valid_dataloader=None,
                                  train_dataloader=None,
                                  start_time=self.start_time)
 
-        print(f"* Loading model from saved state (Epoch {self.restart_epoch}).",
-              flush=True)
-        model_path = (f"{self.constants.job_dir}"
-                      f"model_restart_{self.restart_epoch}.pth")
+        if self.constants.pretrained_model_path:
+            model_path = self.constants.pretrained_model_path
+        else:
+            self.restart_epoch = self.constants.generation_epoch
+            model_path = (f"{self.constants.job_dir}"
+                          f"model_restart_{self.restart_epoch}.pth")
+
+        os.makedirs(self.constants.job_dir + "generation/", exist_ok=True)
+
+        print(f"* Loading model from: {model_path}", flush=True)
         self.model = self.create_model()
         self.model = util.load_saved_model(model=self.model, path=model_path)
 
         self.model.eval()
         with torch.no_grad():
             self.sample_molecules(n_samples=self.constants.n_samples)
+
+        self._concatenate_generation_batches()
 
         self.print_time_elapsed()
 
@@ -861,7 +953,7 @@ class Workflow:
                     self.best_avg_score = score
 
                     # update the best agent so far ("basf")
-                    self.best_agent_model = deepcopy(self.agent_model)
+                    self.best_agent_model = self._freeze(deepcopy(self.agent_model))
                     print("-- Updated best model.", flush=True)
 
         # flush any remaining accumulated gradients at end of training

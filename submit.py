@@ -83,7 +83,7 @@ def _normalize_datasets(submission: dict) -> tuple:
     - a list         → used as-is (None entries = Mode B, path entries = Mode A)
     """
     raw_ds = submission.get("dataset") or None
-    raw_dp = submission["data_path"]
+    raw_dp = submission.get("data_path") or ""
 
     if raw_ds is None:
         # dataset will be resolved later (e.g. from pretrained model params)
@@ -158,14 +158,14 @@ def _resolve_dataset_from_pretrained(submission: dict, job_params: dict) -> None
 _VALID_JOB_TYPES   = {"preprocess", "pretrain", "transfer", "rl", "generate"}
 _VALID_SPLIT_TYPES = {"random", "butina", "custom"}
 
-_REQUIRED_SUBMISSION = {"data_path"}
+_REQUIRED_SUBMISSION = set()
 
 _REQUIRED_JOB: dict = {
     "preprocess": {"job_type"},
     "pretrain":   {"job_type"},
     "transfer":   {"job_type"},
     "rl":         {"job_type", "score_components", "score_thresholds"},
-    "generate":   {"job_type", "generation_epoch"},
+    "generate":   {"job_type"},
 }
 
 
@@ -192,12 +192,21 @@ def validate_config(
             + ", ".join(f'"{k}"' for k in sorted(missing_submission))
         )
     job_type_for_dataset_check = job_params.get("job_type")
-    if not submission.get("dataset") and job_type_for_dataset_check not in ("rl", "transfer"):
+    _pretrained_optional_types = ("rl", "transfer", "generate")
+    if not submission.get("data_path") and job_type_for_dataset_check not in _pretrained_optional_types:
+        errors.append('"data_path" is required in "submission".')
+    if not submission.get("data_path") and job_type_for_dataset_check in _pretrained_optional_types:
+        if not job_params.get("pretrained_model_path"):
+            errors.append(
+                '"data_path" is required in "submission" when '
+                '"pretrained_model_path" is not set.'
+            )
+    if not submission.get("dataset") and job_type_for_dataset_check not in _pretrained_optional_types:
         errors.append(
             '"dataset" is required in "submission" for '
             f'job_type="{job_type_for_dataset_check}".'
         )
-    if not submission.get("dataset") and job_type_for_dataset_check in ("rl", "transfer"):
+    if not submission.get("dataset") and job_type_for_dataset_check in _pretrained_optional_types:
         if not job_params.get("pretrained_model_path"):
             errors.append(
                 '"dataset" is required in "submission" when '
@@ -331,33 +340,37 @@ def validate_config(
                     f'Checkpoint "{model_path}" does not exist. '
                     f'Check "pretrained_model_path".'
                 )
-        elif job_type in ("transfer", "rl"):
-            if not model_dir:
-                errors.append(
-                    'Specify either "pretrained_model_path" (direct path to a .pth file) '
-                    'or both "pretrained_model_dir" and "generation_epoch".'
-                )
-            elif epoch is None:
-                errors.append(
-                    'Specify either "pretrained_model_path" (direct path to a .pth file) '
-                    'or both "pretrained_model_dir" and "generation_epoch".'
-                )
-            else:
-                checkpoint = Path(model_dir) / f"model_restart_{epoch}.pth"
-                if not checkpoint.exists():
+        else:
+            # No pretrained_model_path — require dir+epoch for transfer/rl,
+            # or accept dir+epoch for generate (legacy fallback).
+            if job_type in ("transfer", "rl"):
+                if not model_dir or epoch is None:
                     errors.append(
-                        f'Checkpoint "{checkpoint}" does not exist. '
-                        f'Check "pretrained_model_dir" ("{model_dir}") and '
-                        f'"generation_epoch" ({epoch}).'
+                        'Specify either "pretrained_model_path" (direct path to a .pth file) '
+                        'or both "pretrained_model_dir" and "generation_epoch".'
                     )
-        elif model_dir and epoch is not None:
-            checkpoint = Path(model_dir) / f"model_restart_{epoch}.pth"
-            if not checkpoint.exists():
-                errors.append(
-                    f'Checkpoint "{checkpoint}" does not exist. '
-                    f'Check "pretrained_model_dir" ("{model_dir}") and '
-                    f'"generation_epoch" ({epoch}).'
-                )
+                else:
+                    checkpoint = Path(model_dir) / f"model_restart_{epoch}.pth"
+                    if not checkpoint.exists():
+                        errors.append(
+                            f'Checkpoint "{checkpoint}" does not exist. '
+                            f'Check "pretrained_model_dir" ("{model_dir}") and '
+                            f'"generation_epoch" ({epoch}).'
+                        )
+            elif job_type == "generate":
+                if model_dir and epoch is not None:
+                    checkpoint = Path(model_dir) / f"model_restart_{epoch}.pth"
+                    if not checkpoint.exists():
+                        errors.append(
+                            f'Checkpoint "{checkpoint}" does not exist. '
+                            f'Check "pretrained_model_dir" ("{model_dir}") and '
+                            f'"generation_epoch" ({epoch}).'
+                        )
+                else:
+                    errors.append(
+                        'Specify "pretrained_model_path" (direct path to a .pth file) '
+                        'in the "job" block.'
+                    )
 
     if errors:
         _raise(config_path, errors)
@@ -588,11 +601,11 @@ def main():
     submission = config["submission"]
     job_params = config["job"]
 
-    if job_params.get("job_type") in ("rl", "transfer"):
+    if job_params.get("job_type") in ("rl", "transfer", "generate"):
         _resolve_dataset_from_pretrained(submission, job_params)
 
     datasets, data_paths, smiles_files = _normalize_datasets(submission)
-    dataset_dirs = [Path(dp) / ds for dp, ds in zip(data_paths, datasets)]
+    dataset_dirs = [Path(dp) / ds if (dp and ds) else Path("") for dp, ds in zip(data_paths, datasets)]
 
     validate_config(args.config, submission, job_params, datasets, data_paths, smiles_files)
 

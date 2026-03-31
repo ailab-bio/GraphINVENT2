@@ -73,14 +73,20 @@ def get_last_epoch() -> str:
             epoch_key, _, _ = read_row(path=convergence_path,
                                        row=-1,
                                        col=(0, 1, 2))
-        except ValueError:
+        except (ValueError, FileNotFoundError):
             epoch_key = "Epoch 1"
 
-        generation_epoch = constants.generation_epoch
         if constants.job_type == "generate":
-            epoch_key = f"Epoch GEN{generation_epoch}"
+            if constants.pretrained_model_path:
+                import re as _re
+                _m = _re.search(r"model_restart_(\d+)\.pth",
+                                constants.pretrained_model_path)
+                gen_epoch = int(_m.group(1)) if _m else 0
+            else:
+                gen_epoch = constants.generation_epoch
+            epoch_key = f"Epoch GEN{gen_epoch}"
         elif constants.job_type == "test":
-            epoch_key = f"Epoch EVAL{generation_epoch}"
+            epoch_key = f"Epoch EVAL{constants.generation_epoch}"
 
     return epoch_key
 

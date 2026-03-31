@@ -213,14 +213,16 @@ class Analyzer:
         prop_dict[(epoch_key, "run_time")]         = round(time.time() - self.start_time, 2)
 
         # calculate validity list now, so as not to write to CSV in previous step
-        batch_id = f"batch_{generation_batch_idx}"
-        epoch_id = f"epoch_{epoch_key[6:]}"
+        if constants.job_type == "generate":
+            label = f"batch_{generation_batch_idx}"
+        else:
+            label = f"epoch_{epoch_key[6:]}_batch_{generation_batch_idx}"
         fraction_valid, validity_tensor, _ = util.write_molecules(
             molecules=generated_graphs,
             final_likelihoods=loglikelihoods,
             epoch=epoch_key,
             write=True,
-            label=f"{epoch_id}_{batch_id}",
+            label=label,
         )
         prop_dict[(epoch_key, "fraction_valid")]  = fraction_valid
         prop_dict[(epoch_key, "validity_tensor")] = validity_tensor
@@ -238,7 +240,10 @@ class Analyzer:
             merged_properties = {**prop_dict, **training_set_properties}
 
             # plot properties for this epoch
-            plot_filename = f"{output}generation/features{epoch_key[6:]}.png"
+            if constants.job_type == "generate":
+                plot_filename = f"{output}generation/features.png"
+            else:
+                plot_filename = f"{output}generation/features_{epoch_key[6:]}.png"
             self.plot_molecular_properties(properties=merged_properties,
                                            plot_filename=plot_filename)
 
