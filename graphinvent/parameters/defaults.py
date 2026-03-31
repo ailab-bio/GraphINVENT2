@@ -133,6 +133,8 @@ parameters = {
     "sample_every"        : 10,
     "dataset_dir"         : "data/gdb13_1K/",
     "smiles_file"         : None,
+    "auto_detect_features": True,
+    "extra_dataset"       : None,
     "split_type"          : "random",
     "train_frac"          : 0.8,
     "valid_frac"          : 0.1,

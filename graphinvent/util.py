@@ -4,6 +4,7 @@ Contains various miscellaneous useful functions.
 import ast
 import csv
 import json
+import re
 from collections import namedtuple
 from pathlib import Path
 from typing import Iterator, Union, Tuple
@@ -228,7 +229,13 @@ def load_training_set_properties(csv_path: str) -> dict:
         try:
             parsed_value = ast.literal_eval(value)
         except (ValueError, SyntaxError):
-            parsed_value = value
+            # Fallback for NumPy 2.0 repr like "[np.float64(0.0), np.float64(1.0)]"
+            # Strip np.typeN(...) wrappers so literal_eval can handle the value.
+            cleaned = re.sub(r"np\.\w+\(([^)]*)\)", r"\1", value)
+            try:
+                parsed_value = ast.literal_eval(cleaned)
+            except (ValueError, SyntaxError):
+                parsed_value = value
 
         if isinstance(parsed_value, list):
             parsed_value = torch.Tensor(parsed_value)
@@ -515,8 +522,8 @@ def write_preprocessing_parameters(params: namedtuple) -> None:
     dict_path = Path(params.dataset_dir) / "preprocessing_params.json"
     keys_to_write = {
         "atom_types", "formal_charge", "imp_H", "chirality",
-        "max_n_nodes", "use_aromatic_bonds", "use_chirality",
-        "use_explicit_H", "ignore_H",
+        "max_n_nodes", "use_aromatic_bonds", "use_canon",
+        "use_chirality", "use_explicit_H", "ignore_H",
     }
     preproc_dict = {
         key: getattr(params, key)
@@ -739,7 +746,7 @@ def save_training_set_properties(training_set_properties : dict) -> None:
                 # long, instead it gets its own file elsewhere
                 continue
             if isinstance(value, np.ndarray):
-                csv_writer.writerow([key, list(value)])
+                csv_writer.writerow([key, [float(x) for x in value]])
             elif isinstance(value, torch.Tensor):
                 try:
                     csv_writer.writerow([key, float(value)])

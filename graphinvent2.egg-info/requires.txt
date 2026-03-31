@@ -12,6 +12,7 @@ tensorboard
 [dev]
 ruff
 pyright
+pytest
 
 [tdc]
 PyTDC

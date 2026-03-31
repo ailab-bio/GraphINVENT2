@@ -27,6 +27,7 @@ Requires-Dist: PyTDC; extra == "tdc"
 Provides-Extra: dev
 Requires-Dist: ruff; extra == "dev"
 Requires-Dist: pyright; extra == "dev"
+Requires-Dist: pytest; extra == "dev"
 Dynamic: license-file
 
 # GraphINVENT2

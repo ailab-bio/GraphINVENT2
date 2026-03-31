@@ -20,9 +20,10 @@ described in [*Graph Networks for Molecular Design*](https://iopscience.iop.org/
 3. [Quick start](#quick-start)
 4. [Job types](#job-types)
 5. [Tutorials](#tutorials)
-6. [Contributing](#contributing)
-7. [References](#references)
-8. [License](#license)
+6. [Testing](#testing)
+7. [Contributing](#contributing)
+8. [References](#references)
+9. [License](#license)
 
 ---
 
@@ -195,6 +196,37 @@ Pretrain → Reinforcement learning → Generate
 | [03 Transfer learning](./tutorials/03_transfer_learning.md) | Fine-tune on a new dataset |
 | [04 Reinforcement learning](./tutorials/04_reinforcement_learning.md) | Property optimization |
 | [05 Sampling](./tutorials/05_sampling.md) | Generate molecules |
+
+---
+
+## Testing
+
+The test suite verifies that a completed preprocessing job produced correct output.
+All commands should be run from the **repository root**.
+
+### 1. Configure the target dataset
+
+Edit `tests/config.py` to point at the dataset you want to verify:
+
+```python
+# tests/config.py
+DATASET_DIR = Path("data/datasets/debug")   # must contain .smi and .h5 files
+SMILES_FILE = Path("data/datasets/debug/debug.smi")  # original input; set to None for Mode B
+```
+
+### 2. Run the tests
+
+```bash
+pytest tests/ -v
+```
+
+### What is tested
+
+| Test class | Checks |
+|------------|--------|
+| `TestSplitFileCounts` | `train/valid/test.smi` exist; molecule counts sum to the original file; no overlap between splits |
+| `TestHDFFileCounts` | `train/valid/test.h5` exist and contain `nodes`, `edges`, `APDs`; HDF5 molecule count matches `.smi` count; subgraph count ≥ molecule count |
+| `TestSMILESReconstruction` | Every graph in each HDF5 decodes to a valid SMILES; reconstructed SMILES set matches the `.smi` file (lossless round-trip) |
 
 ---
 

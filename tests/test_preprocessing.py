@@ -47,13 +47,14 @@ SPLITS = ["train", "valid", "test"]
 def read_smiles_file(path: Path) -> List[str]:
     """
     Return a list of SMILES strings from a .smi file.
-    Skips blank lines and any header line containing 'SMILES'.
+    Skips blank lines, '#' comment lines, and header lines containing 'SMILES'.
+    The first whitespace-delimited token on each line is taken as the SMILES.
     """
     smiles = []
     with open(path) as fh:
         for line in fh:
             line = line.strip()
-            if not line or "SMILES" in line:
+            if not line or line.startswith("#") or "SMILES" in line:
                 continue
             smiles.append(line.split()[0])
     return smiles
@@ -151,12 +152,19 @@ def _build_constants(params: dict):
 
 
 def _node_row_to_atom(row: np.ndarray, c) -> Optional[rdkit.Chem.Atom]:
-    """Convert a single node feature vector to an RDKit Atom, or None if empty."""
+    """
+    Convert a single node feature vector to an RDKit Atom, or None if the
+    row is all-zero (padding).
+
+    The feature vector layout (one-hot segments concatenated) is:
+        [ atom_types | formal_charge | imp_H (optional) | chirality (optional) ]
+    """
     nonzero = np.nonzero(row)[0]
+    # A valid atom has at least atom_type and formal_charge encoded.
     if len(nonzero) < 2:
         return None
 
-    atom = rdkit.Chem.Atom(c.atom_types[nonzero[0]])
+    atom = rdkit.Chem.Atom(c.atom_types[int(nonzero[0])])
 
     fc_idx = int(nonzero[1]) - c.n_atom_types
     atom.SetFormalCharge(c.formal_charge[fc_idx])
@@ -164,6 +172,19 @@ def _node_row_to_atom(row: np.ndarray, c) -> Optional[rdkit.Chem.Atom]:
     if not c.use_explicit_H and not c.ignore_H and c.n_imp_H > 0:
         h_idx = int(nonzero[2]) - c.n_atom_types - c.n_formal_charge
         atom.SetUnsignedProp("_TotalNumHs", c.imp_H[h_idx])
+
+    if c.use_chirality:
+        # The chirality one-hot is always the last segment; use the last
+        # nonzero index, mirroring MolecularGraph.features_to_atom().
+        cip_idx = (
+            int(nonzero[-1])
+            - c.n_atom_types
+            - c.n_formal_charge
+            - (0 if (c.use_explicit_H or c.ignore_H) else c.n_imp_H)
+        )
+        cip_code = c.chirality[cip_idx]
+        if cip_code != "None":
+            atom.SetProp("_CIPCode", cip_code)
 
     return atom
 

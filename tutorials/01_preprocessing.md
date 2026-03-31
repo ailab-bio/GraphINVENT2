@@ -48,6 +48,54 @@ contain exactly these three files; an error is raised if any are missing:
 
 ---
 
+## Preprocessing multiple datasets simultaneously
+
+Both `"dataset"` and `"data_path"` accept either a single string or a **list of strings**.
+When you provide a list, all datasets are preprocessed in a single run with a **shared,
+union vocabulary** — the feature vocabulary (atom types, formal charges, implicit H counts,
+and maximum node count) is computed across all datasets together before any HDF5 file is
+written.  Each dataset still produces its own separate set of HDF5 files.
+
+This is useful when you intend to pretrain on one corpus and later fine-tune or transfer
+to another, since a shared vocabulary guarantees that both datasets are encoded with
+identical feature dimensions.
+
+`"smiles_file"` can be a list matching `"dataset"` in length — use a path for datasets
+that need splitting (Mode A) and `null` for datasets that are already pre-split (Mode B).
+Mixed Mode A and Mode B datasets in the same run are fully supported.
+
+```json
+"submission": {
+  "python_path": "python",
+  "graphinvent_path": "./graphinvent/",
+  "data_path": "./data/datasets/",
+  "dataset":     ["new-dataset",          "pretrained-set"],
+  "smiles_file": ["./data/raw/new.smi",   null],
+  "job_name": "run",
+  "use_slurm": false
+}
+```
+
+Here `new-dataset` will be split automatically from `new.smi`, while `pretrained-set`
+is expected to already contain `train.smi`, `valid.smi`, and `test.smi`.
+
+To use Mode B for all datasets (all already pre-split), simply set `"smiles_file": null`:
+
+```json
+"dataset":     ["dataset_1", "dataset_2"],
+"smiles_file": null
+```
+
+A single `"data_path"` string is broadcast to all datasets.  If each dataset lives in a
+different root directory, provide a matching list:
+
+```json
+"data_path": ["./data/internal/", "./data/external/"],
+"dataset":   ["internal-set",     "external-set"]
+```
+
+---
+
 ## Splitting strategies (Mode A only)
 
 Set `"split_type"` in the `job` block to one of the following.
@@ -95,22 +143,59 @@ def _custom_split(smiles, train_frac, valid_frac):
 These parameters are **baked into the HDF5 files** and must match exactly for every
 subsequent job (training, generation, RL).  They are checked automatically at runtime.
 
-### Molecular feature parameters — auto-detected
+### Molecular feature parameters
 
-The following parameters are **automatically detected** by scanning your SMILES files
-before the HDF5 conversion starts.  You do not need to specify them in `params.json`:
+The following parameters describe the chemical vocabulary of the dataset.
 
-| Parameter | What is detected |
+| Parameter | What it controls |
 |-----------|-----------------|
-| `atom_types` | All unique element symbols present in the dataset |
-| `formal_charge` | All unique formal charges present |
-| `imp_H` | All unique implicit H counts present (omitted when `use_explicit_H` or `ignore_H`) |
-| `max_n_nodes` | Maximum number of heavy atoms in any molecule |
+| `atom_types` | Allowed element symbols (e.g. `["C", "N", "O", "F"]`) |
+| `formal_charge` | Allowed formal charges (e.g. `[-1, 0, 1]`) |
+| `imp_H` | Allowed implicit H counts (e.g. `[0, 1, 2, 3]`); omitted when `use_explicit_H` or `ignore_H` |
+| `max_n_nodes` | Maximum number of heavy atoms in any generated molecule |
 | `chirality` | Fixed as `["None", "R", "S"]` when `use_chirality` is `true`; omitted entirely when `false` |
 
-The detected values are printed at the start of the preprocessing run and written to
-`preprocessing_params.json` in the dataset directory so that subsequent jobs can verify
-they are using a compatible feature encoding.
+#### `auto_detect_features` (default: `true`)
+
+When `true`, all of the parameters above are **automatically detected** by scanning
+your SMILES files before the HDF5 conversion starts — you do not need to specify them
+in `params.json`.
+
+When `false`, the values you provide in `params.json` are used directly.  Any parameter
+left as an empty list (`[]`) or `0` is still auto-detected individually, so you can
+hard-code some parameters and auto-detect others:
+
+```json
+"job": {
+  "auto_detect_features": false,
+  "atom_types":    ["C", "N", "O", "F", "S", "Cl", "Br"],
+  "formal_charge": [],
+  "imp_H":         [],
+  "max_n_nodes":   0
+}
+```
+
+Here `atom_types` is fixed to the listed elements (useful for transfer learning, to
+ensure a larger vocabulary than the fine-tuning set alone contains), while
+`formal_charge`, `imp_H`, and `max_n_nodes` are still auto-detected.
+
+The detected (and/or provided) values are printed at the start of the preprocessing run
+and written to `preprocessing_params.json` in the dataset directory so that subsequent
+jobs can verify they are using a compatible feature encoding.
+
+#### `extra_dataset`
+
+Set `"extra_dataset"` to the path of an additional `.smi` file or a directory
+containing `.smi` files that should be **scanned for vocabulary** but **not
+preprocessed**.  This is useful when you want the vocabulary to be large enough to
+cover molecules you plan to generate or fine-tune on later, without including those
+molecules in the training set.
+
+```json
+"extra_dataset": "./data/datasets/future-finetune-set"
+```
+
+Set to `null` (the default) to disable.
 
 ### Encoding options
 
@@ -153,8 +238,7 @@ Edit `jobs/preprocess/params.json`.
     "data_path": "./data/datasets/",
     "dataset": "my-dataset",
     "smiles_file": "./data/datasets/my_molecules.smi",
-    "n_jobs": 1,
-    "jobdir_start_idx": 0,
+    "job_name": "run",
     "use_slurm": false,
     "slurm": {
       "account": "XXXXXXXXXX",
@@ -164,6 +248,8 @@ Edit `jobs/preprocess/params.json`.
   },
   "job": {
     "job_type": "preprocess",
+    "auto_detect_features": true,
+    "extra_dataset": null,
     "split_type": "random",
     "train_frac": 0.8,
     "valid_frac": 0.1,
@@ -192,8 +278,7 @@ fractions if desired).  Everything else stays the same.
     "data_path": "./data/datasets/",
     "dataset": "gdb13-debug",
     "smiles_file": null,
-    "n_jobs": 1,
-    "jobdir_start_idx": 0,
+    "job_name": "run",
     "use_slurm": false,
     "slurm": {
       "account": "XXXXXXXXXX",
@@ -203,6 +288,8 @@ fractions if desired).  Everything else stays the same.
   },
   "job": {
     "job_type": "preprocess",
+    "auto_detect_features": true,
+    "extra_dataset": null,
     "use_aromatic_bonds": false,
     "use_canon": true,
     "use_chirality": false,
@@ -215,6 +302,68 @@ fractions if desired).  Everything else stays the same.
 }
 ```
 
+### Multi-dataset example (shared vocabulary)
+
+```json
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": ["dataset_1", "dataset_2"],
+    "smiles_file": null,
+    "job_name": "run",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-02:00:00",
+      "gpus_per_node": "T4:1"
+    }
+  },
+  "job": {
+    "job_type": "preprocess",
+    "auto_detect_features": true,
+    "extra_dataset": null,
+    "use_aromatic_bonds": false,
+    "use_canon": true,
+    "use_chirality": false,
+    "use_explicit_H": false,
+    "ignore_H": false,
+    "batch_size": 1000,
+    "block_size": 100000,
+    "decoding_route": "bfs"
+  }
+}
+```
+
+Both `dataset_1` and `dataset_2` must be pre-split Mode B directories.  The run produces
+`dataset_1/train.h5` (and `valid.h5`, `test.h5`) and likewise for `dataset_2`, all encoded
+with the same union vocabulary.
+
+### Fixing the vocabulary for transfer learning
+
+If you plan to fine-tune on a dataset that contains atom types not present in the
+pretraining set, set `auto_detect_features: false` and list all atom types explicitly
+so that the pretraining HDF5 uses a vocabulary large enough to cover the fine-tuning
+molecules:
+
+```json
+"job": {
+  "job_type": "preprocess",
+  "auto_detect_features": false,
+  "atom_types": ["C", "N", "O", "F", "S", "Cl", "Br", "I"],
+  "formal_charge": [],
+  "imp_H": [],
+  "max_n_nodes": 0,
+  ...
+}
+```
+
+Empty lists (`[]`) and `0` fall back to auto-detection for those individual fields.
+Alternatively, point `extra_dataset` at the fine-tuning SMILES file and leave
+`auto_detect_features: true` — the extra molecules will be scanned for vocabulary
+but will not be included in the pretraining HDF5.
+
 ---
 
 ## Running the job
@@ -226,14 +375,15 @@ python submit.py --config jobs/preprocess/params.json
 `submit.py` will:
 1. If `smiles_file` is set: split the file and write `train.smi` / `valid.smi` / `test.smi` into the dataset directory.
 2. If `smiles_file` is null: verify that all three `.smi` files exist in the dataset directory (error if any are missing).
-3. Create `output/<dataset>/preprocess/job_0/`
-4. Write a resolved `params.json` into that directory.
-5. Launch `graphinvent/main.py --job-dir output/<dataset>/preprocess/job_0/`
+3. If `dataset` is a list: scan all datasets (plus `extra_dataset` if set) to compute the union vocabulary, then preprocess each dataset separately using that shared vocabulary.
+4. Create `output/<dataset>/preprocess/job_0/`
+5. Write a resolved `params.json` into that directory.
+6. Launch `graphinvent/main.py --job-dir output/<dataset>/preprocess/job_0/`
 
 `main.py` will then:
-6. Scan all three `.smi` files to auto-detect `atom_types`, `formal_charge`, `imp_H`, and `max_n_nodes`.
-7. Run the HDF5 conversion using the detected feature vocabulary.
-8. Write `preprocessing_params.json` to the dataset directory.
+7. Scan the `.smi` files to detect `atom_types`, `formal_charge`, `imp_H`, and `max_n_nodes` (skipped when `auto_detect_features` is `false` and values are fully specified).
+8. Run the HDF5 conversion using the feature vocabulary.
+9. Write `preprocessing_params.json` to the dataset directory.
 
 ---
 

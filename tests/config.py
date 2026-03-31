@@ -13,5 +13,5 @@ SMILES_FILE   : path to the *original* SMILES file used as input.
 """
 from pathlib import Path
 
-DATASET_DIR = Path("data/datasets/test")
-SMILES_FILE = Path("data/datasets/test/mytestsmiles.smi")
+DATASET_DIR = Path("data/datasets/debug")
+SMILES_FILE = Path("data/datasets/debug/debug.smi")

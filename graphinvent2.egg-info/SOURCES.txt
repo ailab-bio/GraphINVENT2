@@ -22,8 +22,10 @@ graphinvent/parameters/constants.py
 graphinvent/parameters/defaults.py
 graphinvent/parameters/load.py
 graphinvent/tools/README.md
+graphinvent/tools/__init__.py
 graphinvent/tools/atom_types.py
 graphinvent/tools/combine_HDFs.py
+graphinvent/tools/draw_molecules.py
 graphinvent/tools/formal_charges.py
 graphinvent/tools/fresh-start.sh
 graphinvent/tools/max_n_nodes.py
@@ -37,3 +39,4 @@ graphinvent2.egg-info/dependency_links.txt
 graphinvent2.egg-info/entry_points.txt
 graphinvent2.egg-info/requires.txt
 graphinvent2.egg-info/top_level.txt
+tests/test_preprocessing.py

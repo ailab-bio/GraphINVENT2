@@ -1,0 +1,33 @@
+{
+  "use_canon": true,
+  "use_aromatic_bonds": false,
+  "chirality": [
+    "None",
+    "R",
+    "S"
+  ],
+  "max_n_nodes": 72,
+  "use_explicit_H": false,
+  "formal_charge": [
+    -1,
+    0,
+    1
+  ],
+  "ignore_H": false,
+  "imp_H": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "atom_types": [
+    "Br",
+    "C",
+    "Cl",
+    "F",
+    "N",
+    "O",
+    "S"
+  ],
+  "use_chirality": false
+}

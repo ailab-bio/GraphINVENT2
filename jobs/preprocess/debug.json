@@ -3,10 +3,9 @@
     "python_path": "python",
     "graphinvent_path": "./graphinvent/",
     "data_path": "./data/datasets/",
-    "dataset": "test",
-    "smiles_file": "./data/datasets/test/mytestsmiles.smi",
-    "n_jobs": 1,
-    "jobdir_start_idx": 0,
+    "dataset": ["debug", "DRD2_actives"],
+    "smiles_file": ["./data/datasets/debug/debug.smi", null],
+    "job_name": "run",
     "use_slurm": false,
     "slurm": {
       "account": "XXXXXXXXXX",
@@ -17,6 +16,9 @@
   "job": {
     "job_type": "preprocess",
     "restart": false,
+
+    "auto_detect_features": true,
+    "extra_dataset": null,
     "split_type": "random",
     "train_frac": 0.8,
     "valid_frac": 0.1,

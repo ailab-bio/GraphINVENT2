@@ -214,48 +214,163 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
             flush=True,
         )
 
+    # For non-preprocess jobs, load molecular feature parameters from
+    # preprocessing_params.json (authoritative source written by the preprocessing
+    # step).  These never need to be re-specified in the job's params.json.
+    _FEATURE_KEYS = (
+        "atom_types", "formal_charge", "imp_H", "chirality",
+        "max_n_nodes", "use_aromatic_bonds", "use_canon",
+        "use_chirality", "use_explicit_H", "ignore_H",
+    )
+    # List/int keys that can be explicitly overridden in non-preprocess job JSONs.
+    # An empty list [] or 0 means "inherit from preprocessing_params.json".
+    _OVERRIDABLE_LIST_KEYS = ("atom_types", "formal_charge", "imp_H", "chirality")
+    _OVERRIDABLE_INT_KEYS  = ("max_n_nodes",)
+
+    if parameters.get("job_type") != "preprocess":
+        # Read the raw job params.json before it was merged with defaults, so we
+        # can distinguish "user explicitly set a non-empty value" from "default []".
+        _job_params_path = Path(parameters["job_dir"]) / "params.json"
+        _raw_job = load_params(str(_job_params_path)) if _job_params_path.exists() else {}
+        job_feature_overrides: dict = {}
+        for _k in _OVERRIDABLE_LIST_KEYS:
+            _v = _raw_job.get(_k, [])
+            if _v:  # non-empty list → explicit override
+                job_feature_overrides[_k] = _v
+        for _k in _OVERRIDABLE_INT_KEYS:
+            _v = _raw_job.get(_k, 0)
+            if _v:  # non-zero → explicit override
+                job_feature_overrides[_k] = _v
+
+        dataset_dir  = parameters.get("dataset_dir", "")
+        json_preproc = Path(dataset_dir) / "preprocessing_params.json"
+        csv_preproc  = Path(dataset_dir) / "preprocessing_params.csv"
+
+        if json_preproc.exists():
+            preproc_params = load_params(str(json_preproc))
+        elif csv_preproc.exists():
+            preproc_params = load_params(str(csv_preproc))
+        else:
+            preproc_params = {}
+            print(
+                f"-- Warning: no preprocessing_params file found in "
+                f"'{dataset_dir}'. Feature parameters will use defaults.",
+                flush=True,
+            )
+
+        if preproc_params:
+            print(
+                "* Loading molecular feature parameters from "
+                "preprocessing_params.json.",
+                flush=True,
+            )
+            for key in _FEATURE_KEYS:
+                if key in preproc_params:
+                    parameters[key] = preproc_params[key]
+
+        # Re-apply any non-empty job-level overrides on top of preprocessing_params.
+        if job_feature_overrides:
+            print("* Applying job-level feature overrides:", flush=True)
+            for _k, _v in job_feature_overrides.items():
+                parameters[_k] = _v
+                print(f"  {_k} : {_v}", flush=True)
+
     if parameters["use_explicit_H"] and parameters["ignore_H"]:
         raise ValueError(
             "Cannot use explicit Hs and ignore Hs simultaneously. "
             "Please fix the flags in your params.json."
         )
 
-    # Auto-detect molecular feature vocabulary from SMILES files when preprocessing
-    if parameters.get("job_type") == "preprocess" and parameters.get("atom_types") is None:
+    # Resolve molecular feature vocabulary for preprocessing jobs.
+    if parameters.get("job_type") == "preprocess":
         dataset_dir = parameters.get("dataset_dir", "")
         smiles_file = parameters.get("smiles_file") or None
 
-        # In Mode A (single SMILES file + automatic splitting), the split files
-        # don't exist yet — splitting happens later in Workflow.preprocess_phase().
-        # Scan the original file directly instead.
+        # In Mode A the split files don't exist yet; scan the original file.
         split_files = [
             dataset_dir + "train.smi",
             dataset_dir + "valid.smi",
             dataset_dir + "test.smi",
         ]
-        if smiles_file and os.path.exists(smiles_file):
-            smi_paths = [smiles_file]
-        else:
-            smi_paths = split_files
+        _primary_paths = [smiles_file] if smiles_file and os.path.exists(smiles_file) \
+                         else split_files
 
-        print("* Auto-detecting molecular features from SMILES files...", flush=True)
-        atom_types, formal_charge, imp_H, max_n_nodes = scan_smiles_features(
-            smi_paths=smi_paths,
-            use_explicit_H=parameters.get("use_explicit_H", False),
-            ignore_H=parameters.get("ignore_H", False),
-        )
-        parameters["atom_types"]    = atom_types
-        parameters["formal_charge"] = formal_charge
-        parameters["max_n_nodes"]   = max_n_nodes
-        if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
-            parameters["imp_H"] = imp_H
-        if parameters.get("use_chirality", False):
-            parameters["chirality"] = ["None", "R", "S"]
-        print(f"  atom_types    : {atom_types}", flush=True)
-        print(f"  formal_charge : {formal_charge}", flush=True)
-        if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
-            print(f"  imp_H         : {imp_H}", flush=True)
-        print(f"  max_n_nodes   : {max_n_nodes}", flush=True)
+        if parameters.get("auto_detect_features", True):
+            smi_paths = list(_primary_paths)
+
+            # If extra_dataset is provided, also scan it so the vocabulary covers
+            # both datasets (useful for transfer learning compatibility).
+            # Accepts a path to a .smi file OR a directory with train/valid/test.smi.
+            extra_dataset = parameters.get("extra_dataset") or None
+            if extra_dataset:
+                extra_path = Path(extra_dataset)
+                if extra_path.is_file():
+                    smi_paths.append(str(extra_path))
+                    print(f"* Also scanning extra dataset for features: {extra_dataset}", flush=True)
+                elif extra_path.is_dir():
+                    for _name in ("train.smi", "valid.smi", "test.smi"):
+                        _p = extra_path / _name
+                        if _p.exists():
+                            smi_paths.append(str(_p))
+                    print(f"* Also scanning extra dataset for features: {extra_dataset}", flush=True)
+                else:
+                    print(f"-- Warning: extra_dataset path not found: {extra_dataset}", flush=True)
+
+            print("* Auto-detecting molecular features from SMILES files...", flush=True)
+            atom_types, formal_charge, imp_H, max_n_nodes = scan_smiles_features(
+                smi_paths=smi_paths,
+                use_explicit_H=parameters.get("use_explicit_H", False),
+                ignore_H=parameters.get("ignore_H", False),
+            )
+            parameters["atom_types"]    = atom_types
+            parameters["formal_charge"] = formal_charge
+            parameters["max_n_nodes"]   = max_n_nodes
+            if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
+                parameters["imp_H"] = imp_H
+            if parameters.get("use_chirality", False):
+                parameters["chirality"] = ["None", "R", "S"]
+            print(f"  atom_types    : {atom_types}", flush=True)
+            print(f"  formal_charge : {formal_charge}", flush=True)
+            if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
+                print(f"  imp_H         : {imp_H}", flush=True)
+            print(f"  max_n_nodes   : {max_n_nodes}", flush=True)
+        else:
+            # Manual mode: values come from params.json.
+            # Any field left as [] or 0 is auto-detected from the primary dataset.
+            needs_auto = []
+            for _k in ("atom_types", "formal_charge"):
+                if not parameters.get(_k):
+                    needs_auto.append(_k)
+            if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
+                if not parameters.get("imp_H"):
+                    needs_auto.append("imp_H")
+            if not parameters.get("max_n_nodes"):
+                needs_auto.append("max_n_nodes")
+
+            if needs_auto:
+                print(f"* auto_detect_features=false — auto-detecting {needs_auto} from SMILES...",
+                      flush=True)
+                _auto_at, _auto_fc, _auto_imph, _auto_nn = scan_smiles_features(
+                    smi_paths=_primary_paths,
+                    use_explicit_H=parameters.get("use_explicit_H", False),
+                    ignore_H=parameters.get("ignore_H", False),
+                )
+                if "atom_types"    in needs_auto: parameters["atom_types"]    = _auto_at
+                if "formal_charge" in needs_auto: parameters["formal_charge"] = _auto_fc
+                if "imp_H"         in needs_auto: parameters["imp_H"]         = _auto_imph
+                if "max_n_nodes"   in needs_auto: parameters["max_n_nodes"]   = _auto_nn
+            else:
+                print("* auto_detect_features=false — using all feature parameters from params.json.",
+                      flush=True)
+
+            if parameters.get("use_chirality", False) and not parameters.get("chirality"):
+                parameters["chirality"] = ["None", "R", "S"]
+
+            print(f"  atom_types    : {parameters.get('atom_types')}", flush=True)
+            print(f"  formal_charge : {parameters.get('formal_charge')}", flush=True)
+            if not parameters.get("use_explicit_H", False) and not parameters.get("ignore_H", False):
+                print(f"  imp_H         : {parameters.get('imp_H')}", flush=True)
+            print(f"  max_n_nodes   : {parameters.get('max_n_nodes')}", flush=True)
 
     # Bond type <-> integer mappings
     bondtype_to_int = {BondType.SINGLE: 0, BondType.DOUBLE: 1, BondType.TRIPLE: 2}
@@ -310,37 +425,10 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
 
     if constants_dict["job_type"] != "preprocess":
         print(
-            "* Running job using HDF datasets located at " + parameters["dataset_dir"],
+            "* Running job using HDF datasets located at "
+            + parameters["dataset_dir"],
             flush=True,
         )
-        print(
-            "* Checking that the relevant parameters match those used in preprocessing.",
-            flush=True,
-        )
-
-        dataset_dir   = parameters["dataset_dir"]
-        json_preproc  = Path(dataset_dir) / "preprocessing_params.json"
-        csv_preproc   = Path(dataset_dir) / "preprocessing_params.csv"
-
-        if json_preproc.exists():
-            params_to_check = load_params(str(json_preproc))
-        elif csv_preproc.exists():
-            params_to_check = load_params(str(csv_preproc))
-        else:
-            print(
-                "-- No preprocessing_params file found; skipping parameter check.",
-                flush=True,
-            )
-            params_to_check = {}
-
-        for key, value in params_to_check.items():
-            if key in constants_dict and value != constants_dict[key]:
-                raise ValueError(
-                    f"Parameter mismatch between current job and preprocessing: "
-                    f"'{key}' differs. Ensure all relevant parameters match."
-                )
-
-        print("-- Job parameters match preprocessing parameters.", flush=True)
 
     if constants_dict["job_type"] == "rl":
         print("-- Loading pre-trained scikit-learn activity model.", flush=True)

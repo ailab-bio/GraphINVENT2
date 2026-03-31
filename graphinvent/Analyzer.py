@@ -734,9 +734,14 @@ class Analyzer:
         """
         (p, n, wp, wn)   = b
 
+        def _to_numpy(v):
+            if isinstance(v, torch.Tensor):
+                return v.cpu().numpy()
+            return np.array(v)
+
         weighted_average = np.around((
-            np.array(p[("Training set", key)]) * wp
-            + np.array(n[("Training set", key)]) * wn
+            _to_numpy(p[("Training set", key)]) * wp
+            + _to_numpy(n[("Training set", key)]) * wn
         ) / (wp + wn), decimals=3)
 
         return weighted_average
@@ -784,8 +789,8 @@ class Analyzer:
             if idx * constants.batch_size > n_samples:
                 break
 
-            if constants.device == "cuda":
-                batch = [b.cuda(non_blocking=True) for b in batch]
+            if constants.device != "cpu":
+                batch = [b.to(constants.device) for b in batch]
             nodes, edges, target_output = batch
 
             renormalized_target_output = (
@@ -873,7 +878,7 @@ class Analyzer:
             ax_at.set(xlabel=f"Atom type ({xlabel_values})")
 
             # plot formal charge histogram
-            ax_fc.plot(range(constants.formal_charge[0], constants.formal_charge[-1] + 1),
+            ax_fc.plot(constants.formal_charge,
                        norm_formal_charge_hist,
                        color=c, label=epoch_key, linestyle=ls, marker=m)
             xlabel_values = ", ".join(map(str, constants.formal_charge))

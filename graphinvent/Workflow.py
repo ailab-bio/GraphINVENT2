@@ -369,8 +369,8 @@ class Workflow:
         """
         net = gnn.mpnn.GGNN(constants=self.constants)
 
-        if self.constants.device == "cuda":
-            net = net.to("cuda", non_blocking=True)
+        if self.constants.device != "cpu":
+            net = net.to(self.constants.device)
 
         return net
 
@@ -1032,8 +1032,8 @@ class Workflow:
         accumulation_counter = 0  # initialize the accumulation counter
         for batch_idx, batch in tqdm(enumerate(self.train_dataloader),
                                      total=len(self.train_dataloader)):
-            if self.constants.device == "cuda":
-                batch = [b.to("cuda", non_blocking=True) for b in batch]
+            if self.constants.device != "cpu":
+                batch = [b.to(self.constants.device) for b in batch]
 
             nodes, edges, target_output = batch
             output = self.model(nodes, edges)
@@ -1081,8 +1081,8 @@ class Workflow:
 
             for batch_idx, batch in tqdm(enumerate(self.valid_dataloader),
                                          total=len(self.valid_dataloader)):
-                if self.constants.device == "cuda":
-                    batch = [b.to("cuda", non_blocking=True) for b in batch]
+                if self.constants.device != "cpu":
+                    batch = [b.to(self.constants.device) for b in batch]
 
                 nodes, edges, target_output = batch
                 output = self.model(nodes, edges)
