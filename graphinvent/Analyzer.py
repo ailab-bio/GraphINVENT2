@@ -300,7 +300,7 @@ class Analyzer:
             molecules=generated_graphs,
             final_likelihoods=agent_loglikelihoods,
             epoch=epoch_key,
-            write=is_agent,
+            write=True,
             label=label
         )
         prop_dict[(epoch_key, "fraction_valid")]    = fraction_valid
@@ -928,11 +928,11 @@ class Analyzer:
                                       file, or create a new file. Defaults to True.
         """
         if not append:
-            with open(constants.job_dir + "fine-tuning.log", "w") as output_file:
+            with open(constants.job_dir + "score.log", "w") as output_file:
                 output_file.write("Step, Score\n")
                 output_file.write(f"Step {step}, {score:.8f}\n")
         else:
-            with open(constants.job_dir + "fine-tuning.log", "a") as output_file:
+            with open(constants.job_dir + "score.log", "a") as output_file:
                 output_file.write(f"Step {step}, {score:.8f}\n")
 
         if self.create_tensorboard:

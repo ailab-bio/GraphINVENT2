@@ -431,7 +431,7 @@ class Workflow:
         subdirectory so the new run starts cleanly.
 
         Backs up: convergence.log, generation.log, validation.log,
-        fine-tuning.log (RL only), all model_restart_*.pth checkpoints, and
+        score.log (RL only), all model_restart_*.pth checkpoints, and
         the generation/ subdirectory.
         """
         job_dir = self.constants.job_dir
@@ -439,7 +439,7 @@ class Workflow:
 
         log_names = ["convergence.log", "generation.log", "validation.log"]
         if job_type == "rl":
-            log_names.append("fine-tuning.log")
+            log_names.append("score.log")
 
         stale = [
             job_dir + name
@@ -845,7 +845,6 @@ class Workflow:
                 epoch=step,
                 lr=self.optimizer.param_groups[0]["lr"],
                 training_loss=loss.detach(),
-                validation_loss=0.0,  # placeholder, not meaningful during fine-tuning
                 score=torch.mean(score_a).item()
             )
 

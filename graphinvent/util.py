@@ -168,9 +168,9 @@ def get_restart_epoch() -> Union[int, str]:
         epoch (int or str) :
     """
     if constants.job_type == "rl" and constants.restart:
-        # RL restart: find the last saved step from fine-tuning.log.
+        # RL restart: find the last saved step from score.log.
         # (generation.log for RL uses "Step N label" format, not "Epoch N".)
-        ft_log_path = constants.job_dir + "fine-tuning.log"
+        ft_log_path = constants.job_dir + "score.log"
         epoch       = "NA"
         row         = -1
         while not isinstance(epoch, int):
@@ -633,21 +633,31 @@ def write_training_status(tb_writer : Union[SummaryWriter, None],
     # RL progress is measured in steps; all supervised jobs use epochs
     epoch_label = "Step" if constants.job_type == "rl" else "Epoch"
 
+    is_rl = constants.job_type == "rl"
+
     if not append:  # create the file
         with open(convergence_path, "w") as output_file:
-            output_file.write(f"{epoch_label.lower()}, lr, avg_train_loss, "
-                              f"avg_valid_loss, model_score\n")
+            if is_rl:
+                output_file.write(f"{epoch_label.lower()}, lr, avg_train_loss, model_score\n")
+            else:
+                output_file.write(f"{epoch_label.lower()}, lr, avg_train_loss, "
+                                  f"avg_valid_loss, model_score\n")
     else:  # append to existing file
         if constants.job_type in ["pretrain", "transfer", "rl"]:
             if score is None:
                 with open(convergence_path, "a") as output_file:
-                    output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
-                                      f"{training_loss:.8f}, "
-                                      f"{validation_loss:.8f}, ")
+                    if is_rl:
+                        output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
+                                          f"{training_loss:.8f}, ")
+                    else:
+                        output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
+                                          f"{training_loss:.8f}, "
+                                          f"{validation_loss:.8f}, ")
                 # write to tensorboard
                 if tb_writer is not None:
                     tb_writer.add_scalar("Training/training_loss", training_loss, epoch)
-                    tb_writer.add_scalar("Training/validation_loss", validation_loss, epoch)
+                    if not is_rl:
+                        tb_writer.add_scalar("Training/validation_loss", validation_loss, epoch)
                     tb_writer.add_scalar("Training/lr", lr, epoch)
 
             elif score == "NA":
@@ -656,9 +666,13 @@ def write_training_status(tb_writer : Union[SummaryWriter, None],
 
             elif score is not None and training_loss is not None:
                 with open(convergence_path, "a") as output_file:
-                    output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
-                                      f"{training_loss:.8f}, "
-                                      f"{validation_loss:.8f}, {score:.6f}\n")
+                    if is_rl:
+                        output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
+                                          f"{training_loss:.8f}, {score:.6f}\n")
+                    else:
+                        output_file.write(f"{epoch_label} {epoch}, {lr:.8f}, "
+                                          f"{training_loss:.8f}, "
+                                          f"{validation_loss:.8f}, {score:.6f}\n")
 
             else:
                 with open(convergence_path, "a") as output_file:

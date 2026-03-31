@@ -196,7 +196,7 @@ Output is written to `output/<dataset>/rl/job_0/`.
 | File | Description |
 |------|-------------|
 | `params_all.json` | All resolved parameters |
-| `fine-tuning.log` | Per-step average score (most important RL metric) |
+| `score.log` | Per-step average score (most important RL metric) |
 | `convergence.log` | Per-step LR, training loss, mean score |
 | `generation.log` | Per-step molecule quality metrics (validity, uniqueness, etc.) |
 | `model_restart_<step>.pth` | Model checkpoint saved after each evaluation step |
@@ -206,7 +206,7 @@ Output is written to `output/<dataset>/rl/job_0/`.
 
 ## Monitoring RL progress
 
-### `fine-tuning.log`
+### `score.log`
 
 ```
 Step, Score
@@ -260,4 +260,4 @@ set of molecules using the best checkpoint:
 [Tutorial 5: Sampling](./05_sampling.md).
 
 Set `"pretrained_model_path"` in your sampling config to the best checkpoint from the RL
-job (e.g. `"output/debug/rl/run/model_restart_50.pth"`), identified from `fine-tuning.log`.
+job (e.g. `"output/debug/rl/run/model_restart_50.pth"`), identified from `score.log`.
