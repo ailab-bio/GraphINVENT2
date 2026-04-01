@@ -4,8 +4,11 @@ Contains various miscellaneous useful functions.
 
 import ast
 import csv
+import datetime
 import json
 import re
+import subprocess
+import sys
 from collections import namedtuple
 from pathlib import Path
 from typing import Iterator, Tuple, Union
@@ -513,16 +516,76 @@ class _ConstantsEncoder(json.JSONEncoder):  # this might be dead code?
         return str(obj)
 
 
+def _build_run_info(seed: int = 0) -> dict:
+    """
+    Collect reproducibility metadata: timestamp, library versions, git commit,
+    device details, and the random seed used for this run.
+
+    Returns a dict suitable for embedding in any params_all.json.
+    """
+    # --- timestamp ---
+    timestamp = datetime.datetime.now().isoformat(timespec="seconds")
+
+    # --- library versions ---
+    try:
+        import rdkit as _rdkit
+
+        rdkit_version = _rdkit.__version__
+    except Exception:
+        rdkit_version = "unknown"
+    try:
+        cuda_version = torch.version.cuda or "n/a"
+    except Exception:
+        cuda_version = "unknown"
+
+    # --- device details ---
+    device_name = "cpu"
+    if torch.cuda.is_available():
+        try:
+            device_name = torch.cuda.get_device_name(0)
+        except Exception:
+            device_name = "cuda (unknown model)"
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device_name = "mps"
+
+    # --- git commit hash ---
+    try:
+        git_hash = (
+            subprocess.check_output(
+                ["git", "rev-parse", "--short", "HEAD"],
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .strip()
+        )
+    except Exception:
+        git_hash = "unknown"
+
+    return {
+        "timestamp": timestamp,
+        "python_version": sys.version.split()[0],
+        "torch_version": torch.__version__,
+        "numpy_version": np.__version__,
+        "rdkit_version": rdkit_version,
+        "cuda_version": cuda_version,
+        "device_name": device_name,
+        "git_hash": git_hash,
+        "seed": seed,
+    }
+
+
 def write_job_parameters(params: namedtuple) -> None:
     """
-    Writes all resolved job parameters/hyperparameters to `params_all.json`.
-    This file is for reference only; the authoritative config is `params.json`.
+    Writes all resolved job parameters/hyperparameters to ``params_all.json``,
+    together with a ``run_info`` block containing reproducibility metadata
+    (timestamp, library versions, git hash, device, seed).
 
     Args:
         params: Resolved constants namedtuple.
     """
     dict_path = Path(params.job_dir) / "params_all.json"
     params_dict = {field: getattr(params, field) for field in params._fields}
+    params_dict["run_info"] = _build_run_info(seed=getattr(params, "seed", 0))
 
     with open(dict_path, "w") as f:
         json.dump(params_dict, f, indent=2, cls=_ConstantsEncoder)
@@ -530,14 +593,18 @@ def write_job_parameters(params: namedtuple) -> None:
 
 def write_preprocessing_parameters(params: namedtuple) -> None:
     """
-    Writes the subset of parameters needed to verify preprocessing consistency
-    to `preprocessing_params.json` in the dataset directory.
+    Writes the feature-vocabulary parameters needed to verify preprocessing
+    consistency to ``preprocessing_params.json`` in the dataset directory,
+    together with split configuration and a ``run_info`` block.
+
+    The actual split counts (n_train, n_valid, n_test) are appended later by
+    :func:`update_preprocessing_stats` once the split files exist on disk.
 
     Args:
         params: Resolved constants namedtuple.
     """
     dict_path = Path(params.dataset_dir) / "preprocessing_params.json"
-    keys_to_write = {
+    vocab_keys = {
         "atom_types",
         "formal_charge",
         "imp_H",
@@ -549,11 +616,45 @@ def write_preprocessing_parameters(params: namedtuple) -> None:
         "use_explicit_H",
         "ignore_H",
     }
+    split_keys = {"split_type", "train_frac", "valid_frac", "smiles_file"}
+    keys_to_write = vocab_keys | split_keys
     preproc_dict = {
         key: getattr(params, key) for key in keys_to_write if hasattr(params, key)
     }
+    preproc_dict["run_info"] = _build_run_info(seed=getattr(params, "seed", 0))
     with open(dict_path, "w") as f:
         json.dump(preproc_dict, f, indent=2)
+
+
+def update_preprocessing_stats(dataset_dir: str) -> None:
+    """
+    Append split counts (n_train, n_valid, n_test) to the existing
+    ``preprocessing_params.json`` in *dataset_dir* by counting lines in the
+    ``train.smi``, ``valid.smi``, and ``test.smi`` files.
+
+    Safe to call even if a split file is absent (count is recorded as 0).
+
+    Args:
+        dataset_dir: Path to the dataset directory.
+    """
+    base = Path(dataset_dir)
+    json_path = base / "preprocessing_params.json"
+    if not json_path.exists():
+        return
+
+    with open(json_path) as f:
+        data = json.load(f)
+
+    for split, fname in [
+        ("n_train", "train.smi"),
+        ("n_valid", "valid.smi"),
+        ("n_test", "test.smi"),
+    ]:
+        p = base / fname
+        data[split] = sum(1 for _ in open(p)) if p.exists() else 0
+
+    with open(json_path, "w") as f:
+        json.dump(data, f, indent=2)
 
 
 def write_graphs_to_smi(

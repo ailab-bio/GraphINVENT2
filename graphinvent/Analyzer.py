@@ -140,10 +140,6 @@ class Analyzer:
             return float(uc_jsd)
 
         epoch_key = util.get_last_epoch()
-        if constants.job_type == "rl":
-            epoch_label = "Step"
-        else:
-            epoch_label = "Epoch"
 
         print("-- Calculating NLL statistics for validation set.", flush=True)
         valid_likelihood_list, avg_valid_likelihood = self.get_validation_likelihood(
@@ -176,12 +172,15 @@ class Analyzer:
         )
 
         # write results to disk
+        import os as _os
+
+        _val_log = constants.job_dir + "validation.log"
         util.write_validation_scores(
             output_dir=constants.job_dir,
             epoch_key=epoch_key,
             model_scores=model_scores,
             tb_writer=self.tb_writer,
-            append=bool(epoch_key != f"{epoch_label} {constants.sample_every}"),
+            append=_os.path.exists(_val_log),
         )
         util.write_training_status(
             tb_writer=self.tb_writer, score=model_scores["UC-JSD"]
@@ -846,7 +845,11 @@ class Analyzer:
             # means the sum is number of subgraphs)
             n_structures += torch.sum(target_output[:, -1]).unsqueeze(dim=0)
 
-        avg_final_likelihood = torch.sum(likelihoods, dim=0) / n_structures[0]
+        avg_final_likelihood = (
+            torch.sum(likelihoods, dim=0) / n_structures[0]
+            if n_structures[0] > 0
+            else torch.zeros(1, device=constants.device)
+        )
 
         return likelihoods, avg_final_likelihood
 
@@ -1003,13 +1006,14 @@ class Analyzer:
             append (bool, optional) : Indicates whether to append to an existing
                                       file, or create a new file. Defaults to True.
         """
+        score_val = float(score)
         if not append:
             with open(constants.job_dir + "score.log", "w") as output_file:
                 output_file.write("Step, Score\n")
-                output_file.write(f"Step {step}, {score:.8f}\n")
+                output_file.write(f"Step {step}, {score_val:.8f}\n")
         else:
             with open(constants.job_dir + "score.log", "a") as output_file:
-                output_file.write(f"Step {step}, {score:.8f}\n")
+                output_file.write(f"Step {step}, {score_val:.8f}\n")
 
         if self.create_tensorboard:
             self.tb_writer.add_scalar("Evaluation/score", score, step)

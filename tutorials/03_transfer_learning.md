@@ -107,7 +107,14 @@ output/
 
 ## Configuration file
 
-Edit `jobs/transfer/params.json`:
+> **Tip:** `jobs/transfer/params.json` is a template — copy it before editing
+> so the original stays intact and each experiment has its own config file:
+> ```bash
+> cp jobs/transfer/params.json jobs/transfer/my_experiment.json
+> python submit.py --config jobs/transfer/my_experiment.json
+> ```
+
+Edit your copy of `jobs/transfer/params.json`:
 
 ```json
 {

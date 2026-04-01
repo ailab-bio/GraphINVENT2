@@ -120,7 +120,15 @@ cluster environments where Conda or pip virtualenvs are not practical.
 
 ### 1. Preprocess a dataset
 
-Edit `jobs/preprocess/params.json` to point at your SMILES file, then run:
+> **Tip:** The `jobs/*/params.json` files are templates — copy them before
+> editing so the originals stay pristine and you can track settings per
+> experiment:
+> ```bash
+> cp jobs/preprocess/params.json jobs/preprocess/my_experiment.json
+> ```
+> Then pass your copy to `submit.py --config`.
+
+Edit a copy of `jobs/preprocess/params.json` to point at your SMILES file, then run:
 
 ```bash
 python submit.py --config jobs/preprocess/params.json

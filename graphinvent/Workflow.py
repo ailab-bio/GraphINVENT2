@@ -15,6 +15,7 @@ by the framework.  Each public method corresponds to one job type:
 # load general packages and functions
 import datetime
 import json
+import math
 import os
 import pickle
 import shutil
@@ -110,7 +111,6 @@ class Workflow:
         self.prior_model = None
         self.best_agent_model = None  # tracks the highest-scoring model seen during RL
         self.best_avg_score = 0.0
-        self.rl_step = 0.0
         self.scoring_function = None
 
     def preprocess_test_data(self) -> None:
@@ -514,6 +514,15 @@ class Workflow:
                 if os.path.exists(p):
                     os.remove(p)
 
+        # move features.png to the job root then delete the now-empty generation/ dir
+        features_src = Path(gen_dir) / "features.png"
+        if features_src.exists():
+            shutil.move(str(features_src), self.constants.job_dir + "features.png")
+        try:
+            Path(gen_dir).rmdir()  # only removes if empty; safe to ignore if not
+        except OSError:
+            pass
+
         print(f"* Generated molecules written to: {out_base}.smi", flush=True)
 
     def _backup_stale_job_files(self) -> None:
@@ -659,6 +668,8 @@ class Workflow:
             if os.path.exists(self.train_smi_path):
                 self.preprocess_train_data()
 
+            util.update_preprocessing_stats(dataset_dir)
+
         else:  # resume an interrupted preprocessing job with matching params
 
             # Determine where to resume based on which HDF files already exist.
@@ -702,6 +713,8 @@ class Workflow:
                     "restart=True but no in-progress HDF files were found in "
                     f"{dataset_dir}. Set 'restart': false to start from scratch."
                 )
+
+            util.update_preprocessing_stats(dataset_dir)
 
     def training_phase(self) -> None:
         """
@@ -1027,7 +1040,6 @@ class Workflow:
         )
 
         loss = (1 - self.constants.alpha) * loss_a + self.constants.alpha * loss_b
-        self.rl_step += 1
         return loss, score_a
 
     def create_output_files(self) -> None:
@@ -1069,12 +1081,12 @@ class Workflow:
         """
         print(f"* Generating {n_samples} molecules.", flush=True)
         generation_batch_size = min(self.constants.batch_size, n_samples)
-        n_generation_batches = int(n_samples / generation_batch_size)
+        n_generation_batches = math.ceil(n_samples / generation_batch_size)
 
         generator = GraphGenerator(model=self.model, batch_size=generation_batch_size)
 
         # generate graphs in batches
-        for idx in range(0, n_generation_batches + 1):
+        for idx in range(0, n_generation_batches):
             print("Batch", idx, "of", n_generation_batches)
 
             # generate one batch of graphs

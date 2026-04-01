@@ -128,6 +128,7 @@ parameters = {
     "n_samples": 2000,
     "n_workers": 0,
     "restart": False,
+    "seed": 0,  # 0 = non-deterministic; any positive integer fixes all RNG sources
     "max_n_nodes": 13,
     "job_type": "pretrain",
     "sample_every": 10,

@@ -405,15 +405,17 @@ def _raise(config_path: str, errors: list) -> None:
 
 
 def create_output_directories(dataset: str, job_type: str) -> tuple:
-    """Create the output and tensorboard directories for this job."""
+    """Create the output directory for this job.
+
+    TensorBoard logs are written to ``<job_dir>/tensorboard/`` (i.e. inside
+    the job directory) rather than a sibling ``tensorboard/`` folder, so each
+    run is self-contained in a single directory.
+    """
     base_path = Path("output") / dataset / job_type
-    tensorboard_path = base_path / "tensorboard"
-
     base_path.mkdir(parents=True, exist_ok=True)
-    tensorboard_path.mkdir(parents=True, exist_ok=True)
-
     print(f"* Output directory: {base_path}", flush=True)
-    return base_path, tensorboard_path
+    # tensorboard_path is set per-job inside submit_jobs(); return a sentinel.
+    return base_path, None
 
 
 # ---------------------------------------------------------------------------
@@ -425,14 +427,14 @@ def submit_jobs(
     submission: dict,
     job_params: dict,
     base_path: Path,
-    tensorboard_path: Path,
+    tensorboard_path: Path,  # kept for API compatibility; value is ignored
     dataset_dir: Path,
     extra_params: dict = None,
 ) -> None:
     """Build a job directory and launch (or schedule) one job."""
     job_name = submission.get("job_name", "job")
     job_dir = base_path / job_name
-    tb_dir = tensorboard_path / job_name
+    tb_dir = job_dir / "tensorboard"
 
     job_dir.mkdir(parents=True, exist_ok=True)
     tb_dir.mkdir(parents=True, exist_ok=True)

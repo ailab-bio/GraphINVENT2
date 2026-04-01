@@ -16,7 +16,10 @@ The job directory must contain a params.json file written by submit.py.
 """
 
 import datetime
+import random
 
+import numpy as np
+import torch
 import util
 from parameters.constants import constants
 from Workflow import Workflow
@@ -25,7 +28,17 @@ util.suppress_warnings()
 
 
 def main():
-    _ = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"* Job started at: {start_time}", flush=True)
+
+    seed = getattr(constants, "seed", 0)
+    if seed > 0:
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+        print(f"* Random seed set to {seed}", flush=True)
 
     workflow = Workflow(constants=constants)
     job_type = constants.job_type

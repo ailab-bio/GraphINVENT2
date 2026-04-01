@@ -226,7 +226,14 @@ Set to `null` (the default) to disable.
 
 ## Configuration file
 
-Edit `jobs/preprocess/params.json`.
+> **Tip:** `jobs/preprocess/params.json` is a template — copy it before editing
+> so the original stays intact and each experiment has its own config file:
+> ```bash
+> cp jobs/preprocess/params.json jobs/preprocess/my_dataset.json
+> python submit.py --config jobs/preprocess/my_dataset.json
+> ```
+
+Edit your copy of `jobs/preprocess/params.json`.
 
 ### Mode A example (single file, random split)
 

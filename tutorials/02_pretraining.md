@@ -114,7 +114,14 @@ well for drug-like molecules with up to ~30 heavy atoms.
 
 ## Configuration file
 
-Edit `jobs/pretrain/params.json`:
+> **Tip:** `jobs/pretrain/params.json` is a template — copy it before editing
+> so the original stays intact and each experiment has its own config file:
+> ```bash
+> cp jobs/pretrain/params.json jobs/pretrain/my_experiment.json
+> python submit.py --config jobs/pretrain/my_experiment.json
+> ```
+
+Edit your copy of `jobs/pretrain/params.json`:
 
 ```json
 {
@@ -205,7 +212,7 @@ Everything is written to `output/<dataset>/pretrain/job_0/`.
 | `generation/` | Directory containing generated SMILES (`.smi`), likelihoods (`.likelihood`), and validity flags (`.valid`) for each evaluation epoch |
 
 If TensorBoard is enabled, the TensorBoard data is written to
-`output/<dataset>/pretrain/tensorboard/job_0/`.
+`output/<dataset>/pretrain/<job_name>/tensorboard/`.
 
 ---
 
@@ -242,7 +249,7 @@ Epoch 10, 0.523, 0.412, 0.789, 45.2, 9.3, ...
 ### TensorBoard
 
 ```bash
-tensorboard --logdir output/<dataset>/pretrain/tensorboard/
+tensorboard --logdir output/<dataset>/pretrain/<job_name>/tensorboard/
 ```
 
 ---

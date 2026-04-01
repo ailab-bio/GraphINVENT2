@@ -124,7 +124,14 @@ increase `sigma`.
 
 ## Configuration file
 
-Edit `jobs/rl/params.json`:
+> **Tip:** `jobs/rl/params.json` is a template — copy it before editing
+> so the original stays intact and each experiment has its own config file:
+> ```bash
+> cp jobs/rl/params.json jobs/rl/my_experiment.json
+> python submit.py --config jobs/rl/my_experiment.json
+> ```
+
+Edit your copy of `jobs/rl/params.json`:
 
 ```json
 {
@@ -227,7 +234,7 @@ collapsing.  Also watch `avg_n_nodes` to see if the agent is converging to the t
 ### TensorBoard
 
 ```bash
-tensorboard --logdir output/<dataset>/rl/tensorboard/
+tensorboard --logdir output/<dataset>/rl/<job_name>/tensorboard/
 ```
 
 Tracks agent log-likelihood, prior log-likelihood, training loss, and evaluation score.
