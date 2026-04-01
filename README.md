@@ -22,8 +22,9 @@ described in [*Graph Networks for Molecular Design*](https://iopscience.iop.org/
 5. [Tutorials](#tutorials)
 6. [Testing](#testing)
 7. [Contributing](#contributing)
-8. [References](#references)
-9. [License](#license)
+8. [Changes from GraphINVENT](#changes-from-graphinvent)
+9. [References](#references)
+10. [License](#license)
 
 ---
 
@@ -153,7 +154,7 @@ Training progress is logged to `output/<dataset>/pretrain/job_0/convergence.log`
 If `use_tensorboard: true`, launch the dashboard with:
 
 ```bash
-tensorboard --logdir output/<dataset>/pretrain/tensorboard/
+tensorboard --logdir output/<dataset>/pretrain/<job_name>/tensorboard/
 ```
 
 ### 3. Generate molecules
@@ -162,7 +163,7 @@ tensorboard --logdir output/<dataset>/pretrain/tensorboard/
 python submit.py --config jobs/sample/params.json
 ```
 
-Generated SMILES are written to `output/<dataset>/generate/job_0/generation/`.
+Generated SMILES are written to `output/<dataset>/generate/<job_name>/` as `<n_samples>_samples.smi`.
 
 ---
 
@@ -242,6 +243,129 @@ pytest tests/ -v
 
 Contributions are welcome as issues or pull requests.  To report a bug, please
 open an issue on GitHub.
+
+---
+
+## Changes from GraphINVENT
+
+GraphINVENT2 is a significant rewrite of the original GraphINVENT codebase.
+**Existing workflows, config files, and preprocessed datasets are not compatible
+and must be recreated.**  The changes below are organized by whether they break
+existing usage or add new capability.
+
+### Breaking changes
+
+#### Job configuration (`submit.py`)
+The original `submit.py` was a Python script with a hardcoded `Config` class that
+you edited directly.  It has been replaced by a JSON-driven CLI:
+
+```bash
+# old
+python submit.py           # edit Config class inside the file before running
+
+# new
+python submit.py --config jobs/pretrain/params.json
+```
+
+Each config file has two top-level keys:
+- `"submission"` — how/where to run (Python path, SLURM settings, dataset name)
+- `"job"` — what to run (`job_type` + all model/training hyperparameters)
+
+Template configs live in `jobs/*/params.json`.
+
+#### `job_type` values renamed
+
+| Old value | New value | Notes |
+|-----------|-----------|-------|
+| `"train"` | `"pretrain"` | |
+| `"fine-tune"` | `"transfer"` | Supervised fine-tuning on a new dataset |
+| *(none)* | `"rl"` | Reinforcement learning is now its own job type |
+
+#### HDF5 dataset key renamed: `"APDs"` → `"action_probs"`
+All HDF5 files produced by the old preprocessor used the internal key `"APDs"`.
+The new loader expects `"action_probs"`.  **All previously preprocessed `.h5`
+files must be regenerated** with the new code before training.
+
+#### Preprocessing parameter file: `.csv` → `.json`
+The old code wrote `preprocessing_params.csv`; the new code writes
+`preprocessing_params.json`.  Old `.csv` files are not read by the new code.
+
+#### Specifying a pretrained model checkpoint
+The old `generation_epoch` integer + `pretrained_model_dir` directory pattern
+has been replaced by a single direct path:
+
+```json
+// old (generate job)
+{ "generation_epoch": 100, "pretrained_model_dir": "output/debug/pretrain/run/" }
+
+// new (generate, transfer, and rl jobs)
+{ "pretrained_model_path": "output/debug/pretrain/run/model_restart_100.pth" }
+```
+
+Model architecture and dataset parameters are loaded automatically from the
+`params_all.json` file in the same directory as the `.pth` checkpoint.
+
+#### Data directory layout
+
+| Old path | New path |
+|----------|----------|
+| `data/pre-training/<dataset>/` | `data/datasets/<dataset>/` |
+| `data/fine-tuning/<dataset>/` | `data/datasets/<dataset>/` |
+
+#### Output directory layout
+TensorBoard logs are now written **inside** the job directory instead of a
+sibling `tensorboard/` folder, making each run self-contained:
+
+| Old | New |
+|-----|-----|
+| `output/<dataset>/<job_type>/tensorboard/<job_name>/` | `output/<dataset>/<job_type>/<job_name>/tensorboard/` |
+
+#### Generation output files
+Old code kept per-batch files (`epoch_GEN<N>_batch_<B>.smi`) permanently.
+New code concatenates all batches into a single trio of files at the job root
+and removes the temporary `generation/` directory:
+
+```
+# old
+output/<dataset>/generate/<job_name>/generation/epoch_GEN100_batch_0.smi
+output/<dataset>/generate/<job_name>/generation/epoch_GEN100_batch_1.smi
+...
+
+# new
+output/<dataset>/generate/<job_name>/<n_samples>_samples.smi
+output/<dataset>/generate/<job_name>/<n_samples>_samples.likelihood
+output/<dataset>/generate/<job_name>/<n_samples>_samples.valid
+```
+
+#### Internal renames (relevant if you import GraphINVENT2 modules directly)
+
+| Old name | New name |
+|----------|----------|
+| `DataProcesser` (class + file) | `DataProcessor` |
+| `APDReadout` | `ActionProbReadout` |
+| `get_decoding_APD()` | `get_action_probs()` |
+| `get_final_decoding_APD()` | `get_final_action_probs()` |
+| HDF5 key `"APDs"` | `"action_probs"` |
+
+#### Python version requirement
+Python 3.6/3.8 (old) → **Python 3.9+** (new).
+
+---
+
+### New features
+
+| Feature | Description |
+|---------|-------------|
+| **Auto feature detection** | `atom_types`, `formal_charge`, `imp_H`, `max_n_nodes` are scanned automatically from the SMILES file; no manual specification needed. |
+| **Built-in dataset splitting** | Pass a single SMILES file via `smiles_file`; the code splits it into train/valid/test using random, Butina-cluster, or custom strategies. |
+| **Apple Silicon (MPS) support** | Device selection now works on Apple M-series GPUs in addition to CUDA and CPU. |
+| **Reproducibility logging** | `params_all.json` records the random seed, Python/PyTorch/RDKit/NumPy versions, CUDA version, device name, and git commit hash for every run. |
+| **Random seed control** | Set `"seed": <int>` (0 = non-deterministic) to fix all RNG sources across Python, NumPy, and PyTorch. |
+| **Backup on re-run** | Re-running a job into an existing output directory automatically backs up previous results to `_previous_run_<timestamp>/` instead of overwriting. |
+| **`visualize.py`** | Root-level script to render a `.smi` file as a molecule grid image. |
+| **`cleanup.py`** | Root-level script to remove stale outputs, preprocessed data, and backup directories with an interactive confirmation step. |
+| **Unit tests** | `tests/` verifies split correctness, HDF5 structure, and SMILES round-trip fidelity after preprocessing. |
+| **Tutorials** | Five end-to-end tutorials in `tutorials/` covering preprocessing through RL. |
 
 ---
 

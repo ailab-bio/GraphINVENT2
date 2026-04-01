@@ -201,13 +201,26 @@ Set to `null` (the default) to disable.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `use_aromatic_bonds` | `false` | Include an aromatic bond type |
+| `use_aromatic_bonds` | `false` | Include an aromatic bond type (see below) |
 | `use_canon` | `true` | Use RDKit canonical atom ordering (recommended) |
 | `use_chirality` | `false` | Encode chirality in node features |
 | `use_explicit_H` | `false` | Treat all H atoms explicitly (not recommended) |
 | `ignore_H` | `false` | Ignore H atoms entirely |
 
 > `use_explicit_H` and `ignore_H` are mutually exclusive.
+
+**Kekulé vs aromatic bonds (`use_aromatic_bonds`):**
+By default (`false`), molecules are Kekulized before graph construction: aromatic
+rings are represented as alternating single and double bonds (Kekulé form), giving
+a bond vocabulary of three types (SINGLE, DOUBLE, TRIPLE).  This is the
+recommended setting — it is more robust because the model cannot generate
+an invalid aromatic system.
+
+Setting `use_aromatic_bonds: true` adds a fourth bond type (AROMATIC) and skips
+Kekulization.  This can be a more compact representation for aromatic-heavy
+datasets, but molecules generated with misplaced aromatic bonds will fail RDKit
+sanitization and be discarded as invalid.  **This flag must match between
+preprocessing and all subsequent training/generation jobs.**
 
 ### Decoding route
 
