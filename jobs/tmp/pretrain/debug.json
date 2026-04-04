@@ -1,0 +1,51 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "debug",
+    "job_name": "pretrain-debug",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-06:00:00",
+      "gpus_per_node": "T4:1"
+    }
+  },
+  "job": {
+    "job_type": "pretrain",
+    "device": "cuda",
+    "batch_size": 1000,
+    "block_size": 100000,
+    "accumulation_steps": 10,
+    "epochs": 200,
+    "init_lr": 1e-4,
+    "max_rel_lr": 10,
+    "min_rel_lr": 0.0001,
+    "sample_every": 10,
+    "n_samples": 2000,
+    "n_workers": 0,
+    "restart": false,
+    "decoding_route": "bfs",
+    "use_tensorboard": false,
+    "enn_depth": 2,
+    "enn_dropout_p": 0.0,
+    "enn_hidden_dim": 128,
+    "mlp1_depth": 2,
+    "mlp1_dropout_p": 0.0,
+    "mlp1_hidden_dim": 256,
+    "mlp2_depth": 2,
+    "mlp2_dropout_p": 0.0,
+    "mlp2_hidden_dim": 256,
+    "gather_att_depth": 2,
+    "gather_att_dropout_p": 0.0,
+    "gather_att_hidden_dim": 128,
+    "gather_emb_depth": 2,
+    "gather_emb_dropout_p": 0.0,
+    "gather_emb_hidden_dim": 128,
+    "gather_width": 100,
+    "hidden_node_features": 100,
+    "message_passes": 3,
+    "message_size": 100
+  }
+}

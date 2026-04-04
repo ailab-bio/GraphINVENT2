@@ -5,7 +5,7 @@
     "data_path": "./data/datasets/",
     "dataset": ["debug", "DRD2_actives"],
     "smiles_file": ["./data/datasets/debug/debug.smi", null],
-    "job_name": "run",
+    "job_name": "newtest",
     "use_slurm": false,
     "slurm": {
       "account": "XXXXXXXXXX",
@@ -16,6 +16,7 @@
   "job": {
     "job_type": "preprocess",
     "restart": false,
+    "conditioning": null,
 
     "auto_detect_features": true,
     "extra_dataset": null,

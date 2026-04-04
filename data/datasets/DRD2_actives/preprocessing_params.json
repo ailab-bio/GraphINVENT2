@@ -1,24 +1,24 @@
 {
-  "use_canon": true,
-  "use_aromatic_bonds": false,
-  "chirality": [
-    "None",
-    "R",
-    "S"
-  ],
-  "max_n_nodes": 72,
-  "use_explicit_H": false,
-  "formal_charge": [
-    -1,
-    0,
-    1
-  ],
-  "ignore_H": false,
+  "valid_frac": 0.1,
   "imp_H": [
     0,
     1,
     2,
     3
+  ],
+  "train_frac": 0.8,
+  "max_n_nodes": 72,
+  "use_explicit_H": false,
+  "use_aromatic_bonds": true,
+  "formal_charge": [
+    -1,
+    0,
+    1
+  ],
+  "chirality": [
+    "None",
+    "R",
+    "S"
   ],
   "atom_types": [
     "Br",
@@ -29,5 +29,23 @@
     "O",
     "S"
   ],
-  "use_chirality": false
+  "ignore_H": false,
+  "use_chirality": false,
+  "use_canon": true,
+  "smiles_file": null,
+  "split_type": "random",
+  "run_info": {
+    "timestamp": "2026-04-04T12:45:06",
+    "python_version": "3.13.5",
+    "torch_version": "2.11.0",
+    "numpy_version": "2.4.4",
+    "rdkit_version": "2025.09.6",
+    "cuda_version": "n/a",
+    "device_name": "mps",
+    "git_hash": "4ea1707",
+    "seed": 0
+  },
+  "n_train": 3448,
+  "n_valid": 431,
+  "n_test": 432
 }

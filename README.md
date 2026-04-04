@@ -165,6 +165,19 @@ python submit.py --config jobs/sample/params.json
 
 Generated SMILES are written to `output/<dataset>/generate/<job_name>/` as `<n_samples>_samples.smi`.
 
+### Visualizing generated molecules
+
+Use the root-level `visualize.py` script to render any `.smi` file as a PNG grid image:
+
+```bash
+python visualize.py path/to/molecules.smi                      # 25 random molecules, 5 columns
+python visualize.py path/to/molecules.smi --n 50 --ncols 10   # 50 random molecules, 10 columns
+python visualize.py path/to/molecules.smi --first              # first N instead of random
+python visualize.py path/to/molecules.smi --size 300x200 --out grid.png  # custom cell size / output path
+```
+
+The output PNG is saved next to the input file as `<filename>_grid.png` by default.
+
 ---
 
 ## Job types
@@ -362,7 +375,7 @@ Python 3.6/3.8 (old) → **Python 3.9+** (new).
 | **Reproducibility logging** | `params_all.json` records the random seed, Python/PyTorch/RDKit/NumPy versions, CUDA version, device name, and git commit hash for every run. |
 | **Random seed control** | Set `"seed": <int>` (0 = non-deterministic) to fix all RNG sources across Python, NumPy, and PyTorch. |
 | **Backup on re-run** | Re-running a job into an existing output directory automatically backs up previous results to `_previous_run_<timestamp>/` instead of overwriting. |
-| **`visualize.py`** | Root-level script to render a `.smi` file as a molecule grid image. |
+| **`visualize.py`** | Root-level script to render any `.smi` file as a molecule grid PNG (see [Visualizing generated molecules](#visualizing-generated-molecules)). |
 | **`cleanup.py`** | Root-level script to remove stale outputs, preprocessed data, and backup directories with an interactive confirmation step. |
 | **Unit tests** | `tests/` verifies split correctness, HDF5 structure, and SMILES round-trip fidelity after preprocessing. |
 | **Tutorials** | Five end-to-end tutorials in `tutorials/` covering preprocessing through RL. |

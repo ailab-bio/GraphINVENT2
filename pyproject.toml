@@ -37,11 +37,12 @@ dev = ["black", "ruff", "mypy", "pytest", "pre-commit"]
 graphinvent-submit = "submit:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["graphinvent*"]
+where = ["src"]
 
 [tool.setuptools.package-data]
 "graphinvent" = ["tools/*", "parameters/*", "gnn/*"]
+"metrics" = []
+"oracles" = []
 
 # ---------------------------------------------------------------------------
 # Tool configuration
@@ -61,10 +62,16 @@ ignore = [
     "E501",   # line too long — black handles this
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["E402"]  # tests manipulate sys.path before importing bare graphinvent modules
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
+markers = [
+    "tdc_network: marks tests that require a network connection to download TDC surrogate models",
+]
 
 [tool.mypy]
 python_version = "3.9"

@@ -241,10 +241,244 @@ Tracks agent log-likelihood, prior log-likelihood, training loss, and evaluation
 
 ---
 
+## TDC oracle integration
+
+GraphINVENT2 integrates with the [Therapeutics Data Commons (TDC)](https://tdcommons.ai/)
+oracle API to provide surrogate-model-based scoring without you having to supply your own
+QSAR model.  Install the optional dependency once:
+
+```bash
+pip install -e ".[tdc]"
+```
+
+Surrogate model files downloaded by TDC are stored in `data/surrogates/` (same location as
+user-provided QSAR pickles) so all model artifacts live in one place.
+
+### Available oracles
+
+Five oracles from the [PMO benchmark](https://arxiv.org/abs/2206.12411) (Gao et al., 2022)
+are supported out of the box:
+
+| Config name | What it measures | Model |
+|---|---|---|
+| `"SA"` | Synthetic Accessibility score — how easy the molecule is to synthesise (RDKit; normalised to [0, 1] where 1 = easiest) | RDKit formula |
+| `"DRD2"` | Probability of activity at Dopamine Receptor D2 | SVM classifier, ECFP6 |
+| `"GSK3B"` | Probability of activity at Glycogen Synthase Kinase 3β | Random Forest, ECFP6 |
+| `"JNK3"` | Probability of activity at c-Jun N-terminal Kinase 3 | Random Forest, ECFP6 |
+| `"celecoxib_rediscovery"` | Tanimoto similarity to Celecoxib (GuacaMol benchmark) | Fingerprint similarity |
+
+> **Note on QED and penalised LogP:** These are considered trivial benchmarks by Gao et al.
+> (2022) — most generative models can optimise them easily — and are intentionally excluded
+> from the PMO oracle list.  If you need them, `"QED"` is already a built-in
+> `score_component`; for penalised LogP you can add a custom oracle via config.
+
+Any other TDC oracle can also be used by name (see *Adding a custom oracle* below).
+
+### Single-objective RL with DRD2
+
+Use the oracle name directly in `score_components`:
+
+```json
+{
+  "job": {
+    "job_type": "rl",
+    "score_components": ["DRD2"],
+    "score_thresholds": [0.5],
+    "score_type": "binary",
+    "qsar_models": {},
+    "sigma": 20,
+    "alpha": 0.5,
+    "epochs": 200,
+    "batch_size": 50
+  }
+}
+```
+
+### Multi-objective RL with GSK3β + JNK3 + SA
+
+Combine oracles exactly like any other score components.  Using `"binary"` scoring with
+thresholds is recommended for multi-objective runs because it forces the agent to satisfy
+**all** criteria simultaneously:
+
+```json
+{
+  "job": {
+    "job_type": "rl",
+    "score_components": ["GSK3B", "JNK3", "SA"],
+    "score_thresholds": [0.5, 0.5, 0.6],
+    "score_type": "binary",
+    "qsar_models": {},
+    "sigma": 20,
+    "alpha": 0.5,
+    "epochs": 300,
+    "batch_size": 50
+  }
+}
+```
+
+A molecule scores 1 iff it exceeds all three thresholds (active at GSK3β AND active at JNK3
+AND reasonably synthesisable); 0 otherwise.
+
+---
+
+## PMO benchmark best practices
+
+When comparing methods or reporting results against the PMO benchmark (Gao et al., 2022):
+
+1. **Cap oracle calls at 10 000 per run** — the `constrained_rl` job type enforces this via
+   `"oracle_budget": 10000`.
+2. **Report AUC Top-10**, not just the final top scores (see *AUC Top-10* below).
+3. **Deduplicate before scoring** — GraphINVENT2's `CachedOracle` handles this automatically:
+   repeated SMILES are returned from cache without consuming budget.
+4. **Run at least 5 independent seeds** and report mean ± std.  Set `"seed": N` (N > 0) in
+   the job config to fix all random number sources for reproducibility.
+5. **Log the full optimization curve** — `convergence.log` records the per-step score, and
+   `CachedOracle.optimization_log` gives the per-molecule (call_count, score) sequence
+   needed for AUC computation.
+
+---
+
+## AUC Top-10
+
+AUC Top-10 is the primary optimization metric recommended by Gao et al. (2022).  It rewards
+methods that reach high scores quickly, not just those that eventually find good molecules
+given unlimited budget.
+
+### How it is computed
+
+At each oracle call *t* (from 1 to `oracle_budget`):
+
+1. Identify the 10 highest-scoring unique molecules seen so far (across all calls up to *t*).
+2. Compute their average score.  If fewer than 10 molecules have been found, divide by 10
+   regardless (so early steps are penalised).
+
+AUC Top-10 is the area under this curve, normalised by dividing by `oracle_budget`:
+
+```
+AUC Top-10 = (1 / 10 000) × ∫₀¹⁰⁰⁰⁰ top10_avg(t) dt
+```
+
+The result is in [0, 1].  A method that immediately generates 10 perfect molecules at t=1
+and never improves scores AUC ≈ 1.0; a method that only finds them at t=10 000 scores
+AUC ≈ 0.0.
+
+### Illustrative example
+
+| Oracle call *t* | Best score seen | Top-10 average |
+|---|---|---|
+| 1 | 0.60 | 0.060 |
+| 50 | 0.75 | 0.350 |
+| 200 | 0.90 | 0.710 |
+| 1000 | 0.95 | 0.870 |
+| 10 000 | 0.97 | 0.920 |
+
+AUC Top-10 ≈ area under the "Top-10 average" column / 10 000.
+
+### Constrained AUC Top-10
+
+When multiple objectives or hard constraints are in play, only molecules that satisfy **all**
+constraints count toward the top-10.  If no valid molecule has been found by call *t*, the
+average is 0.0.  This naturally penalises methods that waste budget on molecules that fail the
+constraints.
+
+### Computing AUC Top-10 in code
+
+```python
+from src.oracles import compute_auc_top_k, OracleFactory
+
+# Create a cached oracle (tracks the full optimization curve automatically)
+oracle = OracleFactory.create_cached("DRD2")
+
+# ... run RL training, calling oracle(smiles_batch) each step ...
+
+# After training, compute AUC Top-10
+auc = compute_auc_top_k(
+    optimization_log=oracle.optimization_log,  # list of (call_count, score)
+    k=10,
+    budget=10000,
+)
+print(f"AUC Top-10: {auc:.4f}")
+
+# Constrained variant: pass per-molecule constraint satisfaction flags
+satisfied = [score > 0.5 for _, score in oracle.optimization_log]
+auc_constrained = compute_auc_top_k(
+    optimization_log=oracle.optimization_log,
+    k=10,
+    budget=10000,
+    constraints=satisfied,
+)
+```
+
+---
+
+## Adding a custom oracle
+
+### Option 1: Any TDC oracle by name
+
+The `OracleFactory` forwards unrecognised names directly to TDC, so the entire TDC oracle
+catalogue works without code changes.  For example, to use the `Median1` oracle:
+
+```json
+"score_components": ["Median1"],
+"score_thresholds": [0.4],
+"score_type": "binary",
+"qsar_models": {}
+```
+
+Find available TDC oracle names at https://tdcommons.ai/functions/oracles/.
+
+### Option 2: User-defined oracle class
+
+Implement `BaseOracle` from `src/oracles/`:
+
+```python
+# my_oracles.py
+from src.oracles import BaseOracle
+
+class PenalisedLogP(BaseOracle):
+    """Penalised LogP: LogP − SA − ring penalty."""
+
+    @property
+    def name(self) -> str:
+        return "penalised_logp"
+
+    def __call__(self, smiles: list[str]) -> list[float]:
+        from rdkit import Chem
+        from rdkit.Chem import Descriptors
+        scores = []
+        for smi in smiles:
+            mol = Chem.MolFromSmiles(smi) if smi else None
+            if mol is None:
+                scores.append(0.0)
+                continue
+            logp = Descriptors.MolLogP(mol)
+            # ... compute SA and ring penalty ...
+            scores.append(max(0.0, min(1.0, logp / 5.0)))  # simplified
+        return scores
+```
+
+Then register it in `ScoringFunction.get_contributions_to_score` or inject it via the
+`qsar_models`-style dict if you prefer a config-driven approach.
+
+### Surrogate model files
+
+Place any files needed by your oracle in `data/surrogates/`.  TDC models are also
+downloaded there (controlled by the `TDC_HOME` environment variable, set automatically
+by `TDCOracle.__init__`).  The directory layout:
+
+```
+data/surrogates/
+├── QSAR_model_example.pickle   # placeholder (empty)
+├── my_custom_model.pickle      # user-provided QSAR model
+└── tdc/                        # TDC downloads (DRD2, GSK3β, JNK3 surrogate files)
+```
+
+---
+
 ## Defining a custom scoring function
 
-To add a new score component, edit `graphinvent/ScoringFunction.py`.  Add a new branch
-to the `get_contributions_to_score` method:
+To add a new score component without TDC, edit `graphinvent/ScoringFunction.py`.  Add a
+new branch to the `get_contributions_to_score` method:
 
 ```python
 elif score_component == "my_property":

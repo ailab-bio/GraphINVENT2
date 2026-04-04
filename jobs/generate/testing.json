@@ -1,0 +1,21 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "job_name": "sample",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-01:00:00",
+      "gpus_per_node": "T4:1"
+    }
+  },
+  "job": {
+    "job_type": "generate",
+    "device": "cuda",
+    "batch_size": 100,
+    "n_samples": 1000,
+    "n_workers": 0,
+    "pretrained_model_path": "./output/debug/rl/rldebugging/model_restart_10.pth"
+  }
+}

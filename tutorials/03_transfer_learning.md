@@ -139,7 +139,7 @@ Edit your copy of `jobs/transfer/params.json`:
     "imp_H": [0, 1, 2, 3],
     "chirality": ["None", "R", "S"],
     "max_n_nodes": 13,
-    "use_aromatic_bonds": false,
+    "use_aromatic_bonds": true,
     "use_canon": true,
     "use_chirality": false,
     "use_explicit_H": false,

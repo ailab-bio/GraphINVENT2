@@ -7,14 +7,36 @@ in a compact binary format that the data loader can stream efficiently during tr
 
 ---
 
+## SMILES file format
+
+All `.smi` files (whether a single input file or pre-split train/valid/test files) must follow this format:
+
+- One molecule per line: `<SMILES> [optional_identifier]`
+- The identifier (name, ID, etc.) is separated by a space and is ignored during preprocessing
+- A header line is detected automatically if it contains the word `SMILES` and is skipped
+- Lines that cannot be parsed by RDKit are silently skipped
+
+Example:
+```
+CCO ethanol
+c1ccccc1 benzene
+CC(=O)O acetic_acid
+```
+
+A bare SMILES-only file (no identifiers, no header) is equally valid.
+
+---
+
 ## Dataset input modes
 
 There are two ways to provide data.  Choose the one that fits your workflow.
 
 ### Mode A — single SMILES file (automatic splitting)
 
-Set `"smiles_file"` in the `submission` block to the path of a `.smi` file containing
-all your molecules (one SMILES per line, optional space-separated identifier ignored).
+Set `"smiles_file"` in the `submission` block to the **full (absolute) path** of a `.smi`
+file containing all your molecules (one SMILES per line, optional space-separated
+identifier ignored).  Relative paths may work when `submit.py` is run from the repo root,
+but an absolute path is safer and always unambiguous.
 
 `submit.py` will read the file, split it into train / valid / test, write the three
 `.smi` files into the dataset directory, then launch the HDF5 conversion.
@@ -201,7 +223,7 @@ Set to `null` (the default) to disable.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `use_aromatic_bonds` | `false` | Include an aromatic bond type (see below) |
+| `use_aromatic_bonds` | `true` | Include an aromatic bond type (see below) |
 | `use_canon` | `true` | Use RDKit canonical atom ordering (recommended) |
 | `use_chirality` | `false` | Encode chirality in node features |
 | `use_explicit_H` | `false` | Treat all H atoms explicitly (not recommended) |
@@ -273,7 +295,7 @@ Edit your copy of `jobs/preprocess/params.json`.
     "split_type": "random",
     "train_frac": 0.8,
     "valid_frac": 0.1,
-    "use_aromatic_bonds": false,
+    "use_aromatic_bonds": true,
     "use_canon": true,
     "use_chirality": false,
     "use_explicit_H": false,
@@ -310,7 +332,7 @@ fractions if desired).  Everything else stays the same.
     "job_type": "preprocess",
     "auto_detect_features": true,
     "extra_dataset": null,
-    "use_aromatic_bonds": false,
+    "use_aromatic_bonds": true,
     "use_canon": true,
     "use_chirality": false,
     "use_explicit_H": false,
@@ -344,7 +366,7 @@ fractions if desired).  Everything else stays the same.
     "job_type": "preprocess",
     "auto_detect_features": true,
     "extra_dataset": null,
-    "use_aromatic_bonds": false,
+    "use_aromatic_bonds": true,
     "use_canon": true,
     "use_chirality": false,
     "use_explicit_H": false,

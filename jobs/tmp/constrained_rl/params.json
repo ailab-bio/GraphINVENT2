@@ -1,0 +1,39 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "debug",
+    "job_name": "constrained_rl_run",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-24:00:00",
+      "gpus_per_node": "T4:1"
+    }
+  },
+  "job": {
+    "job_type": "constrained_rl",
+    "device": "cuda",
+    "batch_size": 50,
+    "block_size": 100000,
+    "accumulation_steps": 10,
+    "n_samples": 100,
+    "n_workers": 0,
+    "restart": false,
+    "sample_every": 10,
+    "decoding_route": "bfs",
+    "use_tensorboard": false,
+    "pretrained_model_path": "",
+    "score_components": ["QED", "drd2_activity", "target_size=12"],
+    "score_thresholds": [0.5, 0.5, 0.0],
+    "score_type": "binary",
+    "qsar_models": {"drd2_activity": "data/surrogates/QSAR_model_example.pickle"},
+    "sigma": 20,
+    "alpha": 0.5,
+    "oracle_budget": 10000,
+    "checkpoint_oracle_counts": [1000, 3000, 10000],
+    "eval_sample_size": 30000,
+    "success_threshold": 0.5
+  }
+}

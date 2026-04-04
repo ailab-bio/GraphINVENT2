@@ -2,11 +2,11 @@
 GraphINVENT2 job submission script.
 
 Each job type has a dedicated config directory under jobs/:
-    jobs/preprocess/params.json   -- data preprocessing
-    jobs/pretrain/params.json     -- prior model training
-    jobs/transfer/params.json     -- supervised fine-tuning
-    jobs/rl/params.json           -- RL fine-tuning
-    jobs/sample/params.json       -- molecule sampling / generation
+    jobs/preprocess/params.json     -- data preprocessing
+    jobs/unconditional/params.json  -- pre-training or transfer learning (unconditional model)
+    jobs/conditional/params.json    -- pre-training or transfer learning (conditional model)
+    jobs/goal_directed/params.json  -- RL or constrained-RL fine-tuning
+    jobs/generate/params.json       -- molecule sampling / evaluation
 
 Edit the relevant params.json, then run:
     python submit.py --config jobs/preprocess/params.json
@@ -157,16 +157,22 @@ def _resolve_dataset_from_pretrained(submission: dict, job_params: dict) -> None
 # Config validation
 # ---------------------------------------------------------------------------
 
-_VALID_JOB_TYPES = {"preprocess", "pretrain", "transfer", "rl", "generate"}
+_VALID_JOB_TYPES = {
+    "preprocess",
+    "unconditional",
+    "conditional",
+    "goal_directed",
+    "generate",
+}
 _VALID_SPLIT_TYPES = {"random", "butina", "custom"}
 
 _REQUIRED_SUBMISSION = set()
 
 _REQUIRED_JOB: dict = {
     "preprocess": {"job_type"},
-    "pretrain": {"job_type"},
-    "transfer": {"job_type"},
-    "rl": {"job_type", "score_components", "score_thresholds"},
+    "unconditional": {"job_type"},
+    "conditional": {"job_type", "condition_dim"},
+    "goal_directed": {"job_type", "score_components", "score_thresholds"},
     "generate": {"job_type"},
 }
 
@@ -194,7 +200,7 @@ def validate_config(
             + ", ".join(f'"{k}"' for k in sorted(missing_submission))
         )
     job_type_for_dataset_check = job_params.get("job_type")
-    _pretrained_optional_types = ("rl", "transfer", "generate")
+    _pretrained_optional_types = ("goal_directed", "generate")
     if (
         not submission.get("data_path")
         and job_type_for_dataset_check not in _pretrained_optional_types
@@ -260,7 +266,7 @@ def validate_config(
         )
 
     # --- graphinvent path ---
-    graphinvent_path = Path(submission.get("graphinvent_path", "./graphinvent"))
+    graphinvent_path = Path(submission.get("graphinvent_path", "./src/graphinvent"))
     if not (graphinvent_path / "main.py").exists():
         errors.append(
             f'"graphinvent_path" points to "{graphinvent_path}", but '
@@ -311,8 +317,8 @@ def validate_config(
                         f"to a .smi path for automatic splitting."
                     )
 
-    # --- RL-specific checks ---
-    if job_type == "rl":
+    # --- goal_directed-specific checks ---
+    if job_type == "goal_directed":
         components = job_params.get("score_components", [])
         thresholds = job_params.get("score_thresholds", [])
         if len(components) != len(thresholds):
@@ -344,8 +350,19 @@ def validate_config(
                 except ValueError:
                     errors.append(f'Could not parse target size in "{comp}".')
 
-    # --- generation / training: pretrained model checks ---
-    if job_type in ("transfer", "rl", "generate"):
+    # --- pretrained model / resume_from checks ---
+
+    # unconditional and conditional: resume_from is optional; validate if set.
+    if job_type in ("unconditional", "conditional"):
+        resume = job_params.get("resume_from")
+        if resume and not Path(resume).exists():
+            errors.append(
+                f'"resume_from" is set to "{resume}", but that file does not exist. '
+                'Check the path or set "resume_from" to null to train from scratch.'
+            )
+
+    # goal_directed and generate always require a pretrained model.
+    if job_type in ("goal_directed", "generate"):
         model_path = job_params.get("pretrained_model_path", "")
         model_dir = job_params.get("pretrained_model_dir", "")
         epoch = job_params.get("generation_epoch")
@@ -356,9 +373,7 @@ def validate_config(
                     f'Check "pretrained_model_path".'
                 )
         else:
-            # No pretrained_model_path — require dir+epoch for transfer/rl,
-            # or accept dir+epoch for generate (legacy fallback).
-            if job_type in ("transfer", "rl"):
+            if job_type == "goal_directed":
                 if not model_dir or epoch is None:
                     errors.append(
                         'Specify either "pretrained_model_path" (direct path to a .pth file) '
@@ -461,7 +476,7 @@ def submit_jobs(
 
 def _submit_single_job(submission: dict, job_dir: Path) -> None:
     python_path = submission.get("python_path", "python")
-    graphinvent_path = Path(submission.get("graphinvent_path", "./graphinvent"))
+    graphinvent_path = Path(submission.get("graphinvent_path", "./src/graphinvent"))
     main_py = graphinvent_path / "main.py"
 
     if submission.get("use_slurm", False):
@@ -559,7 +574,7 @@ def submit_multi_preprocess(
     """
     use_explicit_H = job_params.get("use_explicit_H", False)
     ignore_H = job_params.get("ignore_H", False)
-    graphinvent_path = submission.get("graphinvent_path", "./graphinvent")
+    graphinvent_path = submission.get("graphinvent_path", "./src/graphinvent")
 
     print(
         f"* Multi-dataset preprocessing: computing union vocabulary "

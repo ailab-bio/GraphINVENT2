@@ -1,7 +1,7 @@
 {
   "submission": {
     "python_path": "python",
-    "graphinvent_path": "./graphinvent/",
+    "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": ["dataset_1", "dataset_2"],
     "smiles_file": null,
@@ -16,13 +16,14 @@
   "job": {
     "job_type": "preprocess",
     "restart": false,
+    "conditioning": null,
 
     "auto_detect_features": true,
     "extra_dataset": null,
     "split_type": "random",
     "train_frac": 0.8,
     "valid_frac": 0.1,
-    "use_aromatic_bonds": false,
+    "use_aromatic_bonds": true,
     "use_canon": true,
     "use_chirality": false,
     "use_explicit_H": false,

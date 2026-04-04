@@ -1,0 +1,64 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "debug",
+    "job_name": "run",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-12:00:00",
+      "gpus_per_node": "T4:1"
+    }
+  },
+  "job": {
+    "job_type": "conditional",
+
+    "_mode": "Pre-training (train from scratch): set resume_from to null. Transfer learning (fine-tune from a pretrained unconditional or conditional checkpoint): set resume_from to a checkpoint path, e.g. './output/debug/unconditional/run/model_restart_100.pth'.",
+    "resume_from": null,
+
+    "_conditioning": "Conditioning parameters. condition_dim must match the number of property columns in the preprocessed dataset. condition_embedding_dim sets the size of the virtual seed node embedding (default equals hidden_node_features).",
+    "condition_dim": 1,
+    "condition_embedding_dim": 100,
+
+    "device": "cuda",
+    "restart": false,
+    "use_tensorboard": false,
+    "decoding_route": "bfs",
+    "use_aromatic_bonds": true,
+
+    "_training": "Training hyperparameters.",
+    "epochs": 100,
+    "batch_size": 1000,
+    "block_size": 100000,
+    "accumulation_steps": 10,
+    "init_lr": 1e-4,
+    "max_rel_lr": 10,
+    "min_rel_lr": 0.0001,
+    "sample_every": 10,
+    "n_samples": 100,
+    "n_workers": 0,
+
+    "_architecture": "GGNN architecture. Ignored when resume_from is set (loaded from checkpoint). Must match the pretrained model's architecture if using transfer learning.",
+    "hidden_node_features": 100,
+    "message_passes": 3,
+    "message_size": 100,
+    "enn_depth": 2,
+    "enn_dropout_p": 0.0,
+    "enn_hidden_dim": 128,
+    "mlp1_depth": 2,
+    "mlp1_dropout_p": 0.0,
+    "mlp1_hidden_dim": 256,
+    "mlp2_depth": 2,
+    "mlp2_dropout_p": 0.0,
+    "mlp2_hidden_dim": 256,
+    "gather_att_depth": 2,
+    "gather_att_dropout_p": 0.0,
+    "gather_att_hidden_dim": 128,
+    "gather_emb_depth": 2,
+    "gather_emb_dropout_p": 0.0,
+    "gather_emb_hidden_dim": 128,
+    "gather_width": 100
+  }
+}

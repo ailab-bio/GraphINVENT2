@@ -1,0 +1,218 @@
+"""
+Defines default model parameters, hyperparameters, and settings.
+Recommended not to modify the default settings here, but rather create an input
+file with the modified parameters in a new job directory (see README). **Used
+as an alternative to using argparser, as there are many variables.**
+"""
+
+# load general packages and functions
+import sys
+
+# load GraphINVENT-specific functions
+sys.path.insert(1, "./parameters/")  # search "parameters/" directory
+import parameters.args as args
+
+# default parameters defined below
+"""
+General settings for the generative model:
+    atom_types (list)         : Contains atom types (str) to encode in node features.
+    formal_charge (list)      : Contains formal charges (int) to encode in node
+                                features.
+    imp_H (list)              : Contains number of implicit hydrogens (int) to encode
+                                in node features.
+    chirality (list)          : Contains chiral states (str) to encode in node features.
+    accumulation_steps (int)  : Number of gradient accumulation steps.  # TODO come back and make sure this doesn't conflict with larger batch sizes
+    device (str)              : Specifies type of architecture to run on. Options:
+                                "cuda" or "cpu").
+    generation_epoch (int)    : Epoch to sample during a 'generation' job.
+    n_samples (int)           : Number of molecules to generate during each sampling
+                                epoch. Note: if `n_samples` > 100000 molecules, these
+                                will be generated in batches of 100000.
+    n_workers (int)           : Number of subprocesses to use during data loading.
+    restart (bool)            : If specified, will restart training from previous saved
+                                state. Can only be used for preprocessing or training
+                                jobs.
+    max_n_nodes (int)         : Maximum number of allowed nodes in graph. Must be
+                                greater than or equal to the number of nodes in
+                                largest graph in training set.
+    job_type (str)            : Type of job to run; options: 'preprocess', 'pretrain',
+                                'transfer', 'generate', 'test', or 'rl'.
+    sample_every (int)        : Specifies when to sample the model (i.e. epochs
+                                between sampling).
+    dataset_dir (str)         : Full path to directory containing testing ("test.smi"),
+                                training ("train.smi"), and validation ("valid.smi")
+                                sets.
+    use_aromatic_bonds (bool) : If specified, aromatic bond types will be used.
+    use_canon (bool)          : If specified, uses canonical RDKit ordering in graph
+                                representations.
+    use_chirality (bool)      : If specified, includes chirality in the atomic
+                                representations.
+    use_explicit_H (bool)     : If specified, uses explicit Hs in molecular
+                                representations (not recommended for most applications).
+    ignore_H (bool)           : If specified, ignores H's completely in graph
+                                representations (treats them neither as explicit or
+                                implicit). When generating graphs, H's are added to
+                                graphs after generation is terminated.
+    use_tensorboard (bool)    : If specified, enables the use of tensorboard during
+                                training.
+    tensorboard_dir (str)     : Path to directory in which to write tensorboard
+                                things.
+    batch_size (int)          : Number of graphs in a mini-batch. When preprocessing
+                                graphs, this is the size of the preprocessing groups
+                                (e.g. how many subgraphs preprocessed at once).
+    epochs (int)              : Number of training epochs.
+    init_lr (float)           : Initial learning rate.
+    max_rel_lr (float)        : Maximum allowed learning rate relative to the initial
+                                (used for learning rate ramp-up).
+    model (str)               : MPNN model to use ('MNN', 'S2V', 'AttS2V', 'GGNN',
+                                'AttGGNN', or 'EMN').
+    decoding_route (str)      : Breadth-first search ("bfs") or depth-first search
+                                ("dfs").
+    score_components (list)   : A list of all the components to use in the RL scoring
+                                function. Can include "target_size={int}", "QED",
+                                "{name}_activity".
+    score_thresholds (list)   : Acceptable thresholds for the above score components.
+    score_type (str)          : If there are multiple components used in the scoring
+                                function, determines if the final score should be
+                                "continuous" (in which case, the above thresholds
+                                are ignored), or "binary" (in which case a generated
+                                molecule will receive a score of 1 iff all its score
+                                components are greater than the specified thresholds).
+    qsar_models (dict)        : A dictionary containing the path to each activity
+                                model specified in `score_components`. Note that
+                                the key in this dict must correspond to the name
+                                of the score component.
+    sigma (float)             : Can take any value. Tunes the contribution of the
+                                score in the augmented log-likelihood. See Atance
+                                et al (2021) https://doi.org/10.33774/chemrxiv-2021-9w3tc
+                                for suitable values.
+    alpha (float)             : Can take values between [0.0, 1.0]. Tunes the contribution
+                                from the best agent so far (BASF) in the loss.
+    oracle_budget (int)                   : Total oracle call budget for constrained_rl jobs.
+    checkpoint_oracle_counts (list)       : Oracle call counts at which to save checkpoints.
+    eval_sample_size (int)                : Number of molecules to generate per checkpoint
+                                            evaluation.
+    success_threshold (float)             : Score threshold for success rate computation.
+GGNN hyperparameters:
+    enn_depth (int)              : Num layers in 'enn' MLP.
+    enn_dropout_p (float)        : Dropout probability in 'enn' MLP.
+    enn_hidden_dim (int)         : Number of weights (layer width) in 'enn' MLP.
+    mlp1_depth (int)             : Num layers in first-tier MLP in `ActionProbReadout`.
+    mlp1_dropout_p (float)       : Dropout probability in first-tier MLP in `ActionProbReadout`.
+    mlp1_hidden_dim (int)        : Number of weights (layer width) in first-tier
+                                   MLP in `ActionProbReadout`.
+    mlp2_depth (int)             : Num layers in second-tier MLP in `ActionProbReadout`.
+    mlp2_dropout_p (float)       : Dropout probability in second-tier MLP in `ActionProbReadout`.
+    mlp2_hidden_dim (int)        : Number of weights (layer width) in second-tier
+                                   MLP in `ActionProbReadout`.
+    gather_att_depth (int)       : Num layers in 'gather_att' MLP in `AttentionReadout`.
+    gather_att_dropout_p (float) : Dropout probability in 'gather_att' MLP in
+                                   `AttentionReadout`.
+    gather_att_hidden_dim (int)  : Number of weights (layer width) in 'gather_att'
+                                   MLP in `AttentionReadout`.
+    gather_emb_depth (int)       : Num layers in 'gather_emb' MLP in `AttentionReadout`.
+    gather_emb_dropout_p (float) : Dropout probability in 'gather_emb' MLP in
+                                   `AttentionReadout`.
+    gather_emb_hidden_dim (int)  : Number of weights (layer width) in 'gather_emb'
+                                   MLP in `AttentionReadout`.
+    gather_width (int)           : Output size of `AttentionReadout` block.
+    message_passes (int)         : Number of message passing steps.
+    message_size (int)           : Size of message passed (output size of all
+                                   MLPs in message aggregation step, input size
+                                   to `GRU`).
+"""
+# general job parameters
+parameters = {
+    "atom_types": ["C", "N", "O", "S", "Cl"],
+    "formal_charge": [-1, 0, 1],
+    "imp_H": [0, 1, 2, 3],
+    "chirality": ["None", "R", "S"],
+    "accumulation_steps": 10,
+    "device": "cuda",
+    "generation_epoch": 30,
+    "n_samples": 2000,
+    "n_workers": 0,
+    "restart": False,
+    "seed": 0,  # 0 = non-deterministic; any positive integer fixes all RNG sources
+    "max_n_nodes": 13,
+    "job_type": "pretrain",
+    "sample_every": 10,
+    "dataset_dir": "data/gdb13_1K/",
+    "smiles_file": None,
+    "auto_detect_features": True,
+    "extra_dataset": None,
+    "split_type": "random",
+    "train_frac": 0.8,
+    "valid_frac": 0.1,
+    "use_aromatic_bonds": True,
+    "use_canon": True,
+    "use_chirality": False,
+    "use_explicit_H": False,
+    "ignore_H": False,
+    "use_tensorboard": False,
+    "tensorboard_dir": "tensorboard/",
+    "batch_size": 1000,
+    "block_size": 100000,
+    "epochs": 100,
+    "init_lr": 1e-4,
+    "max_rel_lr": 10,
+    "min_rel_lr": 0.0001,
+    "decoding_route": "bfs",
+    "activity_model_dir": "data/surrogates/",
+    "score_components": ["QED", "drd2_activity", "target_size=12"],
+    "score_thresholds": [0.5, 0.5, 0.0],  # 0.0 essentially means no threshold
+    "score_type": "binary",
+    "qsar_models": {"drd2_activity": "data/surrogates/QSAR_model_example.pickle"},
+    "pretrained_model_dir": "output/",
+    "pretrained_model_path": "",
+    "sigma": 20,
+    "alpha": 0.5,
+    # Oracle-constrained RL parameters:
+    "oracle_budget": 10000,
+    "checkpoint_oracle_counts": [1000, 3000, 10000],
+    "eval_sample_size": 30000,
+    "success_threshold": 0.5,
+    # --- Job type consolidation ---
+    # unconditional / conditional: null = train from scratch, path = resume/transfer
+    "resume_from": None,
+    # sample job: "generate" (write SMILES) or "evaluate" (compute NLL/UC-JSD)
+    "sample_mode": "generate",
+    # --- Conditional generation ---
+    # null = unconditional; dict = {"properties": ["pLogS"], "source": "smiles_file"}
+    "conditioning": None,
+    "condition_dim": 0,  # 0 = unconditional; N = N-dimensional property vector
+    "condition_embedding_dim": 100,  # MLP output size (default = hidden_node_features)
+    "condition_type": "virtual_node",  # injection mechanism (only option currently)
+    # condition values to sample with for sample job: {"pLogS": -1.5}
+    "sample_conditions": None,
+    # GGNN hyperparameters:
+    "enn_depth": 2,
+    "enn_dropout_p": 0.0,
+    "enn_hidden_dim": 128,
+    "mlp1_depth": 2,
+    "mlp1_dropout_p": 0.0,
+    "mlp1_hidden_dim": 256,
+    "mlp2_depth": 2,
+    "mlp2_dropout_p": 0.0,
+    "mlp2_hidden_dim": 256,
+    "gather_att_depth": 2,
+    "gather_att_dropout_p": 0.0,
+    "gather_att_hidden_dim": 128,
+    "gather_emb_depth": 2,
+    "gather_emb_dropout_p": 0.0,
+    "gather_emb_hidden_dim": 128,
+    "gather_width": 100,
+    "hidden_node_features": 100,
+    "message_passes": 3,
+    "message_size": 100,
+}
+
+# make sure job dir ends in "/"
+if args.job_dir[-1] != "/":
+    print("* Adding '/' to end of `job_dir`.")
+    args.job_dir += "/"
+
+# make sure dataset dir ends in "/"
+if parameters["dataset_dir"][-1] != "/":
+    print("* Adding '/' to end of `dataset_dir`.")
+    parameters["dataset_dir"] += "/"

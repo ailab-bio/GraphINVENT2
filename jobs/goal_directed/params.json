@@ -1,0 +1,42 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "debug",
+    "job_name": "run",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-24:00:00",
+      "gpus_per_node": "T4:1"
+    }
+  },
+  "job": {
+    "job_type": "goal_directed",
+    "oracle_budget": null,
+    "device": "cuda",
+    "batch_size": 50,
+    "block_size": 100000,
+    "accumulation_steps": 10,
+    "epochs": 100,
+    "init_lr": 1e-4,
+    "max_rel_lr": 10,
+    "min_rel_lr": 0.0001,
+    "sample_every": 10,
+    "n_samples": 100,
+    "n_workers": 0,
+    "restart": false,
+    "use_tensorboard": false,
+    "pretrained_model_path": "",
+    "score_components": ["QED"],
+    "score_thresholds": [0.5],
+    "score_type": "binary",
+    "qsar_models": {},
+    "sigma": 20,
+    "alpha": 0.5,
+    "checkpoint_oracle_counts": [1000, 3000, 10000],
+    "eval_sample_size": 30000,
+    "success_threshold": 0.5
+  }
+}
