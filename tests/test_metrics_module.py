@@ -389,6 +389,247 @@ class TestEvaluateConditional:
 # ---------------------------------------------------------------------------
 
 
+class TestComputeInternalDiversity:
+    """Tests for compute_internal_diversity in src/metrics/_internal_diversity.py."""
+
+    def _fn(self, *args, **kwargs):
+        from metrics._internal_diversity import compute_internal_diversity
+
+        return compute_internal_diversity(*args, **kwargs)
+
+    # ------------------------------------------------------------------
+    # Basic correctness
+    # ------------------------------------------------------------------
+
+    def test_identical_molecules_diversity_zero(self):
+        """A set of identical molecules should have internal diversity 0.0."""
+        aspirin = "CC(=O)Oc1ccccc1C(=O)O"
+        result = self._fn([aspirin] * 10)
+        assert result["internal_diversity"] == pytest.approx(0.0, abs=1e-6)
+        assert result["n_duplicates_removed"] == 9
+
+    def test_diverse_fixture_set_high_diversity(self, fixture_smiles):
+        """A diverse set of real molecules should have internal diversity > 0.5."""
+        result = self._fn(fixture_smiles)
+        assert result["internal_diversity"] > 0.5
+
+    def test_result_keys_present(self, fixture_smiles):
+        result = self._fn(fixture_smiles)
+        for key in (
+            "internal_diversity",
+            "mean_internal_similarity",
+            "median_internal_similarity",
+            "max_internal_similarity",
+            "sim_gt_0_4",
+            "sim_gt_0_6",
+            "sim_gt_0_8",
+            "sim_gt_0_9",
+            "n_duplicates_removed",
+            "n_invalid",
+            "n_molecules",
+            "subsampled",
+            "pairwise_similarities",
+        ):
+            assert key in result, f"Missing key: {key}"
+
+    def test_diversity_plus_mean_sim_equals_one(self, fixture_smiles):
+        """internal_diversity + mean_internal_similarity should sum to 1."""
+        result = self._fn(fixture_smiles)
+        total = result["internal_diversity"] + result["mean_internal_similarity"]
+        assert total == pytest.approx(1.0, abs=1e-6)
+
+    def test_pairwise_length_correct(self, fixture_smiles):
+        """Upper-triangle has n*(n-1)//2 entries for n unique valid molecules."""
+        result = self._fn(fixture_smiles)
+        n = result["n_molecules"]
+        expected_pairs = n * (n - 1) // 2
+        assert len(result["pairwise_similarities"]) == expected_pairs
+
+    def test_similarities_in_range(self, fixture_smiles):
+        result = self._fn(fixture_smiles)
+        assert 0.0 <= result["internal_diversity"] <= 1.0
+        assert 0.0 <= result["mean_internal_similarity"] <= 1.0
+        assert 0.0 <= result["max_internal_similarity"] <= 1.0
+
+    def test_max_gte_mean(self, fixture_smiles):
+        result = self._fn(fixture_smiles)
+        assert result["max_internal_similarity"] >= result["mean_internal_similarity"]
+
+    # ------------------------------------------------------------------
+    # Edge cases
+    # ------------------------------------------------------------------
+
+    def test_empty_list_returns_gracefully(self):
+        result = self._fn([])
+        assert result["internal_diversity"] == 0.0
+        assert result["n_molecules"] == 0
+        assert len(result["pairwise_similarities"]) == 0
+
+    def test_single_molecule_warns_and_returns_zero(self):
+        with pytest.warns(UserWarning, match="one unique valid molecule"):
+            result = self._fn(["CCO"])
+        assert result["internal_diversity"] == 0.0
+        assert result["n_molecules"] == 1
+
+    def test_invalid_smiles_skipped(self):
+        result = self._fn(["CCO", "NOT_SMILES", "c1ccccc1"])
+        assert result["n_invalid"] == 1
+        assert result["n_molecules"] == 2
+
+    def test_deduplication_counts(self):
+        """Duplicate SMILES should be deduplicated and counted."""
+        smiles = ["CCO", "CCO", "CCO", "c1ccccc1"]
+        result = self._fn(smiles)
+        assert result["n_duplicates_removed"] == 2
+        assert result["n_molecules"] == 2
+
+    def test_max_mols_subsamples(self, fixture_smiles):
+        """max_mols should limit the number of molecules used."""
+        result = self._fn(fixture_smiles, max_mols=5)
+        assert result["n_molecules"] == 5
+        assert result["subsampled"] is True
+
+    def test_no_subsampling_when_below_limit(self, fixture_smiles):
+        result = self._fn(fixture_smiles, max_mols=10000)
+        assert result["subsampled"] is False
+
+    def test_max_mols_none_disables_subsampling(self, fixture_smiles):
+        result = self._fn(fixture_smiles, max_mols=None)
+        assert result["subsampled"] is False
+
+
+class TestComputeTestSetSimilarity:
+    """Tests for compute_test_set_similarity in src/metrics/_similarity.py."""
+
+    def _fn(self, *args, **kwargs):
+        from metrics._similarity import compute_test_set_similarity
+
+        return compute_test_set_similarity(*args, **kwargs)
+
+    # ------------------------------------------------------------------
+    # Basic correctness
+    # ------------------------------------------------------------------
+
+    def test_self_similarity_is_one(self):
+        """A molecule should have similarity 1.0 to itself."""
+        aspirin = "CC(=O)Oc1ccccc1C(=O)O"
+        result = self._fn([aspirin], [aspirin])
+        assert result["mean_similarity"] == pytest.approx(1.0, abs=1e-6)
+
+    def test_low_similarity_sanity_check(self):
+        """Methane vs sulfasalazine should give a low similarity."""
+        methane = "C"
+        sulfasalazine = "Cc1ccc(S(=O)(=O)Nc2ccccn2)cc1"
+        result = self._fn([methane], [sulfasalazine])
+        assert result["mean_similarity"] < 0.3
+
+    def test_result_keys_present(self, fixture_smiles):
+        """All expected keys must be present in the result."""
+        result = self._fn(fixture_smiles, fixture_smiles)
+        for key in (
+            "mean_similarity",
+            "median_similarity",
+            "top_k_similarity",
+            "sim_gt_0_4",
+            "sim_gt_0_6",
+            "sim_gt_0_8",
+            "sim_gt_0_9",
+            "exact_rediscovery_count",
+            "n_invalid_generated",
+            "n_invalid_test",
+            "n_test_after_filter",
+            "per_mol_similarity",
+        ):
+            assert key in result, f"Missing key: {key}"
+
+    def test_similarities_in_range(self, fixture_smiles):
+        """Similarity values must lie in [0, 1]."""
+        result = self._fn(fixture_smiles, fixture_smiles)
+        assert 0.0 <= result["mean_similarity"] <= 1.0
+        assert 0.0 <= result["median_similarity"] <= 1.0
+        assert 0.0 <= result["top_k_similarity"] <= 1.0
+
+    def test_per_mol_length_matches_valid_generated(self):
+        """per_mol_similarity should have one entry per valid generated molecule."""
+        smiles = ["CCO", "INVALID_SMILES_XYZ", "c1ccccc1"]
+        test = ["CC(=O)O"]
+        result = self._fn(smiles, test)
+        assert len(result["per_mol_similarity"]) == 2  # two valid SMILES
+        assert result["n_invalid_generated"] == 1
+
+    def test_exact_rediscovery_when_identical(self, fixture_smiles):
+        """Generating exact test molecules should yield non-zero exact_rediscovery_count."""
+        result = self._fn(fixture_smiles, fixture_smiles)
+        assert result["exact_rediscovery_count"] == len(fixture_smiles)
+
+    # ------------------------------------------------------------------
+    # Edge cases
+    # ------------------------------------------------------------------
+
+    def test_empty_generated_returns_gracefully(self, fixture_smiles):
+        result = self._fn([], fixture_smiles)
+        assert result["mean_similarity"] == 0.0
+        assert result["per_mol_similarity"] == []
+
+    def test_empty_test_returns_gracefully(self, fixture_smiles):
+        result = self._fn(fixture_smiles, [])
+        assert result["mean_similarity"] == 0.0
+        assert result["n_test_after_filter"] == 0
+
+    def test_all_invalid_generated(self, fixture_smiles):
+        result = self._fn(["NOT_A_SMILES", "ALSO_BAD"], fixture_smiles)
+        assert result["mean_similarity"] == 0.0
+        assert result["n_invalid_generated"] == 2
+
+    def test_invalid_test_smiles_skipped(self):
+        """Invalid SMILES in the test set are counted but not used."""
+        valid = "CCO"
+        result = self._fn([valid], ["NOT_SMILES", "CCO"])
+        assert result["n_invalid_test"] == 1
+        assert result["mean_similarity"] == pytest.approx(1.0, abs=1e-6)
+
+    def test_top_k_lte_mean(self, fixture_smiles):
+        """top_k_similarity should be >= mean_similarity (it's the top-k mean)."""
+        result = self._fn(fixture_smiles, fixture_smiles, top_k=5)
+        assert result["top_k_similarity"] >= result["mean_similarity"] - 1e-9
+
+    def test_max_refs_subsamples(self, fixture_smiles):
+        """max_refs limits the number of reference molecules used."""
+        result = self._fn(fixture_smiles, fixture_smiles, max_refs=3)
+        assert result["n_test_after_filter"] == 3
+
+    # ------------------------------------------------------------------
+    # Condition filtering
+    # ------------------------------------------------------------------
+
+    def test_condition_filter_subsets_test_set(self):
+        """condition_filter should reduce n_test_after_filter."""
+        smiles = ["CCO", "c1ccccc1"]
+        conditions = [{"logp": 0.1}, {"logp": 2.5}]
+        cond_filter = {"logp": {"value": 0.1, "tolerance": 0.5}}
+        result_filtered = self._fn(
+            smiles,
+            smiles,
+            condition_filter=cond_filter,
+            test_conditions=conditions,
+        )
+        result_unfiltered = self._fn(smiles, smiles)
+        assert (
+            result_filtered["n_test_after_filter"]
+            < result_unfiltered["n_test_after_filter"]
+        )
+
+    def test_condition_filter_without_test_conditions_warns(self, fixture_smiles):
+        """Providing condition_filter without test_conditions should warn, not crash."""
+        cond_filter = {"logp": {"value": 1.0, "tolerance": 0.5}}
+        with pytest.warns(UserWarning, match="test_conditions is None"):
+            result = self._fn(
+                fixture_smiles, fixture_smiles, condition_filter=cond_filter
+            )
+        # Should still return results (unfiltered)
+        assert result["mean_similarity"] >= 0.0
+
+
 class TestEvaluateGoalDirected:
     @pytest.fixture(scope="class")
     def gd_results(self, fixture_smiles):

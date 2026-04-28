@@ -1,0 +1,61 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "chembl_v34",
+    "job_name": "run",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "3-00:00:00",
+      "gpus_per_node": "A100:1"
+    }
+  },
+  "job": {
+    "job_type": "unconditional",
+
+    "_mode": "Pretraining from scratch. Set resume_from to a checkpoint path to continue a previous run.",
+    "resume_from": null,
+
+    "device": "cuda",
+    "restart": false,
+    "use_tensorboard": true,
+    "decoding_route": "bfs",
+    "use_aromatic_bonds": false,
+
+    "_training": "Training hyperparameters. accumulation_steps=10 simulates a batch of 10*batch_size=10000 subgraphs per optimizer step. sample_every=5 generates n_samples=1000 molecules every 5 epochs to track NLL and UC-JSD convergence.",
+    "epochs": 200,
+    "batch_size": 1000,
+    "block_size": 100000,
+    "accumulation_steps": 10,
+    "init_lr": 1e-4,
+    "max_rel_lr": 10,
+    "min_rel_lr": 0.0001,
+    "sample_every": 5,
+    "n_samples": 1000,
+    "n_workers": 4,
+    "seed": 42,
+
+    "_architecture": "Larger architecture than the debug default, appropriate for ChEMBL-scale pretraining. hidden_node_features=256, message_passes=4 gives more expressive representations over ChEMBL's diverse chemistry.",
+    "hidden_node_features": 256,
+    "message_passes": 4,
+    "message_size": 256,
+    "enn_depth": 2,
+    "enn_dropout_p": 0.0,
+    "enn_hidden_dim": 256,
+    "mlp1_depth": 4,
+    "mlp1_dropout_p": 0.0,
+    "mlp1_hidden_dim": 512,
+    "mlp2_depth": 4,
+    "mlp2_dropout_p": 0.0,
+    "mlp2_hidden_dim": 512,
+    "gather_att_depth": 2,
+    "gather_att_dropout_p": 0.0,
+    "gather_att_hidden_dim": 256,
+    "gather_emb_depth": 2,
+    "gather_emb_dropout_p": 0.0,
+    "gather_emb_hidden_dim": 256,
+    "gather_width": 256
+  }
+}

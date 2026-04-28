@@ -9,10 +9,11 @@ Step-by-step guides for every job type in GraphINVENT2.
 | # | Tutorial | Description |
 |---|----------|-------------|
 | 1 | [Preprocessing](./01_preprocessing.md) | Convert SMILES files to HDF5 format for training |
-| 2 | [Pretraining](./02_pretraining.md) | Train a generative model from random initialisation |
-| 3 | [Transfer Learning](./03_transfer_learning.md) | Supervised fine-tuning on a new dataset |
-| 4 | [Reinforcement Learning](./04_reinforcement_learning.md) | Optimise for molecular properties with RL |
-| 5 | [Sampling](./05_sampling.md) | Generate new molecules from a trained model |
+| 2 | [Pretraining](./02_pretraining.md) | Train a generative model from random initialisation (`unconditional`) |
+| 3 | [Transfer Learning](./03_transfer_learning.md) | Supervised fine-tuning on a new dataset (`unconditional` + `resume_from`) |
+| 4 | [Reinforcement Learning](./04_reinforcement_learning.md) | Goal-directed property optimisation (`goal_directed`) |
+| 5 | [Sampling](./05_sampling.md) | Generate new molecules from a trained model (`generate`) |
+| 5 | [Conditional Generation](./05_conditional_generation.md) | Train and sample a property-conditioned model (`conditional`) |
 
 ---
 
@@ -49,21 +50,20 @@ Each `params.json` has two sections:
 {
   "submission": {
     "python_path": "python",
-    "graphinvent_path": "./graphinvent/",
+    "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "gdb13-debug",
-    "n_jobs": 1,
-    "jobdir_start_idx": 0,
+    "job_name": "run",
     "use_slurm": false
   },
   "job": {
-    "job_type": "pretrain",
+    "job_type": "unconditional",
     "..."
   }
 }
 ```
 
-Output is always written to `output/<dataset>/<job_type>/job_<idx>/`.
+Output is always written to `output/<dataset>/<job_type>/<job_name>/`.
 
 ---
 

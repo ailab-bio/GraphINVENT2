@@ -52,20 +52,20 @@ checkpoint.  You do not need to specify them manually.
 
 ## Configuration file
 
-> **Tip:** `jobs/sample/params.json` is a template — copy it before editing
+> **Tip:** `jobs/generate/params.json` is a template — copy it before editing
 > so the original stays intact and each generation run has its own config file:
 > ```bash
-> cp jobs/sample/params.json jobs/sample/my_run.json
-> python submit.py --config jobs/sample/my_run.json
+> cp jobs/generate/params.json jobs/generate/my_run.json
+> python submit.py --config jobs/generate/my_run.json
 > ```
 
-Edit your copy of `jobs/sample/params.json`:
+Edit your copy of `jobs/generate/params.json`:
 
 ```json
 {
   "submission": {
     "python_path": "python",
-    "graphinvent_path": "./graphinvent/",
+    "graphinvent_path": "./src/graphinvent/",
     "job_name": "run",
     "use_slurm": false,
     "slurm": {
@@ -97,7 +97,7 @@ Edit your copy of `jobs/sample/params.json`:
 ## Running the job
 
 ```bash
-python submit.py --config jobs/sample/params.json
+python submit.py --config jobs/generate/params.json
 ```
 
 ---

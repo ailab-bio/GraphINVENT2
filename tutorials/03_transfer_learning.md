@@ -58,9 +58,9 @@ loss, one-cycle LR schedule, gradient accumulation), with two differences:
 2. **Learning rate**: a lower initial learning rate (`init_lr`) is recommended to avoid
    overwriting the pretrained representations too aggressively.
 
-`generation_epoch` specifies **which pretrain checkpoint to load** (i.e., the epoch
-number N in `model_restart_<N>.pth`).  If you trained for 100 epochs and want to start
-from the final checkpoint, set `generation_epoch: 100`.
+`resume_from` specifies **which pretrain checkpoint to load** as a direct path to the
+`.pth` file, e.g. `"./output/gdb13-debug/unconditional/run/model_restart_100.pth"`.
+Set it to `null` to train from scratch (equivalent to pretraining).
 
 ---
 
@@ -70,8 +70,7 @@ from the final checkpoint, set `generation_epoch: 100`.
 
 | Parameter | Description |
 |-----------|-------------|
-| `pretrained_model_dir` | Path to the directory containing `model_restart_<N>.pth` |
-| `generation_epoch` | Checkpoint to load: loads `model_restart_<generation_epoch>.pth` |
+| `resume_from` | Path to the pretrained checkpoint to fine-tune from, e.g. `"./output/gdb13-debug/unconditional/run/model_restart_100.pth"` |
 
 ### Recommended changes from pretraining defaults
 
@@ -107,24 +106,23 @@ output/
 
 ## Configuration file
 
-> **Tip:** `jobs/transfer/params.json` is a template — copy it before editing
+> **Tip:** `jobs/unconditional/params.json` is a template — copy it before editing
 > so the original stays intact and each experiment has its own config file:
 > ```bash
-> cp jobs/transfer/params.json jobs/transfer/my_experiment.json
-> python submit.py --config jobs/transfer/my_experiment.json
+> cp jobs/unconditional/params.json jobs/unconditional/my_transfer.json
+> python submit.py --config jobs/unconditional/my_transfer.json
 > ```
 
-Edit your copy of `jobs/transfer/params.json`:
+Edit your copy of `jobs/unconditional/params.json`:
 
 ```json
 {
   "submission": {
     "python_path": "python",
-    "graphinvent_path": "./graphinvent/",
+    "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "new-dataset",
-    "n_jobs": 1,
-    "jobdir_start_idx": 0,
+    "job_name": "run",
     "use_slurm": false,
     "slurm": {
       "account": "XXXXXXXXXX",
@@ -133,7 +131,8 @@ Edit your copy of `jobs/transfer/params.json`:
     }
   },
   "job": {
-    "job_type": "transfer",
+    "job_type": "unconditional",
+    "resume_from": "./output/gdb13-debug/unconditional/run/model_restart_100.pth",
     "atom_types": ["C", "N", "O", "S", "Cl"],
     "formal_charge": [-1, 0, 1],
     "imp_H": [0, 1, 2, 3],
@@ -156,8 +155,6 @@ Edit your copy of `jobs/transfer/params.json`:
     "n_samples": 2000,
     "n_workers": 0,
     "restart": false,
-    "generation_epoch": 100,
-    "pretrained_model_dir": "./output/gdb13-debug/pretrain/job_0/",
     "decoding_route": "bfs",
     "use_tensorboard": true,
     "enn_depth": 4,
@@ -187,8 +184,7 @@ Key fields to change for your use case:
 
 - `"dataset"`: name of your fine-tuning dataset directory
 - `"data_path"`: parent directory of the fine-tuning dataset
-- `"generation_epoch"`: which pretrain checkpoint to load
-- `"pretrained_model_dir"`: path to the pretrain job output directory
+- `"resume_from"`: path to the pretrained checkpoint to load (e.g. `"./output/gdb13-debug/unconditional/run/model_restart_100.pth"`)
 - All feature parameters: must match preprocessing of the fine-tuning dataset
 
 ---
@@ -205,14 +201,14 @@ python submit.py --config jobs/preprocess/params.json
 Then run transfer learning:
 
 ```bash
-python submit.py --config jobs/transfer/params.json
+python submit.py --config jobs/unconditional/params.json
 ```
 
 ---
 
 ## Output files
 
-Output is written to `output/<dataset>/transfer/job_0/`, with the same structure as
+Output is written to `output/<dataset>/unconditional/run/`, with the same structure as
 pretraining:
 
 | File | Description |
@@ -245,6 +241,6 @@ Monitor the same metrics as pretraining (`convergence.log`, `generation.log`).
 ## Next steps
 
 - Generate molecules from the fine-tuned model: [Tutorial 5: Sampling](./05_sampling.md).
-  Set `generation_epoch` to the transfer-learning epoch you want to sample from and
-  `pretrained_model_dir` (or `job_dir`) to the transfer job output directory.
+  Set `pretrained_model_path` in the generate config to the transfer-learning checkpoint
+  you want to sample from (e.g. `"./output/new-dataset/unconditional/run/model_restart_50.pth"`).
 - Apply RL on top of transfer learning: [Tutorial 4: Reinforcement Learning](./04_reinforcement_learning.md).

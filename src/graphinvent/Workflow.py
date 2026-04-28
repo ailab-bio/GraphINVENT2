@@ -204,7 +204,7 @@ class Workflow:
         job_dir = self.constants.job_dir
         job_type = self.constants.job_type
 
-        if job_type in ("rl", "constrained_rl"):
+        if job_type in ("rl", "constrained_rl", "goal_directed"):
             # Reinforcement learning: load a pretrained checkpoint then set up
             # three model copies (agent, frozen prior, best-agent-so-far).
             print("* Defining models for RL fine-tuning.", flush=True)
@@ -1718,6 +1718,11 @@ class Workflow:
         Replaces the former `generate` (sample_mode='generate') and `test`
         (sample_mode='evaluate') job types.
         """
+        # Backward compat: the deprecated "test" job_type always implied evaluate mode.
+        if self.constants.job_type == "test":
+            self.testing_phase()
+            return
+
         mode = self.constants.sample_mode
         if mode == "generate":
             self.generation_phase()

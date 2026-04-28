@@ -1,0 +1,41 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "chembl_v34",
+    "smiles_file": "./data/raw/chembl_v34_filtered.smi",
+    "job_name": "run",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-08:00:00",
+      "gpus_per_node": "A100:1"
+    }
+  },
+  "job": {
+    "job_type": "preprocess",
+    "restart": false,
+    "conditioning": null,
+
+    "auto_detect_features": true,
+    "extra_dataset": null,
+
+    "_split_note": "Butina (scaffold) split groups molecules by chemical scaffold so train/valid/test sets contain different scaffolds. This produces a more challenging and realistic evaluation than random splitting for drug-like molecules.",
+    "split_type": "butina",
+    "train_frac": 0.8,
+    "valid_frac": 0.1,
+
+    "_encoding_note": "Kekulize (use_aromatic_bonds=false) is recommended: the model cannot generate an invalid aromatic system. Aromatic bonds add a 4th bond type and require the model to learn valid aromaticity rules.",
+    "use_aromatic_bonds": false,
+    "use_canon": true,
+    "use_chirality": false,
+    "use_explicit_H": false,
+    "ignore_H": false,
+
+    "_perf_note": "batch_size=1000 subgraphs per preprocessing group; block_size=100000 subgraphs cached in RAM per training block.",
+    "batch_size": 1000,
+    "block_size": 100000,
+    "decoding_route": "bfs"
+  }
+}

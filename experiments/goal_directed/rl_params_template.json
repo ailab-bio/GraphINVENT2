@@ -1,0 +1,53 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "chembl_v34",
+    "job_name": "__ORACLE__",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-24:00:00",
+      "gpus_per_node": "A100:1"
+    }
+  },
+  "job": {
+    "job_type": "goal_directed",
+
+    "_oracle_note": "__ORACLE__ and __THRESHOLD__ are replaced by run_all_oracles.py. score_components accepts any name in src/oracles/_tdc.py ORACLE_REGISTRY (SA, DRD2, GSK3B, JNK3, celecoxib_rediscovery) or 'tdc:<name>' for any other TDC oracle.",
+    "score_components": ["__ORACLE__"],
+    "score_thresholds": [0.0],
+    "score_type": "continuous",
+    "qsar_models": {},
+
+    "_pretrained_note": "Update this path to point at the best epoch checkpoint from Experiment 1 (chembl_v34 pretrain). The architecture is loaded automatically from params_all.json in the same directory.",
+    "pretrained_model_path": "./output/chembl_v34/unconditional/run/model_restart_200.pth",
+
+    "_budget_note": "oracle_budget=10000 matches the PMO benchmark protocol. checkpoint_oracle_counts saves intermediate results for budget-curve plots. eval_sample_size molecules are generated at each checkpoint for evaluation.",
+    "oracle_budget": 10000,
+    "checkpoint_oracle_counts": [1000, 3000, 5000, 10000],
+    "eval_sample_size": 10000,
+    "success_threshold": "__THRESHOLD__",
+
+    "device": "cuda",
+    "batch_size": 64,
+    "block_size": 100000,
+    "accumulation_steps": 1,
+    "epochs": 500,
+    "init_lr": 1e-4,
+    "max_rel_lr": 1,
+    "min_rel_lr": 0.0001,
+    "sample_every": 1,
+    "n_samples": 200,
+    "n_workers": 0,
+    "restart": false,
+    "use_tensorboard": true,
+
+    "_rl_note": "sigma=20 scales the reward contribution in the AugLL loss; alpha=0.5 weights the BASF replay buffer vs fresh agent samples.",
+    "sigma": 20,
+    "alpha": 0.5,
+
+    "seed": "__SEED__"
+  }
+}

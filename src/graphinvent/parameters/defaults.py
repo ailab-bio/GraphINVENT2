@@ -185,6 +185,22 @@ parameters = {
     "condition_type": "virtual_node",  # injection mechanism (only option currently)
     # condition values to sample with for sample job: {"pLogS": -1.5}
     "sample_conditions": None,
+    # --- Internal diversity ---
+    # Set to false to skip the O(n²) pairwise fingerprint comparison.
+    "compute_internal_diversity": True,
+    # Cap on the number of molecules used for pairwise comparison.  When the
+    # generated set is larger, a random subsample of this size is drawn and a
+    # warning is printed.  null = no limit (can be slow for >10K molecules).
+    "diversity_max_molecules": 10000,
+    # --- Test-set similarity ---
+    # Set to false to skip the nearest-neighbour fingerprint comparison (useful
+    # for very large test sets where pairwise comparison is slow).
+    "compute_test_similarity": True,
+    # Cap on the number of test-set reference molecules.  null = use all.
+    # Set to an integer (e.g. 10000) to subsample large test sets.
+    "test_similarity_max_refs": None,
+    # K for the top-K similarity statistic.
+    "test_similarity_top_k": 10,
     # GGNN hyperparameters:
     "enn_depth": 2,
     "enn_dropout_p": 0.0,

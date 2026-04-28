@@ -1,0 +1,65 @@
+# Oracle configuration for GraphINVENT2 PMO-style evaluation.
+#
+# Each oracle entry specifies:
+#   name         : Score component name as used in score_components (see ScoringFunction.py).
+#                  Names in ORACLE_REGISTRY (SA, DRD2, GSK3B, JNK3, celecoxib_rediscovery)
+#                  are used directly.  Any other TDC oracle can be prefixed with "tdc:".
+#   tdc_name     : Exact name passed to tdc.Oracle(...).  Must match TDC's catalogue.
+#   threshold    : Success threshold for the success-rate metric.
+#                  A molecule is a "success" if its oracle score >= threshold.
+#   description  : Human-readable description of the oracle.
+
+oracles:
+  - name: GSK3B
+    tdc_name: GSK3B
+    threshold: 0.5
+    description: >
+      Glycogen synthase kinase 3 beta (GSK3β) inhibition predicted by a
+      random forest classifier trained on ECFP6 fingerprints. Score in [0, 1];
+      higher = more likely to be a GSK3β inhibitor.
+
+  - name: JNK3
+    tdc_name: JNK3
+    threshold: 0.5
+    description: >
+      c-Jun N-terminal kinase 3 (JNK3) inhibition predicted by a random forest
+      classifier trained on ECFP6 fingerprints. Score in [0, 1].
+
+  - name: DRD2
+    tdc_name: DRD2
+    threshold: 0.5
+    description: >
+      Dopamine receptor D2 (DRD2) activity predicted by an SVM classifier
+      trained on ECFP6 fingerprints. Score in [0, 1].
+
+  - name: SA
+    tdc_name: SA
+    threshold: 0.67
+    description: >
+      Synthetic accessibility (SA) score from RDKit, normalised to [0, 1] by
+      TDC where 1 = easiest to synthesize (raw SA ≈ 1) and 0 = hardest (raw SA
+      ≈ 10). threshold=0.67 corresponds to raw SA ≤ 3.0 (easily synthesizable).
+
+  - name: QED
+    tdc_name: QED
+    threshold: 0.9
+    description: >
+      Quantitative estimate of drug-likeness (QED) computed from eight RDKit
+      descriptors. Score in [0, 1]; higher = more drug-like.
+
+  - name: tdc:LogP
+    tdc_name: LogP
+    threshold: null
+    description: >
+      Lipophilicity (LogP, octanol-water partition coefficient). Score in [0, 1]
+      after TDC normalisation. No fixed success threshold; optimisation is used
+      to explore the LogP distribution. Set threshold manually if a target range
+      is needed.
+
+# PMO benchmark settings
+pmo:
+  budget: 10000
+  checkpoints: [1000, 3000, 5000, 10000]
+  eval_sample_size: 10000
+  seeds: [42, 123, 456]
+  k: 10                 # AUC Top-k: average of top-k unique molecule scores

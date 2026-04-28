@@ -186,6 +186,84 @@ def compute_rediscovery_rate(
     return len(found) / len(test_smiles)
 
 
+def compute_internal_diversity(
+    generated_smiles: list,
+    max_mols=10000,
+) -> dict:
+    """
+    Pairwise Tanimoto similarity within the generated set (Morgan ECFP4, 2048 bits).
+
+    Thin wrapper around ``metrics.compute_internal_diversity`` from
+    ``src/metrics/_internal_diversity.py`` for use inside ``Analyzer``.
+
+    Args:
+        generated_smiles: List of generated SMILES strings.
+        max_mols:         Subsample cap (default 10 000).  None = no limit.
+
+    Returns:
+        dict with keys internal_diversity, mean_internal_similarity,
+        median_internal_similarity, max_internal_similarity,
+        sim_gt_0_4/0_6/0_8/0_9, n_duplicates_removed, n_invalid,
+        n_molecules, subsampled, pairwise_similarities.
+    """
+    import sys
+    from pathlib import Path
+
+    _src = str(Path(__file__).resolve().parent.parent)
+    if _src not in sys.path:
+        sys.path.insert(0, _src)
+    from metrics._internal_diversity import compute_internal_diversity as _fn
+
+    return _fn(generated_smiles, max_mols=max_mols)
+
+
+def compute_test_set_similarity(
+    generated_smiles: list,
+    test_smiles: list,
+    top_k: int = 10,
+    condition_filter=None,
+    test_conditions=None,
+    max_refs=None,
+) -> dict:
+    """
+    Nearest-neighbour Tanimoto similarity (Morgan ECFP4, 2048 bits) between
+    generated molecules and a hold-out test set.
+
+    Thin wrapper around ``metrics.compute_test_set_similarity`` from
+    ``src/metrics/_similarity.py`` for use inside ``Analyzer``.
+
+    Args:
+        generated_smiles: List of generated SMILES strings.
+        test_smiles:      List of test-set SMILES strings.
+        top_k:            Number of top-scoring molecules for top-k statistic.
+        condition_filter: Optional dict ``{prop: {"value": v, "tolerance": t}}``
+                          to restrict the test set before comparison.
+        test_conditions:  Per-molecule condition dicts parallel to test_smiles.
+        max_refs:         Cap on reference molecules; None uses all.
+
+    Returns:
+        dict with keys mean_similarity, median_similarity, top_k_similarity,
+        sim_gt_0_4/0_6/0_8/0_9, exact_rediscovery_count, n_invalid_generated,
+        n_invalid_test, n_test_after_filter, per_mol_similarity.
+    """
+    import sys
+    from pathlib import Path
+
+    _src = str(Path(__file__).resolve().parent.parent)
+    if _src not in sys.path:
+        sys.path.insert(0, _src)
+    from metrics._similarity import compute_test_set_similarity as _fn
+
+    return _fn(
+        generated_smiles,
+        test_smiles,
+        top_k=top_k,
+        condition_filter=condition_filter,
+        test_conditions=test_conditions,
+        max_refs=max_refs,
+    )
+
+
 def compute_success_rate(scores: torch.Tensor, threshold: float) -> float:
     """
     Fraction of molecules with score > threshold.

@@ -258,12 +258,30 @@ class Analyzer:
             output = constants.job_dir  # shorthand
 
             # Compute novelty and SA score for all job types
+            _top_k = int(getattr(constants, "test_similarity_top_k", 10))
             _extra_cols = [
                 "novelty",
                 "sa_score_mean",
                 "sa_score_median",
                 "sa_score_std",
             ]
+            if getattr(constants, "compute_internal_diversity", True):
+                _extra_cols += [
+                    "internal_diversity",
+                    "mean_internal_similarity",
+                    "max_internal_similarity",
+                ]
+            if getattr(constants, "compute_test_similarity", True):
+                _extra_cols += [
+                    "sim_mean",
+                    "sim_median",
+                    f"sim_top{_top_k}",
+                    "sim_gt_0_4",
+                    "sim_gt_0_6",
+                    "sim_gt_0_8",
+                    "sim_gt_0_9",
+                    "exact_rediscovery_count",
+                ]
             validity_t = prop_dict.get((epoch_key, "validity_tensor"))
             if validity_t is not None:
                 ext = self._compute_extended_metrics(
@@ -394,6 +412,13 @@ class Analyzer:
             "sa_score_std",
             "success_rate",
         ]
+        if getattr(constants, "compute_internal_diversity", True):
+            _extra_cols += [
+                "internal_diversity",
+                "mean_internal_similarity",
+                "max_internal_similarity",
+                "internal_diversity_successful",
+            ]
         if is_agent:
             ext = self._compute_extended_metrics(
                 generated_graphs=generated_graphs,
@@ -1224,6 +1249,64 @@ class Analyzer:
             result[f"{key}_std"] = float(np.std(values))
         return result
 
+    def _load_test_smiles(
+        self,
+    ) -> tuple:
+        """
+        Reads the test-set SMILES file and returns a (smiles, conditions) pair.
+
+        For plain ``.smi`` files returns ``(list[str], None)``.
+        For tab-separated files with a header row returns
+        ``(list[str], list[dict[str, float]])`` where the second element is a
+        parallel list of per-molecule property dicts.
+
+        Results are cached after the first call.
+        """
+        if hasattr(self, "_test_smiles_cache"):
+            return self._test_smiles_cache
+
+        path = constants.test_set
+        smiles: list = []
+        conditions: list = []
+        has_conditions = False
+
+        if os.path.exists(path):
+            with open(path) as fh:
+                first = fh.readline()
+                cols = first.strip().split("\t")
+                if cols[0].upper() == "SMILES" and len(cols) > 1:
+                    # Tab-separated with property header
+                    has_conditions = True
+                    prop_names = cols[1:]
+                    for line in fh:
+                        parts = line.strip().split("\t")
+                        if not parts or not parts[0]:
+                            continue
+                        smiles.append(parts[0])
+                        cond: dict = {}
+                        for i, name in enumerate(prop_names):
+                            try:
+                                cond[name] = float(parts[i + 1])
+                            except (IndexError, ValueError):
+                                pass
+                        conditions.append(cond)
+                else:
+                    # Plain SMILES, first line may be SMILES or a molecule
+                    smi0 = cols[0]
+                    if smi0.upper() != "SMILES":
+                        smiles.append(smi0)
+                    for line in fh:
+                        parts = line.strip().split()
+                        if not parts:
+                            continue
+                        smi = parts[0]
+                        if smi.upper() != "SMILES":
+                            smiles.append(smi)
+
+        result = (smiles, conditions if has_conditions else None)
+        self._test_smiles_cache = result
+        return result
+
     def _load_training_smiles(self) -> set:
         """
         Reads the training set SMILES file and returns a set of SMILES strings.
@@ -1299,6 +1382,70 @@ class Analyzer:
                 result["rediscovery_rate"] = metrics.compute_rediscovery_rate(
                     valid_smiles, set(reference_smiles)
                 )
+
+        # --- Internal diversity ---
+        if getattr(constants, "compute_internal_diversity", True):
+            all_valid_smiles = [s for s in all_smiles if s is not None]
+            max_mols = getattr(constants, "diversity_max_molecules", 10000)
+            div = metrics.compute_internal_diversity(
+                all_valid_smiles, max_mols=max_mols
+            )
+            result["internal_diversity"] = div["internal_diversity"]
+            result["mean_internal_similarity"] = div["mean_internal_similarity"]
+            result["max_internal_similarity"] = div["max_internal_similarity"]
+
+            # For RL/goal-directed: also compute diversity on successful subset
+            if scores is not None:
+                threshold = float(getattr(constants, "success_threshold", 0.5))
+                n = len(generated_graphs)
+                successful_smiles = [
+                    all_smiles[i]
+                    for i in range(n)
+                    if i < len(scores)
+                    and float(scores[i]) > threshold
+                    and all_smiles[i] is not None
+                ]
+                if len(successful_smiles) >= 2:
+                    div_top = metrics.compute_internal_diversity(
+                        successful_smiles, max_mols=max_mols
+                    )
+                    result["internal_diversity_successful"] = div_top[
+                        "internal_diversity"
+                    ]
+                else:
+                    result["internal_diversity_successful"] = float("nan")
+
+        # --- Test-set similarity ---
+        if getattr(constants, "compute_test_similarity", True):
+            valid_smiles_for_sim = [s for s in all_smiles if s is not None]
+            test_smi_list, test_cond_list = self._load_test_smiles()
+            if test_smi_list and valid_smiles_for_sim:
+                # Build condition_filter from sample_conditions for conditional jobs
+                cond_filter = None
+                sample_conds = getattr(constants, "sample_conditions", None)
+                if sample_conds and test_cond_list is not None:
+                    cond_filter = {
+                        name: {"value": float(val), "tolerance": 0.3}
+                        for name, val in sample_conds.items()
+                    }
+                top_k = int(getattr(constants, "test_similarity_top_k", 10))
+                max_refs = getattr(constants, "test_similarity_max_refs", None)
+                sim = metrics.compute_test_set_similarity(
+                    valid_smiles_for_sim,
+                    test_smi_list,
+                    top_k=top_k,
+                    condition_filter=cond_filter,
+                    test_conditions=test_cond_list,
+                    max_refs=max_refs,
+                )
+                result["sim_mean"] = sim["mean_similarity"]
+                result["sim_median"] = sim["median_similarity"]
+                result[f"sim_top{top_k}"] = sim["top_k_similarity"]
+                result["sim_gt_0_4"] = sim["sim_gt_0_4"]
+                result["sim_gt_0_6"] = sim["sim_gt_0_6"]
+                result["sim_gt_0_8"] = sim["sim_gt_0_8"]
+                result["sim_gt_0_9"] = sim["sim_gt_0_9"]
+                result["exact_rediscovery_count"] = sim["exact_rediscovery_count"]
 
         return result
 

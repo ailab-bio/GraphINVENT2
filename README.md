@@ -147,10 +147,10 @@ skip preprocessing and go straight to training.
 ### 2. Train a model
 
 ```bash
-python submit.py --config jobs/pretrain/params.json
+python submit.py --config jobs/unconditional/params.json
 ```
 
-Training progress is logged to `output/<dataset>/pretrain/job_0/convergence.log`.
+Training progress is logged to `output/<dataset>/unconditional/run/convergence.log`.
 If `use_tensorboard: true`, launch the dashboard with:
 
 ```bash
@@ -160,7 +160,7 @@ tensorboard --logdir output/<dataset>/pretrain/<job_name>/tensorboard/
 ### 3. Generate molecules
 
 ```bash
-python submit.py --config jobs/sample/params.json
+python submit.py --config jobs/generate/params.json
 ```
 
 Generated SMILES are written to `output/<dataset>/generate/<job_name>/` as `<n_samples>_samples.smi`.
@@ -194,17 +194,18 @@ run).  Output is always written to `output/<dataset>/<job_type>/job_<idx>/`.
 | Job type | Config | Description |
 |----------|--------|-------------|
 | `preprocess` | `jobs/preprocess/params.json` | Convert SMILES to HDF5; auto-detects feature vocabulary |
-| `pretrain` | `jobs/pretrain/params.json` | Train a generative model from random initialization |
-| `transfer` | `jobs/transfer/params.json` | Fine-tune a pretrained model on a new dataset |
-| `rl` | `jobs/rl/params.json` | Optimize a model for molecular properties with RL |
-| `generate` | `jobs/sample/params.json` | Sample new molecules from a trained model |
+| `unconditional` | `jobs/unconditional/params.json` | Train from scratch or fine-tune (set `resume_from`) an unconditional model |
+| `conditional` | `jobs/conditional/params.json` | Train a property-conditioned model (requires TSV input with property columns) |
+| `goal_directed` | `jobs/goal_directed/params.json` | RL optimization toward scoring criteria; set `oracle_budget` to cap calls |
+| `generate` | `jobs/generate/params.json` | Sample new molecules from a trained model |
 
 ### Typical workflows
 
 ```
-Preprocess → Pretrain → Generate
-Preprocess (new data) → Transfer learning → Generate
-Pretrain → Reinforcement learning → Generate
+Preprocess → Unconditional → Generate
+Preprocess (new data) → Unconditional (resume_from=checkpoint) → Generate   # transfer learning
+Unconditional → Goal-directed → Generate
+Preprocess (TSV with properties) → Conditional → Generate (with sample_conditions)
 ```
 
 ---
@@ -214,10 +215,11 @@ Pretrain → Reinforcement learning → Generate
 | Tutorial | Topic |
 |----------|-------|
 | [01 Preprocessing](./tutorials/01_preprocessing.md) | Convert SMILES to HDF5 |
-| [02 Pretraining](./tutorials/02_pretraining.md) | Train from scratch |
-| [03 Transfer learning](./tutorials/03_transfer_learning.md) | Fine-tune on a new dataset |
-| [04 Reinforcement learning](./tutorials/04_reinforcement_learning.md) | Property optimization |
+| [02 Pretraining](./tutorials/02_pretraining.md) | Train from scratch (unconditional) |
+| [03 Transfer learning](./tutorials/03_transfer_learning.md) | Fine-tune on a new dataset (unconditional + resume_from) |
+| [04 Reinforcement learning](./tutorials/04_reinforcement_learning.md) | Goal-directed property optimization |
 | [05 Sampling](./tutorials/05_sampling.md) | Generate molecules |
+| [05 Conditional generation](./tutorials/05_conditional_generation.md) | Train and sample a property-conditioned model |
 
 ---
 
@@ -277,7 +279,7 @@ you edited directly.  It has been replaced by a JSON-driven CLI:
 python submit.py           # edit Config class inside the file before running
 
 # new
-python submit.py --config jobs/pretrain/params.json
+python submit.py --config jobs/unconditional/params.json
 ```
 
 Each config file has two top-level keys:
@@ -288,11 +290,15 @@ Template configs live in `jobs/*/params.json`.
 
 #### `job_type` values renamed
 
-| Old value | New value | Notes |
-|-----------|-----------|-------|
-| `"train"` | `"pretrain"` | |
-| `"fine-tune"` | `"transfer"` | Supervised fine-tuning on a new dataset |
-| *(none)* | `"rl"` | Reinforcement learning is now its own job type |
+| Old value (GraphINVENT) | New value (GraphINVENT2) | Notes |
+|-------------------------|--------------------------|-------|
+| `"train"` | `"unconditional"` | Train from scratch or fine-tune (set `resume_from`) |
+| `"fine-tune"` | `"unconditional"` + `resume_from` | Supervised fine-tuning on a new dataset |
+| *(none)* | `"goal_directed"` | RL optimization; set `oracle_budget` to cap oracle calls |
+| *(none)* | `"conditional"` | Property-conditioned generation (new in GraphINVENT2) |
+| *(none)* | `"generate"` | Generation/evaluation; set `sample_mode` to `"generate"` or `"evaluate"` |
+
+Deprecated aliases still work (with a warning): `pretrain`, `transfer`, `rl`, `constrained_rl`, `sample`, `test`.
 
 #### HDF5 dataset key renamed: `"APDs"` → `"action_probs"`
 All HDF5 files produced by the old preprocessor used the internal key `"APDs"`.

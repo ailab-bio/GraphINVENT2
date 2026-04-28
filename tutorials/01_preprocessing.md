@@ -89,7 +89,7 @@ Mixed Mode A and Mode B datasets in the same run are fully supported.
 ```json
 "submission": {
   "python_path": "python",
-  "graphinvent_path": "./graphinvent/",
+  "graphinvent_path": "./src/graphinvent/",
   "data_path": "./data/datasets/",
   "dataset":     ["new-dataset",          "pretrained-set"],
   "smiles_file": ["./data/raw/new.smi",   null],
@@ -276,7 +276,7 @@ Edit your copy of `jobs/preprocess/params.json`.
 {
   "submission": {
     "python_path": "python",
-    "graphinvent_path": "./graphinvent/",
+    "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "my-dataset",
     "smiles_file": "./data/datasets/my_molecules.smi",
@@ -316,7 +316,7 @@ fractions if desired).  Everything else stays the same.
 {
   "submission": {
     "python_path": "python",
-    "graphinvent_path": "./graphinvent/",
+    "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "gdb13-debug",
     "smiles_file": null,
@@ -350,7 +350,7 @@ fractions if desired).  Everything else stays the same.
 {
   "submission": {
     "python_path": "python",
-    "graphinvent_path": "./graphinvent/",
+    "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": ["dataset_1", "dataset_2"],
     "smiles_file": null,

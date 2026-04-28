@@ -124,21 +124,22 @@ increase `sigma`.
 
 ## Configuration file
 
-> **Tip:** `jobs/rl/params.json` is a template — copy it before editing
+> **Tip:** `jobs/goal_directed/params.json` is a template — copy it before editing
 > so the original stays intact and each experiment has its own config file:
 > ```bash
-> cp jobs/rl/params.json jobs/rl/my_experiment.json
-> python submit.py --config jobs/rl/my_experiment.json
+> cp jobs/goal_directed/params.json jobs/goal_directed/my_experiment.json
+> python submit.py --config jobs/goal_directed/my_experiment.json
 > ```
 
-Edit your copy of `jobs/rl/params.json`:
+Edit your copy of `jobs/goal_directed/params.json`:
 
 ```json
 {
   "submission": {
     "python_path": "python",
-    "graphinvent_path": "./graphinvent/",
+    "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
+    "dataset": "debug",
     "job_name": "run",
     "use_slurm": false,
     "slurm": {
@@ -148,10 +149,11 @@ Edit your copy of `jobs/rl/params.json`:
     }
   },
   "job": {
-    "job_type": "rl",
+    "job_type": "goal_directed",
+    "oracle_budget": null,
     "device": "cuda",
     "batch_size": 50,
-    "accumulation_steps": 1,
+    "accumulation_steps": 10,
     "epochs": 100,
     "init_lr": 1e-4,
     "max_rel_lr": 10,
@@ -160,14 +162,14 @@ Edit your copy of `jobs/rl/params.json`:
     "n_samples": 100,
     "n_workers": 0,
     "restart": false,
-    "pretrained_model_path": "./output/pretrain/job/model_restart_100.pth",
+    "pretrained_model_path": "./output/debug/unconditional/run/model_restart_100.pth",
     "score_components": ["QED", "target_size=12"],
     "score_thresholds": [0.5, 0.0],
     "score_type": "binary",
     "qsar_models": {},
     "sigma": 20,
     "alpha": 0.5,
-    "use_tensorboard": true
+    "use_tensorboard": false
   }
 }
 ```
@@ -191,14 +193,14 @@ Edit your copy of `jobs/rl/params.json`:
 ## Running the job
 
 ```bash
-python submit.py --config jobs/rl/params.json
+python submit.py --config jobs/goal_directed/params.json
 ```
 
 ---
 
 ## Output files
 
-Output is written to `output/<dataset>/rl/job_0/`.
+Output is written to `output/<dataset>/goal_directed/run/`.
 
 | File | Description |
 |------|-------------|
@@ -234,7 +236,7 @@ collapsing.  Also watch `avg_n_nodes` to see if the agent is converging to the t
 ### TensorBoard
 
 ```bash
-tensorboard --logdir output/<dataset>/rl/<job_name>/tensorboard/
+tensorboard --logdir output/<dataset>/goal_directed/<job_name>/tensorboard/
 ```
 
 Tracks agent log-likelihood, prior log-likelihood, training loss, and evaluation score.
@@ -281,7 +283,8 @@ Use the oracle name directly in `score_components`:
 ```json
 {
   "job": {
-    "job_type": "rl",
+    "job_type": "goal_directed",
+    "oracle_budget": null,
     "score_components": ["DRD2"],
     "score_thresholds": [0.5],
     "score_type": "binary",
@@ -303,7 +306,8 @@ thresholds is recommended for multi-objective runs because it forces the agent t
 ```json
 {
   "job": {
-    "job_type": "rl",
+    "job_type": "goal_directed",
+    "oracle_budget": null,
     "score_components": ["GSK3B", "JNK3", "SA"],
     "score_thresholds": [0.5, 0.5, 0.6],
     "score_type": "binary",
@@ -325,8 +329,7 @@ AND reasonably synthesisable); 0 otherwise.
 
 When comparing methods or reporting results against the PMO benchmark (Gao et al., 2022):
 
-1. **Cap oracle calls at 10 000 per run** — the `constrained_rl` job type enforces this via
-   `"oracle_budget": 10000`.
+1. **Cap oracle calls at 10 000 per run** — set `"oracle_budget": 10000` in the `goal_directed` job config to enforce this automatically.
 2. **Report AUC Top-10**, not just the final top scores (see *AUC Top-10* below).
 3. **Deduplicate before scoring** — GraphINVENT2's `CachedOracle` handles this automatically:
    repeated SMILES are returned from cache without consuming budget.

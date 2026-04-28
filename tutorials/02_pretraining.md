@@ -114,24 +114,23 @@ well for drug-like molecules with up to ~30 heavy atoms.
 
 ## Configuration file
 
-> **Tip:** `jobs/pretrain/params.json` is a template — copy it before editing
+> **Tip:** `jobs/unconditional/params.json` is a template — copy it before editing
 > so the original stays intact and each experiment has its own config file:
 > ```bash
-> cp jobs/pretrain/params.json jobs/pretrain/my_experiment.json
-> python submit.py --config jobs/pretrain/my_experiment.json
+> cp jobs/unconditional/params.json jobs/unconditional/my_experiment.json
+> python submit.py --config jobs/unconditional/my_experiment.json
 > ```
 
-Edit your copy of `jobs/pretrain/params.json`:
+Edit your copy of `jobs/unconditional/params.json`:
 
 ```json
 {
   "submission": {
     "python_path": "python",
-    "graphinvent_path": "./graphinvent/",
+    "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "gdb13-debug",
-    "n_jobs": 1,
-    "jobdir_start_idx": 0,
+    "job_name": "run",
     "use_slurm": false,
     "slurm": {
       "account": "XXXXXXXXXX",
@@ -140,7 +139,8 @@ Edit your copy of `jobs/pretrain/params.json`:
     }
   },
   "job": {
-    "job_type": "pretrain",
+    "job_type": "unconditional",
+    "resume_from": null,
     "atom_types": ["C", "N", "O", "S", "Cl"],
     "formal_charge": [-1, 0, 1],
     "imp_H": [0, 1, 2, 3],
@@ -193,14 +193,14 @@ Edit your copy of `jobs/pretrain/params.json`:
 ## Running the job
 
 ```bash
-python submit.py --config jobs/pretrain/params.json
+python submit.py --config jobs/unconditional/params.json
 ```
 
 ---
 
 ## Output files
 
-Everything is written to `output/<dataset>/pretrain/job_0/`.
+Everything is written to `output/<dataset>/unconditional/run/`.
 
 | File | Description |
 |------|-------------|
@@ -212,7 +212,7 @@ Everything is written to `output/<dataset>/pretrain/job_0/`.
 | `generation/` | Directory containing generated SMILES (`.smi`), likelihoods (`.likelihood`), and validity flags (`.valid`) for each evaluation epoch |
 
 If TensorBoard is enabled, the TensorBoard data is written to
-`output/<dataset>/pretrain/<job_name>/tensorboard/`.
+`output/<dataset>/unconditional/<job_name>/tensorboard/`.
 
 ---
 
@@ -249,7 +249,7 @@ Epoch 10, 0.523, 0.412, 0.789, 45.2, 9.3, ...
 ### TensorBoard
 
 ```bash
-tensorboard --logdir output/<dataset>/pretrain/<job_name>/tensorboard/
+tensorboard --logdir output/<dataset>/unconditional/<job_name>/tensorboard/
 ```
 
 ---

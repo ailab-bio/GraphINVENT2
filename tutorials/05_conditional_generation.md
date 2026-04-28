@@ -92,14 +92,18 @@ Configure `jobs/conditional/params.json`:
 ```json
 {
   "submission": {
-    "dataset_dir": "data/datasets/my_cond_dataset/",
-    "job_dir": "output/my_cond_dataset/conditional/run1/"
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "my_cond_dataset",
+    "job_name": "run"
   },
   "job": {
     "job_type": "conditional",
     "condition_dim": 2,
     "condition_embedding_dim": 100,
-    "n_epochs": 100,
+    "resume_from": null,
+    "epochs": 100,
     "batch_size": 1000,
     "accumulation_steps": 10
   }
@@ -126,16 +130,19 @@ Training is identical to an unconditional job except that at each step the condi
 
 ## Step 4 — Generate with target properties
 
-Configure `jobs/sample/params.json`:
+Configure `jobs/generate/params.json`:
 
 ```json
 {
   "submission": {
-    "dataset_dir": "data/datasets/my_cond_dataset/",
-    "job_dir": "output/my_cond_dataset/conditional/run1/"
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "my_cond_dataset",
+    "job_name": "run"
   },
   "job": {
-    "job_type": "sample",
+    "job_type": "generate",
     "sample_mode": "generate",
     "condition_dim": 2,
     "condition_embedding_dim": 100,
@@ -155,7 +162,7 @@ Configure `jobs/sample/params.json`:
 Run:
 
 ```bash
-python submit.py --config jobs/sample/params.json
+python submit.py --config jobs/generate/params.json
 ```
 
 Generated SMILES will be written to `output/.../generation/`.

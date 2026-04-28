@@ -9,6 +9,7 @@ docker/graphinvent.sif
 .claude/*
 TODO.md
 CLAUDE.md
+manuscript/*
 
 # Ignore all .h5 files in the entire project
 *.h5

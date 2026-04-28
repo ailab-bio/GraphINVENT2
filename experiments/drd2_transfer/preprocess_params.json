@@ -1,0 +1,38 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": ["chembl_v34", "drd2_actives"],
+    "smiles_file": [null, "./data/raw/drd2_actives.smi"],
+    "job_name": "run",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-02:00:00",
+      "gpus_per_node": "T4:1"
+    }
+  },
+  "job": {
+    "job_type": "preprocess",
+    "restart": false,
+    "conditioning": null,
+
+    "_vocab_note": "Processing chembl_v34 and drd2_actives together computes a UNION vocabulary so both datasets share identical feature dimensions. chembl_v34 is pre-split (smiles_file=null); drd2_actives will be split automatically from drd2_actives.smi.",
+    "auto_detect_features": true,
+    "extra_dataset": null,
+
+    "split_type": "random",
+    "train_frac": 0.8,
+    "valid_frac": 0.1,
+
+    "use_aromatic_bonds": false,
+    "use_canon": true,
+    "use_chirality": false,
+    "use_explicit_H": false,
+    "ignore_H": false,
+    "batch_size": 1000,
+    "block_size": 100000,
+    "decoding_route": "bfs"
+  }
+}

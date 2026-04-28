@@ -1,0 +1,26 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "drd2_actives",
+    "job_name": "run",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "0-02:00:00",
+      "gpus_per_node": "T4:1"
+    }
+  },
+  "job": {
+    "job_type": "generate",
+    "sample_mode": "generate",
+    "device": "cuda",
+    "batch_size": 1000,
+    "n_samples": 10000,
+    "n_workers": 0,
+    "_checkpoint_note": "Update the path below to the actual best checkpoint from the transfer learning run (check convergence.log for lowest validation NLL epoch).",
+    "pretrained_model_path": "./output/drd2_actives/unconditional/run/model_restart_100.pth",
+    "sample_conditions": null
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "submission": {
+    "python_path": "python",
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "chembl_v34_cond",
+    "job_name": "run",
+    "use_slurm": false,
+    "slurm": {
+      "account": "XXXXXXXXXX",
+      "run_time": "2-00:00:00",
+      "gpus_per_node": "A100:1"
+    }
+  },
+  "job": {
+    "job_type": "conditional",
+
+    "_mode": "Fine-tune from the ChEMBL unconditional pretrained model. The ConditionEncoder and virtual-edge MLP start from random weights; the rest of the GGNN uses the pretrained weights. Update resume_from to point at the actual best checkpoint from Experiment 1.",
+    "resume_from": "./output/chembl_v34/unconditional/run/model_restart_200.pth",
+
+    "_conditioning": "condition_dim must match the number of property columns in the preprocessed dataset (4: QED, SA_norm, LogP_norm, GSK3B). condition_embedding_dim should equal hidden_node_features for best performance.",
+    "condition_dim": 4,
+    "condition_embedding_dim": 256,
+
+    "device": "cuda",
+    "restart": false,
+    "use_tensorboard": true,
+    "decoding_route": "bfs",
+    "use_aromatic_bonds": false,
+
+    "_training": "Lower initial learning rate than unconditional pretraining because we are fine-tuning. accumulation_steps=10 simulates a batch of 10000 subgraphs.",
+    "epochs": 100,
+    "batch_size": 1000,
+    "block_size": 100000,
+    "accumulation_steps": 10,
+    "init_lr": 5e-5,
+    "max_rel_lr": 5,
+    "min_rel_lr": 0.0001,
+    "sample_every": 5,
+    "n_samples": 500,
+    "n_workers": 4,
+    "seed": 42,
+
+    "_architecture": "Architecture parameters are ignored when resume_from is set (loaded from checkpoint). Listed here for documentation only.",
+    "hidden_node_features": 256,
+    "message_passes": 4,
+    "message_size": 256,
+    "enn_depth": 2,
+    "enn_dropout_p": 0.0,
+    "enn_hidden_dim": 256,
+    "mlp1_depth": 4,
+    "mlp1_dropout_p": 0.0,
+    "mlp1_hidden_dim": 512,
+    "mlp2_depth": 4,
+    "mlp2_dropout_p": 0.0,
+    "mlp2_hidden_dim": 512,
+    "gather_att_depth": 2,
+    "gather_att_dropout_p": 0.0,
+    "gather_att_hidden_dim": 256,
+    "gather_emb_depth": 2,
+    "gather_emb_dropout_p": 0.0,
+    "gather_emb_hidden_dim": 256,
+    "gather_width": 256
+  }
+}
