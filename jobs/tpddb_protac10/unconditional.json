@@ -1,0 +1,32 @@
+{
+  "submission": {
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "tpddb_protac10",
+    "job_name": "run",
+    "use_slurm": false
+  },
+  "job": {
+    "job_type": "unconditional",
+    "resume_from": null,
+    "device": "cpu",
+    "restart": false,
+    "use_tensorboard": false,
+    "epochs": 200,
+    "batch_size": 50,
+    "block_size": 100000,
+    "accumulation_steps": 2,
+    "init_lr": 1e-3,
+    "max_rel_lr": 5,
+    "min_rel_lr": 0.01,
+    "sample_every": 100,
+    "n_samples": 50,
+    "n_workers": 0,
+    "hidden_node_features": 64,
+    "message_passes": 3,
+    "message_size": 64,
+    "mlp1_hidden_dim": 128,
+    "mlp2_hidden_dim": 128,
+    "gather_width": 64
+  }
+}

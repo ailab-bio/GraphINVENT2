@@ -70,6 +70,10 @@ class MolecularGraph:
         """
         self.constants = constants
 
+        # node_idx -> desired CIP code, populated by `features_to_atom` and
+        # consumed by `_apply_chirality` once the molecule is complete
+        self._desired_cip: dict = {}
+
         # placeholders (these are set in the respective sub-classes)
         self.molecule = None
         self.node_features = None
@@ -180,7 +184,48 @@ class MolecularGraph:
                 # raised if `molecule` is False, None, or too ugly to sanitize
                 pass
 
+        if self.constants.use_chirality and molecule and self._desired_cip:
+            self._apply_chirality(molecule)
+
         return molecule
+
+    def _apply_chirality(self, molecule: rdkit.Chem.Mol) -> None:
+        """
+        Restores R/S stereochemistry recorded by `features_to_atom`.
+
+        A CIP code is a property *of the whole molecule*, not of an atom in
+        isolation -- it depends on the neighbour ordering -- so it cannot be
+        written directly onto an atom.  Instead each stereocentre is given a
+        tetrahedral tag, RDKit is asked to recompute the CIP codes, and any
+        centre that came out with the wrong handedness is flipped.
+        """
+        from rdkit.Chem import ChiralType
+
+        centres = {
+            idx: code
+            for idx, code in self._desired_cip.items()
+            if code in ("R", "S") and idx < molecule.GetNumAtoms()
+        }
+        if not centres:
+            return
+
+        try:
+            rdkit.Chem.SanitizeMol(molecule)
+        except (ValueError, RuntimeError):
+            return  # too malformed for stereochemistry to be meaningful
+
+        for idx in centres:
+            molecule.GetAtomWithIdx(idx).SetChiralTag(ChiralType.CHI_TETRAHEDRAL_CW)
+        rdkit.Chem.AssignStereochemistry(molecule, cleanIt=True, force=True)
+
+        flipped = False
+        for idx, code in centres.items():
+            atom = molecule.GetAtomWithIdx(idx)
+            if atom.GetPropsAsDict().get("_CIPCode") != code:
+                atom.SetChiralTag(ChiralType.CHI_TETRAHEDRAL_CCW)
+                flipped = True
+        if flipped:
+            rdkit.Chem.AssignStereochemistry(molecule, cleanIt=True, force=True)
 
     def features_to_atom(self, node_idx: int) -> rdkit.Chem.Atom:
         """
@@ -230,7 +275,12 @@ class MolecularGraph:
             )
             total_num_h = self.constants.imp_H[total_num_h_idx]
 
-            new_atom.SetUnsignedProp("_TotalNumHs", total_num_h)
+            # `SetUnsignedProp("_TotalNumHs", ...)` writes a property RDKit never
+            # reads, so the H count was silently discarded.  Every aromatic N-H
+            # heterocycle (pyrrole, indole, imidazole, pyrazole, tetrazole) then
+            # failed to kekulize and was counted invalid.
+            new_atom.SetNumExplicitHs(int(total_num_h))
+            new_atom.SetNoImplicit(True)
 
         elif self.constants.ignore_H:
             # Hs will be set with structure is sanitized later
@@ -248,7 +298,12 @@ class MolecularGraph:
                 * self.constants.n_imp_H
             )
             cip_code = self.constants.chirality[cip_code_idx]
-            new_atom.SetProp("_CIPCode", cip_code)
+            # Only remember it here.  Setting `_CIPCode` directly has no effect:
+            # RDKit recomputes CIP codes from the chiral tags during
+            # sanitisation and wipes the property, so R and S both decoded to
+            # the same achiral molecule.  `_apply_chirality` sets real tags once
+            # the whole molecule (and hence the neighbour order) exists.
+            self._desired_cip[node_idx] = cip_code
 
         return new_atom
 
@@ -378,6 +433,16 @@ class PreprocessingGraph(MolecularGraph):
 
         # loop until all nodes have been visited
         while len(nodes_visited) < self.n_nodes:
+            if not last_nodes_visited:
+                # No frontier left but nodes remain: the graph is disconnected
+                # (e.g. a salt or a mixture).  Without this the loop spins
+                # forever and wedges the whole preprocessing job silently.
+                raise ValueError(
+                    "MolecularGraphError: molecular graph is disconnected "
+                    f"({len(nodes_visited)} of {self.n_nodes} atoms reachable). "
+                    "Multi-fragment inputs (salts, mixtures) are not supported "
+                    "-- strip counter-ions or keep the largest fragment."
+                )
             neighboring_nodes = []
 
             for node in last_nodes_visited:
@@ -399,11 +464,16 @@ class PreprocessingGraph(MolecularGraph):
                     neighboring_nodes.append(new_neighbor_nodes[next_node])
                     node_importance[next_node] = -1
 
+            # `dict.fromkeys` de-duplicates while PRESERVING the ranking order
+            # established above; `set(...)` discarded it and left the nodes in
+            # ascending-index order, so `use_canon` was not canonical at all.
+            neighboring_nodes = list(dict.fromkeys(neighboring_nodes))
+
             # append the new, sorted neighboring nodes to list of visited nodes
-            nodes_visited.extend(set(neighboring_nodes))
+            nodes_visited.extend(neighboring_nodes)
 
             # update the list of most recently visited nodes
-            last_nodes_visited = set(neighboring_nodes)
+            last_nodes_visited = neighboring_nodes
 
         return nodes_visited
 
@@ -480,15 +550,24 @@ class PreprocessingGraph(MolecularGraph):
             # get RDKit canonical ranking
             atom_ranking = list(rdkit.Chem.CanonicalRankAtoms(molecule, breakTies=True))
 
-        # using a random node as a starting point, get a new node ranking that
-        # does not leave isolated fragments in graph traversal
+        # Start from the highest-ranked node.  `atom_ranking[0]` is the *rank of
+        # atom 0*, not a node index -- using it as an index made the traversal
+        # depend on the order the atoms happened to be written in the SMILES,
+        # so equivalent SMILES for the same molecule gave different graphs.
+        node_init = int(np.argmax(atom_ranking))
+
         if self.constants.decoding_route == "bfs":
             self.node_ordering = self.breadth_first_search(
-                node_ranking=atom_ranking, node_init=atom_ranking[0]
+                node_ranking=atom_ranking, node_init=node_init
             )
         elif self.constants.decoding_route == "dfs":
             self.node_ordering = self.depth_first_search(
-                node_ranking=atom_ranking, node_init=atom_ranking[0]
+                node_ranking=atom_ranking, node_init=node_init
+            )
+        else:
+            raise ValueError(
+                f"Unknown decoding_route '{self.constants.decoding_route}'; "
+                "expected 'bfs' or 'dfs'."
             )
 
         # reorder all nodes according to new node ranking

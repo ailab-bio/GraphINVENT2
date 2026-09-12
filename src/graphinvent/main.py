@@ -74,8 +74,12 @@ def main():
     print(f"* Run mode: '{job_type}'", flush=True)
 
     if job_type == "preprocess":
-        util.write_preprocessing_parameters(params=constants)
+        # Written only after the run succeeds.  Persisting it first meant a
+        # failed auto-detection left an empty vocabulary on disk, which every
+        # later run then loaded in preference to re-detecting, failing far away
+        # with "Input C not in allowable set []".
         workflow.preprocess_phase()
+        util.write_preprocessing_parameters(params=constants)
 
     elif job_type == "unconditional":
         util.write_job_parameters(params=constants)

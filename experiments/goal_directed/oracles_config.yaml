@@ -1,65 +1,58 @@
-# Oracle configuration for GraphINVENT2 PMO-style evaluation.
+# Targets for the goal-directed sweep.
 #
-# Each oracle entry specifies:
-#   name         : Score component name as used in score_components (see ScoringFunction.py).
-#                  Names in ORACLE_REGISTRY (SA, DRD2, GSK3B, JNK3, celecoxib_rediscovery)
-#                  are used directly.  Any other TDC oracle can be prefixed with "tdc:".
-#   tdc_name     : Exact name passed to tdc.Oracle(...).  Must match TDC's catalogue.
-#   threshold    : Success threshold for the success-rate metric.
-#                  A molecule is a "success" if its oracle score >= threshold.
-#   description  : Human-readable description of the oracle.
+# Each entry defines one optimization objective and is run independently, once
+# per seed, against the same pretrained prior.  Keeping every setting but the
+# objective fixed is what makes the runs comparable.
+#
+#   name        : the score component name used for this run
+#   oracle      : the oracle spec, copied verbatim into the job's "oracles"
+#                 block.  "type" is "sklearn", "python", or "vina"; see
+#                 tutorials/06_custom_oracles.md
+#   threshold   : score at or above which a molecule counts as a success
+#   description : what the objective is, and where the model came from
+#
+# The models referenced below do not ship with the repository.  Train them from
+# your own data with src/graphinvent/tools/train-surrogate.py, or point the
+# entries at a docking setup.  The paths here are placeholders.
 
 oracles:
-  - name: GSK3B
-    tdc_name: GSK3B
+  - name: target_a
+    oracle:
+      type: sklearn
+      path: data/surrogates/target_a_rf.pkl
+      output: proba
+      direction: maximize
     threshold: 0.5
     description: >
-      Glycogen synthase kinase 3 beta (GSK3β) inhibition predicted by a
-      random forest classifier trained on ECFP6 fingerprints. Score in [0, 1];
-      higher = more likely to be a GSK3β inhibitor.
+      Activity against the primary target, from a random forest over Morgan
+      fingerprints trained on in-house or ChEMBL assay data.  Check the
+      held-out metrics printed by train-surrogate.py before trusting a sweep
+      built on this.
 
-  - name: JNK3
-    tdc_name: JNK3
+  - name: target_a_selective
+    oracle:
+      type: sklearn
+      path: data/surrogates/target_a_rf.pkl
+      output: proba
+      direction: maximize
     threshold: 0.5
     description: >
-      c-Jun N-terminal kinase 3 (JNK3) inhibition predicted by a random forest
-      classifier trained on ECFP6 fingerprints. Score in [0, 1].
+      The same primary target, intended to be run with an anti-target added to
+      score_components so the two objectives trade off.  Add the second oracle
+      to the template's "oracles" block with direction "minimize".
 
-  - name: DRD2
-    tdc_name: DRD2
-    threshold: 0.5
-    description: >
-      Dopamine receptor D2 (DRD2) activity predicted by an SVM classifier
-      trained on ECFP6 fingerprints. Score in [0, 1].
+  # Structure-based alternative, for a target with a usable structure but too
+  # little assay data to train a surrogate.  Docking costs roughly a second per
+  # molecule per core, so budget the run accordingly.
+  # - name: target_b_dock
+  #   oracle:
+  #     type: vina
+  #     receptor: data/receptors/target_b.pdbqt
+  #     center: [12.0, 3.4, -8.1]
+  #     box_size: [20.0, 20.0, 20.0]
+  #     exhaustiveness: 8
+  #     n_workers: 8
+  #   threshold: 0.5
+  #   description: AutoDock Vina docking against target B.
 
-  - name: SA
-    tdc_name: SA
-    threshold: 0.67
-    description: >
-      Synthetic accessibility (SA) score from RDKit, normalised to [0, 1] by
-      TDC where 1 = easiest to synthesize (raw SA ≈ 1) and 0 = hardest (raw SA
-      ≈ 10). threshold=0.67 corresponds to raw SA ≤ 3.0 (easily synthesizable).
-
-  - name: QED
-    tdc_name: QED
-    threshold: 0.9
-    description: >
-      Quantitative estimate of drug-likeness (QED) computed from eight RDKit
-      descriptors. Score in [0, 1]; higher = more drug-like.
-
-  - name: tdc:LogP
-    tdc_name: LogP
-    threshold: null
-    description: >
-      Lipophilicity (LogP, octanol-water partition coefficient). Score in [0, 1]
-      after TDC normalisation. No fixed success threshold; optimisation is used
-      to explore the LogP distribution. Set threshold manually if a target range
-      is needed.
-
-# PMO benchmark settings
-pmo:
-  budget: 10000
-  checkpoints: [1000, 3000, 5000, 10000]
-  eval_sample_size: 10000
-  seeds: [42, 123, 456]
-  k: 10                 # AUC Top-k: average of top-k unique molecule scores
+seeds: [0, 1, 2]

@@ -21,7 +21,7 @@
 #   --skip-exp4                 Skip Experiment 4 (conditional generation).
 #
 # Prerequisites:
-#   pip install -e ".[tdc]"     (required for goal-directed and conditional)
+#   pip install -e ".[docking]" (only if a goal-directed run uses a Vina oracle)
 #   See experiments/chembl_pretrain/README.md for data download instructions.
 #
 # ─────────────────────────────────────────────────────────────────────────────
@@ -130,7 +130,9 @@ if [[ $SKIP_EXP2 -eq 0 ]]; then
 
   echo "Step 2c: Transfer learning (fine-tune from ChEMBL checkpoint)"
   # Patch the checkpoint path into the config if --pretrain-checkpoint was given
-  if [[ -n "$PRETRAIN_CHECKPOINT" ]]; then
+  # Guarded by DRY_RUN: this rewrites a tracked config file in place, which a
+  # dry run must not do.
+  if [[ -n "$PRETRAIN_CHECKPOINT" && $DRY_RUN -eq 0 ]]; then
     python - <<EOF
 import json, pathlib
 cfg_path = pathlib.Path("experiments/drd2_transfer/transfer_params.json")
@@ -139,6 +141,8 @@ cfg["job"]["resume_from"] = "${PRETRAIN_CHECKPOINT}"
 cfg_path.write_text(json.dumps(cfg, indent=2))
 print(f"Patched resume_from -> ${PRETRAIN_CHECKPOINT}")
 EOF
+  elif [[ -n "$PRETRAIN_CHECKPOINT" ]]; then
+    echo "[dry-run] would patch resume_from -> $PRETRAIN_CHECKPOINT in experiments/drd2_transfer/transfer_params.json"
   fi
   RUN python submit.py --config experiments/drd2_transfer/transfer_params.json
 
@@ -190,7 +194,9 @@ if [[ $SKIP_EXP4 -eq 0 ]]; then
   RUN python submit.py --config experiments/conditional/preprocess_params.json
 
   echo "Step 4c: Train conditional model (fine-tune from ChEMBL checkpoint)"
-  if [[ -n "$PRETRAIN_CHECKPOINT" ]]; then
+  # Guarded by DRY_RUN: this rewrites a tracked config file in place, which a
+  # dry run must not do.
+  if [[ -n "$PRETRAIN_CHECKPOINT" && $DRY_RUN -eq 0 ]]; then
     python - <<EOF
 import json, pathlib
 cfg_path = pathlib.Path("experiments/conditional/train_params.json")
@@ -199,6 +205,8 @@ cfg["job"]["resume_from"] = "${PRETRAIN_CHECKPOINT}"
 cfg_path.write_text(json.dumps(cfg, indent=2))
 print(f"Patched resume_from -> ${PRETRAIN_CHECKPOINT}")
 EOF
+  elif [[ -n "$PRETRAIN_CHECKPOINT" ]]; then
+    echo "[dry-run] would patch resume_from -> $PRETRAIN_CHECKPOINT in experiments/conditional/train_params.json"
   fi
   RUN python submit.py --config experiments/conditional/train_params.json
 

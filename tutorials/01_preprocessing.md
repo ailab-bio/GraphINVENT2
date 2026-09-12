@@ -1,90 +1,102 @@
 # Tutorial 1: Preprocessing
 
-Before training any model, your raw SMILES data must be converted into HDF5 format.
-This step encodes each molecule as a sequence of subgraphs (its **decoding route**) and
-stores the node features, edge features, and target Action Probability Distributions (action probabilities)
-in a compact binary format that the data loader can stream efficiently during training.
+Training data for GraphINVENT2 is not a list of molecules but a list of *decisions*. A
+preprocessing job takes each SMILES string, converts it to a molecular graph, traverses that
+graph in a fixed order, and records the sequence of partial subgraphs the traversal passes
+through together with the action that extends each one. The model is then trained to predict
+the action given the subgraph, which is why the stored target is a probability distribution
+over all possible next actions (add an atom, connect two existing atoms, or terminate) rather
+than a molecule.
+
+Because the traversal order is fixed by `decoding_route`, one molecule yields one decoding
+route and therefore a deterministic set of training examples. The whole set is written to
+HDF5 so that the data loader can stream it in blocks instead of holding it in memory, which
+matters as soon as the dataset is larger than a few tens of thousands of molecules.
 
 ---
 
 ## SMILES file format
 
-All `.smi` files (whether a single input file or pre-split train/valid/test files) must follow this format:
+Every `.smi` file, whether it is a single input file or one of the pre-split
+train/valid/test files, is read the same way:
 
-- One molecule per line: `<SMILES> [optional_identifier]`
-- The identifier (name, ID, etc.) is separated by a space and is ignored during preprocessing
-- A header line is detected automatically if it contains the word `SMILES` and is skipped
-- Lines that cannot be parsed by RDKit are silently skipped
+- One molecule per line, `<SMILES> [optional_identifier]`, whitespace-separated.
+- The identifier is ignored during preprocessing.
+- A first line containing the word `SMILES` is treated as a header and skipped.
+- Lines RDKit cannot parse are skipped without failing the job.
 
-Example:
 ```
 CCO ethanol
 c1ccccc1 benzene
 CC(=O)O acetic_acid
 ```
 
-A bare SMILES-only file (no identifiers, no header) is equally valid.
+A file of bare SMILES with no identifiers and no header is equally valid.
+
+For conditional training the input is instead tab-separated with a header whose first column
+is `SMILES`; see [Tutorial 5: Conditional generation](./05_conditional_generation.md).
 
 ---
 
-## Dataset input modes
+## Two ways to supply data
 
-There are two ways to provide data.  Choose the one that fits your workflow.
+### Mode A — one SMILES file, split automatically
 
-### Mode A — single SMILES file (automatic splitting)
+Set `"smiles_file"` in the `submission` block to the path of a file containing all your
+molecules. The preprocessing job reads that file, removes duplicates by canonical SMILES,
+splits the remainder into train/valid/test, writes the three `.smi` files into the dataset
+directory, and then converts them to HDF5.
 
-Set `"smiles_file"` in the `submission` block to the **full (absolute) path** of a `.smi`
-file containing all your molecules (one SMILES per line, optional space-separated
-identifier ignored).  Relative paths may work when `submit.py` is run from the repo root,
-but an absolute path is safer and always unambiguous.
+Deduplication happens before the split and is not optional: a molecule appearing twice in the
+input would otherwise land in two different splits, leaking test molecules into training and
+inflating every novelty and similarity number computed later.
 
-`submit.py` will read the file, split it into train / valid / test, write the three
-`.smi` files into the dataset directory, then launch the HDF5 conversion.
+Relative paths are resolved against the directory `submit.py` is run from, which is normally
+the repository root. An absolute path is unambiguous and safer if you run jobs from elsewhere.
 
 ```json
 "submission": {
   "data_path": "./data/datasets/",
   "dataset":   "my-dataset",
-  "smiles_file": "./data/datasets/my_molecules.smi"
+  "smiles_file": "./data/raw/my_molecules.smi"
 }
 ```
 
-### Mode B — pre-split directory (default)
+### Mode B — a directory that is already split
 
-Leave `"smiles_file"` absent or set to `null`.  The dataset directory must already
-contain exactly these three files; an error is raised if any are missing:
-
-| File | Content |
-|------|---------|
-| `train.smi` | Training set — one SMILES per line |
-| `valid.smi` | Validation set — one SMILES per line |
-| `test.smi`  | Test set — one SMILES per line |
+Leave `"smiles_file"` absent or `null`. The dataset directory must then contain `train.smi`,
+`valid.smi`, and `test.smi`; `submit.py` refuses the job before launching anything if any of
+the three is missing.
 
 ```json
 "submission": {
   "data_path": "./data/datasets/",
-  "dataset":   "gdb13-debug",
+  "dataset":   "debug",
   "smiles_file": null
 }
 ```
 
+The repository ships four dataset directories under `data/datasets/`: `debug` and `test` are
+small sets for smoke-testing the pipeline, `DRD2_actives` is a focused set usable as a
+transfer-learning target, and `unit_testing` holds a fixture file for the test suite rather
+than a trainable dataset.
+
 ---
 
-## Preprocessing multiple datasets simultaneously
+## Preprocessing several datasets at once
 
-Both `"dataset"` and `"data_path"` accept either a single string or a **list of strings**.
-When you provide a list, all datasets are preprocessed in a single run with a **shared,
-union vocabulary** — the feature vocabulary (atom types, formal charges, implicit H counts,
-and maximum node count) is computed across all datasets together before any HDF5 file is
-written.  Each dataset still produces its own separate set of HDF5 files.
+Both `"dataset"` and `"data_path"` accept a list as well as a single string. Given a list,
+all datasets are scanned together to compute one union feature vocabulary — the atom types,
+formal charges, implicit hydrogen counts, and maximum node count found across all of them —
+and each dataset is then encoded separately against that shared vocabulary.
 
-This is useful when you intend to pretrain on one corpus and later fine-tune or transfer
-to another, since a shared vocabulary guarantees that both datasets are encoded with
-identical feature dimensions.
+This matters because the node feature vector length is determined by the vocabulary. A model
+pretrained on a dataset encoded with one vocabulary cannot load into a job whose dataset was
+encoded with another, so if you intend to pretrain on one corpus and fine-tune on a second,
+preprocessing them together is the reliable way to guarantee compatible tensors.
 
-`"smiles_file"` can be a list matching `"dataset"` in length — use a path for datasets
-that need splitting (Mode A) and `null` for datasets that are already pre-split (Mode B).
-Mixed Mode A and Mode B datasets in the same run are fully supported.
+`"smiles_file"` may also be a list of the same length: a path selects Mode A for that dataset,
+`null` selects Mode B. The two modes can be mixed freely within one run.
 
 ```json
 "submission": {
@@ -98,57 +110,62 @@ Mixed Mode A and Mode B datasets in the same run are fully supported.
 }
 ```
 
-Here `new-dataset` will be split automatically from `new.smi`, while `pretrained-set`
-is expected to already contain `train.smi`, `valid.smi`, and `test.smi`.
-
-To use Mode B for all datasets (all already pre-split), simply set `"smiles_file": null`:
-
-```json
-"dataset":     ["dataset_1", "dataset_2"],
-"smiles_file": null
-```
-
-A single `"data_path"` string is broadcast to all datasets.  If each dataset lives in a
-different root directory, provide a matching list:
+A single `"data_path"` string is broadcast over all datasets. If the datasets live under
+different roots, give a list of the same length:
 
 ```json
 "data_path": ["./data/internal/", "./data/external/"],
 "dataset":   ["internal-set",     "external-set"]
 ```
 
+One limitation: the union-vocabulary scan reads only the datasets named in `"dataset"`. The
+`extra_dataset` parameter described below is honoured only in single-dataset runs, so it
+cannot be used to widen a multi-dataset vocabulary.
+
 ---
 
 ## Splitting strategies (Mode A only)
 
-Set `"split_type"` in the `job` block to one of the following.
+`"split_type"` in the `job` block selects one of three strategies.
 
-| `split_type` | Description |
-|--------------|-------------|
-| `"random"` | Shuffle with a fixed seed, then split by count.  Fast and the default. |
-| `"butina"` | Cluster molecules with the Butina algorithm (ECFP4 / Tanimoto distance ≤ 0.4).  The largest clusters go to train; remaining small clusters go to valid / test.  Requires RDKit. |
-| `"custom"` | Calls `_custom_split()` in `submit.py`.  Replace the placeholder body with your own logic (e.g., scaffold split, temporal split, property-stratified split). |
+| `split_type` | Behaviour |
+|--------------|-----------|
+| `"random"` | Shuffle, then slice by count. The default. |
+| `"butina"` | Cluster with the Butina algorithm on ECFP4 fingerprints at Tanimoto distance 0.4, then fill train with whole clusters until `train_frac` is reached, valid likewise, test with the remainder. |
+| `"custom"` | Calls `_custom_split()` in `src/graphinvent/DataProcessor.py`, which raises `NotImplementedError` until you replace its body. |
+
+A random split will place close analogues of test molecules into the training set, so held-out
+performance measured against it says more about interpolation than about generalisation. The
+Butina split assigns whole clusters to a single split, which makes the test set structurally
+dissimilar to the training set and gives a harder, more honest estimate. It is also
+O(n²) in the number of molecules, since it computes a full pairwise distance matrix, so it
+becomes impractical somewhere in the low hundreds of thousands of molecules.
+
+Note that clusters are assigned in the order `Butina.ClusterData` returns them, largest first,
+which means the training split receives the densest regions of chemical space and the test
+split the sparsest. That is a defensible choice for measuring extrapolation but it is a
+heuristic, not a principled scaffold split.
 
 ### Splitting ratios
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `train_frac` | `0.8` | Fraction of molecules assigned to the training set |
-| `valid_frac` | `0.1` | Fraction assigned to the validation set |
-| (implicit) test | `0.1` | Remainder: `1 - train_frac - valid_frac` |
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `train_frac` | `0.8` | Fraction assigned to training |
+| `valid_frac` | `0.1` | Fraction assigned to validation |
+| (implicit) test | `0.1` | `1 - train_frac - valid_frac` |
+
+`submit.py` rejects the job if `train_frac + valid_frac` exceeds 1.0.
 
 ### Implementing a custom split
 
-Open `submit.py` and edit `_custom_split()`:
+Edit `_custom_split()` in `src/graphinvent/DataProcessor.py`. It receives the deduplicated
+SMILES list and the two fractions, and must return three lists of SMILES:
 
 ```python
 def _custom_split(smiles, train_frac, valid_frac):
-    # 1. Compute a property or similarity score per molecule.
     scores = [my_score_fn(smi) for smi in smiles]
-
-    # 2. Sort or partition.
     sorted_smiles = [s for _, s in sorted(zip(scores, smiles))]
 
-    # 3. Slice into splits.
     n = len(sorted_smiles)
     n_train = int(round(n * train_frac))
     n_valid = int(round(n * valid_frac))
@@ -162,30 +179,33 @@ def _custom_split(smiles, train_frac, valid_frac):
 
 ## Choosing preprocessing parameters
 
-These parameters are **baked into the HDF5 files** and must match exactly for every
-subsequent job (training, generation, RL).  They are checked automatically at runtime.
+These parameters are baked into the HDF5 files. Every later job reads
+`preprocessing_params.json` from the dataset directory and checks its own settings against it,
+so a mismatch is caught rather than silently producing a model with the wrong tensor shapes.
 
-### Molecular feature parameters
+### Molecular feature vocabulary
 
-The following parameters describe the chemical vocabulary of the dataset.
+| Parameter | What it fixes |
+|-----------|--------------|
+| `atom_types` | Element symbols the node features can encode |
+| `formal_charge` | Formal charges the node features can encode |
+| `imp_H` | Implicit hydrogen counts; omitted when `use_explicit_H` or `ignore_H` is set |
+| `max_n_nodes` | Largest graph the model can represent, and therefore the shape of every node and edge tensor |
+| `chirality` | Fixed to `["None", "R", "S"]` when `use_chirality` is true; unused otherwise |
 
-| Parameter | What it controls |
-|-----------|-----------------|
-| `atom_types` | Allowed element symbols (e.g. `["C", "N", "O", "F"]`) |
-| `formal_charge` | Allowed formal charges (e.g. `[-1, 0, 1]`) |
-| `imp_H` | Allowed implicit H counts (e.g. `[0, 1, 2, 3]`); omitted when `use_explicit_H` or `ignore_H` |
-| `max_n_nodes` | Maximum number of heavy atoms in any generated molecule |
-| `chirality` | Fixed as `["None", "R", "S"]` when `use_chirality` is `true`; omitted entirely when `false` |
+`max_n_nodes` deserves attention because it is not only a data property. It sets the width of
+the action probability distribution and so the size of the readout layer, and during
+generation it is the point at which an unfinished graph is force-terminated. A value chosen
+from the training set alone will truncate anything larger the model tries to build.
 
-#### `auto_detect_features` (default: `true`)
+#### `auto_detect_features` (default `true`)
 
-When `true`, all of the parameters above are **automatically detected** by scanning
-your SMILES files before the HDF5 conversion starts — you do not need to specify them
-in `params.json`.
+With auto-detection on, the SMILES files are scanned before conversion and the five parameters
+above are set from what is actually present, so you do not specify them at all.
 
-When `false`, the values you provide in `params.json` are used directly.  Any parameter
-left as an empty list (`[]`) or `0` is still auto-detected individually, so you can
-hard-code some parameters and auto-detect others:
+With it off, the values in `params.json` are used as given, except that an empty list or `0`
+still falls back to auto-detection for that individual field. This lets you pin some fields
+and detect the rest:
 
 ```json
 "job": {
@@ -197,80 +217,82 @@ hard-code some parameters and auto-detect others:
 }
 ```
 
-Here `atom_types` is fixed to the listed elements (useful for transfer learning, to
-ensure a larger vocabulary than the fine-tuning set alone contains), while
-`formal_charge`, `imp_H`, and `max_n_nodes` are still auto-detected.
+The reason to pin `atom_types` is transfer learning: if the fine-tuning set contains bromine
+and the pretraining set does not, a vocabulary detected from the pretraining set alone gives a
+model that cannot represent the fine-tuning data at all.
 
-The detected (and/or provided) values are printed at the start of the preprocessing run
-and written to `preprocessing_params.json` in the dataset directory so that subsequent
-jobs can verify they are using a compatible feature encoding.
+The resolved values are printed at the start of the run and written to
+`preprocessing_params.json` in the dataset directory.
 
 #### `extra_dataset`
 
-Set `"extra_dataset"` to the path of an additional `.smi` file or a directory
-containing `.smi` files that should be **scanned for vocabulary** but **not
-preprocessed**.  This is useful when you want the vocabulary to be large enough to
-cover molecules you plan to generate or fine-tune on later, without including those
-molecules in the training set.
+Points at an additional `.smi` file, or a directory containing `train.smi`/`valid.smi`/`test.smi`,
+that should be scanned for vocabulary but not preprocessed. It is the lighter alternative to
+pinning `atom_types` by hand when you already have the future fine-tuning set on disk.
 
 ```json
 "extra_dataset": "./data/datasets/future-finetune-set"
 ```
 
-Set to `null` (the default) to disable.
+It is read only when `auto_detect_features` is `true` and only in single-dataset runs. Set it
+to `null` (the default) to disable.
 
 ### Encoding options
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `use_aromatic_bonds` | `true` | Include an aromatic bond type (see below) |
-| `use_canon` | `true` | Use RDKit canonical atom ordering (recommended) |
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `use_aromatic_bonds` | `true` | Adds AROMATIC as a fourth bond type (see below) |
+| `use_canon` | `true` | Use RDKit canonical atom ordering |
 | `use_chirality` | `false` | Encode chirality in node features |
-| `use_explicit_H` | `false` | Treat all H atoms explicitly (not recommended) |
-| `ignore_H` | `false` | Ignore H atoms entirely |
+| `use_explicit_H` | `false` | Treat hydrogens as explicit graph nodes |
+| `ignore_H` | `false` | Drop hydrogens from the representation entirely |
 
-> `use_explicit_H` and `ignore_H` are mutually exclusive.
+`use_explicit_H` and `ignore_H` are mutually exclusive; setting both raises an error.
 
-**Kekulé vs aromatic bonds (`use_aromatic_bonds`):**
-By default (`false`), molecules are Kekulized before graph construction: aromatic
-rings are represented as alternating single and double bonds (Kekulé form), giving
-a bond vocabulary of three types (SINGLE, DOUBLE, TRIPLE).  This is the
-recommended setting — it is more robust because the model cannot generate
-an invalid aromatic system.
+#### Aromatic bonds versus Kekulé structures
 
-Setting `use_aromatic_bonds: true` adds a fourth bond type (AROMATIC) and skips
-Kekulization.  This can be a more compact representation for aromatic-heavy
-datasets, but molecules generated with misplaced aromatic bonds will fail RDKit
-sanitization and be discarded as invalid.  **This flag must match between
-preprocessing and all subsequent training/generation jobs.**
+The default, `use_aromatic_bonds: true`, keeps RDKit's aromatic perception and gives a
+four-type bond vocabulary (single, double, triple, aromatic). Aromatic rings are then a single
+edge label rather than an alternating pattern the model has to reproduce.
+
+Setting it to `false` calls `Chem.Kekulize(mol, clearAromaticFlags=True)` before graph
+construction, so rings become alternating single and double bonds and the vocabulary has three
+types. Each choice moves the failure mode rather than removing it: with aromatic bonds the
+model can emit an aromatic ring that fails RDKit's sanitisation and is discarded as invalid,
+while with Kekulé structures it must instead learn the alternating pattern, and a ring with
+the wrong parity is equally invalid. Which one produces higher validity is an empirical
+question for a given dataset, and both are in use — the shipped `jobs/preprocess/params.json`
+uses aromatic bonds, the ChEMBL experiment config under `experiments/` uses Kekulé.
+
+The flag must match between preprocessing and every job that reads the resulting HDF5, since
+it changes the edge feature dimension.
 
 ### Decoding route
 
-| Parameter | Options | Description |
-|-----------|---------|-------------|
-| `decoding_route` | `"bfs"` / `"dfs"` | Traversal order used to build the subgraph sequence.  BFS is the default and generally recommended. |
+| Parameter | Options | Effect |
+|-----------|---------|--------|
+| `decoding_route` | `"bfs"` / `"dfs"` | Traversal order used to enumerate subgraphs. BFS is the default. |
 
-### Performance parameters
+### Throughput parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `batch_size` | `1000` | Subgraphs processed per group during preprocessing |
-| `block_size` | `100000` | Subgraphs loaded into RAM per block during training |
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `batch_size` | `1000` | Molecules converted per group during preprocessing |
+| `block_size` | `100000` | Subgraphs held in RAM per block when the data is later read for training |
 
 ---
 
 ## Configuration file
 
-> **Tip:** `jobs/preprocess/params.json` is a template — copy it before editing
-> so the original stays intact and each experiment has its own config file:
-> ```bash
-> cp jobs/preprocess/params.json jobs/preprocess/my_dataset.json
-> python submit.py --config jobs/preprocess/my_dataset.json
-> ```
+`jobs/preprocess/params.json` is a template. Copy it rather than editing it, so that the
+original stays intact and every experiment has a config file you can point at afterwards:
 
-Edit your copy of `jobs/preprocess/params.json`.
+```bash
+cp jobs/preprocess/params.json jobs/preprocess/my_dataset.json
+python submit.py --config jobs/preprocess/my_dataset.json
+```
 
-### Mode A example (single file, random split)
+### Mode A (single file, random split)
 
 ```json
 {
@@ -279,7 +301,7 @@ Edit your copy of `jobs/preprocess/params.json`.
     "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "my-dataset",
-    "smiles_file": "./data/datasets/my_molecules.smi",
+    "smiles_file": "./data/raw/my_molecules.smi",
     "job_name": "run",
     "use_slurm": false,
     "slurm": {
@@ -290,6 +312,8 @@ Edit your copy of `jobs/preprocess/params.json`.
   },
   "job": {
     "job_type": "preprocess",
+    "restart": false,
+    "conditioning": null,
     "auto_detect_features": true,
     "extra_dataset": null,
     "split_type": "random",
@@ -307,10 +331,9 @@ Edit your copy of `jobs/preprocess/params.json`.
 }
 ```
 
-To use the Butina split instead, change `"split_type"` to `"butina"` (and adjust
-fractions if desired).  Everything else stays the same.
+Switching to the Butina split is a one-word change to `"split_type"`.
 
-### Mode B example (pre-split directory)
+### Mode B (pre-split directory)
 
 ```json
 {
@@ -318,7 +341,7 @@ fractions if desired).  Everything else stays the same.
     "python_path": "python",
     "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
-    "dataset": "gdb13-debug",
+    "dataset": "debug",
     "smiles_file": null,
     "job_name": "run",
     "use_slurm": false,
@@ -330,6 +353,8 @@ fractions if desired).  Everything else stays the same.
   },
   "job": {
     "job_type": "preprocess",
+    "restart": false,
+    "conditioning": null,
     "auto_detect_features": true,
     "extra_dataset": null,
     "use_aromatic_bonds": true,
@@ -344,7 +369,9 @@ fractions if desired).  Everything else stays the same.
 }
 ```
 
-### Multi-dataset example (shared vocabulary)
+`split_type`, `train_frac`, and `valid_frac` are ignored in Mode B.
+
+### Multiple datasets, shared vocabulary
 
 ```json
 {
@@ -364,6 +391,8 @@ fractions if desired).  Everything else stays the same.
   },
   "job": {
     "job_type": "preprocess",
+    "restart": false,
+    "conditioning": null,
     "auto_detect_features": true,
     "extra_dataset": null,
     "use_aromatic_bonds": true,
@@ -378,33 +407,11 @@ fractions if desired).  Everything else stays the same.
 }
 ```
 
-Both `dataset_1` and `dataset_2` must be pre-split Mode B directories.  The run produces
-`dataset_1/train.h5` (and `valid.h5`, `test.h5`) and likewise for `dataset_2`, all encoded
-with the same union vocabulary.
-
-### Fixing the vocabulary for transfer learning
-
-If you plan to fine-tune on a dataset that contains atom types not present in the
-pretraining set, set `auto_detect_features: false` and list all atom types explicitly
-so that the pretraining HDF5 uses a vocabulary large enough to cover the fine-tuning
-molecules:
-
-```json
-"job": {
-  "job_type": "preprocess",
-  "auto_detect_features": false,
-  "atom_types": ["C", "N", "O", "F", "S", "Cl", "Br", "I"],
-  "formal_charge": [],
-  "imp_H": [],
-  "max_n_nodes": 0,
-  ...
-}
-```
-
-Empty lists (`[]`) and `0` fall back to auto-detection for those individual fields.
-Alternatively, point `extra_dataset` at the fine-tuning SMILES file and leave
-`auto_detect_features: true` — the extra molecules will be scanned for vocabulary
-but will not be included in the pretraining HDF5.
+Both datasets must be pre-split Mode B directories here. The run produces
+`dataset_1/{train,valid,test}.h5` and the same trio for `dataset_2`, all encoded against the
+union vocabulary. Note that `submit.py` sets `auto_detect_features` to `false` internally for
+these per-dataset jobs and injects the union values, which is what keeps the two encodings
+identical.
 
 ---
 
@@ -414,54 +421,50 @@ but will not be included in the pretraining HDF5.
 python submit.py --config jobs/preprocess/params.json
 ```
 
-`submit.py` will:
-1. If `smiles_file` is set: split the file and write `train.smi` / `valid.smi` / `test.smi` into the dataset directory.
-2. If `smiles_file` is null: verify that all three `.smi` files exist in the dataset directory (error if any are missing).
-3. If `dataset` is a list: scan all datasets (plus `extra_dataset` if set) to compute the union vocabulary, then preprocess each dataset separately using that shared vocabulary.
-4. Create `output/<dataset>/preprocess/job_0/`
-5. Write a resolved `params.json` into that directory.
-6. Launch `graphinvent/main.py --job-dir output/<dataset>/preprocess/job_0/`
+`submit.py` validates the config, refuses it with a list of specific problems if anything is
+wrong, creates `output/<dataset>/preprocess/<job_name>/`, writes the resolved parameters there
+as `params.json`, and launches `src/graphinvent/main.py --job-dir <that directory>/`. The
+`job_name` comes from the `submission` block and defaults to `job`; the shipped templates set
+it to `run`.
 
-`main.py` will then:
-7. Scan the `.smi` files to detect `atom_types`, `formal_charge`, `imp_H`, and `max_n_nodes` (skipped when `auto_detect_features` is `false` and values are fully specified).
-8. Run the HDF5 conversion using the feature vocabulary.
-9. Write `preprocessing_params.json` to the dataset directory.
+`main.py` then resolves the feature vocabulary (scanning the SMILES files when
+`auto_detect_features` is on), splits the input file if you are in Mode A, converts each split
+to HDF5, and writes `preprocessing_params.json`.
 
 ---
 
-## Output files
+## Output
 
-All output is written to `output/<dataset>/preprocess/job_0/` and to the **dataset directory** itself.
+### In the job directory, `output/<dataset>/preprocess/<job_name>/`
 
-### In the job directory
+| File | Contents |
+|------|----------|
+| `params.json` | The job block as submitted |
+| `params_all.json` | Every resolved parameter, plus library versions, device, git hash, and seed |
 
-| File | Description |
-|------|-------------|
-| `params_all.json` | Record of all resolved parameters |
+### In the dataset directory, `<data_path>/<dataset>/`
 
-### In the dataset directory
+| File | Contents |
+|------|----------|
+| `train.h5`, `valid.h5`, `test.h5` | Node features, edge features, and target action probabilities per subgraph |
+| `train.csv` | Property distributions of the training set, used as the reference when generated molecules are evaluated |
+| `preprocessing_params.json` | The vocabulary and encoding flags, plus split sizes; read back by every later job to verify compatibility |
 
-| File | Description |
-|------|-------------|
-| `train.h5` | HDF5 file for the training set |
-| `valid.h5` | HDF5 file for the validation set |
-| `test.h5`  | HDF5 file for the test set |
-| `train.csv` | Training-set property statistics used as the reference distribution during model evaluation |
-| `preprocessing_params.json` | Snapshot of the parameters used; loaded by subsequent jobs to verify consistency |
-
-If `smiles_file` was specified, the split `.smi` files are also written here before HDF5 conversion.
+In Mode A the split `.smi` files are written here too. Files left over from an earlier run are
+moved into a timestamped `_previous_run_<stamp>/` directory rather than overwritten.
 
 ---
 
-## Restarting an interrupted preprocessing job
+## Restarting an interrupted job
 
-If preprocessing is interrupted, set `"restart": true` in the `job` section and rerun.
-The script detects which HDF5 files have been partially created and resumes from the
-correct point.
+Set `"restart": true` and rerun. The job first compares the current parameters against the
+saved `preprocessing_params.json`; if they differ it says so and starts fresh instead of
+producing a dataset encoded two different ways. Otherwise it inspects which HDF5 files are
+complete and resumes at the first incomplete one.
 
 ---
 
 ## Next step
 
-Once all three `.h5` files exist in the dataset directory, proceed to
+Once `train.h5`, `valid.h5`, and `test.h5` exist in the dataset directory, continue to
 [Tutorial 2: Pretraining](./02_pretraining.md).

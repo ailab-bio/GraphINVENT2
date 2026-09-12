@@ -49,8 +49,19 @@ DEFAULT_OUT = REPO_ROOT / "experiments" / "goal_directed" / "results"
 # ---------------------------------------------------------------------------
 
 
+PLACEHOLDER_SMILES = "[Xe]"
+
+
 def load_smiles(path: Path) -> list[str]:
-    """Load SMILES from a .smi file (one per line, optional space-separated ID)."""
+    """
+    Load SMILES from a .smi file (one per line, optional space-separated ID).
+
+    Lines holding the `[Xe]` placeholder are skipped: GraphINVENT writes it for
+    graphs that failed sanitisation, and RDKit parses it as a perfectly valid
+    xenon atom, so counting those lines inflates every validity and uniqueness
+    figure computed from this file.  A `SMILES` header line is skipped for the
+    same reason.
+    """
     smiles = []
     with open(path) as f:
         for line in f:
@@ -58,6 +69,8 @@ def load_smiles(path: Path) -> list[str]:
             if not line or line.startswith("#"):
                 continue
             smi = line.split()[0]
+            if smi == PLACEHOLDER_SMILES or smi.upper() == "SMILES":
+                continue
             smiles.append(smi)
     return smiles
 
@@ -157,7 +170,7 @@ def oracle_scores_from_log(log_path: Path) -> list[tuple[int, float]]:
     Load the optimization log from a checkpoint JSON written by the RL training loop.
 
     Expected format (written by Workflow.py at each checkpoint):
-        {"oracle_call": <int>, "score": <float>}  (one per line)
+        {"oracle_calls": <int>, "score": <float>}  (one per line)
 
     Falls back to parsing the .smi file header if the log file is absent.
     """
@@ -171,7 +184,7 @@ def oracle_scores_from_log(log_path: Path) -> list[tuple[int, float]]:
                 continue
             try:
                 entry = json.loads(line)
-                log.append((int(entry["oracle_call"]), float(entry["score"])))
+                log.append((int(entry["oracle_calls"]), float(entry["score"])))
             except (json.JSONDecodeError, KeyError):
                 pass
     return log
@@ -268,9 +281,17 @@ def main() -> None:
     args = parse_args()
 
     oracle_cfg = load_oracle_config(args.config)
-    pmo_cfg = oracle_cfg.get("pmo", {})
-    all_seeds = pmo_cfg.get("seeds", [42, 123, 456])
-    checkpoints = pmo_cfg.get("checkpoints", [1000, 3000, 5000, 10000])
+    # `seeds` and `checkpoints` sit at the top level of oracles_config.yaml.
+    # Reading them only from a nested "pmo" block meant the hard-coded defaults
+    # ran instead, so no output directory matched and every target was reported
+    # as missing.  The nested form is still honoured for older configs.
+    legacy_cfg = oracle_cfg.get("pmo", {}) or {}
+    all_seeds = oracle_cfg.get("seeds") or legacy_cfg.get("seeds") or [42, 123, 456]
+    checkpoints = (
+        oracle_cfg.get("checkpoints")
+        or legacy_cfg.get("checkpoints")
+        or [1000, 3000, 5000, 10000]
+    )
     oracle_list = oracle_cfg.get("oracles", [])
 
     if args.oracles:
@@ -300,7 +321,7 @@ def main() -> None:
         try:
             from oracles import OracleFactory
 
-            oracle = OracleFactory.create_cached(oracle_name)
+            oracle = OracleFactory.create_cached(oracle_name, oracle_info["oracle"])
         except Exception as exc:
             print(f"  Could not load oracle {oracle_name}: {exc}. Skipping.")
             continue

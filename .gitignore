@@ -11,6 +11,12 @@ TODO.md
 CLAUDE.md
 manuscript/*
 
+# Ignore raw third-party database downloads. TPDdb publishes no explicit
+# redistribution licence, so the full tables are fetched at build time by
+# src/graphinvent/tools/tpddb-create-dataset.py rather than vendored here; the
+# small derived subset under data/datasets/ is kept, with its provenance.
+data/raw/
+
 # Ignore all .h5 files in the entire project
 *.h5
 *.h5.chunked

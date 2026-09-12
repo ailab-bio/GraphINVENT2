@@ -1,36 +1,56 @@
 """
 Scoring functions used during reinforcement learning fine-tuning.
 
-The `ScoringFunction` class combines one or more component scores into a single
-scalar reward for each generated molecule.  Component scores currently supported:
+`ScoringFunction` combines one or more component scores into a single scalar
+reward per generated molecule.  Two kinds of component exist.
 
-  qed          -- Quantitative Estimate of Drug-likeness (RDKit)
-  sa           -- Synthetic Accessibility score (RDKit)
-  activity     -- Predicted activity from a pretrained QSAR model (SVM)
-  qsar         -- Alias for `activity`
-  validity     -- 1.0 if the molecule passes RDKit sanitisation, else 0.0
-  uniqueness   -- 1.0 if the molecule has not been seen before, else 0.0
-  SA           -- TDC Synthetic Accessibility oracle (normalised to [0, 1])
-  DRD2         -- TDC Dopamine Receptor D2 oracle (SVM, ECFP6)
-  GSK3B        -- TDC Glycogen Synthase Kinase 3beta oracle (RF, ECFP6)
-  JNK3         -- TDC c-Jun N-terminal Kinase 3 oracle (RF, ECFP6)
-  celecoxib_rediscovery -- TDC Tanimoto similarity to Celecoxib
-  tdc:<name>   -- Any other TDC oracle, passed through verbatim
+Built-ins, computed directly from the molecule:
 
-Each component score can be thresholded: if any component falls below its
-threshold the molecule receives a score of 0.  This lets the RL agent focus
-only on molecules that simultaneously satisfy all criteria.
+  QED                    -- Quantitative Estimate of Drug-likeness (RDKit)
+  target_size=<int>      -- Windowed score peaking at a heavy-atom count
+  logp_target=<float>    -- Windowed score peaking at a Crippen logP
+  <name>_activity        -- A pickled QSAR model listed in `qsar_models`
+
+Oracles, declared by name in the `oracles` config block and referenced from
+`score_components`.  These are user-supplied: a surrogate trained on the user's
+own data, an AutoDock Vina docking run against a chosen receptor, or an
+arbitrary Python callable.  Each carries its own transform onto [0, 1] and a
+direction, so "bind this target but avoid that one" is two oracles over the
+same kind of quantity with opposite directions.  See :mod:`oracles`.
+
+Components combine either as a product (`score_type: "continuous"`) or as an
+AND over per-component thresholds (`score_type: "binary"`), so a molecule must
+satisfy every criterion simultaneously to score well.
+
+When an oracle reports predictive uncertainty, that uncertainty can damp the
+reward or the gradient contribution per component; see
+:mod:`oracles._uncertainty`.
 """
 
 # load general packages and functions
 from collections import namedtuple
-from typing import Optional
 
 import numpy as np
 import sklearn
 import torch
 from rdkit import DataStructs
-from rdkit.Chem import QED, AllChem
+from rdkit.Chem import QED, AllChem, Crippen
+
+
+def _ensure_src_on_path() -> None:
+    """
+    Make the sibling ``oracles`` package importable.
+
+    `main.py` runs as a script from ``src/graphinvent/``, so ``src`` is not on
+    the path, and the editable install does not work from a path containing
+    spaces (see CLAUDE.md).
+    """
+    import sys
+    from pathlib import Path
+
+    src_dir = str(Path(__file__).resolve().parent.parent)
+    if src_dir not in sys.path:
+        sys.path.insert(0, src_dir)
 
 
 class ScoringFunction:
@@ -66,48 +86,158 @@ class ScoringFunction:
             self.score_thresholds
         ), "`score_components` and `score_thresholds` do not match."
 
-        # Lazily instantiate TDC oracles for components that name a TDC oracle.
-        # This is a no-op if PyTDC is not installed or no TDC components are used.
-        self._tdc_oracles: dict = {}
-        self._init_tdc_oracles()
+        # Oracles named in the `oracles` config block.  These are the
+        # user-supplied objectives (a trained surrogate, a docking run, an
+        # arbitrary callable); `score_components` references them by name.
+        self._oracles: dict = {}
+        # Fallback budget counter for components with no external oracle
+        # (QED, target_size, logp_target).
+        self.n_molecules_scored: int = 0
+        # Per-molecule uncertainty from the most recent batch, keyed by
+        # component; only populated for oracles that report one.
+        self._component_uncertainty: dict = {}
+        self._init_oracles()
+        self._modulation = self._init_modulation()
 
-    def _init_tdc_oracles(self) -> None:
-        """Instantiate cached TDC oracles for any score components that require them."""
-        try:
-            import sys
-            from pathlib import Path
-
-            # Ensure src/ is on the path when running from graphinvent/
-            _src = Path(__file__).resolve().parent.parent / "src"
-            if str(_src) not in sys.path:
-                sys.path.insert(0, str(_src))
-            from oracles import OracleFactory  # noqa: E402
-
-            for component in self.score_components:
-                tdc_name = self._resolve_tdc_name(component)
-                if tdc_name is not None and component not in self._tdc_oracles:
-                    self._tdc_oracles[component] = OracleFactory.create_cached(tdc_name)
-        except ImportError:
-            pass  # PyTDC not installed; TDC components will raise NotImplementedError
-
-    def _resolve_tdc_name(self, component: str) -> Optional[str]:
+    def _init_modulation(self):
         """
-        Return the TDC oracle name for a score component, or None if not a TDC oracle.
+        Build the uncertainty-modulation policy from the job config.
 
-        Recognises:
-            - Any name in ORACLE_REGISTRY (SA, DRD2, GSK3B, JNK3, celecoxib_rediscovery)
-            - ``"tdc:<name>"`` prefix for arbitrary TDC oracles
+        Validated at construction so a malformed spec fails before any
+        molecules are generated.
         """
-        try:
-            from oracles._tdc import ORACLE_REGISTRY
+        _ensure_src_on_path()
+        from oracles import UncertaintyModulation
 
-            if component in ORACLE_REGISTRY:
-                return component
-        except ImportError:
-            pass
-        if component.startswith("tdc:"):
-            return component[4:]
-        return None
+        modulation = UncertaintyModulation(
+            getattr(self.constants, "uncertainty_modulation", None)
+        )
+        if modulation.enabled:
+            unsupported = [
+                name
+                for name in modulation.components
+                if modulation.is_configured(name)
+                and not (
+                    name in self._oracles and self._oracles[name].supports_uncertainty
+                )
+            ]
+            if unsupported:
+                print(
+                    "-- Warning: uncertainty_modulation is configured for "
+                    f"{unsupported}, but those components report no uncertainty "
+                    "(not an oracle, or a non-ensemble model). They will be "
+                    "left unmodulated.",
+                    flush=True,
+                )
+        return modulation
+
+    def reliability_weights_per_component(self) -> dict:
+        """
+        Reliability weights from the most recent batch, keyed by component.
+
+        Empty when nothing reported an uncertainty, which the callers treat as
+        "no modulation" rather than as an error.
+        """
+        return {
+            component: self._modulation.weights_for(component, uncertainties)
+            for component, uncertainties in self._component_uncertainty.items()
+        }
+
+    def loss_weights(self, n_molecules: int):
+        """
+        Per-molecule loss weights for the most recent batch.
+
+        Returns None when loss modulation is off or nothing reported an
+        uncertainty, so the caller can skip the reweighting entirely.
+        """
+        if not self._modulation.modulates_loss():
+            return None
+        reliability = self.reliability_weights_per_component()
+        if not reliability:
+            return None
+
+        _ensure_src_on_path()
+        from oracles import combine_loss_weights, modulate_loss_weights
+
+        combined = combine_loss_weights(reliability, n_molecules)
+        return modulate_loss_weights(combined)
+
+    def _init_oracles(self) -> None:
+        """
+        Build every oracle named in ``constants.oracles``.
+
+        Constructed eagerly so a missing model file, an unreadable receptor, or
+        a typo in a spec fails at job start rather than after the first batch
+        of molecules has been generated.
+        """
+        specs = dict(getattr(self.constants, "oracles", None) or {})
+        if not specs:
+            self._check_components_resolvable()
+            return
+
+        _ensure_src_on_path()
+        from oracles import OracleFactory
+
+        self._oracles = OracleFactory.from_specs(specs)
+        self._check_components_resolvable()
+
+    def _check_components_resolvable(self) -> None:
+        """
+        Fail fast on a score component nothing can compute.
+
+        Without this the run raises `NotImplementedError` from deep inside
+        scoring, part-way through the first training step and after the models
+        have already been loaded.
+        """
+        unresolved = [
+            component
+            for component in self.score_components
+            if not self._is_builtin(component) and component not in self._oracles
+        ]
+        if unresolved:
+            declared = sorted(self._oracles) or "none"
+            raise ValueError(
+                f"Score component(s) {unresolved} are neither built-in nor "
+                f"declared in the 'oracles' config block (declared: {declared}). "
+                "Built-ins are: QED, target_size=<int>, logp_target=<float>, "
+                "and <name>_activity with a matching entry in 'qsar_models'."
+            )
+
+    def _is_builtin(self, component: str) -> bool:
+        """Whether a component is computed directly rather than by an oracle."""
+        return (
+            component == "QED"
+            or component.startswith("target_size=")
+            or component.startswith("logp_target=")
+            or ("activity" in component and component in self.qsar_models)
+        )
+
+    @property
+    def oracle_calls(self) -> int:
+        """
+        Number of oracle evaluations consumed so far.
+
+        With a cached oracle this is the deduplicated unique-molecule count,
+        which is the meaningful unit for a budget: re-proposing a molecule the
+        agent has already seen costs nothing.  With no external oracle there is
+        nothing to meter, so the number of molecules scored is reported instead.
+        """
+        if self._oracles:
+            return max(o.call_count for o in self._oracles.values())
+        return self.n_molecules_scored
+
+    @property
+    def optimization_log(self) -> list:
+        """
+        Chronological (cumulative_call_count, score) record from the oracles.
+
+        Empty without an external oracle, since only a real oracle defines the
+        call-indexed curve the AUC Top-k metric integrates over.
+        """
+        if not self._oracles:
+            return []
+        busiest = max(self._oracles.values(), key=lambda o: o.call_count)
+        return busiest.optimization_log
 
     def compute_score(
         self,
@@ -149,6 +279,10 @@ class ScoringFunction:
                                               raw score tensor before masking.
         """
         self.n_graphs = len(graphs)
+        self.n_molecules_scored += len(graphs)
+        # Reset per-batch uncertainty before scoring; `get_contributions_to_score`
+        # fills it for the oracles that report one.
+        self._component_uncertainty = {}
         contributions_to_score = self.get_contributions_to_score(graphs=graphs)
 
         # Build component dict keyed by score component name
@@ -157,10 +291,7 @@ class ScoringFunction:
             for i, name in enumerate(self.score_components)
         }
 
-        if len(self.score_components) == 1:
-            final_score = contributions_to_score[0]
-
-        elif self.score_type == "continuous":
+        if self.score_type == "continuous":
             final_score = contributions_to_score[0]
             for component in contributions_to_score[1:]:
                 final_score = final_score * component
@@ -182,6 +313,19 @@ class ScoringFunction:
 
         else:
             raise NotImplementedError
+
+        # Score modulation: fold predictive reliability into the objective, so
+        # a molecule the surrogate cannot vouch for is worth less as a molecule
+        # (Medina & Janet, arXiv:2606.24990, Eq. 6).
+        if self._modulation.modulates_score():
+            reliability = self.reliability_weights_per_component()
+            if reliability:
+                from oracles import combine_score_weights
+
+                factor = combine_score_weights(reliability, self.n_graphs)
+                final_score = final_score * torch.tensor(
+                    factor, device=self.device, dtype=torch.float32
+                )
 
         # remove contribution of duplicate molecules to the score
         final_score = final_score * uniqueness
@@ -224,9 +368,42 @@ class ScoringFunction:
                     [graph.n_nodes for graph in graphs], device=self.device
                 )
                 max_nodes = self.max_n_nodes
-                score = torch.ones(self.n_graphs, device=self.device) - torch.abs(
-                    n_nodes - target_size
-                ) / (max_nodes - target_size)
+                # Clamped at 0: the unclamped expression is unbounded below, so
+                # a 1-atom graph scored -2.0, and with two negative components
+                # the product flips positive -- a bad molecule earning a good
+                # reward.  A score is a value in [0, 1]; distance beyond the
+                # window is simply "no credit".
+                score = torch.clamp(
+                    torch.ones(self.n_graphs, device=self.device)
+                    - torch.abs(n_nodes - target_size) / (max_nodes - target_size),
+                    min=0.0,
+                )
+
+                contributions_to_score.append(score)
+
+            elif score_component.startswith("logp_target="):
+                # Crippen logP driven toward a target value rather than
+                # maximised.  Lipophilicity is not monotonically desirable:
+                # degraders in particular tend to sit well above the drug-like
+                # window, so the useful objective is to reach a value, not to
+                # exceed it.  The +/- 5 log-unit window is a convention, not a
+                # principled choice; it is wide enough that a randomly
+                # initialised model still receives gradient signal.
+                target_logp = float(score_component.split("=", 1)[1])
+                window = 5.0
+
+                values = []
+                for graph in graphs:
+                    try:
+                        values.append(Crippen.MolLogP(graph.molecule))
+                    except (ValueError, RuntimeError, AttributeError, TypeError):
+                        # invalid graphs decode to None; they are zeroed by the
+                        # validity mask anyway
+                        values.append(target_logp - window)
+                logp = torch.tensor(values, device=self.device, dtype=torch.float32)
+                score = torch.clamp(
+                    1.0 - torch.abs(logp - target_logp) / window, min=0.0
+                )
 
                 contributions_to_score.append(score)
 
@@ -244,42 +421,66 @@ class ScoringFunction:
 
                 contributions_to_score.append(score)
 
-            elif "activity" in score_component:
+            elif "activity" in score_component and score_component in self.qsar_models:
+                # Membership in `qsar_models` is part of the condition, matching
+                # `_is_builtin`.  Matching on the substring alone would capture
+                # an oracle named e.g. "EGFR_activity" -- which passes component
+                # validation, since it IS a declared oracle -- and then raise a
+                # KeyError here on the first scored batch.
                 mols = [graph.molecule for graph in graphs]
-
-                # `score_component` has to be the key to the QSAR model in the
-                # `self.qsar_models` dict
                 qsar_model = self.qsar_models[score_component]
                 score = self.compute_activity(mols, qsar_model)
 
                 contributions_to_score.append(score)
 
-            elif score_component in self._tdc_oracles:
-                oracle = self._tdc_oracles[score_component]
-                from rdkit.Chem import MolToSmiles
-
-                smiles = []
-                for graph in graphs:
-                    try:
-                        smiles.append(
-                            MolToSmiles(graph.molecule) if graph.molecule else None
-                        )
-                    except Exception:
-                        smiles.append(None)
-                scores_list = oracle(smiles)
+            elif score_component in self._oracles:
+                oracle = self._oracles[score_component]
+                smiles = self._graphs_to_smiles(graphs)
+                # Only pay for the uncertainty estimate when something will use
+                # it: for a docking oracle it costs several extra pose searches
+                # per molecule.
+                if (
+                    self._modulation.enabled
+                    and self._modulation.is_configured(score_component)
+                    and oracle.supports_uncertainty
+                ):
+                    scores_list, uncertainties = oracle.predict_with_uncertainty(smiles)
+                    self._component_uncertainty[score_component] = uncertainties
+                else:
+                    scores_list = oracle(smiles)
                 score = torch.tensor(
                     scores_list, device=self.device, dtype=torch.float32
                 )
                 contributions_to_score.append(score)
 
             else:
-                raise NotImplementedError(
-                    "The score component is not defined. "
-                    "You can define it in "
-                    "`ScoringFunction.py`."
+                raise ValueError(
+                    f"Score component '{score_component}' is not defined. "
+                    "Built-ins are QED, target_size=<int>, logp_target=<float>, "
+                    "and <name>_activity; anything else must be declared in the "
+                    "'oracles' block of the job config."
                 )
 
         return contributions_to_score
+
+    @staticmethod
+    def _graphs_to_smiles(graphs: list) -> list:
+        """
+        Canonical SMILES for each graph, with None for those that fail.
+
+        Oracles take SMILES rather than graphs so that a user-supplied scoring
+        function needs to know nothing about GraphINVENT's internals.
+        """
+        from rdkit.Chem import MolToSmiles
+
+        smiles = []
+        for graph in graphs:
+            try:
+                molecule = graph.molecule
+                smiles.append(MolToSmiles(molecule) if molecule else None)
+            except (ValueError, RuntimeError, AttributeError, TypeError):
+                smiles.append(None)
+        return smiles
 
     def compute_activity(self, mols: list, activity_model: sklearn.svm.SVC) -> list:
         """
@@ -305,7 +506,9 @@ class ScoringFunction:
                 ecfp4 = np.zeros((2048,))
                 DataStructs.ConvertToNumpyArray(fingerprint, ecfp4)
                 activity[idx] = activity_model.predict_proba([ecfp4])[0][1]
-            except (ValueError, RuntimeError, AttributeError):
+            except (ValueError, RuntimeError, AttributeError, TypeError):
+                # TypeError covers Boost's ArgumentError, raised when `mol` is
+                # None -- which is routine, since invalid graphs decode to None.
                 pass  # activity[idx] will remain 0.0
 
         return activity

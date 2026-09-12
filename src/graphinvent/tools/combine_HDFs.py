@@ -90,18 +90,21 @@ def write_ts_properties_to_csv(ts_properties_dict: dict) -> None:
                 csv_writer.writerow([key, value])
 
 
-def get_dims() -> dict:
+def get_dims(path: str) -> dict:
     """
-    Gets the dims corresponding to the three datasets in each preprocessed HDF
-    file: "nodes", "edges", and "action_probs".
+    Reads the per-subgraph dimensions of each dataset from an existing HDF file.
+
+    Recomputing them from hand-set atom/charge/bond counts, as this used to,
+    silently omitted the implicit-hydrogen and chirality segments of the node
+    feature vector, which are present under every shipped configuration; the
+    resulting datasets had the wrong width and writing real blocks into them
+    raised a broadcast error.  Reading the shapes back makes the tool correct
+    for any feature vocabulary, with no parameters to keep in sync.
     """
     dims = {}
-    dims["nodes"] = [max_n_nodes, n_atom_types + n_formal_charges]
-    dims["edges"] = [max_n_nodes, max_n_nodes, n_bond_types]
-    dim_f_add = [max_n_nodes, n_atom_types, n_formal_charges, n_bond_types]
-    dim_f_conn = [max_n_nodes, n_bond_types]
-    dims["action_probs"] = [np.prod(dim_f_add) + np.prod(dim_f_conn) + 1]
-
+    with h5py.File(path, "r") as hdf_file:
+        for name in hdf_file.keys():
+            dims[name] = list(hdf_file[name].shape[1:])
     return dims
 
 
@@ -128,21 +131,28 @@ def main(paths: list, training_set: bool) -> None:
     Combine many small HDF files (their paths defined in `paths`) into one large HDF file.
     """
     total_n_subgraphs = get_total_n_subgraphs(paths)
-    dims = get_dims()
+    dims = get_dims(paths[0])
+
+    def _dtype(name: str) -> np.dtype:
+        # Must match DataProcessor._dataset_dtype: action counts need int16 and
+        # condition vectors are float32.
+        if name == "condition_vector":
+            return np.dtype("float32")
+        if name == "action_probs":
+            return np.dtype("int16")
+        return np.dtype("int8")
 
     print(f"* Creating HDF file to contain {total_n_subgraphs} subgraphs")
-    new_hdf_file = h5py.File(f"data/{dataset}/{split}.h5", "a")
-    new_dataset_nodes = new_hdf_file.create_dataset(
-        "nodes", (total_n_subgraphs, *dims["nodes"]), dtype=np.dtype("int8")
-    )
-    new_dataset_edges = new_hdf_file.create_dataset(
-        "edges", (total_n_subgraphs, *dims["edges"]), dtype=np.dtype("int8")
-    )
-    new_dataset_action_probs = new_hdf_file.create_dataset(
-        "action_probs",
-        (total_n_subgraphs, *dims["action_probs"]),
-        dtype=np.dtype("int8"),
-    )
+    new_hdf_file = h5py.File(f"data/datasets/{dataset}/{split}.h5", "a")
+    new_datasets = {
+        name: new_hdf_file.create_dataset(
+            name, (total_n_subgraphs, *shape), dtype=_dtype(name)
+        )
+        for name, shape in dims.items()
+    }
+    new_dataset_nodes = new_datasets["nodes"]
+    new_dataset_edges = new_datasets["edges"]
+    new_dataset_action_probs = new_datasets["action_probs"]
 
     print("* Combining data from smaller HDFs into a new larger HDF.")
     init_index = 0
@@ -205,28 +215,26 @@ if __name__ == "__main__":
     # combine the HDFs defined in `path_list`
 
     # set variables
+    # Feature dimensions are read from the input files, so nothing needs to be
+    # kept in sync with the preprocessing configuration here.
     dataset = "ChEMBL"
-    n_atom_types = 15  # number of atom types used in preprocessing the data
-    n_formal_charges = 3  # number of formal charges used in preprocessing the data
-    n_bond_types = 3  # number of bond types used in preprocessing the data
-    max_n_nodes = 40  # maximum number of nodes in the data
 
     # combine the training files
     n_dirs = 12  # how many times was `{split}.smi` split?
     split = "train"  # train, test, or valid
-    path_list = [f"data/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
+    path_list = [f"data/datasets/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
     main(path_list, training_set=True)
 
     # combine the test files
     n_dirs = 4  # how many times was `{split}.smi` split?
     split = "test"  # train, test, or valid
-    path_list = [f"data/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
+    path_list = [f"data/datasets/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
     main(path_list, training_set=False)
 
     # combine the validation files
     n_dirs = 2  # how many times was `{split}.smi` split?
     split = "valid"  # train, test, or valid
-    path_list = [f"data/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
+    path_list = [f"data/datasets/{dataset}_{i}/{split}.h5" for i in range(0, n_dirs)]
     main(path_list, training_set=False)
 
     print("Done.", flush=True)

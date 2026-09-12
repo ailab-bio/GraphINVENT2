@@ -82,7 +82,11 @@ def _read_smiles_with_conditions(
     # Detect TSV: first line has tabs
     has_tabs = "\t" in lines[0]
     if not has_tabs:
-        # Plain SMILES file — no conditions
+        # Plain SMILES file — no conditions.  Skip a header line, matching the
+        # detection `parameters.load.molecules` uses; otherwise the literal
+        # string "SMILES" is split into the dataset as if it were a molecule.
+        if "SMILES" in lines[0].upper().split()[0]:
+            lines = lines[1:]
         for ln in lines:
             smiles_list.append(ln.split()[0])
         return smiles_list, condition_vectors, condition_names
@@ -336,6 +340,30 @@ def split_smiles_file(
     )
     has_conditions = bool(condition_vectors)
     print(f"  {len(smiles)} molecules read.", flush=True)
+
+    # Deduplicate on canonical SMILES before splitting.  A molecule present
+    # twice in the input would otherwise land in two different splits, leaking
+    # test molecules into training and inflating every novelty number.
+    from rdkit import Chem
+
+    seen: dict = {}
+    keep: list = []
+    for i, smi in enumerate(smiles):
+        mol = Chem.MolFromSmiles(smi)
+        key = Chem.MolToSmiles(mol) if mol is not None else smi
+        if key in seen:
+            continue
+        seen[key] = i
+        keep.append(i)
+    n_dupes = len(smiles) - len(keep)
+    if n_dupes:
+        print(
+            f"  Removed {n_dupes} duplicate molecule(s) before splitting.",
+            flush=True,
+        )
+        smiles = [smiles[i] for i in keep]
+        if has_conditions:
+            condition_vectors = [condition_vectors[i] for i in keep]
     if has_conditions:
         print(f"  Condition properties: {condition_names}", flush=True)
     print(
@@ -393,6 +421,23 @@ def split_smiles_file(
         f"molecules to {dataset_dir}/",
         flush=True,
     )
+
+
+def _dataset_dtype(name: str) -> np.dtype:
+    """
+    Storage dtype for an HDF5 dataset.
+
+    `nodes`/`edges` are one-hot, so int8 suffices.  `action_probs` accumulates a
+    COUNT each time an identical subgraph is deduplicated into an existing row,
+    which routinely exceeds int8's 127 for the small subgraphs many molecules
+    share; those counts were silently clipped, corrupting the relative action
+    weights the row encodes.
+    """
+    if name == "condition_vector":
+        return np.dtype("float32")
+    if name == "action_probs":
+        return np.dtype("int16")
+    return np.dtype("int8")
 
 
 class DataProcessor:
@@ -469,11 +514,18 @@ class DataProcessor:
         `edges`, `action probabilities`), and slowly fills it in by looping over all the
         molecules in the data in groups (or "mini-batches").
         """
-        with h5py.File(f"{self.path[:-3]}h5.chunked", "a") as self.hdf_file:
+        chunked_path = f"{self.path[:-3]}h5.chunked"
+        restart_index_file = constants.dataset_dir + "index.restart"
+        resuming = constants.restart and os.path.exists(restart_index_file)
 
-            self.restart_index_file = constants.dataset_dir + "index.restart"
+        # "a" would reopen a half-written file from a crashed run and then fail
+        # in `create_datasets` with "name already exists"; a fresh run must
+        # start from an empty file.
+        with h5py.File(chunked_path, "a" if resuming else "w") as self.hdf_file:
 
-            if constants.restart and os.path.exists(self.restart_index_file):
+            self.restart_index_file = restart_index_file
+
+            if resuming:
                 self.restart_preprocessing_job()
             else:
                 self.start_new_preprocessing_job()
@@ -503,14 +555,17 @@ class DataProcessor:
                         restart_file_path=constants.dataset_dir,
                     )
 
-                if self.resume_idx == self.n_molecules:
+                if self.resume_idx >= self.n_molecules:
                     # all molecules have been processed
 
                     self.resize_datasets()  # remove padding from initialization
                     print("Datasets resized.", flush=True)
 
-                    if self.is_training_set and not constants.restart:
-
+                    if self.is_training_set:
+                        # No `not constants.restart` guard: that made the write
+                        # impossible in exactly the case restart exists for, so
+                        # a resumed job finished without train.csv and every
+                        # later training job then failed to load it.
                         print("Writing training set properties.", flush=True)
                         util.save_training_set_properties(
                             training_set_properties=self.training_set_properties
@@ -554,7 +609,6 @@ class DataProcessor:
         Resaves the HDF datasets in an unchunked format to remove initial
         padding.
         """
-        _float_datasets = {"condition_vector"}
         with h5py.File(f"{self.path[:-3]}h5.chunked", "r", swmr=True) as chunked_file:
             keys = list(chunked_file.keys())
             data = [chunked_file.get(key)[:] for key in keys]
@@ -562,12 +616,11 @@ class DataProcessor:
 
             with h5py.File(f"{self.path[:-3]}h5", "w") as unchunked_file:
                 for d, k in tqdm(data_zipped):
-                    dtype = (
-                        np.dtype("float32")
-                        if k in _float_datasets
-                        else np.dtype("int8")
+                    # Must match `create_datasets`; re-casting to int8 here
+                    # silently undid the wider dtype used while writing.
+                    unchunked_file.create_dataset(
+                        k, chunks=None, data=d, dtype=_dataset_dtype(k)
                     )
-                    unchunked_file.create_dataset(k, chunks=None, data=d, dtype=dtype)
 
         # remove the restart file and chunked file (don't need them anymore)
         os.remove(self.restart_index_file)
@@ -594,7 +647,9 @@ class DataProcessor:
         # loop over all the `PreprocessingGraph`s, enumerated so we can look up
         # the corresponding condition vector by position in the subset.
         for mol_pos, graph in enumerate(map(self.get_graph, self.molecule_subset)):
-            molecules_processed += 1
+            if graph is None:
+                # unparseable SMILES: skipped here and by `get_n_subgraphs`
+                continue
             molecular_graph_list.append(graph)
 
             # Condition vector for this molecule (all-zero when unconditional).
@@ -621,10 +676,13 @@ class DataProcessor:
                     data_action_probs.append(action_probs)
                     data_condition_vectors.append(mol_condition)
                 else:
-                    # Original deduplication logic for unconditional training.
-                    count = 0
+                    # Deduplicate identical subgraphs, merging their action
+                    # counts.  The append must be guarded by whether a match was
+                    # found: the old `count == len(data_subgraphs)` test was also
+                    # true when the match was the LAST entry, so such subgraphs
+                    # were merged and appended, double-counting their actions.
+                    matched = False
                     for idx, existing_subgraph in enumerate(data_subgraphs):
-                        count += 1
                         try:
                             nodes_equal = (subgraph[0] == existing_subgraph[0]).all()
                         except AttributeError:
@@ -635,39 +693,49 @@ class DataProcessor:
                             edges_equal = False
                         if nodes_equal and edges_equal:
                             data_action_probs[idx] += action_probs
+                            matched = True
                             break
-                    if count == len(data_subgraphs) or count == 0:
+                    if not matched:
                         data_subgraphs.append(subgraph)
                         data_action_probs.append(action_probs)
 
-                # if `constants.batch_size` unique subgraphs have been
-                # processed, save group to the HDF dataset
-                len_data_subgraphs = len(data_subgraphs)
-                if len_data_subgraphs == constants.batch_size:
-                    self.save_group(
-                        data_subgraphs=data_subgraphs,
-                        data_action_probs=data_action_probs,
-                        group_size=len_data_subgraphs,
-                        init_idx=init_idx,
-                        data_condition_vectors=data_condition_vectors,
-                    )
+            # This molecule's whole decoding route is now in the buffer.
+            molecules_processed += 1
 
-                    # get molecular properties for group iff it's the training set
-                    self.compute_training_set_properties(
-                        molecular_graphs=molecular_graph_list,
-                        group_size=constants.batch_size,
-                    )
+            # Flush only on a molecule boundary.  Flushing mid-route and then
+            # counting the molecule as processed silently discarded the rest of
+            # its route -- ~9% of all training states on the shipped debug set.
+            # The group may therefore end slightly above `batch_size`, which is
+            # fine: the HDF datasets are allocated from `get_n_subgraphs`, an
+            # upper bound that deduplication only ever reduces.
+            len_data_subgraphs = len(data_subgraphs)
+            if len_data_subgraphs >= constants.batch_size:
+                self.save_group(
+                    data_subgraphs=data_subgraphs,
+                    data_action_probs=data_action_probs,
+                    group_size=len_data_subgraphs,
+                    init_idx=init_idx,
+                    data_condition_vectors=data_condition_vectors,
+                )
 
-                    # keep track of the last molecule to be processed in
-                    # `self.resume_idx`
-                    # number of molecules processed:
-                    self.resume_idx += molecules_processed
-                    # subgraphs processed:
-                    self.dataset_size += constants.batch_size
+                # get molecular properties for group iff it's the training set
+                self.compute_training_set_properties(
+                    molecular_graphs=molecular_graph_list,
+                    group_size=len_data_subgraphs,
+                )
 
-                    return None
+                # keep track of the last molecule to be processed in
+                # `self.resume_idx`
+                self.resume_idx += molecules_processed
+                self.dataset_size += len_data_subgraphs
+
+                return None
 
         n_processed_subgraphs = len(data_subgraphs)
+        if n_processed_subgraphs == 0:
+            # Nothing left to write (e.g. an empty trailing subset); writing a
+            # zero-length group would raise a broadcast error in `save_group`.
+            return None
 
         # save group with < `constants.batch_size` subgraphs (e.g. last block)
         self.save_group(
@@ -699,13 +767,8 @@ class DataProcessor:
         """
         self.dataset = {}  # initialize
 
-        # condition_vector requires float32; all other datasets use int8.
-        _float_datasets = {"condition_vector"}
-
         for ds_name in self.dataset_names:
-            dtype = (
-                np.dtype("float32") if ds_name in _float_datasets else np.dtype("int8")
-            )
+            dtype = _dataset_dtype(ds_name)
             self.dataset[ds_name] = hdf_file.create_dataset(
                 ds_name,
                 (self.total_n_subgraphs, *self.dims[ds_name]),
@@ -809,12 +872,21 @@ class DataProcessor:
         molecular_graph_generator = map(self.get_graph, self.molecule_set)
 
         # loop over all the `PreprocessingGraph`s
+        n_valid = 0
         for molecular_graph in molecular_graph_generator:
+            if molecular_graph is None:
+                # `get_graph` returns None for SMILES RDKit cannot parse; they
+                # are skipped in `get_subgraphs` too, so they must not be
+                # counted here either or `resume_idx` can never reach
+                # `n_molecules` and the run stalls on empty subsets.
+                continue
+            n_valid += 1
 
             # get the number of decoding graphs (i.e. the decoding route length)
             # and add them to the running count
             n_subgraphs += molecular_graph.get_decoding_route_length()
 
+        self.n_molecules = n_valid
         return int(n_subgraphs)
 
     def compute_training_set_properties(

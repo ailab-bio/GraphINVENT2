@@ -26,8 +26,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# pip install -e ".[tdc]"  — needed only for tools/tdc-create-dataset.py
-tdc = ["PyTDC"]
+# pip install -e ".[docking]"  — AutoDock Vina oracle (structure-based scoring)
+docking = ["vina", "meeko"]
 
 # pip install -e ".[dev]"  — linting / type checking during development
 dev = ["black", "ruff", "mypy", "pytest", "pre-commit"]
@@ -69,9 +69,6 @@ ignore = [
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-markers = [
-    "tdc_network: marks tests that require a network connection to download TDC surrogate models",
-]
 
 [tool.mypy]
 python_version = "3.9"

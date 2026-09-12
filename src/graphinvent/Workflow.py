@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Tuple, Union
 
 import gnn.mpnn
+import numpy as np
 import torch
 import torch.utils.tensorboard
 import util
@@ -276,12 +277,22 @@ class Workflow:
             end_epoch = start_epoch + self.constants.epochs
 
             print("-- Defining scheduler.", flush=True)
+            # The number of RL steps depends on which loop will run:
+            # `rl_training_phase` runs `epochs` steps, while the budget-capped
+            # `constrained_rl_training_phase` runs until the oracle budget is
+            # spent (one batch of molecules scored per step).  Sizing the cycle
+            # from `epochs` in the budget-capped case makes scheduler.step()
+            # overrun total_steps and raise part-way through training.
+            if getattr(self.constants, "oracle_budget", None) is not None:
+                n_rl_steps = math.ceil(
+                    self.constants.oracle_budget / self.constants.batch_size
+                )
+            else:
+                n_rl_steps = self.constants.epochs
             # ceil division: accounts for the final flush step when
-            # epochs % accumulation_steps != 0 (avoids OneCycleLR ValueError).
+            # n_rl_steps % accumulation_steps != 0 (avoids OneCycleLR ValueError).
             n_optimizer_steps = max(
-                1,
-                (self.constants.epochs + self.constants.accumulation_steps - 1)
-                // self.constants.accumulation_steps,
+                1, math.ceil(n_rl_steps / self.constants.accumulation_steps)
             )
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
                 optimizer=self.optimizer,
@@ -299,7 +310,7 @@ class Workflow:
                 print("-- Restoring scheduler state from checkpoint.", flush=True)
                 self.scheduler.load_state_dict(_sched_state)
 
-        elif job_type in ("transfer", "unconditional") and getattr(
+        elif job_type in ("transfer", "unconditional", "conditional") and getattr(
             self.constants, "resume_from", None
         ):
             # Transfer learning or unconditional with resume_from: load a pretrained checkpoint,
@@ -330,13 +341,7 @@ class Workflow:
             end_epoch = start_epoch + self.constants.epochs
 
             print("-- Defining scheduler.", flush=True)
-            n_batches = len(self.train_dataloader)
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                optimizer=self.optimizer,
-                max_lr=self.constants.max_rel_lr * self.constants.init_lr,
-                steps_per_epoch=n_batches,
-                epochs=self.constants.epochs,
-            )
+            self.scheduler = self._make_supervised_scheduler()
 
         elif self.constants.restart:
             # Resume a previously interrupted pretrain or transfer job from
@@ -346,10 +351,11 @@ class Workflow:
 
             print("-- Loading model from previous checkpoint.", flush=True)
             self.restart_epoch = util.get_restart_epoch()
-            self.model = util.load_saved_model(
-                model=self.model,
-                path=f"{job_dir}model_restart_{self.restart_epoch}.pth",
-            )
+            _ckpt_path = f"{job_dir}model_restart_{self.restart_epoch}.pth"
+            self.model = util.load_saved_model(model=self.model, path=_ckpt_path)
+            _ckpt = torch.load(_ckpt_path, map_location="cpu", weights_only=False)
+            _opt_state = _ckpt.get("optimizer") if isinstance(_ckpt, dict) else None
+            _sched_state = _ckpt.get("scheduler") if isinstance(_ckpt, dict) else None
 
             print("-- Defining optimizer.", flush=True)
             self.optimizer = torch.optim.Adam(
@@ -360,13 +366,20 @@ class Workflow:
             end_epoch = start_epoch + self.constants.epochs
 
             print("-- Defining scheduler.", flush=True)
-            n_batches = len(self.train_dataloader)
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                optimizer=self.optimizer,
-                max_lr=self.constants.max_rel_lr * self.constants.init_lr,
-                steps_per_epoch=n_batches,
-                epochs=self.constants.epochs,
-            )
+            self.scheduler = self._make_supervised_scheduler()
+
+            if _opt_state is not None:
+                print("-- Restoring optimizer state from checkpoint.", flush=True)
+                self.optimizer.load_state_dict(_opt_state)
+            if _sched_state is not None:
+                print("-- Restoring scheduler state from checkpoint.", flush=True)
+                self.scheduler.load_state_dict(_sched_state)
+            else:
+                print(
+                    "-- Warning: checkpoint has no optimizer/scheduler state "
+                    "(saved by an older version); both restart from scratch.",
+                    flush=True,
+                )
 
         else:
             # Pretraining from scratch (random weight initialization).
@@ -383,15 +396,36 @@ class Workflow:
             end_epoch = start_epoch + self.constants.epochs
 
             print("-- Defining scheduler.", flush=True)
-            n_batches = len(self.train_dataloader)
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                optimizer=self.optimizer,
-                max_lr=self.constants.max_rel_lr * self.constants.init_lr,
-                steps_per_epoch=n_batches,
-                epochs=self.constants.epochs,
-            )
+            self.scheduler = self._make_supervised_scheduler()
 
         return start_epoch, end_epoch
+
+    def _make_supervised_scheduler(self) -> torch.optim.lr_scheduler.OneCycleLR:
+        """
+        Builds the OneCycle learning-rate schedule for supervised training.
+
+        The number of scheduler steps must match how often `train_epoch`
+        actually calls `scheduler.step()` -- once per `accumulation_steps`
+        batches, plus one flush for the remainder -- not once per batch.
+        Sizing the cycle by batch count instead makes the schedule advance only
+        1/accumulation_steps of the way, so the LR never reaches `max_lr` and
+        never anneals back down.
+
+        `div_factor` / `final_div_factor` are set so the cycle starts at
+        `init_lr`, peaks at `max_rel_lr * init_lr`, and ends at
+        `min_rel_lr * init_lr`, matching the documented meaning of those
+        parameters (and the RL branch above).
+        """
+        n_batches = len(self.train_dataloader)
+        steps_per_epoch = max(1, math.ceil(n_batches / self.accumulation_steps))
+        return torch.optim.lr_scheduler.OneCycleLR(
+            optimizer=self.optimizer,
+            max_lr=self.constants.max_rel_lr * self.constants.init_lr,
+            div_factor=self.constants.max_rel_lr,
+            final_div_factor=1.0 / self.constants.min_rel_lr,
+            steps_per_epoch=steps_per_epoch,
+            epochs=self.constants.epochs,
+        )
 
     @staticmethod
     def _freeze(model: torch.nn.Module) -> torch.nn.Module:
@@ -527,9 +561,16 @@ class Workflow:
             with open(out_base + ext, "w") as out_f:
                 for batch_smi in batch_smis:
                     batch_path = gen_dir + batch_smi.stem + ext
-                    if os.path.exists(batch_path):
-                        with open(batch_path) as in_f:
-                            out_f.write(in_f.read())
+                    if not os.path.exists(batch_path):
+                        continue
+                    with open(batch_path) as in_f:
+                        lines = in_f.readlines()
+                    if ext == ".smi" and lines and "SMILES" in lines[0]:
+                        # RDKit's SmilesWriter puts a header on every batch
+                        # file; keeping them would make line i of the .smi a
+                        # different molecule from line i of the .likelihood.
+                        lines = lines[1:]
+                    out_f.writelines(lines)
 
         # remove individual batch files
         for batch_smi in batch_smis:
@@ -617,10 +658,30 @@ class Workflow:
         with open(preproc_json) as f:
             saved = json.load(f)
 
+        # Compare only the keys that actually determine the HDF contents.  The
+        # file also holds bookkeeping written after the fact (`run_info`,
+        # `n_train`/`n_valid`/`n_test`), which has no counterpart on `constants`
+        # and would make every restart look like a mismatch.
+        comparable = (
+            "atom_types",
+            "formal_charge",
+            "imp_H",
+            "chirality",
+            "max_n_nodes",
+            "use_aromatic_bonds",
+            "use_canon",
+            "use_chirality",
+            "use_explicit_H",
+            "ignore_H",
+            "decoding_route",
+            "split_type",
+            "train_frac",
+            "valid_frac",
+        )
         mismatches = {
             key: (saved[key], getattr(self.constants, key, None))
-            for key in saved
-            if saved[key] != getattr(self.constants, key, None)
+            for key in comparable
+            if key in saved and saved[key] != getattr(self.constants, key, None)
         }
         if mismatches:
             lines = "\n".join(
@@ -837,16 +898,19 @@ class Workflow:
             train_dataloader=self.train_dataloader,
             start_time=self.start_time,
         )
-        self.restart_epoch = util.get_restart_epoch()
-
-        print(
-            f"* Loading model from previous saved state (Epoch "
-            f"{self.restart_epoch}).",
-            flush=True,
-        )
-        model_path = (
-            f"{self.constants.job_dir}" f"model_restart_{self.restart_epoch}.pth"
-        )
+        if self.constants.pretrained_model_path:
+            model_path = self.constants.pretrained_model_path
+            print(f"* Loading model from: {model_path}", flush=True)
+        else:
+            self.restart_epoch = util.get_restart_epoch()
+            print(
+                f"* Loading model from previous saved state (Epoch "
+                f"{self.restart_epoch}).",
+                flush=True,
+            )
+            model_path = (
+                f"{self.constants.job_dir}" f"model_restart_{self.restart_epoch}.pth"
+            )
         self.model = self.create_model()
         self.model = util.load_saved_model(model=self.model, path=model_path)
 
@@ -934,8 +998,15 @@ class Workflow:
                     f"{self.constants.job_dir}"
                     f"model_restart_{self.current_epoch}.pth"
                 )
+                # Save optimizer/scheduler alongside the weights so a restart
+                # resumes Adam's moments and the LR cycle instead of silently
+                # resetting both (the RL branch above already does this).
                 torch.save(
-                    obj=model_to_evaluate.state_dict(),
+                    obj={
+                        "model": model_to_evaluate.state_dict(),
+                        "optimizer": self.optimizer.state_dict(),
+                        "scheduler": self.scheduler.state_dict(),
+                    },
                     f=model_path,
                     pickle_protocol=pickle.HIGHEST_PROTOCOL,
                 )
@@ -1110,8 +1181,10 @@ class Workflow:
             self.current_epoch = step
             loss, score_a = self.rl_training_step()
 
-            # Count oracle calls from the agent batch
-            oracle_calls += self.constants.batch_size
+            # Ask the scoring function how many evaluations were actually
+            # consumed.  Adding `batch_size` per step both ignored cache hits
+            # and missed the second (best-agent-so-far) batch each step scores.
+            oracle_calls = self.scoring_function.oracle_calls
 
             (loss / accum).backward()
             accum_counter += 1
@@ -1164,6 +1237,7 @@ class Workflow:
                     f=ckpt_path,
                     pickle_protocol=pickle.HIGHEST_PROTOCOL,
                 )
+                self._write_optimization_log()
 
             step += 1
 
@@ -1175,14 +1249,38 @@ class Workflow:
 
         print(
             f"* Oracle budget of {self.constants.oracle_budget} calls exhausted "
-            f"after {step} steps.",
+            f"after {step} steps ({oracle_calls} oracle calls).",
             flush=True,
         )
+        self._write_optimization_log()
 
         # Post-training: evaluate all saved checkpoints
         self.constrained_rl_evaluate_checkpoints()
 
         self.print_time_elapsed()
+
+    def _write_optimization_log(self) -> None:
+        """
+        Persists the oracle's (call_count, score) curve to
+        ``optimization_log.jsonl`` in the job directory.
+
+        The curve exists only in memory on the `CachedOracle`, so without this
+        the PMO-style AUC Top-k cannot be computed after the run: the evaluation
+        script found no file and silently reported 0.0.  Nothing is written when
+        the scoring function uses no external oracle, since the call-indexed
+        curve the metric integrates over is then undefined.
+        """
+        log = self.scoring_function.optimization_log
+        if not log:
+            return
+        path = self.constants.job_dir + "optimization_log.jsonl"
+        with open(path, "w") as f:
+            for call_count, score in log:
+                f.write(json.dumps({"oracle_calls": call_count, "score": score}) + "\n")
+        print(
+            f"* Wrote oracle optimization log ({len(log)} entries) to {path}.",
+            flush=True,
+        )
 
     def constrained_rl_evaluate_checkpoints(self) -> None:
         """
@@ -1249,9 +1347,11 @@ class Workflow:
 
             # Compute validity/uniqueness
             _, validity_tensor, uniqueness_tensor = util.write_graphs_to_smi(
+                # Name matches what `experiments/goal_directed/evaluate_results.py`
+                # globs for; it previously wrote generation/oracle_eval_<N>.smi
+                # and the evaluator found nothing.
                 smi_filename=(
-                    f"{self.constants.job_dir}"
-                    f"generation/oracle_eval_{oracle_count}.smi"
+                    f"{self.constants.job_dir}" f"checkpoint_{oracle_count}_samples.smi"
                 ),
                 molecular_graphs_list=all_graphs,
                 write=True,
@@ -1358,6 +1458,10 @@ class Workflow:
                                 action for the generated graphs.
         """
         print(f"* Generating {n_samples} molecules.", flush=True)
+        # Every caller writes per-batch files here; `generation_phase` created
+        # the directory but `testing_phase` did not, so sample_mode="evaluate"
+        # died on a missing path after loading the model.
+        os.makedirs(self.constants.job_dir + "generation/", exist_ok=True)
         generation_batch_size = min(self.constants.batch_size, n_samples)
         n_generation_batches = math.ceil(n_samples / generation_batch_size)
 
@@ -1365,15 +1469,31 @@ class Workflow:
         condition_vector = None
         if getattr(self.constants, "condition_dim", 0) > 0:
             sample_conds = getattr(self.constants, "sample_conditions", None)
-            if sample_conds is not None:
-                import numpy as _np
-
-                cond_arr = _np.array(
-                    [float(v) for v in sample_conds.values()], dtype=_np.float32
+            if sample_conds is None:
+                raise ValueError(
+                    "This is a conditional model (condition_dim="
+                    f"{self.constants.condition_dim}) but 'sample_conditions' is "
+                    'not set; add e.g. {"pLogS": -1.5} to the job config. '
+                    "Without it the model would be sampled unconditionally, "
+                    "silently ignoring the conditioning it was trained with."
                 )
-                condition_vector = torch.tensor(
-                    cond_arr, device=self.constants.device
-                ).unsqueeze(0)
+            # Order by the property list the model was trained on -- relying on
+            # the JSON key order instead would silently permute the condition
+            # vector if the user wrote the keys in a different order.
+            conditioning = getattr(self.constants, "conditioning", None) or {}
+            prop_names = conditioning.get("properties") or list(sample_conds)
+            missing = [k for k in prop_names if k not in sample_conds]
+            if missing:
+                raise ValueError(
+                    f"'sample_conditions' is missing value(s) for {missing}; "
+                    f"this model was conditioned on {prop_names}."
+                )
+            cond_arr = np.array(
+                [float(sample_conds[k]) for k in prop_names], dtype=np.float32
+            )
+            condition_vector = torch.tensor(
+                cond_arr, device=self.constants.device
+            ).unsqueeze(0)
 
         generator = GraphGenerator(
             model=self.model,
@@ -1639,8 +1759,12 @@ class Workflow:
         LogSoftmax = torch.nn.LogSoftmax(dim=1)
         output = LogSoftmax(output)
 
-        # normalize the target output (as can contain information on > 1 graph)
-        target_output = target_output / torch.sum(target_output, dim=1, keepdim=True)
+        # normalize the target output (as can contain information on > 1 graph);
+        # clamp the denominator so an all-zero target row yields zeros rather
+        # than NaNs, which would otherwise poison the whole batch's gradients
+        target_output = target_output / torch.sum(
+            target_output, dim=1, keepdim=True
+        ).clamp(min=1e-12)
 
         # define loss function and calculate the los
         criterion = torch.nn.KLDivLoss(reduction="batchmean")
@@ -1685,6 +1809,16 @@ class Workflow:
         loss = difference * difference
         mask = (uniqueness != 0).int()
         loss = loss * mask
+
+        # Loss modulation: reweight how much each molecule contributes to the
+        # gradient by how much its property predictions can be trusted, leaving
+        # the objective itself unchanged (Medina & Janet, arXiv:2606.24990,
+        # Eq. 8).  The weights are already normalised to mean 1, so this
+        # redistributes learning signal rather than rescaling it -- an
+        # unnormalised weighting would act as a covert learning-rate change.
+        weights = self.scoring_function.loss_weights(len(loss))
+        if weights is not None:
+            loss = loss * torch.tensor(weights, device=loss.device, dtype=loss.dtype)
 
         return loss
 

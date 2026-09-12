@@ -28,7 +28,13 @@ def load_molecules(path: str) -> SmilesMolSupplier:
     with open(path) as f:
         first_line = f.readline()
     has_header = "SMILES" in first_line
-    return SmilesMolSupplier(path, sanitize=True, nameColumn=-1, titleLine=has_header)
+    return SmilesMolSupplier(
+        path,
+        sanitize=True,
+        nameColumn=-1,
+        titleLine=has_header,
+        delimiter="\t" if "\t" in first_line else " \t",
+    )
 
 
 def scan_features(

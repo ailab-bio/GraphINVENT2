@@ -154,8 +154,16 @@ class Analyzer:
             dataset="training"
         )
 
-        # get average final NLL for the generation set
-        avg_gen_likelihood = torch.sum(likelihood_per_action) / constants.n_samples
+        # Average final NLL for the generation set.  `likelihood_per_action`
+        # holds raw action *probabilities*, whereas the train/valid figures are
+        # NLLs, so it must be negated-log'd before the three are compared or
+        # written side by side.  It is also captured for the first generation
+        # batch only, so the divisor is that batch's size, not `n_samples`.
+        likelihood_per_action = -torch.log(
+            torch.as_tensor(likelihood_per_action).clamp(min=1e-12)
+        )
+        n_generated = min(constants.batch_size, constants.n_samples)
+        avg_gen_likelihood = torch.sum(likelihood_per_action) / n_generated
 
         # initialize dictionary with NLL statistics
         model_scores = {
@@ -534,6 +542,10 @@ class Analyzer:
                             n_edges += int(torch.sum(edges[node_idx, :, bond_type]))
                         except TypeError:  # if edges is `np.ndarray`
                             n_edges += int(np.sum(edges[node_idx, :, bond_type]))
+                    if n_edges == 0:
+                        # an isolated node has no bond to bin; `n_edges - 1`
+                        # would index -1, i.e. the ">= n_edges_to_bin" bin
+                        continue
                     if n_edges > n_edges_to_bin:
                         n_edges = n_edges_to_bin
 
@@ -931,22 +943,38 @@ class Analyzer:
 
             if constants.device != "cpu":
                 batch = [b.to(constants.device) for b in batch]
-            nodes, edges, target_output = batch
+            # conditional datasets yield (nodes, edges, target, condition)
+            if len(batch) == 4:
+                nodes, edges, target_output, condition_vector = batch
+            else:
+                nodes, edges, target_output = batch
+                condition_vector = None
 
             renormalized_target_output = target_output / torch.sum(
                 target_output, dim=1, keepdim=True
-            )
+            ).clamp(min=1e-12)
 
-            # return the output and normalize
-            normalized_output = Softmax(self.model(nodes, edges))
+            # return the output and normalize; the condition must be passed
+            # through, otherwise the reported NLL measures an unconditional
+            # forward pass rather than the model actually being trained
+            normalized_output = Softmax(
+                self.model(nodes, edges, condition_vector=condition_vector)
+                if condition_vector is not None
+                else self.model(nodes, edges)
+            )
 
             # multiplication with `target_output` zeros out the "incorrect" actions
             correct_action_probabilities = torch.mul(
                 renormalized_target_output, normalized_output
             )
             likelihood = torch.sum(correct_action_probabilities, dim=1)
-            # line below removes NaN values; ~ inverts a boolean tensor
-            likelihood = -1 * torch.log(likelihood[~torch.isnan(likelihood)])
+            likelihood = likelihood[~torch.isnan(likelihood)]
+            # Clamp before the log.  A correct action the model assigns zero
+            # probability gives -log(0) = +inf, which propagates through the
+            # mean into `inf` and then makes the UC-JSD normalisation inf/inf,
+            # i.e. nan -- the model score was silently unusable whenever any
+            # single action underflowed.
+            likelihood = -1 * torch.log(likelihood.clamp(min=1e-12))
             start_idx = idx * constants.batch_size
             end_idx = idx * constants.batch_size + len(likelihood)
             likelihoods[start_idx:end_idx] = likelihood
@@ -956,11 +984,22 @@ class Analyzer:
             # means the sum is number of subgraphs)
             n_structures += torch.sum(target_output[:, -1]).unsqueeze(dim=0)
 
-        avg_final_likelihood = (
-            torch.sum(likelihoods, dim=0) / n_structures[0]
-            if n_structures[0] > 0
-            else torch.zeros(1, device=constants.device)
-        )
+        # A per-molecule average is undefined when the evaluated slice happens
+        # to contain no completed molecule (possible on small datasets, since
+        # only enough batches to cover `n_samples` are scored).  Report NaN
+        # rather than 0.0, which would read as a perfect likelihood.  Both
+        # branches are 0-dim: formatting a one-ELEMENT tensor with "{:.5f}"
+        # raises TypeError.
+        if n_structures[0] > 0:
+            avg_final_likelihood = torch.sum(likelihoods, dim=0) / n_structures[0]
+        else:
+            print(
+                f"-- Warning: no complete molecules in the {dataset} slice used "
+                "for NLL evaluation; reporting NaN. Increase `n_samples` or use "
+                "a larger dataset.",
+                flush=True,
+            )
+            avg_final_likelihood = torch.tensor(float("nan"), device=constants.device)
 
         return likelihoods, avg_final_likelihood
 

@@ -1,6 +1,5 @@
 {
   "submission": {
-    "python_path": "python",
     "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "chembl_v34_cond",
@@ -16,22 +15,22 @@
   "job": {
     "job_type": "preprocess",
     "restart": false,
-
-    "_conditioning_note": "The input file must be tab-separated with a header row. First column = SMILES; subsequent columns = property values. condition_dim must equal the number of property columns. Run experiments/conditional/compute_properties.py to create the TSV from a plain SMILES file.",
-    "condition_dim": 4,
+    "_conditioning_note": "The input file must be tab-separated with a header row. First column = SMILES; subsequent columns = property values. condition_dim must equal the number of property columns. Run experiments/conditional/compute_properties.py to create the TSV; it writes QED, SA_norm and LogP_norm by default, plus one column per --surrogate NAME=PATH. Add any such name to 'properties' here, in the same order, and raise condition_dim to match.",
+    "condition_dim": 3,
     "conditioning": {
-      "properties": ["QED", "SA_norm", "LogP_norm", "GSK3B"],
+      "properties": [
+        "QED",
+        "SA_norm",
+        "LogP_norm"
+      ],
       "source": "smiles_file"
     },
-
     "auto_detect_features": true,
     "extra_dataset": null,
-
     "_split_note": "Random split is used here because the Butina split is already applied at the ChEMBL level. Using random here keeps the conditional dataset comparable to the unconditional ChEMBL split.",
     "split_type": "random",
     "train_frac": 0.8,
     "valid_frac": 0.1,
-
     "use_aromatic_bonds": false,
     "use_canon": true,
     "use_chirality": false,

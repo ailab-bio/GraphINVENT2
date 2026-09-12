@@ -1,6 +1,5 @@
 {
   "submission": {
-    "python_path": "python",
     "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "chembl_v34",
@@ -15,7 +14,7 @@
   "job": {
     "job_type": "goal_directed",
 
-    "_oracle_note": "__ORACLE__ and __THRESHOLD__ are replaced by run_all_oracles.py. score_components accepts any name in src/oracles/_tdc.py ORACLE_REGISTRY (SA, DRD2, GSK3B, JNK3, celecoxib_rediscovery) or 'tdc:<name>' for any other TDC oracle.",
+    "_oracle_note": "__ORACLE__ and __THRESHOLD__ are replaced by run_all_oracles.py. score_components accepts a built-in (QED, target_size=<int>, logp_target=<float>) or the name of any oracle declared in the 'oracles' block below.",
     "score_components": ["__ORACLE__"],
     "score_thresholds": [0.0],
     "score_type": "continuous",

@@ -69,8 +69,17 @@ General settings for the generative model:
     decoding_route (str)      : Breadth-first search ("bfs") or depth-first search
                                 ("dfs").
     score_components (list)   : A list of all the components to use in the RL scoring
-                                function. Can include "target_size={int}", "QED",
-                                "{name}_activity".
+                                function. Can include "target_size={int}",
+                                "logp_target={float}", "QED", "{name}_activity",
+                                or the name of any oracle declared in `oracles`.
+    oracles (dict)            : User-defined scoring oracles, {name: spec}. Each
+                                spec has a "type" ("sklearn" | "python" | "vina")
+                                and that type's parameters, plus optional
+                                "transform" and "direction".
+    uncertainty_modulation (dict) : Per-component uncertainty-aware shaping.
+                                "mode" selects where it acts ("none", "score",
+                                "loss", "both"); "components" maps a component
+                                name to {"method": ..., ...}.
     score_thresholds (list)   : Acceptable thresholds for the above score components.
     score_type (str)          : If there are multiple components used in the scoring
                                 function, determines if the final score should be
@@ -163,12 +172,26 @@ parameters = {
     "score_thresholds": [0.5, 0.5, 0.0],  # 0.0 essentially means no threshold
     "score_type": "binary",
     "qsar_models": {"drd2_activity": "data/surrogates/QSAR_model_example.pickle"},
+    # User-defined scoring oracles, keyed by the name used in `score_components`.
+    # Each entry needs a "type" ("sklearn", "python", or "vina") plus that
+    # type's parameters; "transform" maps the oracle's native output onto
+    # [0, 1] and "direction" ("maximize"/"minimize") expresses an anti-target.
+    # See tutorials/06_custom_oracles.md.
+    "oracles": {},
+    # Uncertainty-aware reward/loss shaping (Medina & Janet, arXiv:2606.24990).
+    # "mode": "none" | "score" | "loss" | "both"; "components" gives each
+    # scoring component its own method and parameters, because every oracle
+    # reports uncertainty in its own units. See tutorials/06_custom_oracles.md.
+    "uncertainty_modulation": {},
     "pretrained_model_dir": "output/",
     "pretrained_model_path": "",
     "sigma": 20,
     "alpha": 0.5,
     # Oracle-constrained RL parameters:
-    "oracle_budget": 10000,
+    # None = plain RL (run for `epochs` steps); an int caps the run by oracle
+    # calls.  Must default to None so `goal_directed` means unconstrained RL
+    # unless a budget is explicitly requested.
+    "oracle_budget": None,
     "checkpoint_oracle_counts": [1000, 3000, 10000],
     "eval_sample_size": 30000,
     "success_threshold": 0.5,

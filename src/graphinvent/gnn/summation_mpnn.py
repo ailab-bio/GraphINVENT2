@@ -76,6 +76,7 @@ class SummationMPNN(torch.nn.Module):
         hidden_nodes: torch.Tensor,
         input_nodes: torch.Tensor,
         node_mask: torch.Tensor,
+        condition_embedding: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Produces the action probabilities prediction from the final node hidden states.
@@ -236,5 +237,11 @@ class SummationMPNN(torch.nn.Module):
             nodes_in = nodes
             adjacency = adjacency[:, 1:, 1:]
 
-        node_mask = adjacency.sum(-1) != 0
-        return self.readout(hidden_nodes, nodes_in, node_mask)
+        # A node exists if it has any non-zero input feature.  Deriving the mask
+        # from the adjacency instead would mark a bond-less atom as padding, so
+        # every single-atom subgraph (one per molecule in the decoding route)
+        # got an all-False mask and its attention spread over the padding slots.
+        node_mask = nodes_in.sum(-1) != 0
+        return self.readout(
+            hidden_nodes, nodes_in, node_mask, condition_embedding=condition_embedding
+        )

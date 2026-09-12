@@ -60,8 +60,15 @@ def scan_smiles_features(
         with open(path) as f:
             first_line = f.readline()
         has_header = "SMILES" in first_line
+        # Property columns are tab-separated, so RDKit must be told the
+        # delimiter; with the default it hands the whole "SMILES\tvalue"
+        # line to the parser and every molecule comes back None.
         supplier = SmilesMolSupplier(
-            path, sanitize=True, nameColumn=-1, titleLine=has_header
+            path,
+            sanitize=True,
+            nameColumn=-1,
+            titleLine=has_header,
+            delimiter="\t" if "\t" in first_line else " \t",
         )
         for mol in supplier:
             if mol is None:
@@ -241,6 +248,8 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
     # preprocessing_params.json (authoritative source written by the preprocessing
     # step).  These never need to be re-specified in the job's params.json.
     _FEATURE_KEYS = (
+        "conditioning",
+        "condition_dim",
         "atom_types",
         "formal_charge",
         "imp_H",
@@ -280,6 +289,17 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
         "hidden_node_features",
         "message_passes",
         "message_size",
+        # Conditioning changes the module layout (whether a ConditionEncoder is
+        # built at all, and its width), so it must be inherited alongside the
+        # rest of the architecture -- otherwise load_state_dict rejects the
+        # checkpoint's condition_encoder.* keys.
+        "condition_dim",
+        "condition_embedding_dim",
+        "condition_type",
+        # The property ORDER here defines what each slot of the condition
+        # vector means, so a sampling job must inherit it rather than fall back
+        # to the key order of whatever `sample_conditions` dict was written.
+        "conditioning",
     )
     if parameters.get("job_type") in (
         "transfer",
@@ -291,7 +311,15 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
         "goal_directed",
         "sample",
     ):
-        _pth_path = parameters.get("pretrained_model_path", "")
+        # `resume_from` is the current name for the checkpoint to continue
+        # from; `pretrained_model_path` is the older one.  Both must trigger
+        # architecture inheritance, or a transfer job silently builds a
+        # default-sized model and fails to load the checkpoint.
+        _pth_path = (
+            parameters.get("pretrained_model_path")
+            or parameters.get("resume_from")
+            or ""
+        )
         if _pth_path:
             _pretrain_params_path = Path(_pth_path).parent / "params_all.json"
             if _pretrain_params_path.exists():
@@ -602,20 +630,17 @@ def collect_global_constants(parameters: dict, job_dir: str) -> namedtuple:
                 ) from None
 
     # Validate conditional generation settings
-    if constants_dict["condition_dim"] > 0:
-        if constants_dict["job_type"] == "unconditional":
-            raise ValueError(
-                "condition_dim > 0 requires job_type 'conditional', not 'unconditional'."
-            )
-        if (
-            constants_dict.get("conditioning") is None
-            and constants_dict["job_type"] == "preprocess"
-        ):
-            pass  # allowed to preprocess without conditioning
+    if (
+        constants_dict["condition_dim"] > 0
+        and constants_dict["job_type"] == "unconditional"
+    ):
+        raise ValueError(
+            "condition_dim > 0 requires job_type 'conditional', not 'unconditional'."
+        )
 
     # For sample job: validate sample_conditions when sampling from conditional model
     if (
-        constants_dict["job_type"] == "sample"
+        constants_dict["job_type"] in ("sample", "generate")
         and constants_dict["sample_mode"] == "generate"
     ):
         # If condition_dim > 0 (loaded from preprocessing_params), sample_conditions must be set

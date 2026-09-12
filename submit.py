@@ -43,6 +43,7 @@ use Mode B).  Mixed Mode A and Mode B datasets are fully supported.
 
 import argparse
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -469,13 +470,20 @@ def submit_jobs(
     params_path = job_dir / "params.json"
     with open(params_path, "w") as f:
         json.dump(params, f, indent=2)
+        # json.dump writes no trailing newline, which trips the
+        # end-of-file-fixer pre-commit hook every time one of these
+        # generated files is regenerated and committed.
+        f.write("\n")
 
     print(f"* Created job directory: {job_dir}", flush=True)
     _submit_single_job(submission, job_dir)
 
 
 def _submit_single_job(submission: dict, job_dir: Path) -> None:
-    python_path = submission.get("python_path", "python")
+    # Default to the interpreter running submit.py, not whatever "python"
+    # happens to be on PATH: launching the child under a different
+    # interpreter silently runs the job against different dependencies.
+    python_path = submission.get("python_path") or sys.executable
     graphinvent_path = Path(submission.get("graphinvent_path", "./src/graphinvent"))
     main_py = graphinvent_path / "main.py"
 
@@ -493,7 +501,10 @@ def _submit_single_job(submission: dict, job_dir: Path) -> None:
 
 def _write_submission_script(submission: dict, job_dir: Path, main_py: Path) -> Path:
     slurm = submission.get("slurm", {})
-    python_path = submission.get("python_path", "python")
+    # Default to the interpreter running submit.py, not whatever "python"
+    # happens to be on PATH: launching the child under a different
+    # interpreter silently runs the job against different dependencies.
+    python_path = submission.get("python_path") or sys.executable
     script_path = job_dir / "submit.sh"
     output_log = job_dir / "output.o${SLURM_JOB_ID}"
 
@@ -508,7 +519,12 @@ def _write_submission_script(submission: dict, job_dir: Path, main_py: Path) -> 
     lines += [
         "hostname",
         "export QT_QPA_PLATFORM='offscreen'",
-        f"({python_path} {main_py} --job-dir {job_dir}/ > {output_log})",
+        # shlex.quote: this repo's own path contains spaces (iCloud Drive), and
+        # an unquoted path makes sbatch run a truncated command.  The log path
+        # is quoted separately because it embeds an unexpanded ${SLURM_JOB_ID}.
+        f"({shlex.quote(str(python_path))} {shlex.quote(str(main_py))} "
+        f'--job-dir {shlex.quote(str(job_dir) + "/")} '
+        f'> "{output_log}")',
     ]
 
     with open(script_path, "w") as f:
@@ -637,7 +653,14 @@ def main():
     submission = config["submission"]
     job_params = config["job"]
 
-    if job_params.get("job_type") in ("rl", "transfer", "generate"):
+    if job_params.get("job_type") in (
+        "goal_directed",
+        "generate",
+        "unconditional",
+        "conditional",
+        "rl",
+        "transfer",
+    ):
         _resolve_dataset_from_pretrained(submission, job_params)
 
     datasets, data_paths, smiles_files = _normalize_datasets(submission)

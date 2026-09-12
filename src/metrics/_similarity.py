@@ -72,8 +72,10 @@ def compute_test_set_similarity(
         * ``sim_gt_0_6`` – fraction > 0.6.
         * ``sim_gt_0_8`` – fraction > 0.8.
         * ``sim_gt_0_9`` – fraction > 0.9.
-        * ``exact_rediscovery_count`` – number of generated molecules with
-          similarity = 1.0 to any test molecule.
+        * ``exact_rediscovery_count`` – number of *distinct* test molecules
+          exactly rediscovered, confirmed by canonical-SMILES identity rather
+          than by a fingerprint similarity of 1.0.  Falls back to the
+          fingerprint criterion when a ``condition_filter`` is active.
         * ``n_invalid_generated`` – number of generated SMILES that could not
           be parsed.
         * ``n_invalid_test`` – number of test SMILES that could not be parsed
@@ -107,6 +109,7 @@ def compute_test_set_similarity(
     # ------------------------------------------------------------------
     n_invalid_gen = 0
     gen_fps: list = []
+    gen_canonical: list[str] = []
     for smi in generated_smiles:
         if smi is None:
             n_invalid_gen += 1
@@ -118,6 +121,7 @@ def compute_test_set_similarity(
         try:
             fp = AllChem.GetMorganFingerprintAsBitVect(mol, fp_radius, nBits=fp_bits)
             gen_fps.append(fp)
+            gen_canonical.append(Chem.MolToSmiles(mol))
         except Exception:
             n_invalid_gen += 1
 
@@ -132,6 +136,7 @@ def compute_test_set_similarity(
     n_invalid_test = 0
     test_fps: list = []
     test_indices: list[int] = []
+    test_canonical: list[str] = []
 
     for idx, smi in enumerate(test_smiles):
         if smi is None:
@@ -148,9 +153,16 @@ def compute_test_set_similarity(
             continue
         test_fps.append(fp)
         test_indices.append(idx)
+        test_canonical.append(Chem.MolToSmiles(mol))
 
     # Apply condition filter if provided
     if condition_filter and test_conditions is not None:
+        if len(test_conditions) != len(test_smiles):
+            raise ValueError(
+                f"test_conditions length ({len(test_conditions)}) must match "
+                f"test_smiles length ({len(test_smiles)}); they are parallel "
+                "arrays and are indexed together."
+            )
         kept_fps: list = []
         for fp, idx in zip(test_fps, test_indices):
             cond = test_conditions[idx]
@@ -166,6 +178,7 @@ def compute_test_set_similarity(
             if passes:
                 kept_fps.append(fp)
         test_fps = kept_fps
+        test_canonical = []  # no longer parallel to test_fps after filtering
     elif condition_filter and test_conditions is None:
         warnings.warn(
             "condition_filter was provided but test_conditions is None; "
@@ -180,10 +193,17 @@ def compute_test_set_similarity(
         return result
 
     # Apply max_refs subsampling deterministically
+    if max_refs is not None and max_refs <= 0:
+        raise ValueError(
+            f"max_refs must be a positive integer or None, got {max_refs}."
+        )
     if max_refs is not None and len(test_fps) > max_refs:
         # Use a fixed stride for determinism (no random seed side-effects)
         step = len(test_fps) / max_refs
-        test_fps = [test_fps[int(i * step)] for i in range(max_refs)]
+        idc = [int(i * step) for i in range(max_refs)]
+        test_fps = [test_fps[i] for i in idc]
+        if test_canonical:
+            test_canonical = [test_canonical[i] for i in idc]
 
     n_test_after_filter = len(test_fps)
 
@@ -203,6 +223,17 @@ def compute_test_set_similarity(
     actual_k = min(top_k, len(arr))
     top_k_sim = float(np.mean(np.sort(arr)[-actual_k:])) if actual_k > 0 else 0.0
 
+    # Exact rediscovery must be confirmed by canonical-SMILES identity: a
+    # Tanimoto of 1.0 on folded Morgan bits is *not* proof of identity
+    # (enantiomers and homologues such as decane/dodecane collide).  Count
+    # distinct rediscovered molecules so a mode-collapsed run cannot inflate it.
+    if test_canonical:
+        n_exact_rediscovered = len(set(gen_canonical) & set(test_canonical))
+    else:
+        # test_canonical is dropped when a condition filter is applied; fall
+        # back to the fingerprint criterion rather than silently reporting 0.
+        n_exact_rediscovered = int(np.sum(arr >= 1.0 - 1e-6))
+
     return {
         "mean_similarity": float(np.mean(arr)),
         "median_similarity": float(np.median(arr)),
@@ -211,7 +242,7 @@ def compute_test_set_similarity(
         "sim_gt_0_6": float(np.mean(arr > 0.6)),
         "sim_gt_0_8": float(np.mean(arr > 0.8)),
         "sim_gt_0_9": float(np.mean(arr > 0.9)),
-        "exact_rediscovery_count": int(np.sum(arr >= 1.0 - 1e-6)),
+        "exact_rediscovery_count": n_exact_rediscovered,
         "n_invalid_generated": n_invalid_gen,
         "n_invalid_test": n_invalid_test,
         "n_test_after_filter": n_test_after_filter,

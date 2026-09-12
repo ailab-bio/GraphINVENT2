@@ -96,9 +96,9 @@ class GraphGenerator:
         n_generated_graphs = self.build_graphs()
 
         # get the time it took to generate graphs
-        self.start_time = time.time() - self.start_time
-        print(f"Generated {n_generated_graphs} molecules in " f"{self.start_time:.4} s")
-        print(f"--{n_generated_graphs/self.start_time:4.5} molecules/s")
+        elapsed = time.time() - self.start_time
+        print(f"Generated {n_generated_graphs} molecules in {elapsed:.4} s")
+        print(f"--{n_generated_graphs / max(elapsed, 1e-9):4.5} molecules/s")
 
         # convert the molecular graphs (currently separate node and edge
         # features tensors) into `GenerationGraph` objects; sometimes
@@ -147,9 +147,16 @@ class GraphGenerator:
         t_bar = tqdm(total=self.batch_size)
         generation_round = 0
 
-        # Reset properly_terminated so that stale 1s from a previous call to
-        # this method (e.g. when the generator is reused across batches) do not
-        # bleed into the current generation run.
+        # Reset ALL per-batch state.  `Workflow.sample_molecules` reuses one
+        # generator across batches; without this, half-built graphs from the
+        # previous batch are carried over and finish as "new" molecules, and
+        # their stale likelihood columns corrupt the reported NLLs.
+        self.initialize_graph_batch()
+        self.generated_nodes.zero_()
+        self.generated_edges.zero_()
+        self.generated_n_nodes.zero_()
+        self.likelihoods.zero_()
+        self.generated_likelihoods.zero_()
         self.properly_terminated.zero_()
 
         # generate graphs in a batch, saving graphs when either the terminate
@@ -221,10 +228,11 @@ class GraphGenerator:
         # define tensor shapes
         node_shape = (self.batch_size, *constants.dim_nodes)
         edge_shape = (self.batch_size, *constants.dim_edges)
-        likelihoods_shape = (
-            self.batch_size,
-            constants.max_n_nodes * 2,
-        )  # the 2 is arbitrary
+        # One column per action.  A molecule takes one action per atom plus
+        # one per ring-closure bond plus a terminate, so 4 x max_n_nodes is a
+        # generous bound; graphs that would exceed it are force-terminated in
+        # `build_graphs` rather than overflowing the buffer.
+        likelihoods_shape = (self.batch_size, constants.max_n_nodes * 4)
 
         # allocate a buffer equal to the size of an extra batch
         n_allocate = self.batch_size * 2
@@ -374,8 +382,11 @@ class GraphGenerator:
             # keep track of the newly added node
             self.n_nodes[batch] += 1
 
-            # include the NLLs for the add actions for this generation round
-            self.likelihoods[batch, generation_round] = likelihoods_sampled[batch]
+            # record at this graph's own action index, then advance it
+            self.likelihoods[batch, self.action_counter[batch]] = likelihoods_sampled[
+                batch
+            ]
+            self.action_counter[batch] += 1
 
         def _conn_nodes(
             conn: Tuple[torch.Tensor, ...],
@@ -402,8 +413,11 @@ class GraphGenerator:
             self.edges[batch, bond_from, bond_to, bond_type] = 1
             self.edges[batch, bond_to, bond_from, bond_type] = 1
 
-            # include the NLLs for the connect actions for this generation round
-            self.likelihoods[batch, generation_round] = likelihoods_sampled[batch]
+            # record at this graph's own action index, then advance it
+            self.likelihoods[batch, self.action_counter[batch]] = likelihoods_sampled[
+                batch
+            ]
+            self.action_counter[batch] += 1
 
         # first applies the "add" action to all graphs in batch (note: does
         # nothing if a graph did not sample "add")
@@ -442,9 +456,9 @@ class GraphGenerator:
             n_graphs_generated (int) : Number of graphs generated thus far.
         """
         # number of graphs to be terminated
-        self.likelihoods[terminate_idc, generation_round] = likelihoods_sampled[
-            terminate_idc
-        ]
+        self.likelihoods[terminate_idc, self.action_counter[terminate_idc]] = (
+            likelihoods_sampled[terminate_idc]
+        )
 
         # number of graphs to be terminated
         n_done_graphs = len(terminate_idc)
@@ -497,6 +511,15 @@ class GraphGenerator:
             n_nodes_shape, dtype=torch.int8, device=constants.device
         )
 
+        # Per-graph action counter.  The likelihood buffer must be indexed by
+        # how many actions *this graph* has taken, not by the global generation
+        # round: a slot that terminates is immediately reused for a new
+        # molecule, so a global index both overflows the buffer and writes each
+        # molecule's likelihoods at the wrong columns.
+        self.action_counter = torch.zeros(
+            self.batch_size, dtype=torch.long, device=constants.device
+        )
+
         # add a dummy non-empty graph at idx 0, since models cannot receive
         # purely empty graphs
         self.nodes[0] = torch.ones(([1] + constants.dim_nodes), device=constants.device)
@@ -522,9 +545,7 @@ class GraphGenerator:
         node_shape = [self.batch_size] + constants.dim_nodes
         edge_shape = [self.batch_size] + constants.dim_edges
         n_nodes_shape = [self.batch_size]
-        likelihoods_shape = [self.batch_size] + [
-            constants.max_n_nodes * 2
-        ]  # the 2 is arbitrary
+        likelihoods_shape = [self.batch_size] + [constants.max_n_nodes * 4]
 
         # reset the "bad" graphs with zero tensors
         if len(idc) > 0:
@@ -548,6 +569,8 @@ class GraphGenerator:
                 dtype=torch.float32,
                 device=constants.device,
             )
+
+            self.action_counter[idc] = 0
 
         # create a dummy non-empty graph
         self.nodes[0] = torch.ones(([1] + constants.dim_nodes), device=constants.device)
@@ -766,6 +789,43 @@ class GraphGenerator:
             graph (GenerationGraph) : Generated graph.
         """
 
+        # node_idx -> desired CIP code for the graph currently being decoded
+        desired_cip: dict = {}
+
+        def _apply_chirality(molecule: rdkit.Chem.Mol, centres: dict) -> None:
+            """
+            Restores R/S stereochemistry recorded while decoding the atoms.
+
+            A CIP code depends on the neighbour ordering, so it cannot be
+            written onto an isolated atom.  Each centre is given a tetrahedral
+            tag, RDKit recomputes the codes, and centres that came out with the
+            wrong handedness are flipped.
+            """
+            from rdkit.Chem import ChiralType
+
+            wanted = {
+                i: c
+                for i, c in centres.items()
+                if c in ("R", "S") and i < molecule.GetNumAtoms()
+            }
+            if not wanted:
+                return
+            try:
+                rdkit.Chem.SanitizeMol(molecule)
+            except (ValueError, RuntimeError):
+                return
+            for i in wanted:
+                molecule.GetAtomWithIdx(i).SetChiralTag(ChiralType.CHI_TETRAHEDRAL_CW)
+            rdkit.Chem.AssignStereochemistry(molecule, cleanIt=True, force=True)
+            flipped = False
+            for i, code in wanted.items():
+                atom = molecule.GetAtomWithIdx(i)
+                if atom.GetPropsAsDict().get("_CIPCode") != code:
+                    atom.SetChiralTag(ChiralType.CHI_TETRAHEDRAL_CCW)
+                    flipped = True
+            if flipped:
+                rdkit.Chem.AssignStereochemistry(molecule, cleanIt=True, force=True)
+
         def _features_to_atom(
             node_idx: int, node_features: torch.Tensor
         ) -> rdkit.Chem.Atom:
@@ -807,7 +867,11 @@ class GraphGenerator:
                 )
                 total_num_h = constants.imp_H[total_num_h_idx]
 
-                new_atom.SetUnsignedProp("_TotalNumHs", total_num_h)  # set property
+                # `_TotalNumHs` is a property RDKit never reads, so the H count
+                # was discarded and every aromatic N-H heterocycle failed to
+                # kekulize -- i.e. was scored invalid however good it was.
+                new_atom.SetNumExplicitHs(int(total_num_h))
+                new_atom.SetNoImplicit(True)
             elif constants.ignore_H:
                 # Hs will be set with structure is "sanitized" (corrected) later
                 # in `mol_to_graph()`
@@ -822,8 +886,10 @@ class GraphGenerator:
                     - (not constants.use_explicit_H and not constants.ignore_H)
                     * constants.n_imp_H
                 )
-                cip_code = constants.chirality[cip_code_idx]
-                new_atom.SetProp("_CIPCode", cip_code)  # set property
+                # Recorded, not set: RDKit recomputes CIP codes from chiral
+                # tags during sanitisation and discards the property, so R and
+                # S both decoded to the same achiral molecule.
+                desired_cip[node_idx] = constants.chirality[cip_code_idx]
 
             return new_atom
 
@@ -848,6 +914,7 @@ class GraphGenerator:
             # create empty editable `rdkit.Chem.Mol` object
             molecule = rdkit.Chem.RWMol()
             node_to_idx = {}
+            desired_cip.clear()
 
             # add atoms to editable mol object
             for node_idx in range(n_nodes):
@@ -873,7 +940,7 @@ class GraphGenerator:
                 )
 
             try:  # convert editable mol object to non-editable mol object
-                molecule.GetMol()
+                molecule = molecule.GetMol()
             except AttributeError:  # will throw an error if molecule is `None`
                 pass
 
@@ -884,6 +951,9 @@ class GraphGenerator:
                     ValueError
                 ):  # throws exception if molecule is too ugly to correct
                     pass
+
+            if constants.use_chirality and molecule and desired_cip:
+                _apply_chirality(molecule, desired_cip)
 
             return molecule
 

@@ -1,34 +1,27 @@
-# Experiment 1: ChEMBL v34 Pretraining
+# Experiment 1: ChEMBL v34 pretraining
 
-Train a GGNN generative model from scratch on a large, diverse drug-like chemical space using ChEMBL v34 as the reference dataset.  This pretrained model serves as the starting point for all downstream experiments (transfer learning, goal-directed RL, and conditional generation).
+Train a GGNN generative model from random initialisation on ChEMBL v34, producing the prior that every downstream experiment starts from.
 
 ---
 
-## Purpose
+## Why pretrain first
 
-A pretrained model learns a broad prior distribution over drug-like chemistry.  All subsequent experiments start from this prior, which prevents mode collapse in RL and provides a warm start for transfer learning and conditional fine-tuning.
+Transfer learning, RL and conditional fine-tuning all modify an existing distribution rather than learning one from scratch. Starting from a prior over drug-like chemistry gives the RL agent a usable action distribution from step one, which is what keeps the augmented log-likelihood objective from collapsing onto degenerate high-scoring structures, and it gives the conditional and transfer models a chemical grammar they no longer have to spend capacity learning. The quality of everything downstream is bounded by this run, so it is worth spending the convergence checks on it.
 
 ---
 
 ## Step 1 — Download and filter ChEMBL v34
 
-ChEMBL v34 is available from the EMBL-EBI FTP server.  Download the SMILES export file and apply standard drug-likeness filters to produce a training set of clean, processable SMILES strings.
-
 ```bash
 mkdir -p data/raw
 cd data/raw
-
-# Download ChEMBL v34 SMILES export (~600 MB compressed)
 wget https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/releases/chembl_34/chembl_34_chemreps.txt.gz
 gunzip chembl_34_chemreps.txt.gz
 ```
 
-The file has the format:
-```
-chembl_id   canonical_smiles   standard_inchi   standard_inchi_key
-```
+The download is a tab-separated file with the columns `chembl_id`, `canonical_smiles`, `standard_inchi`, `standard_inchi_key`.
 
-Filter to drug-like small molecules.  A recommended filtering script:
+ChEMBL contains a great deal that a graph generator has no business modelling: salts, peptides, metal complexes, and molecules far outside the size range the model can represent. The filters below cut it to drug-like small molecules. The property cutoffs are conventional Lipinski-adjacent thresholds rather than principled ones, and the heavy-atom ceiling matters most, because `max_n_nodes` is detected from the data and drives the size of every tensor in the model.
 
 ```python
 # filter_chembl.py — run from repository root
@@ -59,10 +52,10 @@ with open(input_file) as f_in, open(output_file, "w") as f_out:
         mol = Chem.MolFromSmiles(smi)
         if mol is None:
             continue
-        # No charged atoms beyond +1/-1
+        # Charges beyond ±1 and any metal would enlarge the formal-charge and
+        # atom-type vocabularies for a handful of molecules.
         if any(abs(a.GetFormalCharge()) > 1 for a in mol.GetAtoms()):
             continue
-        # No metals
         if any(a.GetAtomicNum() not in
                {1,5,6,7,8,9,14,15,16,17,34,35,53} for a in mol.GetAtoms()):
             continue
@@ -75,8 +68,7 @@ with open(input_file) as f_in, open(output_file, "w") as f_out:
                 hbd > filters["max_hbd"] or rotb > filters["max_rotbonds"] or
                 n < filters["min_atoms"] or n > filters["max_atoms"]):
             continue
-        can = Chem.MolToSmiles(mol)
-        f_out.write(can + "\n")
+        f_out.write(Chem.MolToSmiles(mol) + "\n")
         written += 1
 
 print(f"Wrote {written} molecules to {output_file}")
@@ -86,24 +78,28 @@ print(f"Wrote {written} molecules to {output_file}")
 python filter_chembl.py
 ```
 
-Expected output: approximately 1.5–2 million molecules depending on exact filter settings.
+Roughly 1.5–2 million molecules survive, depending on where the cutoffs land.
 
 ---
 
-## Step 2 — Preprocess (scaffold split)
+## Step 2 — Preprocess
 
 ```bash
 python submit.py --config experiments/chembl_pretrain/preprocess_params.json
 ```
 
-This runs a **Butina scaffold split** (80/10/10) so that training, validation, and test sets contain molecules from different chemical scaffolds.  The Butina clustering uses ECFP4 fingerprints with a Tanimoto distance threshold of 0.4.
+The config requests `"split_type": "butina"`, which clusters molecules by ECFP4 Tanimoto distance with a cutoff of 0.4 and assigns whole clusters to train, then valid, then test. The intent is a split where the test set is structurally dissimilar to the training set, which is a harder and more informative evaluation than a random split. This is a fingerprint-similarity clustering, not a Murcko scaffold split, so it groups analogues rather than exact shared scaffolds.
 
-Output files are written to `data/datasets/chembl_v34/`:
+**The Butina split does not scale to the full ChEMBL set.** `_butina_split_indices` in `src/graphinvent/DataProcessor.py` materialises the complete lower-triangular distance list before clustering, which is n(n−1)/2 entries — on the order of 10¹² floats for 1.5M molecules, and far beyond available memory. In practice you have one of three options: run the Butina split on a subsample (a few hundred thousand molecules is already slow but feasible), switch `split_type` to `"random"` and accept the easier evaluation, or split externally and supply pre-split `train.smi`/`valid.smi`/`test.smi` in Mode B. Choose deliberately and report which you used, because the choice moves novelty and test-similarity numbers substantially.
+
+Preprocessing writes into `data/datasets/chembl_v34/`:
+
 - `train.smi` / `valid.smi` / `test.smi`
 - `train.h5` / `valid.h5` / `test.h5`
-- `preprocessing_params.json` (records the feature vocabulary)
+- `train.csv`, the training-set property statistics used as the reference distribution during evaluation
+- `preprocessing_params.json`, the feature vocabulary that every later job is checked against
 
-**Expected runtime:** 2–6 hours on a single CPU (Butina clustering is O(n²)).
+The config sets `"use_aromatic_bonds": false`, so molecules are Kekulised and the bond vocabulary is single/double/triple. This removes an entire failure mode, since the model cannot emit an aromatic system that fails to sanitise. This flag is baked into the HDF5 files and must match in every downstream job.
 
 ---
 
@@ -113,60 +109,66 @@ Output files are written to `data/datasets/chembl_v34/`:
 python submit.py --config experiments/chembl_pretrain/pretrain_params.json
 ```
 
-Key configuration choices (see `pretrain_params.json`):
-
-| Parameter | Value | Rationale |
+| Parameter | Value | Reasoning |
 |-----------|-------|-----------|
-| `epochs` | 200 | Sufficient for convergence on ChEMBL; monitor validation NLL |
-| `hidden_node_features` | 256 | Larger than debug default to capture ChEMBL's chemical diversity |
-| `message_passes` | 4 | Four rounds of message passing for richer graph representations |
-| `accumulation_steps` | 10 | Effective batch ≈ 10,000 subgraphs per optimizer step |
-| `sample_every` | 5 | Generate 1,000 molecules every 5 epochs to track validity/UC-JSD |
-| `use_tensorboard` | true | Monitor NLL, UC-JSD, and validity curves in real time |
+| `epochs` | 200 | An upper bound rather than a target; stop when validation loss plateaus |
+| `hidden_node_features` | 256 | ChEMBL's chemical diversity needs more capacity than the debug default of 100 |
+| `message_passes` | 4 | Four rounds propagate information across most drug-sized graphs |
+| `accumulation_steps` | 10 | Effective batch ≈ 10,000 subgraphs per optimiser step |
+| `sample_every` | 5 | 1,000 molecules sampled every 5 epochs to track validity and UC-JSD |
+| `n_workers` | 4 | HDF5 block loading overlaps with the GPU step |
+| `seed` | 42 | Fixes Python, NumPy and PyTorch RNGs; 0 would leave the run non-deterministic |
+| `use_tensorboard` | true | The scalar curves are easier to read than the logs |
 
-**Convergence check:**
 ```bash
 tensorboard --logdir output/chembl_v34/unconditional/run/tensorboard/
 ```
 
-Watch for:
-1. Validation NLL plateauing (< 0.5% improvement over 10 epochs).
-2. Validity > 85% on sampled molecules.
-3. UC-JSD decreasing and stabilising.
+Three things indicate convergence, and they are worth watching together rather than individually. Validation loss (the KL divergence between predicted and target action distributions) should flatten. UC-JSD, the Jensen–Shannon divergence between the model's negative-log-likelihood distributions on training and generated molecules, should fall and stabilise; it measures whether the model assigns generated molecules likelihoods resembling those it assigns training molecules, so it detects a model that has learned the data's typical set rather than only its mode. Validity of sampled molecules should rise and then plateau.
 
-**Expected runtime:** 48–72 hours on a single A100 GPU for 200 epochs over ~1.5M molecules.
+A validity plateau above roughly 85% is a reasonable expectation for a Kekulised drug-like dataset at this scale, but it is an expectation drawn from comparable runs rather than a guarantee, and a lower plateau is worth investigating before assuming the model is broken.
 
-After convergence, **record the best epoch** (lowest validation NLL in `convergence.log`) and update the `pretrained_model_path` in all downstream experiment configs:
+Expect on the order of 48–72 hours on one A100 for 200 epochs over ~1.5M molecules.
+
+Once the run has converged, take the epoch with the lowest `avg_valid_loss` in `convergence.log` — usually well before epoch 200 — and use that checkpoint downstream:
 
 ```bash
-# Example: best epoch is 180
 CKPT="./output/chembl_v34/unconditional/run/model_restart_180.pth"
 ```
+
+Checkpoints exist only at evaluation epochs, so with `sample_every: 5` the available epochs are multiples of 5.
 
 ---
 
 ## Output files
 
-| File | Description |
-|------|-------------|
-| `output/chembl_v34/unconditional/run/convergence.log` | Epoch-by-epoch training and validation NLL |
-| `output/chembl_v34/unconditional/run/model_restart_<N>.pth` | Model checkpoint at epoch N |
-| `output/chembl_v34/unconditional/run/tensorboard/` | TensorBoard logs |
-| `output/chembl_v34/unconditional/run/params_all.json` | Full resolved parameters including git commit, library versions, and device |
+Everything lands in `output/chembl_v34/unconditional/run/`.
+
+| File | Contents |
+|------|----------|
+| `convergence.log` | `epoch, lr, avg_train_loss, avg_valid_loss, model_score` — one row per epoch, where `model_score` is the UC-JSD at evaluation epochs and `NA` otherwise |
+| `validation.log` | Mean per-molecule likelihood for the validation, training and generated sets, plus `uc_jsd`, one row per evaluation epoch |
+| `generation.log` | Per-evaluation-epoch generation metrics: fraction valid, fraction properly terminated, fraction unique, novelty, SA statistics, internal diversity, test-set similarity, and feature histograms |
+| `generation/` | `epoch_<N>_batch_<B>.smi`, `.likelihood` and `.valid` for each evaluation epoch |
+| `model_restart_<N>.pth` | Checkpoint at evaluation epoch N, including optimiser and scheduler state |
+| `progress.png` | Nine-panel plot regenerated at every evaluation epoch |
+| `params_all.json` | Resolved parameters plus git hash, library versions, device and seed |
+| `tensorboard/` | Scalar time series |
+
+The three metric logs answer different questions and are easy to confuse. `convergence.log` is about optimisation, `validation.log` is about likelihood calibration, and `generation.log` is about what the model actually produces when sampled.
 
 ---
 
-## How to interpret the outputs
+## Reading the results
 
-- **Convergence log:** columns are epoch, train NLL, valid NLL, and (every `sample_every` epochs) validity, uniqueness, novelty, and UC-JSD of sampled molecules.
-- **UC-JSD:** lower is better; values below 0.3 indicate the model's property distribution closely matches the training set.
-- **Validity:** fraction of generated SMILES that parse correctly under RDKit.  Should reach > 85% after ~50 epochs.
+Validity is a floor, not a result. A model can reach high validity by collapsing onto a few small, trivially valid fragments, which is why `generation.log` also carries `fraction_unique`, `novelty`, `internal_diversity` and the nearest-neighbour similarity statistics against the test set. Read them together: high validity with low uniqueness is mode collapse; high validity and uniqueness with near-1.0 test similarity is memorisation; high novelty with very low test similarity may mean the model is exploring genuinely new space, or that it is producing unrealistic structures, and the SA score distribution is what separates those two readings.
+
+The `avg_n_nodes` and feature histograms in `generation.log` are worth comparing against the training-set row written at the top of the file, since a model matching aggregate validity but generating systematically smaller molecules has not learned the distribution.
 
 ---
 
-## Next step
+## Next
 
-Once pretraining is complete, proceed to:
-- [Experiment 2: DRD2 Transfer Learning](../drd2_transfer/README.md)
-- [Experiment 3: Goal-Directed Optimization](../goal_directed/README.md)
-- [Experiment 4: Conditional Generation](../conditional/README.md)
+- [Experiment 2: DRD2 transfer learning](../drd2_transfer/README.md)
+- [Experiment 3: Goal-directed optimisation](../goal_directed/README.md)
+- [Experiment 4: Conditional generation](../conditional/README.md)

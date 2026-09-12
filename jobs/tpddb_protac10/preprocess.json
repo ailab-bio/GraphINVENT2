@@ -1,0 +1,24 @@
+{
+  "submission": {
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "tpddb_protac10",
+    "smiles_file": "./data/datasets/tpddb_protac10/tpddb_protac10.smi",
+    "job_name": "run",
+    "use_slurm": false
+  },
+  "job": {
+    "job_type": "preprocess",
+    "restart": false,
+    "auto_detect_features": true,
+    "split_type": "random",
+    "train_frac": 0.6,
+    "valid_frac": 0.2,
+    "use_aromatic_bonds": true,
+    "use_canon": true,
+    "use_chirality": true,
+    "batch_size": 100,
+    "block_size": 100000,
+    "decoding_route": "bfs"
+  }
+}

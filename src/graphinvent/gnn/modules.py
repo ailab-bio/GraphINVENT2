@@ -118,23 +118,22 @@ class MLP(torch.nn.Module):
         super().__init__()
 
         sizes = [in_features, *hidden_layer_sizes, out_features]
-        layers = [
-            self._linear_block(in_f, out_f, dropout_p)
-            for in_f, out_f in zip(sizes, sizes[1:])
-        ]
-        # Flatten the list of Sequentials into a single Sequential
-        self.seq = torch.nn.Sequential(
-            *[module for sq in layers for module in sq.children()]
-        )
-
-    def _linear_block(
-        self, in_f: int, out_f: int, dropout_p: float
-    ) -> torch.nn.Sequential:
-        linear = torch.nn.Linear(in_f, out_f, bias=True)
-        torch.nn.init.xavier_uniform_(linear.weight)
-        return torch.nn.Sequential(
-            linear, torch.nn.SELU(), torch.nn.AlphaDropout(dropout_p)
-        )
+        layers: list = []
+        n_linear = len(sizes) - 1
+        for i, (in_f, out_f) in enumerate(zip(sizes, sizes[1:])):
+            linear = torch.nn.Linear(in_f, out_f, bias=True)
+            torch.nn.init.xavier_uniform_(linear.weight)
+            layers.append(linear)
+            # No activation or dropout after the output layer: SELU would floor
+            # the outputs at -1.7581, which for the action-probability head means
+            # an invalid action's logit can never be pushed far negative, and
+            # AlphaDropout would randomly perturb the final logits during
+            # training.  (Layer indices are unchanged, so existing checkpoints
+            # still load.)
+            if i < n_linear - 1:
+                layers.append(torch.nn.SELU())
+                layers.append(torch.nn.AlphaDropout(dropout_p))
+        self.seq = torch.nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.seq(x)

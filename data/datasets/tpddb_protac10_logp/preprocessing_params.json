@@ -1,0 +1,53 @@
+{
+  "decoding_route": "bfs",
+  "use_explicit_H": false,
+  "conditioning": {
+    "properties": [
+      "logP"
+    ],
+    "source": "smiles_file"
+  },
+  "atom_types": [
+    "C",
+    "Cl",
+    "F",
+    "N",
+    "O",
+    "S"
+  ],
+  "condition_dim": 1,
+  "chirality": [
+    "None",
+    "R",
+    "S"
+  ],
+  "imp_H": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "use_aromatic_bonds": true,
+  "ignore_H": false,
+  "split_type": "random",
+  "use_canon": true,
+  "valid_frac": 0.2,
+  "formal_charge": [
+    0
+  ],
+  "smiles_file": "data/datasets/tpddb_protac10_logp/tpddb_protac10_logp.smi",
+  "max_n_nodes": 31,
+  "use_chirality": true,
+  "train_frac": 0.6,
+  "run_info": {
+    "timestamp": "2026-09-09T22:20:38",
+    "python_version": "3.13.5",
+    "torch_version": "2.11.0",
+    "numpy_version": "2.4.4",
+    "rdkit_version": "2025.09.6",
+    "cuda_version": "n/a",
+    "device_name": "mps",
+    "git_hash": "ea6be5e",
+    "seed": 0
+  }
+}

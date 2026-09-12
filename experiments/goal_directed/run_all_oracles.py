@@ -1,5 +1,10 @@
 """
-Run goal-directed optimization for every oracle defined in oracles_config.yaml.
+Run a goal-directed optimization for every target defined in oracles_config.yaml.
+
+The sweep exists to compare one generative prior across several targets under
+identical settings, which is what makes the runs comparable to each other.
+Each entry names an oracle you supply -- a surrogate you trained, or a docking
+setup -- so the objectives are yours rather than a fixed catalogue.
 
 Usage (from repository root):
     python experiments/goal_directed/run_all_oracles.py [options]
@@ -59,15 +64,28 @@ def make_job_config(
     oracle_threshold: float | None,
     seed: int,
     pretrained_model_path: str | None,
+    oracle_spec: dict | None = None,
 ) -> dict:
     """Fill in template placeholders for a specific (oracle, seed) combination."""
     cfg = copy.deepcopy(template)
+
+    # The oracle definition travels with the run, so the resolved params.json is
+    # enough to reproduce it without also needing the sweep config.
+    if oracle_spec:
+        cfg["job"]["oracles"] = dict(cfg["job"].get("oracles") or {})
+        cfg["job"]["oracles"][oracle_name] = oracle_spec
 
     # Score component
     cfg["job"]["score_components"] = [oracle_name]
     cfg["job"]["score_thresholds"] = [
         oracle_threshold if oracle_threshold is not None else 0.0
     ]
+    # The template also carries "__THRESHOLD__" here.  Leaving it unsubstituted
+    # made Analyzer's float() conversion raise -- after the entire oracle budget
+    # had already been spent.
+    cfg["job"]["success_threshold"] = (
+        oracle_threshold if oracle_threshold is not None else 0.5
+    )
 
     # Job name encodes oracle + seed for a unique output directory
     job_name = f"{oracle_name.replace(':', '_')}_seed{seed}"
@@ -94,6 +112,10 @@ def write_config(cfg: dict, out_dir: Path) -> Path:
     cfg_path = out_dir / "params.json"
     with open(cfg_path, "w") as f:
         json.dump(cfg, f, indent=2)
+        # json.dump writes no trailing newline, which trips the
+        # end-of-file-fixer pre-commit hook every time one of these
+        # generated files is regenerated and committed.
+        f.write("\n")
     return cfg_path
 
 
@@ -152,8 +174,16 @@ def main() -> None:
     oracle_cfg = load_oracle_config(args.config)
     template = load_template()
 
-    pmo_cfg = oracle_cfg.get("pmo", {})
-    all_seeds = args.seeds if args.seeds else pmo_cfg.get("seeds", [42, 123, 456])
+    # `seeds` sits at the top level of the config.  It used to be read from a
+    # nested "pmo" block, so a top-level key was silently ignored and the
+    # hard-coded default ran instead; the nested form is still honoured.
+    legacy_cfg = oracle_cfg.get("pmo", {}) or {}
+    all_seeds = (
+        args.seeds
+        or oracle_cfg.get("seeds")
+        or legacy_cfg.get("seeds")
+        or [42, 123, 456]
+    )
     all_oracles = oracle_cfg.get("oracles", [])
 
     # Filter to requested oracles
@@ -186,14 +216,21 @@ def main() -> None:
             cfg = make_job_config(
                 template=template,
                 oracle_name=oracle_name,
+                oracle_spec=oracle.get("oracle"),
                 oracle_threshold=threshold,
                 seed=seed,
                 pretrained_model_path=args.pretrained_model,
             )
 
             out_dir = configs_dir / f"{oracle_name.replace(':', '_')}_seed{seed}"
-            cfg_path = write_config(cfg, out_dir)
-            print(f"  Config:  {cfg_path.relative_to(REPO_ROOT)}")
+            cfg_path = out_dir / "params.json"
+            if args.dry_run:
+                # A dry run must not leave files behind; writing the resolved
+                # configs is part of launching, not of previewing.
+                print(f"  Config:  {cfg_path.relative_to(REPO_ROOT)} (not written)")
+            else:
+                cfg_path = write_config(cfg, out_dir)
+                print(f"  Config:  {cfg_path.relative_to(REPO_ROOT)}")
 
             try:
                 run_job(cfg_path, dry_run=args.dry_run)

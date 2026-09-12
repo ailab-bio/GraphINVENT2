@@ -42,7 +42,6 @@ DEFAULT_OUT = REPO_ROOT / "experiments" / "conditional" / "results"
 # QED:      [0, 1] (raw RDKit QED)
 # SA_norm:  [0, 1] = (10 - raw_SA) / 9   (1 = easy to synthesize)
 # LogP_norm:[0, 1] = (LogP + 3) / 10     (0 = LogP=-3, 1 = LogP=7)
-# GSK3B:    [0, 1] (TDC oracle score)
 # ---------------------------------------------------------------------------
 
 PROPERTY_RANGES: dict[str, dict[str, list[float]]] = {
@@ -61,10 +60,6 @@ PROPERTY_RANGES: dict[str, dict[str, list[float]]] = {
         "medium": [0.2, 0.5],  # LogP in [-1, 2]
         "high": [0.5, 0.8],  # LogP in [2, 5]
     },
-    "GSK3B": {
-        "inactive": [0.0, 0.3],
-        "active": [0.5, 1.0],
-    },
 }
 
 
@@ -73,8 +68,10 @@ def _midpoint(lo: float, hi: float) -> float:
     return (lo + hi) / 2.0
 
 
-# Column order must match preprocessing (conditioning.properties in preprocess_params.json)
-PROPERTY_COLUMN_ORDER = ["QED", "SA_norm", "LogP_norm", "GSK3B"]
+# Must match conditioning.properties in preprocess_params.json.  Add any
+# surrogate-predicted column you generated with compute_properties.py
+# --surrogate, in the same order.
+PROPERTY_COLUMN_ORDER = ["QED", "SA_norm", "LogP_norm"]
 
 
 # ---------------------------------------------------------------------------
@@ -129,19 +126,6 @@ def compute_properties_for_smiles(smiles: list[str]) -> dict[str, list[float]]:
             results["LogP_norm"].append(float((max(-3.0, min(7.0, logp)) + 3.0) / 10.0))
         except Exception:
             results["LogP_norm"].append(float("nan"))
-
-        # GSK3B (TDC oracle — expensive; skip for batch, compute separately if needed)
-        results["GSK3B"].append(float("nan"))
-
-    # Fill GSK3B with TDC oracle (batched)
-    try:
-        from oracles import OracleFactory
-
-        oracle = OracleFactory.create_cached("GSK3B")
-        gsk3b_scores = oracle(smiles)
-        results["GSK3B"] = [float(s) for s in gsk3b_scores]
-    except Exception:
-        pass  # Leave as nan
 
     return results
 
@@ -223,6 +207,10 @@ def generate_with_condition(
     tmp_cfg.parent.mkdir(parents=True, exist_ok=True)
     with open(tmp_cfg, "w") as f:
         json.dump(cfg, f, indent=2)
+        # json.dump writes no trailing newline, which trips the
+        # end-of-file-fixer pre-commit hook every time one of these
+        # generated files is regenerated and committed.
+        f.write("\n")
 
     cmd = [sys.executable, str(REPO_ROOT / "submit.py"), "--config", str(tmp_cfg)]
     print(f"  Running: {' '.join(cmd)}")
@@ -246,8 +234,15 @@ def load_smiles(path: Path) -> list[str]:
     with open(path) as f:
         for line in f:
             line = line.strip()
-            if line and not line.startswith("#"):
-                smiles.append(line.split()[0])
+            if not line or line.startswith("#"):
+                continue
+            smi = line.split()[0]
+            # `[Xe]` is the placeholder written for graphs that failed
+            # sanitisation; RDKit parses it as a valid xenon atom, so keeping
+            # those lines inflates validity.  Same for the per-batch header.
+            if smi == "[Xe]" or smi.upper() == "SMILES":
+                continue
+            smiles.append(smi)
     return smiles
 
 
@@ -318,8 +313,6 @@ def main() -> None:
                     condition_dict[col] = 0.75  # neutral easy SA
                 elif col == "LogP_norm":
                     condition_dict[col] = 0.35  # neutral LogP ≈ 0.5
-                elif col == "GSK3B":
-                    condition_dict[col] = 0.0  # neutral (no GSK3B requirement)
 
             job_name = f"cond_{prop_name}_{range_name}"
             print(

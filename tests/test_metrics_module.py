@@ -558,9 +558,29 @@ class TestComputeTestSetSimilarity:
         assert result["n_invalid_generated"] == 1
 
     def test_exact_rediscovery_when_identical(self, fixture_smiles):
-        """Generating exact test molecules should yield non-zero exact_rediscovery_count."""
+        """Regenerating the test set rediscovers every distinct test molecule."""
+        from rdkit import Chem
+
+        n_distinct = len(
+            {Chem.MolToSmiles(Chem.MolFromSmiles(s)) for s in fixture_smiles}
+        )
         result = self._fn(fixture_smiles, fixture_smiles)
-        assert result["exact_rediscovery_count"] == len(fixture_smiles)
+        assert result["exact_rediscovery_count"] == n_distinct
+
+    def test_exact_rediscovery_requires_identical_molecule(self):
+        """Fingerprint collisions must not count as exact rediscoveries.
+
+        Decane and dodecane have identical radius-2 Morgan substructure
+        multisets, so their Tanimoto similarity is exactly 1.0 -- but they are
+        different molecules.
+        """
+        result = self._fn(["CCCCCCCCCC"], ["CCCCCCCCCCCC"])
+        assert result["per_mol_similarity"][0] == pytest.approx(1.0)
+        assert result["exact_rediscovery_count"] == 0
+
+    def test_exact_rediscovery_canonicalizes(self):
+        """A match written in a different-but-equivalent SMILES form counts."""
+        assert self._fn(["OCC"], ["CCO"])["exact_rediscovery_count"] == 1
 
     # ------------------------------------------------------------------
     # Edge cases
@@ -650,9 +670,6 @@ class TestEvaluateGoalDirected:
 
     def test_oracle_calls_matches_input(self, gd_results):
         assert gd_results["oracle_calls"] == 5000
-
-    def test_sample_efficiency_is_none(self, gd_results):
-        assert gd_results["sample_efficiency"] is None
 
     def test_all_conditional_keys_present(self, gd_results):
         for key in (

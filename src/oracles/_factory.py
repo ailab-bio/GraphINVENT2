@@ -1,110 +1,124 @@
-"""OracleFactory: create oracle instances by name from a config dict."""
+"""Builds oracle instances from the ``oracles`` block of a job configuration."""
 
 from __future__ import annotations
 
+from typing import Dict, Type
+
+from ._base import BaseOracle
 from ._cache import CachedOracle
-from ._tdc import ORACLE_REGISTRY, TDCOracle
+from ._surrogate import PythonOracle, SklearnOracle
+from ._vina import VinaOracle
+
+#: Maps the ``type`` field of an oracle spec to its class.  Register a new
+#: oracle class here to make it available from configuration; nothing else in
+#: the codebase needs to change.
+ORACLE_TYPES: Dict[str, Type[BaseOracle]] = {
+    "sklearn": SklearnOracle,
+    "python": PythonOracle,
+    "vina": VinaOracle,
+}
 
 
 class OracleFactory:
     """
-    Creates oracle instances by name.
+    Creates oracles from configuration.
 
-    Oracles are created as :class:`CachedOracle` wrappers around
-    :class:`TDCOracle` by default.  For the 5 named PMO oracles (SA, DRD2,
-    GSK3B, JNK3, celecoxib_rediscovery) the TDC name is looked up from
-    :data:`~src.oracles._tdc.ORACLE_REGISTRY`; any other name is forwarded
-    to TDC verbatim, making the entire TDC catalogue available without code
-    changes.
+    An oracle spec is a dict whose ``type`` selects the class and whose
+    remaining keys are passed to that class's constructor, so the configuration
+    schema is the constructor signature and does not have to be maintained
+    twice.  ``transform`` and ``direction`` are understood by every oracle.
 
     Examples
     --------
-    Single oracle:
+    A selectivity objective -- bind one kinase, avoid a second -- is two
+    oracles over the same kind of quantity with opposite directions:
 
-    >>> oracle = OracleFactory.create_cached("DRD2")
-    >>> scores = oracle(["CCO", "c1ccccc1"])
-
-    From a params.json config:
-
-    >>> import json
-    >>> config = json.load(open("jobs/rl/params.json"))
-    >>> oracles = OracleFactory.from_config(config)
-    >>> for name, oracle in oracles.items():
-    ...     print(name, oracle(["CCO"]))
+    >>> specs = {
+    ...     "GSK3B": {"type": "sklearn", "path": "data/surrogates/gsk3b.pkl"},
+    ...     "JNK3":  {"type": "sklearn", "path": "data/surrogates/jnk3.pkl",
+    ...               "direction": "minimize"},
+    ... }
+    >>> oracles = OracleFactory.from_specs(specs)      # doctest: +SKIP
     """
 
     @staticmethod
-    def create(name: str) -> TDCOracle:
+    def create(name: str, spec: dict) -> BaseOracle:
         """
-        Create a raw (uncached) TDC oracle by name.
+        Build a single oracle from its spec.
 
-        Parameters
-        ----------
-        name : str
-            Oracle name (see :data:`~src.oracles._tdc.ORACLE_REGISTRY` for
-            the 5 built-in names; any TDC oracle name also works).
-
-        Returns
-        -------
-        TDCOracle
+        Raises
+        ------
+        ValueError
+            If ``type`` is missing or unknown.  Failing here means a typo in a
+            config surfaces before any molecules are generated, rather than as
+            a "score component is not defined" error part-way into a run.
+        TypeError
+            If the spec carries keys the oracle class does not accept; the
+            message names them, since a silently ignored key would mean the run
+            optimises something other than what was asked for.
         """
-        return TDCOracle(name=name)
+        if not isinstance(spec, dict):
+            raise ValueError(
+                f"Oracle '{name}' must be defined by a dict, got {type(spec).__name__}."
+            )
+        spec = dict(spec)
+        # Underscore-prefixed keys are inline comments in params.json.
+        spec = {k: v for k, v in spec.items() if not k.startswith("_")}
+
+        oracle_type = spec.pop("type", None)
+        if oracle_type is None:
+            raise ValueError(
+                f"Oracle '{name}' has no 'type'. "
+                f"Choose from: {sorted(ORACLE_TYPES)}."
+            )
+        if oracle_type not in ORACLE_TYPES:
+            raise ValueError(
+                f"Unknown oracle type '{oracle_type}' for oracle '{name}'. "
+                f"Choose from: {sorted(ORACLE_TYPES)}."
+            )
+
+        cls = ORACLE_TYPES[oracle_type]
+        try:
+            return cls(name=name, **spec)
+        except TypeError as exc:
+            raise TypeError(
+                f"Could not construct oracle '{name}' of type '{oracle_type}': "
+                f"{exc}. Check the keys in its config block."
+            ) from exc
 
     @staticmethod
-    def create_cached(name: str) -> CachedOracle:
+    def create_cached(name: str, spec: dict) -> CachedOracle:
         """
-        Create a cached TDC oracle by name.
+        Build an oracle wrapped in the deduplicating cache.
 
-        The returned :class:`CachedOracle` deduplicates queries and tracks
-        cumulative oracle calls for AUC Top-k computation.
-
-        Parameters
-        ----------
-        name : str
-            Oracle name.
-
-        Returns
-        -------
-        CachedOracle
+        Caching matters more here than convenience: a converging RL agent
+        re-proposes the same molecules repeatedly, and for a docking oracle
+        each repeat would otherwise cost another pose search.  The cache is
+        also what makes the oracle-call budget meaningful, since it counts
+        unique molecules evaluated.
         """
-        return CachedOracle(TDCOracle(name=name))
+        return CachedOracle(OracleFactory.create(name, spec))
 
     @staticmethod
-    def known_names() -> list:
-        """
-        Return the list of built-in oracle names (keys in ORACLE_REGISTRY).
-
-        Any name not in this list is still valid — it is forwarded to TDC
-        directly — but these are the five names with first-class support.
-        """
-        return list(ORACLE_REGISTRY.keys())
+    def from_specs(specs: dict) -> Dict[str, CachedOracle]:
+        """Build every oracle in an ``{name: spec}`` mapping."""
+        if not specs:
+            return {}
+        return {
+            name: OracleFactory.create_cached(name, spec)
+            for name, spec in specs.items()
+            if not name.startswith("_")
+        }
 
     @staticmethod
-    def from_config(config: dict) -> dict:
+    def from_config(config: dict) -> Dict[str, CachedOracle]:
         """
-        Instantiate all oracles specified in a job config dict.
-
-        Reads ``config["job"]["oracle"]`` (str, single oracle) or
-        ``config["job"]["oracles"]`` (list of str, multi-objective).  Returns
-        an empty dict if neither key is present.
-
-        Parameters
-        ----------
-        config : dict
-            Top-level config as loaded from params.json.
-
-        Returns
-        -------
-        dict mapping oracle name -> CachedOracle
+        Build oracles from a full params.json dict, reading ``job.oracles``.
         """
-        job = config.get("job", {})
-        oracles: dict = {}
+        job = config.get("job", config)
+        return OracleFactory.from_specs(job.get("oracles", {}))
 
-        if "oracle" in job:
-            name = job["oracle"]
-            oracles[name] = OracleFactory.create_cached(name)
-        elif "oracles" in job:
-            for name in job["oracles"]:
-                oracles[name] = OracleFactory.create_cached(name)
-
-        return oracles
+    @staticmethod
+    def known_types() -> list:
+        """Registered oracle type names."""
+        return sorted(ORACLE_TYPES)

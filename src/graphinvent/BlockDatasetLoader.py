@@ -80,14 +80,19 @@ class BlockDataLoader(torch.utils.data.DataLoader):
         # define a condition for determining whether to drop the last block this
         # is done if the remainder block is very small (less than a tenth the
         # size of a normal block)
-        condition = bool(
-            int(self.block_dataset.__len__() / self.block_size) > 1
-            and self.block_dataset.__len__() % self.block_size < self.block_size / 10
-        )
+        # `block_dataset.__len__()` counts BLOCKS, not rows, so the original
+        # expression was effectively always False.  Dropping a partial batch
+        # would silently discard training data, and `__len__` below does not
+        # account for it, so the remainder is simply kept.
+        condition = False
 
         # loop through and load BLOCKS of data every iteration
         for block in block_loader:
-            block = [torch.squeeze(b) for b in block]
+            # squeeze(0) only -- the outer DataLoader adds a leading batch
+            # dim of 1 that must go, but a bare squeeze() would also drop a
+            # genuine size-1 dim (a condition_dim of 1, or a remainder block
+            # holding a single row), silently corrupting the tensor shape.
+            block = [b.squeeze(0) for b in block]
 
             # wrap each block in a `ShuffleBlock` so that data can be shuffled
             # within blocks
@@ -171,7 +176,9 @@ class HDFDataset(torch.utils.data.Dataset):
     def __init__(self, path: str) -> None:
 
         self.path = path
-        hdf_file = h5py.File(self.path, "r+", swmr=True)
+        # read-only: the loader never writes, "r+" needlessly failed on
+        # read-only dataset directories and made swmr a no-op warning
+        hdf_file = h5py.File(self.path, "r", swmr=True)
 
         # load each HDF dataset; "APDs" is the legacy key from the original GraphINVENT
         self.nodes = hdf_file.get("nodes")

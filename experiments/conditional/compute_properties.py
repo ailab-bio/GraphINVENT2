@@ -5,10 +5,10 @@ Usage (from repository root):
     python experiments/conditional/compute_properties.py \
         --smiles data/raw/chembl_v34_filtered.smi \
         --out data/raw/chembl_v34_cond.tsv \
-        [--gsk3b] [--jnk3] [--drd2]
+        [--surrogate NAME=PATH ...]
 
 Output TSV format (tab-separated, with header):
-    SMILES  QED  SA_norm  LogP_norm  [GSK3B]  [JNK3]  [DRD2]
+    SMILES  QED  SA_norm  LogP_norm  [<surrogate columns>...]
 
 Property definitions:
     QED      : Quantitative Estimate of Drug-likeness (RDKit), range [0, 1].
@@ -17,9 +17,10 @@ Property definitions:
     LogP_norm: LogP clipped to [-3, 7] then scaled to [0, 1]:
                LogP_norm = (LogP - (-3)) / (7 - (-3)) = (LogP + 3) / 10
                These bounds cover > 99% of drug-like molecules.
-    GSK3B    : GSK3β inhibition predicted by TDC DRD2 oracle (requires PyTDC).
-    JNK3     : JNK3 inhibition predicted by TDC oracle (requires PyTDC).
-    DRD3     : DRD2 activity predicted by TDC oracle (requires PyTDC).
+    <name>   : Any additional property from a surrogate you supply with
+               --surrogate NAME=PATH, where PATH is a pickled scikit-learn
+               model over Morgan fingerprints (see
+               src/graphinvent/tools/train-surrogate.py).
 
 Notes:
     - Molecules that fail RDKit sanitisation are skipped silently.
@@ -82,19 +83,17 @@ def compute_logp_norm(mol) -> float:
         return float("nan")
 
 
-def compute_tdc_scores(smiles_list: list[str], oracle_name: str) -> list[float]:
-    """Batch-compute TDC oracle scores. Returns 0.0 for failures."""
-    try:
-        from oracles import OracleFactory
+def load_surrogate(name: str, path: str):
+    """
+    Load a user-trained surrogate as a scoring oracle.
 
-        oracle = OracleFactory.create_cached(oracle_name)
-        return oracle(smiles_list)
-    except ImportError:
-        print(f"Warning: PyTDC not installed; {oracle_name} scores will be 0.0.")
-        return [0.0] * len(smiles_list)
-    except Exception as exc:
-        print(f"Warning: {oracle_name} oracle failed ({exc}); scores will be 0.0.")
-        return [0.0] * len(smiles_list)
+    Failing loudly here is deliberate: a property column silently filled with
+    zeros would be used as a conditioning target and quietly train the model on
+    nothing.
+    """
+    from oracles import OracleFactory
+
+    return OracleFactory.create_cached(name, {"type": "sklearn", "path": path})
 
 
 # ---------------------------------------------------------------------------
@@ -111,16 +110,15 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--out", type=Path, required=True, help="Output TSV file")
     p.add_argument(
-        "--gsk3b", action="store_true", help="Include GSK3B activity (requires PyTDC)"
+        "--surrogate",
+        action="append",
+        default=[],
+        metavar="NAME=PATH",
+        help="Add a property column from a pickled scikit-learn surrogate. "
+        "Repeatable. Train one with src/graphinvent/tools/train-surrogate.py.",
     )
     p.add_argument(
-        "--jnk3", action="store_true", help="Include JNK3 activity (requires PyTDC)"
-    )
-    p.add_argument(
-        "--drd2", action="store_true", help="Include DRD2 activity (requires PyTDC)"
-    )
-    p.add_argument(
-        "--batch-size", type=int, default=1000, help="Batch size for TDC oracle calls"
+        "--batch-size", type=int, default=1000, help="Batch size for surrogate calls"
     )
     p.add_argument(
         "--max-mols",
@@ -173,31 +171,26 @@ def main() -> None:
         )
     print(f"  {len(records)} molecules retained ({skipped} skipped).")
 
-    # Optional TDC oracle scores (batch for efficiency)
+    # Surrogate-predicted properties, batched for efficiency
     valid_smiles = [r["SMILES"] for r in records]
+    surrogate_cols = []
 
-    for oracle_name, flag in [
-        ("GSK3B", args.gsk3b),
-        ("JNK3", args.jnk3),
-        ("DRD2", args.drd2),
-    ]:
-        if not flag:
-            continue
-        print(f"Computing {oracle_name} scores (TDC oracle)...")
+    for entry in args.surrogate:
+        if "=" not in entry:
+            raise SystemExit(f"--surrogate expects NAME=PATH, got '{entry}'.")
+        name, path = entry.split("=", 1)
+        print(f"Computing {name} scores from {path}...")
+        oracle = load_surrogate(name, path)
         scores = []
         for i in range(0, len(valid_smiles), args.batch_size):
-            batch = valid_smiles[i : i + args.batch_size]
-            scores.extend(compute_tdc_scores(batch, oracle_name))
+            scores.extend(oracle(valid_smiles[i : i + args.batch_size]))
             if (i // args.batch_size) % 10 == 0:
                 print(f"  {i}/{len(valid_smiles)}...")
         for r, s in zip(records, scores):
-            r[oracle_name] = s
+            r[name] = s
+        surrogate_cols.append(name)
 
-    # Determine column order
-    property_cols = ["QED", "SA_norm", "LogP_norm"]
-    for col in ["GSK3B", "JNK3", "DRD2"]:
-        if col in records[0]:
-            property_cols.append(col)
+    property_cols = ["QED", "SA_norm", "LogP_norm"] + surrogate_cols
 
     # Write TSV
     args.out.parent.mkdir(parents=True, exist_ok=True)

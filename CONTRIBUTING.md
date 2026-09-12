@@ -1,38 +1,34 @@
 # Contributing to GraphINVENT2
 
+Contributions are welcome as issues or pull requests. Bug reports are most useful when they
+include the `params.json` of the failing job and the `run_info` block from `params_all.json`,
+which records the library versions, device, and git commit the run used.
+
 ## Code style
 
-All Python code must pass **black** (formatting) and **ruff** (linting) before merging.
+Formatting is black at line length 88, and linting is ruff with pyflakes, pycodestyle, and
+isort rules enabled. Both read their configuration from `pyproject.toml`, so running them
+without arguments produces the same result as CI. mypy is configured but not enforced, since
+tensor-heavy code produces more noise than signal under strict settings.
 
-| Tool | Role | Config |
-|------|------|--------|
-| [black](https://black.readthedocs.io) | Auto-formatter, line length 88 | `[tool.black]` in `pyproject.toml` |
-| [ruff](https://docs.astral.sh/ruff/) | Linter (pyflakes + pycodestyle + isort) | `[tool.ruff]` in `pyproject.toml` |
-| [mypy](https://mypy.readthedocs.io) | Optional static type checking | `[tool.mypy]` in `pyproject.toml` |
-
-### Running the checks manually
+All importable code lives under `src/`; `submit.py`, `visualize.py`, and `cleanup.py` are at
+the repository root and are not part of any package.
 
 ```bash
-# Format
-python -m black --line-length 88 graphinvent/ tests/ submit.py visualize.py
-
-# Lint
-python -m ruff check graphinvent/ tests/ submit.py visualize.py
-
-# Type check (optional, best-effort for ML code)
-python -m mypy graphinvent/ --ignore-missing-imports
+python -m black src/ tests/ submit.py visualize.py cleanup.py
+python -m ruff check src/ tests/ submit.py visualize.py cleanup.py
+python -m mypy src/graphinvent --ignore-missing-imports
 ```
 
 ### Pre-commit hooks
-
-Install once after cloning:
 
 ```bash
 pip install pre-commit
 pre-commit install
 ```
 
-After that, black and ruff run automatically on every `git commit`. To run them manually on all files:
+black, ruff with `--fix`, and the standard whitespace, YAML, JSON, and debug-statement hooks
+then run on every commit. To run them across the whole tree:
 
 ```bash
 pre-commit run --all-files
@@ -40,7 +36,10 @@ pre-commit run --all-files
 
 ## Type hints
 
-New public functions should include PEP 484 type annotations. For tensor-heavy code, annotate at least the non-tensor arguments; use `torch.Tensor` for tensor inputs/outputs. Example:
+New public functions should carry PEP 484 annotations. For tensor-heavy code, annotate at
+least the non-tensor arguments and use `torch.Tensor` for the rest; a more precise shape
+annotation is not currently expressible and pretending otherwise makes the signature harder to
+read rather than easier.
 
 ```python
 def write_likelihoods(likelihood_filename: str, likelihoods: torch.Tensor) -> None:
@@ -49,7 +48,7 @@ def write_likelihoods(likelihood_filename: str, likelihoods: torch.Tensor) -> No
 
 ## Docstrings
 
-Use **NumPy-style** docstrings for all public classes and functions:
+NumPy style for public classes and functions:
 
 ```python
 def foo(x: int, y: float) -> str:
@@ -70,23 +69,41 @@ def foo(x: int, y: float) -> str:
     """
 ```
 
+Comments should explain why the code is the way it is. A comment restating what the next line
+does is worse than no comment, because it has to be maintained and it will drift.
+
 ## Tests
 
-Tests live in `tests/` and use **pytest** (no `unittest.TestCase` subclasses).
+Tests live in `tests/` and use pytest without `unittest.TestCase` subclasses. They fall into two
+groups. `test_model.py`, `test_metrics.py`, `test_metrics_module.py`, `test_scoring.py`,
+`test_oracles.py`, `test_uncertainty.py`, `test_graph_roundtrip.py`, and
+`test_conditioning.py` are self-contained and run anywhere.
+`test_preprocessing.py` verifies a *completed preprocessing job*, so it needs
+`tests/config.py` to point at a dataset directory that already holds the `.smi` and `.h5`
+files; it defaults to `data/datasets/debug`.
 
 ```bash
-# Run all tests (edit tests/config.py to point at a preprocessed dataset first)
 pytest tests/ -v
-
-# Run a single test
-pytest tests/test_preprocessing.py::test_valid_smiles -v
+pytest tests/test_preprocessing.py::TestSMILESReconstruction -v
 ```
+
+No test needs network access. The oracle tests build their models in-process or inject a
+stub docking backend through `VinaOracle(dock_fn=...)`, so a contributor can run the whole
+suite without a docking installation or any downloaded model.
 
 ## Development install
 
+Install PyTorch first, from pytorch.org for your platform and CUDA version, then:
+
 ```bash
-pip install torch           # from pytorch.org for your CUDA version
-pip install -e ".[dev]"     # installs ruff, pyright, pytest
-pip install black pre-commit mypy
+pip install -e ".[dev]"     # black, ruff, mypy, pytest, pre-commit
 pre-commit install
 ```
+
+Note that the editable install does not reliably put `src/` on the import path when the
+repository lives under a path containing spaces, such as an iCloud Drive directory; setuptools
+writes a `.pth` file that is then not honoured. The symptoms are `ModuleNotFoundError: No
+module named 'metrics'` and a `graphinvent-submit` console script that fails on import. Run
+scripts from the repository root and add `sys.path.insert(0, "src")` where you need the
+`metrics` or `oracles` packages, and invoke jobs as `python submit.py` rather than through the
+console script.

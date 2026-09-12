@@ -15,6 +15,7 @@ def compute_auc_top_k(
     k: int = 10,
     budget: int = 10000,
     constraints: list = None,
+    finish: bool = False,
 ) -> float:
     """
     Compute AUC Top-k over an oracle optimization curve.
@@ -43,6 +44,11 @@ def compute_auc_top_k(
         constraints.  If ``None``, all entries are considered valid.
         Entries where ``constraints[i]`` is ``False`` do not count toward the
         top-*k* and are excluded from the curve.
+    finish : bool
+        Whether the run terminated because the optimizer converged (or
+        otherwise legitimately stopped early) rather than crashing or being
+        cut short.  Only when ``finish`` is True is the curve flat-extended
+        from the last oracle call out to ``budget``; see Notes.
 
     Returns
     -------
@@ -51,25 +57,30 @@ def compute_auc_top_k(
 
     Notes
     -----
-    *Constrained case*: if fewer than *k* molecules have satisfied all
-    constraints at oracle call *t*, the average is taken over however many
-    exist (returning 0.0 if none).  This naturally penalises methods that
-    waste budget on molecules that fail the constraints.
+    *Fewer than k molecules*: the running average is taken over however many
+    qualifying molecules exist so far (returning 0.0 if none), matching the
+    PMO reference implementation.  Dividing by a fixed *k* instead would
+    penalise a run k/n times over purely for being early in its budget.
 
     *Integration*: trapezoidal rule over the raw call-count axis, anchored at
-    t=0 (f=0) and extended to t=budget with the last observed f-value.
+    t=0 (f=0).  The curve is extended to ``budget`` only when the run actually
+    reached the budget or when ``finish=True``; a run that stopped early
+    without converging is integrated over the budget it was *given*, so a
+    crashed run cannot score the same as one that used its whole budget.
 
     Examples
     --------
     >>> log = [(1, 0.3), (2, 0.7), (3, 0.5), (4, 0.9), (5, 0.8)]
-    >>> compute_auc_top_k(log, k=3, budget=5)
-    0.6466...
+    >>> round(compute_auc_top_k(log, k=3, budget=5), 4)
+    0.48
 
-    Constrained example (only even-indexed entries are valid):
+    Constrained: entries failing the constraint never enter the top-k.  Note
+    the average is over molecules *found*, so filtering out low scorers can
+    raise the curve -- the constraint cost shows up as a delayed start.
 
     >>> constr = [False, True, False, True, True]
-    >>> compute_auc_top_k(log, k=3, budget=5, constraints=constr)
-    ...
+    >>> round(compute_auc_top_k(log, k=3, budget=5, constraints=constr), 4)
+    0.52
     """
     if not optimization_log:
         return 0.0
@@ -107,22 +118,26 @@ def compute_auc_top_k(
             elif score > top_k[0]:
                 heapq.heapreplace(top_k, score)
 
-        # Current f(t): average of top-k found so far
-        if top_k:
-            avg = sum(top_k) / k  # divide by k even if fewer than k found
-        else:
-            avg = 0.0
+        # Current f(t): average over the top-k found so far.  Divide by how
+        # many actually qualify, not by k -- otherwise a run that has found
+        # fewer than k molecules is scored k/n times too low.
+        avg = sum(top_k) / len(top_k) if top_k else 0.0
 
         curve_t.append(t)
         curve_f.append(avg)
 
-    # Extend to budget with the last f value (flat extrapolation)
-    if curve_t[-1] < budget:
+    # Extend to budget with the last f value (flat extrapolation).  Only do
+    # this for a run that legitimately finished; a run that merely stopped
+    # short must not be credited for budget it never spent.
+    if finish and curve_t[-1] < budget:
         curve_t.append(budget)
         curve_f.append(curve_f[-1])
 
-    # Trapezoidal integration, normalised by budget
-    auc = _trapz(curve_f, curve_t) / budget
+    # Trapezoidal integration, normalised by the span actually integrated.
+    span = curve_t[-1]
+    if span <= 0:
+        return 0.0
+    auc = _trapz(curve_f, curve_t) / span
     return float(max(0.0, min(1.0, auc)))
 
 

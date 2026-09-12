@@ -58,6 +58,8 @@ def _make_constants(
     score_thresholds=(0.0,),
     score_type="continuous",
     max_n_nodes=20,
+    oracles=None,
+    uncertainty_modulation=None,
 ) -> namedtuple:
     fields = [
         "score_components",
@@ -66,6 +68,8 @@ def _make_constants(
         "qsar_models",
         "device",
         "max_n_nodes",
+        "oracles",
+        "uncertainty_modulation",
     ]
     C = namedtuple("C", fields)
     return C(
@@ -75,6 +79,8 @@ def _make_constants(
         qsar_models={},
         device="cpu",
         max_n_nodes=max_n_nodes,
+        oracles=dict(oracles or {}),
+        uncertainty_modulation=dict(uncertainty_modulation or {}),
     )
 
 
@@ -277,12 +283,7 @@ class TestTargetSizeComponent:
 class TestScoreType:
 
     def test_binary_below_threshold_gives_zero(self):
-        """Binary scoring: molecules failing ALL thresholds → score 0.
-
-        Note: the single-component path in ScoringFunction returns the raw
-        score regardless of score_type, so this test uses two components to
-        exercise the binary masking branch.
-        """
+        """Binary scoring: molecules failing ALL thresholds → score 0."""
         graphs = [_FakeGraph("CCCCC", n_nodes=5)]
         termination, validity, uniqueness = _all_valid_unique(1)
         c = _make_constants(
@@ -294,6 +295,46 @@ class TestScoreType:
         sf = ScoringFunction(c)
         score = sf.compute_score(graphs, termination, validity, uniqueness)
         assert (score == 0).all()
+
+    def test_binary_applies_threshold_with_one_component(self):
+        """score_type='binary' must be honoured for a single component too.
+
+        The shipped goal_directed template uses exactly one component with a
+        threshold; a short-circuit used to return the raw continuous score, so
+        that job silently optimised continuous QED instead of the binary reward
+        the config asked for.
+        """
+        graphs = [_FakeGraph("CCO", n_nodes=3)]
+        termination, validity, uniqueness = _all_valid_unique(1)
+        c = _make_constants(
+            score_components=["QED"],
+            score_thresholds=[0.99],  # QED of ethanol is well below this
+            score_type="binary",
+            max_n_nodes=10,
+        )
+        score = ScoringFunction(c).compute_score(
+            graphs, termination, validity, uniqueness
+        )
+        assert (score == 0).all()
+
+    def test_target_size_score_is_never_negative(self):
+        """A molecule far from the target size scores 0, not a negative number.
+
+        The unclamped form was unbounded below, and two negative components
+        multiplied to a positive reward.
+        """
+        graphs = [_FakeGraph("C", n_nodes=1)]
+        termination, validity, uniqueness = _all_valid_unique(1)
+        c = _make_constants(
+            score_components=["target_size=10"],
+            score_thresholds=[0.0],
+            score_type="continuous",
+            max_n_nodes=13,
+        )
+        score = ScoringFunction(c).compute_score(
+            graphs, termination, validity, uniqueness
+        )
+        assert (score >= 0).all()
 
     def test_binary_above_threshold_gives_nonzero(self):
         """Binary scoring: molecule above the QED threshold → score > 0."""
@@ -346,3 +387,62 @@ class TestScoreType:
         assert (
             comp["QED"].sum() > 0
         ), "Component scores should not be masked by validity"
+
+
+# ===========================================================================
+# Oracle-backed components
+# ===========================================================================
+
+
+def _constant_half(smiles):
+    """Module-level so a PythonOracle can import it by path."""
+    return [0.5] * len(smiles)
+
+
+class TestOracleComponents:
+    def test_oracle_component_is_scored(self):
+        c = _make_constants(
+            score_components=["my_target"],
+            score_thresholds=[0.0],
+            oracles={
+                "my_target": {
+                    "type": "python",
+                    "target": f"{__name__}:_constant_half",
+                }
+            },
+        )
+        graphs = [_FakeGraph("CCO")]
+        termination, validity, uniqueness = _all_valid_unique(1)
+        score = ScoringFunction(c).compute_score(
+            graphs, termination, validity, uniqueness
+        )
+        assert float(score[0]) == pytest.approx(0.5)
+
+    def test_oracle_may_be_named_with_an_activity_suffix(self):
+        """
+        A component containing "activity" used to be routed to the qsar_models
+        branch on the substring alone, so an oracle called "EGFR_activity"
+        passed validation and then raised KeyError on the first scored batch.
+        """
+        c = _make_constants(
+            score_components=["EGFR_activity"],
+            score_thresholds=[0.0],
+            oracles={
+                "EGFR_activity": {
+                    "type": "python",
+                    "target": f"{__name__}:_constant_half",
+                }
+            },
+        )
+        graphs = [_FakeGraph("CCO")]
+        termination, validity, uniqueness = _all_valid_unique(1)
+        score = ScoringFunction(c).compute_score(
+            graphs, termination, validity, uniqueness
+        )
+        assert float(score[0]) == pytest.approx(0.5)
+
+    def test_undeclared_component_fails_at_construction(self):
+        """Not three batches into a training run."""
+        c = _make_constants(score_components=["nowhere"], score_thresholds=[0.0])
+        with pytest.raises(ValueError, match="neither built-in nor"):
+            ScoringFunction(c)

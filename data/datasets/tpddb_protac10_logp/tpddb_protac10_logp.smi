@@ -1,0 +1,11 @@
+SMILES	logP
+O=C(NCc1ccc(Cl)cc1)[C@@H]1C[C@@H](O)CN1C(=O)Cn1ccnc1	0.8147
+CC(C)[C@@H](C(=O)N1C[C@](C)(O)C[C@H]1C(=O)O)N1Cc2ccccc2C1=O	1.1035
+CCC(=O)N1CCC(C(=O)Nc2ncc(SCc3ncc(C)o3)s2)CC1	3.3189
+CC(=O)NCC(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1	0.8326
+CC(=O)N[C@@H](C)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1	1.2211
+CC(=O)O[C@@H](C)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1	1.6481
+Cc1cc(CC(=O)N2C[C@H](O)C[C@H]2C(=O)NCc2ccc(-c3cc[nH]c3)cc2)on1	1.7988
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(N)C(F)(F)F)cc1	1.5861
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)c2ccccc2)cc1	3.0103
+CC[C@H](NC(C)=O)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1	1.6112

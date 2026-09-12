@@ -51,6 +51,20 @@ def get_feature_vector_indices() -> list:
     return np.cumsum(idc).tolist()
 
 
+def _checkpoint_epoch() -> int:
+    """
+    Epoch number of the checkpoint being sampled.
+
+    Taken from the `model_restart_<N>.pth` filename when an explicit checkpoint
+    path was given, since `generation_epoch` describes a directory-based lookup
+    that such a job never performs.
+    """
+    if getattr(constants, "pretrained_model_path", ""):
+        match = re.search(r"model_restart_(\d+)\.pth", constants.pretrained_model_path)
+        return int(match.group(1)) if match else 0
+    return constants.generation_epoch
+
+
 def get_last_epoch() -> str:
     """
     Gets previous training epoch by reading it from the "convergence.log" file.
@@ -77,25 +91,16 @@ def get_last_epoch() -> str:
         except (ValueError, FileNotFoundError):
             epoch_key = "Epoch 1"
 
-        if constants.job_type == "generate" or (
-            constants.job_type == "sample"
-            and getattr(constants, "sample_mode", "generate") == "generate"
-        ):
-            if constants.pretrained_model_path:
-                import re as _re
-
-                _m = _re.search(
-                    r"model_restart_(\d+)\.pth", constants.pretrained_model_path
-                )
-                gen_epoch = int(_m.group(1)) if _m else 0
-            else:
-                gen_epoch = constants.generation_epoch
-            epoch_key = f"Epoch GEN{gen_epoch}"
-        elif constants.job_type == "test" or (
-            constants.job_type == "sample"
-            and getattr(constants, "sample_mode", "generate") == "evaluate"
-        ):
-            epoch_key = f"Epoch EVAL{constants.generation_epoch}"
+        _sample_mode = getattr(constants, "sample_mode", "generate")
+        _is_evaluate = constants.job_type == "test" or (
+            constants.job_type in ("sample", "generate") and _sample_mode == "evaluate"
+        )
+        if _is_evaluate:
+            # checked first: job_type is "generate" for both modes since the
+            # refactor, so testing job_type alone would always pick "generate".
+            epoch_key = f"Epoch EVAL{_checkpoint_epoch()}"
+        elif constants.job_type in ("generate", "sample"):
+            epoch_key = f"Epoch GEN{_checkpoint_epoch()}"
 
     return epoch_key
 
@@ -234,7 +239,7 @@ def get_restart_epoch() -> Union[int, str]:
         constants.restart
         or constants.job_type == "test"
         or (
-            constants.job_type == "sample"
+            constants.job_type in ("sample", "generate")
             and getattr(constants, "sample_mode", "generate") == "evaluate"
         )
     ):
@@ -513,11 +518,15 @@ def read_row(path: str, row: int, col: int) -> np.ndarray:
         np.ndarray : Desired row from the file.
     """
     with open(path, "r") as csv_file:
+        # ndmin=2 keeps a single-data-row CSV two-dimensional.  Without it
+        # genfromtxt returns a 1-D array and the indexing below silently returns
+        # a COLUMN instead of a row, so `get_last_epoch` raised and was swallowed
+        # into a wrong-but-plausible "Epoch 1" for the rest of the run.
         data = np.genfromtxt(
-            csv_file, dtype=str, delimiter=",", skip_header=1, usecols=col
+            csv_file, dtype=str, delimiter=",", skip_header=1, usecols=col, ndmin=2
         )
-    data = np.array(data)
-    return data[:][row]
+    data = np.atleast_2d(np.array(data))
+    return data[row]
 
 
 def suppress_warnings() -> None:
@@ -660,6 +669,10 @@ def write_job_parameters(params: namedtuple) -> None:
 
     with open(dict_path, "w") as f:
         json.dump(params_dict, f, indent=2, cls=_ConstantsEncoder)
+        # json.dump writes no trailing newline, which trips the
+        # end-of-file-fixer pre-commit hook every time one of these
+        # generated files is regenerated and committed.
+        f.write("\n")
 
 
 def write_preprocessing_parameters(params: namedtuple) -> None:
@@ -686,6 +699,13 @@ def write_preprocessing_parameters(params: namedtuple) -> None:
         "use_chirality",
         "use_explicit_H",
         "ignore_H",
+        # Recorded so downstream jobs know the encoding they must match: the
+        # decoding route depends on `decoding_route`, and the ORDER of
+        # `conditioning["properties"]` fixes the meaning of each slot in the
+        # stored condition vectors.
+        "decoding_route",
+        "conditioning",
+        "condition_dim",
     }
     split_keys = {"split_type", "train_frac", "valid_frac", "smiles_file"}
     keys_to_write = vocab_keys | split_keys
@@ -695,6 +715,7 @@ def write_preprocessing_parameters(params: namedtuple) -> None:
     preproc_dict["run_info"] = _build_run_info(seed=getattr(params, "seed", 0))
     with open(dict_path, "w") as f:
         json.dump(preproc_dict, f, indent=2)
+        f.write("\n")
 
 
 def update_preprocessing_stats(dataset_dir: str) -> None:
@@ -726,6 +747,7 @@ def update_preprocessing_stats(dataset_dir: str) -> None:
 
     with open(json_path, "w") as f:
         json.dump(data, f, indent=2)
+        f.write("\n")
 
 
 def write_graphs_to_smi(
@@ -849,6 +871,7 @@ def write_training_status(
             "rl",
             "constrained_rl",
             "unconditional",
+            "conditional",
             "goal_directed",
         ]:
             if score is None:
@@ -1020,10 +1043,15 @@ def write_validation_scores(
                               start a new one.
     """
     validation_file_path = output_dir + "validation.log"
-    avg_likelihood_val = model_scores["avg_likelihood_val"]
-    avg_likelihood_train = model_scores["avg_likelihood_train"]
-    avg_likelihood_gen = model_scores["avg_likelihood_gen"]
-    uc_jsd = model_scores["UC-JSD"]
+
+    def _scalar(value: Union[float, torch.Tensor]) -> float:
+        """Coerce a metric to a plain float so "{:.5f}" always applies."""
+        return float(value.item() if torch.is_tensor(value) else value)
+
+    avg_likelihood_val = _scalar(model_scores["avg_likelihood_val"])
+    avg_likelihood_train = _scalar(model_scores["avg_likelihood_train"])
+    avg_likelihood_gen = _scalar(model_scores["avg_likelihood_gen"])
+    uc_jsd = _scalar(model_scores["UC-JSD"])
 
     if not append:  # create file
         with open(validation_file_path, "w") as output_file:
@@ -1120,13 +1148,20 @@ def load_saved_model(model: torch.nn.Module, path: str) -> torch.nn.Module:
     -------
         model (torch.nn.Module) : Loaded model.
     """
-    try:
-        # first try to load model as if it was created using GraphINVENT
-        # v1.0 (will raise an exception if it was actually created with
-        # GraphINVENT v2.0)
-        model.state_dict = torch.load(path, weights_only=False).state_dict()
-    except AttributeError:
-        # try to load the model as if created using GraphINVENT v2.0 or
-        # later
-        model.load_state_dict(torch.load(path, weights_only=False))
+    # `map_location` is required so a checkpoint trained on CUDA can be loaded
+    # on a CPU/MPS machine.
+    state = torch.load(path, map_location=constants.device, weights_only=False)
+
+    if isinstance(state, dict) and "model" in state:
+        # Checkpoint saved with optimizer/scheduler state (RL jobs, and
+        # supervised jobs since the restart fix).
+        model.load_state_dict(state["model"])
+    elif isinstance(state, torch.nn.Module):
+        # GraphINVENT v1.0 pickled the whole module.  NOTE: assigning to
+        # `model.state_dict` here (as this function used to) shadows the method
+        # and leaves the weights untouched, silently yielding an untrained model.
+        model.load_state_dict(state.state_dict())
+    else:
+        # Plain state_dict (GraphINVENT v2.0).
+        model.load_state_dict(state)
     return model

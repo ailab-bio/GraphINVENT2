@@ -1,6 +1,5 @@
 {
   "submission": {
-    "python_path": "python",
     "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "gdb13-debug",

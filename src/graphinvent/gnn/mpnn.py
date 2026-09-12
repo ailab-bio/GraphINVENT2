@@ -97,9 +97,20 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
         )
 
         # Two-tier readout that predicts the full action probabilities from node + graph embeddings.
+        # When conditioning is active the condition embedding is concatenated to
+        # the graph embedding, so the readout input grows accordingly.  Routing
+        # the condition only through the virtual seed node is not enough: the
+        # seed is stripped before readout, so on an *empty* graph (the first step
+        # of every molecule) there are no real nodes to carry the signal and the
+        # condition would have no effect at all.
+        self.condition_embedding_dim = (
+            self.constants.condition_embedding_dim
+            if self.condition_encoder is not None
+            else 0
+        )
         self.ActionProbReadout = gnn.modules.ActionProbReadout(
             node_emb_size=self.constants.hidden_node_features,
-            graph_emb_size=self.constants.gather_width,
+            graph_emb_size=self.constants.gather_width + self.condition_embedding_dim,
             mlp1_hidden_dim=self.constants.mlp1_hidden_dim,
             mlp1_depth=self.constants.mlp1_depth,
             mlp1_dropout_p=self.constants.mlp1_dropout_p,
@@ -169,6 +180,7 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
         hidden_nodes: torch.Tensor,
         input_nodes: torch.Tensor,
         node_mask: torch.Tensor,
+        condition_embedding: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Produces the action probabilities logits from the final node hidden states.
@@ -180,12 +192,17 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
                           Shape: (batch, max_n_nodes, n_node_features)
             node_mask:    True for real nodes, False for padding.
                           Shape: (batch, max_n_nodes)
+            condition_embedding: Optional encoded property vector, concatenated
+                          to the graph embedding.
+                          Shape: (batch, condition_embedding_dim)
 
         Returns:
             Flat, unnormalised action probabilities logits.
             Shape: (batch, len_f_add + len_f_conn + 1)
         """
         graph_embeddings = self.gather(hidden_nodes, input_nodes, node_mask)
+        if condition_embedding is not None:
+            graph_embeddings = torch.cat((graph_embeddings, condition_embedding), dim=1)
         return self.ActionProbReadout(hidden_nodes, graph_embeddings)
 
     def forward(
@@ -212,6 +229,17 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
             Shape: (batch, len_f_add + len_f_conn + 1)
         """
         condition_embedding = None
-        if condition_vector is not None and self.condition_encoder is not None:
+        if self.condition_encoder is not None:
+            if condition_vector is None:
+                # A conditional model always needs a condition to keep the
+                # readout input shape well defined; an absent one is treated as
+                # the neutral all-zero condition rather than silently falling
+                # back to an unconditional forward pass.
+                condition_vector = torch.zeros(
+                    nodes.shape[0],
+                    self.constants.condition_dim,
+                    device=nodes.device,
+                    dtype=nodes.dtype,
+                )
             condition_embedding = self.condition_encoder(condition_vector)
         return super().forward(nodes, edges, condition_embedding=condition_embedding)

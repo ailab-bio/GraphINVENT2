@@ -1,6 +1,5 @@
 {
   "submission": {
-    "python_path": "python",
     "graphinvent_path": "./src/graphinvent/",
     "data_path": "./data/datasets/",
     "dataset": "debug",
@@ -22,6 +21,9 @@
     "condition_dim": 1,
     "condition_embedding_dim": 100,
 
+    "_sample_conditions": "Property value(s) to condition on when the training job samples molecules to evaluate itself. Required whenever condition_dim > 0, because every training run samples at `sample_every` epochs. Keys must match the property column names in the preprocessed TSV.",
+    "sample_conditions": {"logP": 3.0},
+
     "device": "cuda",
     "restart": false,
     "use_tensorboard": false,
@@ -40,7 +42,7 @@
     "n_samples": 100,
     "n_workers": 0,
 
-    "_architecture": "GGNN architecture. Ignored when resume_from is set (loaded from checkpoint). Must match the pretrained model's architecture if using transfer learning.",
+    "_architecture": "GGNN architecture. Inherited from the checkpoint ONLY for keys you delete from this block: any architecture key present here overrides the checkpoint and will fail to load if it disagrees. When setting resume_from, delete this whole block.",
     "hidden_node_features": 100,
     "message_passes": 3,
     "message_size": 100,

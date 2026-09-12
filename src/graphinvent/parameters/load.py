@@ -18,8 +18,14 @@ def molecules(path: str) -> rdkit.Chem.rdmolfiles.SmilesMolSupplier:
         has_header = bool("SMILES" in first_line)
     smi_file.close()
 
-    # read file
+    # Property columns are tab-separated, so RDKit must be told the delimiter;
+    # with the default it hands the whole "SMILES\tvalue" line to the parser and
+    # every molecule comes back None.
     molecule_set = SmilesMolSupplier(
-        path, sanitize=True, nameColumn=-1, titleLine=has_header
+        path,
+        sanitize=True,
+        nameColumn=-1,
+        titleLine=has_header,
+        delimiter="\t" if "\t" in first_line else " \t",
     )
     return molecule_set

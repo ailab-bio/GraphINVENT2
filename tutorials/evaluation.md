@@ -1,268 +1,250 @@
-# Tutorial: Evaluation in GraphINVENT2
+# Evaluation in GraphINVENT2
 
-This document is the single reference for all metrics computed by GraphINVENT2.
+This is the reference for the metrics GraphINVENT2 computes, what each one does and does not
+tell you, and which of them a given job type actually writes to disk.
 
----
-
-## 1. Overview
-
-GraphINVENT2 uses a **hierarchical evaluation framework**: each successive training setting computes all metrics from the simpler settings plus its own additions.
-
-```
-Unconditional generation
-  └── + Success rate, conditional V.U.N., conditional diversity, conditional similarity
-        (Conditional generation)
-          └── + AUC Top-K, oracle-call tracking, optimization curve
-                (Goal-directed / RL generation)
-```
-
-Metrics are written to `generation.log` (CSV) and, when `use_tensorboard: true`, to TensorBoard at every `sample_every` evaluation step.
+That last distinction matters more than it might seem. GraphINVENT2 contains two evaluation
+paths that are easy to confuse: the **in-pipeline** metrics, computed by `Analyzer` during
+training, generation and RL and appended to `generation.log`; and the **standalone** functions
+in `src/metrics/`, which implement a wider set including V.U.N., FCD, and success criteria but
+which the training pipeline does not call. If you want the second set you have to run it
+yourself against a generated SMILES file. Each section below says which path a metric belongs
+to.
 
 ---
 
-## 2. Metrics by evaluation setting
+## 1. What each job type writes
 
-### 2.1 Unconditional generation
+| Job type | In-pipeline metrics written to `generation.log` |
+|----------|--------------------------------------------------|
+| `unconditional` | Validity, proper termination, uniqueness, novelty, SA scores, internal diversity, test-set similarity, property histograms. UC-JSD goes to `validation.log`. |
+| `conditional` | The same set. No conditional-specific metric is computed automatically; the test-set similarity is however filtered to molecules matching `sample_conditions`. |
+| `generate` | The same set, one row. Computed from the first generation batch only, not from the full `n_samples` sample. |
+| `goal_directed` | The same set plus `success_rate`, `internal_diversity_successful`, and one `score_<component>_mean` per scoring component. Mean score also goes to `score.log`. |
+| `goal_directed` with `oracle_budget` | Additionally, `oracle_eval.csv` with a full metrics row per milestone checkpoint, including diversity, FCD, and rediscovery rate. |
 
-Applies to `job_type: unconditional` (pre-training and transfer learning).
+FCD and V.U.N. are **not** computed on the ordinary path. `Analyzer._compute_extended_metrics`
+takes an `include_expensive` flag that is left false everywhere except the oracle-milestone
+evaluation, so FCD appears only in `oracle_eval.csv`, and V.U.N. only if you call
+`evaluate_unconditional` yourself.
 
 ---
 
-#### Validity
+## 2. Distribution-level metrics
 
-**What it measures:** The fraction of generated SMILES strings that RDKit can parse into a chemically valid molecule.
+### Validity
 
-**Formula:**
+The fraction of generated graphs that RDKit can sanitise.
 
     validity = n_valid / n_generated
 
-**Interpretation:** 1.0 is perfect; values < 0.7 typically indicate the model has not converged or the vocabulary is misspecified. A newly initialised model starts near 0.
+A freshly initialised model is near 0 and a converged one on drug-like data is usually above
+0.7. Invalid graphs are written into the `.smi` output as the placeholder `[Xe]`, which RDKit
+parses successfully as a xenon atom, so validity recomputed by counting successful
+`MolFromSmiles` calls on a raw output file will be far too high; use the `.valid` file. Persistently low validity late in training points at the vocabulary or the bond encoding
+rather than at undertraining — in particular, `use_aromatic_bonds: true` lets the model emit
+aromatic systems that fail sanitisation, and Kekulé encoding lets it emit rings with the wrong
+single/double parity.
 
----
+Validity is a floor, not a result. It measures whether RDKit accepts the output, which is a
+much weaker property than the molecule being reasonable.
 
-#### Uniqueness
+### Proper termination
 
-**What it measures:** The fraction of valid molecules that are non-duplicate, measured by canonical SMILES.
+`fraction_pt` is the share of graphs that ended because the model drew the terminate action;
+the rest were cut off at `max_n_nodes` or by an invalid action. `fraction_valid_pt` combines
+both conditions.
 
-**Formula:**
+This pair deserves attention because a model can post high validity while almost never choosing
+to stop, in which case the size distribution of its output is set by `max_n_nodes` rather than
+by anything the model learned, and the molecules are truncated fragments that happen to
+sanitise.
 
-    uniqueness = |unique canonical SMILES among valid| / n_valid
+### Uniqueness
 
-**Interpretation:** 1.0 means every valid molecule is structurally distinct. Low uniqueness (< 0.5) indicates mode collapse — the model is repeatedly generating the same few structures.
+    uniqueness = |distinct canonical SMILES among valid| / n_valid
 
----
+Uniqueness below about 0.5 is mode collapse. Note that it is computed within a single generated
+batch, so it depends on `n_samples`: a small sample will show high uniqueness even from a model
+with a narrow distribution, because it has not drawn enough molecules to repeat itself.
 
-#### Novelty
+### Novelty
 
-**What it measures:** The fraction of unique valid molecules not found verbatim in the training set.
+    novelty = |unique valid molecules not in the training set| / |unique valid|
 
-**Formula:**
+Novelty compares canonical SMILES exactly, which makes it a blunt instrument: a generated
+molecule differing from a training molecule by one methyl counts as fully novel. It is returned
+as `None` when the training set is unavailable. Very low novelty indicates memorisation; high
+novelty on its own indicates nothing, since a model producing implausible structures is
+maximally novel.
 
-    novelty = |unique_valid ∩ complement(training_set)| / |unique_valid|
+The continuous version of this question is test-set similarity, below.
 
-**Interpretation:** 1.0 means the model generates only molecules unseen during training. Very low novelty (< 0.3) suggests memorisation. Novelty is `None` when the training set is unavailable.
-
----
-
-#### V.U.N.
-
-**What it measures:** The joint score across validity, uniqueness, and novelty — the fraction of generated molecules that are simultaneously valid, unique, and novel.
-
-**Formula:**
+### V.U.N. (standalone only)
 
     vun = validity × uniqueness × novelty
 
-**Interpretation:** The primary single-number summary for unconditional generation quality. A model that generates valid and diverse molecules while exploring beyond the training set will have a high V.U.N. score.
+A single-number summary of the three above, returned by `evaluate_unconditional` in
+`src/metrics/`. It is not written to `generation.log`. Treating it as the score for a
+generative model is a mistake this codebase deliberately avoids making automatically: the
+product is maximised by a model producing valid, distinct structures unrelated to anything in
+the training data, which is exactly what a poorly-trained model does.
 
----
+### Internal diversity
 
-#### Internal diversity
+How different the generated molecules are from each other, following the MOSES definition:
 
-**What it measures:** How chemically distinct the generated molecules are from one another. Follows the MOSES benchmark definition.
+    internal_diversity = 1 − mean(pairwise Tanimoto similarity)
 
-**Formula:**
+computed over the upper triangle of the pairwise matrix using Morgan fingerprints (ECFP4,
+radius 2, 2048 bits). SMILES are canonicalised and deduplicated first, and the number of
+duplicates removed is reported separately as a diversity signal in its own right.
 
-    internal_diversity = 1 − mean(pairwise Tanimoto similarities)
+Values above roughly 0.7 are typical for a well-trained unconditional model on drug-like data.
+A set with fewer than two unique valid molecules returns 0.0 with a warning.
 
-where pairwise similarities are computed over the upper triangle (excluding diagonal) of the generated set using Morgan fingerprints (ECFP4, radius 2, 2048 bits). SMILES are canonicalised and deduplicated before fingerprinting.
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `compute_internal_diversity` | `true` | Set false to skip the O(n²) comparison |
+| `diversity_max_molecules` | `10000` | Random subsample cap when the generated set is larger; a warning is printed. `null` disables the cap |
 
-**Interpretation:**
-- 1.0 — all molecules are maximally different from each other
-- 0.0 — all molecules are identical
-- Values > 0.7 are typical for well-trained unconditional models on drug-like datasets.
-- `n_duplicates_removed` is reported separately and is itself a diversity signal.
+`generation.log` carries `internal_diversity`, `mean_internal_similarity`, and
+`max_internal_similarity`. The function also returns the median and the fraction of pairs above
+0.4/0.6/0.8/0.9 if you call it directly. For goal-directed jobs,
+`internal_diversity_successful` repeats the calculation over only the molecules scoring above
+`success_threshold`, which is the number that distinguishes an optimiser that found many good
+molecules from one that found one and copied it.
 
-**Configurable parameters:**
+### Test-set similarity
 
-| Parameter | Default | Description |
-|---|---|---|
-| `compute_internal_diversity` | `true` | Set to `false` to skip (saves O(n²) time). |
-| `diversity_max_molecules` | `10000` | Cap on molecules used for pairwise computation. When exceeded, a random subsample of this size is drawn and a warning is printed. Set to `null` to disable. |
+For each valid generated molecule, the maximum Tanimoto similarity to any molecule in the test
+set:
 
-**Additional reported statistics:** `mean_internal_similarity`, `median_internal_similarity`, `max_internal_similarity`, and the fraction of pairs with similarity > 0.4 / 0.6 / 0.8 / 0.9. For RL jobs, `internal_diversity_successful` is also computed on the subset of molecules that exceed the success threshold.
+    nn_sim(g) = max over test molecules t of Tanimoto(fp(g), fp(t))
 
----
+Reported as `sim_mean`, `sim_median`, `sim_top<K>`, the fractions above 0.4/0.6/0.8/0.9, and
+`exact_rediscovery_count` — the number of *distinct test molecules* reproduced exactly,
+determined by canonical-SMILES identity rather than by a fingerprint similarity of 1.0, since
+distinct molecules can share a fingerprint.
 
-#### Test-set similarity
+Interpretation is two-sided and neither end is good. A mean above about 0.7 says the model is
+interpolating within the region it was trained on; a mean below about 0.3 says the samples are
+unrelated to the reference set, which is as consistent with generating nonsense as with
+exploring usefully. The distribution of `nn_sim` across the generated set is more informative
+than its mean, because a bimodal distribution — some near-copies, some far-out structures — has
+the same mean as a uniformly mediocre one.
 
-**What it measures:** How close the generated molecules are to the held-out test set — a continuous version of the binary novelty check. For each valid generated molecule, the maximum Tanimoto similarity to any molecule in the test set is recorded (nearest-neighbour similarity).
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `compute_test_similarity` | `true` | Set false to skip |
+| `test_similarity_max_refs` | `null` | Deterministic stride-based subsample of the test set; `null` uses all |
+| `test_similarity_top_k` | `10` | K for `sim_top<K>` |
 
-**Formula:**
+When `sample_conditions` is set, the test set is filtered to molecules whose condition values
+lie within ±0.3 of the target before the comparison, so a conditional run is compared against
+the relevant slice of the test set rather than all of it. The tolerance is hard-coded.
 
-    nn_sim(g) = max_{t ∈ test_set} Tanimoto(fp(g), fp(t))
+### SA score
 
-Aggregate statistics: mean, median, top-K mean, threshold fractions (> 0.4 / 0.6 / 0.8 / 0.9), and exact rediscovery count (nn_sim = 1.0).
+Synthetic accessibility on the Ertl & Schuffenhauer scale, 1 easy to 10 hard, estimated from
+fragment frequencies in a database of known compounds. `sa_score_mean`, `sa_score_median`, and
+`sa_score_std` are reported over the valid molecules.
 
-**Interpretation:**
-- High mean similarity (> 0.7) suggests the model is interpolating within the training distribution.
-- Low mean similarity (< 0.3) suggests the model is exploring novel chemical space but may be generating unrealistic molecules.
-- `exact_rediscovery_count` is the number of generated molecules that are identical to a test molecule (Tanimoto = 1.0).
+Drug-like molecules typically fall between 2 and 5. The score is a fragment-frequency heuristic
+and not a retrosynthetic assessment: it penalises unusual substructures whether or not they are
+actually hard to make, and it will happily give a low score to a molecule no route reaches. It
+is useful as a filter against obviously unrealisable output and misleading as a synthesizability
+claim.
 
-**Configurable parameters:**
+### FCD (oracle-milestone evaluation only)
 
-| Parameter | Default | Description |
-|---|---|---|
-| `compute_test_similarity` | `true` | Set to `false` to skip (useful for large test sets). |
-| `test_similarity_max_refs` | `null` | Cap on test-set reference molecules. Deterministic stride-based subsampling. |
-| `test_similarity_top_k` | `10` | K for the top-K mean similarity statistic. |
-
----
-
-#### FCD (Fréchet ChemNet Distance)
-
-**What it measures:** The distributional distance between the generated set and a reference set (training or test), computed in the latent space of ChemNet — a neural network trained on molecular property prediction. Analogous to the Fréchet Inception Distance used in image generation.
-
-**Formula:** Modelled as multivariate Gaussians in ChemNet's penultimate-layer activations:
+Fréchet ChemNet Distance between the generated and reference distributions, computed as
+multivariate Gaussians in ChemNet's penultimate-layer activations:
 
     FCD = ||μ_gen − μ_ref||² + Tr(Σ_gen + Σ_ref − 2(Σ_gen Σ_ref)^{1/2})
 
-**Interpretation:** Lower FCD means the generated distribution is closer to the reference. FCD < 1 is excellent; FCD > 10 indicates a substantial distributional shift. Returns `None` if `fcd_torch` is not installed.
+Lower is closer. Below 1 is a close match; above 10 is a substantial distributional shift.
+Requires `fcd_torch`; returns `None` if it is not installed. It appears in `oracle_eval.csv` and
+nowhere else on the automatic path, and is available through the `include_fcd` argument of the
+standalone `evaluate_*` functions.
+
+### UC-JSD
+
+The Jensen–Shannon divergence between the per-molecule NLL distribution of the generated set
+and that of the training set, written to `validation.log` as `uc_jsd` and echoed into
+`convergence.log` as `model_score`.
+
+It approaches 0 as training converges, which makes it a convergence diagnostic rather than a
+quality measure: a model that has memorised the training set scores well on it, and so does a
+model whose samples happen to have training-like likelihoods for the wrong reasons.
 
 ---
 
-#### SA score (Synthetic Accessibility)
+## 3. Success criteria and conditional metrics
 
-**What it measures:** Estimates how easy a molecule is to synthesise, on a scale from 1 (easy) to 10 (hard), based on fragment frequencies in a large database of known compounds (Ertl & Schuffenhauer, 2009).
+Two different notions of "success" exist in this codebase and they are not connected.
 
-**Reported statistics:** mean, median, and standard deviation across all valid generated molecules.
+**In the pipeline**, `success_rate` is the fraction of generated molecules whose RL score
+exceeds `success_threshold` (default 0.5). It is computed only when a score tensor exists,
+which means only for `goal_directed` jobs. A conditional job produces no `success_rate` column.
 
-**Interpretation:** Drug-like molecules typically score between 2 and 5. Scores above 6 indicate complex or possibly unrealisable chemistry.
-
----
-
-#### UC-JSD (Jensen–Shannon Divergence of NLL distributions)
-
-**What it measures:** A convergence diagnostic that compares the model's NLL distribution on generated molecules to the NLL distribution on training molecules. A converged model assigns similar likelihoods to both.
-
-**Formula:**
-
-    UC-JSD = JSD(P_generated || P_training)
-
-where distributions are over per-token negative log-likelihoods and JSD is the symmetric Jensen–Shannon divergence.
-
-**Interpretation:** UC-JSD → 0 as training converges. Written to `validation.log`.
-
----
-
-### 2.2 Conditional generation
-
-Applies to `job_type: conditional`. Computes all unconditional metrics, plus:
-
----
-
-#### Success rate
-
-**What it measures:** The fraction of valid generated molecules that satisfy all target property criteria defined in `success_criteria`.
-
-**Formula:**
-
-    success_rate = |{mol ∈ valid_generated : passes_all_criteria(mol)}| / n_valid
-
-**Criteria types** (configured via `SuccessCriterion`):
+**In `src/metrics/`**, `SuccessCriterion` describes a property-based criterion and
+`evaluate_conditional` computes a `success_rate` and a `conditional_vun` from a list of them.
 
 | Type | Condition |
-|---|---|
-| `threshold` | `property > value` (direction: `"greater"`) or `property < value` (direction: `"less"`) |
+|------|-----------|
+| `threshold` | `property > value` with `direction="greater"`, or `< value` with `"less"` |
 | `range` | `min ≤ property ≤ max` |
 | `target` | `|property − value| ≤ tolerance` |
 
----
+`property` must name a key in `PROPERTY_REGISTRY` — currently `qed`, `sa_score`, `mol_weight`,
+and `logp` — or you must pass the function through the `property_fns` argument.
 
-#### Conditional V.U.N.
-
-**What it measures:** V.U.N. restricted to molecules that pass all target criteria.
-
-**Formula:**
-
-    conditional_vun = success_rate × uniqueness × novelty
-
----
-
-#### Conditional internal diversity
-
-**What it measures:** Internal diversity (1 − mean pairwise Tanimoto) computed only on the subset of generated molecules that pass all target criteria. This answers "are the successful molecules themselves diverse, or does the model find one solution and repeat it?"
-
-Computed and logged as `internal_diversity_successful` alongside the full-set `internal_diversity`.
+`src/metrics/_criteria.py` also provides `load_criteria_from_config`, which reads
+`config["job"]["success_criteria"]` from a params dict. Nothing in `src/graphinvent/` calls it,
+`success_criteria` is not a key in `defaults.py`, and putting it in a job config has no effect
+on a training or generation run. Use the criteria system by calling `evaluate_conditional`
+directly on a generated SMILES file, as shown below.
 
 ---
 
-#### Conditional test-set similarity
+## 4. Sample efficiency for goal-directed runs
 
-**What it measures:** Nearest-neighbour Tanimoto similarity against the subset of the test set whose property values match the target condition within the specified tolerance (default ±0.3).
+### AUC Top-K
 
-**How it works:** When `sample_conditions` is set in the job config (e.g. `{"pLogS": -1.5}`), the test set is automatically filtered to molecules whose condition values fall within `tolerance` of the target before comparison. Property names are read from the tab-separated header of `test.smi` produced during preprocessing.
+The PMO benchmark's primary metric (Gao et al., 2022). At each oracle call *t* the mean of the
+top *k* scores seen so far is recorded, dividing by *k* even when fewer than *k* molecules
+exist so that early calls are penalised; AUC Top-K is the area under that curve divided by the
+budget, so it lies in [0, 1]. Under a constrained variant, only molecules satisfying all
+constraints count toward the top *k*.
 
----
+It is implemented as `compute_auc_top_k` in `src/oracles/_auc.py` and is **not** computed
+automatically. Nothing in `src/graphinvent/` calls it, `oracle_eval.csv` has no `auc_top_10`
+column, and the `CachedOracle.optimization_log` it needs is not persisted by the training loop.
+Computing it currently means driving a `CachedOracle` yourself, or reconstructing the curve
+from the per-milestone `.smi` files.
 
-### 2.3 Goal-directed generation (RL)
+AUC Top-K measures how quickly high scores are reached, which is the right question when oracle
+calls are the binding constraint. It says nothing about whether the top *k* molecules are
+distinct from one another, synthesisable, or plausible, and a run can score well by exploiting
+a region the surrogate model overrates. Report it beside the diversity and validity columns.
 
-Applies to `job_type: goal_directed`. Computes all conditional and unconditional metrics, plus:
+### Oracle call counting
 
----
-
-#### Sample efficiency / AUC Top-K
-
-**What it measures:** The area under the top-K average score curve, normalised by oracle budget. At each oracle call `t`, the running top-K scores are maintained and their mean `f(t)` is recorded. The AUC is the integral of this curve from 0 to the budget, divided by the budget. Follows the PMO benchmark (Gao et al., 2022).
-
-**Formula:**
-
-    AUC_top_K = (1 / budget) ∫₀^budget f(t) dt  ≈  (1 / T) Σ_{t=1}^{T} mean(top-K scores up to t)
-
-For constrained RL, only molecules that pass all constraints count toward the top-K scores.
-
-**Interpretation:** Higher AUC Top-K means the model found high-scoring molecules earlier in the optimisation. Gao et al. recommend K = 10, budget = 10 000, 5 independent runs, reported as mean ± std.
-
----
-
-#### Oracle call tracking
-
-GraphINVENT2 deduplicates oracle calls: if the same SMILES is queried again, the cached score is returned without incrementing the oracle counter. The total oracle call count is logged at each RL step.
+`CachedOracle` returns a cached score for a repeated SMILES without incrementing its own
+counter, so its `call_count` reflects unique evaluations. The budget loop in
+`Workflow.constrained_rl_training_phase`, however, increments its own counter by `batch_size`
+at every step regardless of validity or duplication. A nominal 10 000-call budget therefore
+corresponds to fewer than 10 000 distinct molecules evaluated, and is not directly comparable
+to a PMO figure without accounting for that.
 
 ---
 
-#### Optimization curve
+## 5. Running the evaluation
 
-The top-K average score vs. oracle calls is logged to TensorBoard at each step (`Evaluation/score`). This curve shows how quickly the policy learns to propose high-scoring molecules.
+### Through the `generate` job
 
----
-
-## 3. How to run evaluation
-
-### Using the `generate` job type
-
-Set `sample_mode: evaluate` to evaluate a trained model on the test set (computes NLL / UC-JSD):
-
-```json
-{
-  "job": {
-    "job_type": "generate",
-    "sample_mode": "evaluate",
-    "generation_epoch": 100
-  }
-}
-```
-
-Set `sample_mode: generate` to sample molecules and compute all generation metrics:
+Sampling and computing the generation metrics:
 
 ```json
 {
@@ -270,54 +252,72 @@ Set `sample_mode: generate` to sample molecules and compute all generation metri
     "job_type": "generate",
     "sample_mode": "generate",
     "n_samples": 10000,
-    "generation_epoch": 100
+    "pretrained_model_path": "./output/debug/unconditional/run/model_restart_100.pth"
   }
 }
 ```
 
-Run:
+Computing NLL and UC-JSD on the test set instead:
+
+```json
+{
+  "job": {
+    "job_type": "generate",
+    "sample_mode": "evaluate",
+    "pretrained_model_path": "./output/debug/unconditional/run/model_restart_100.pth"
+  }
+}
+```
 
 ```bash
 python submit.py --config jobs/generate/params.json
 ```
 
-Results are written to `output/<dataset>/generate/<job_name>/generation/` and `generation.log`.
+`sample_mode: evaluate` loads `train.h5`, `valid.h5`, and `test.h5`, so the dataset must be
+preprocessed and present. Results land in `output/<dataset>/generate/<job_name>/`.
 
----
+### Directly, through `src/metrics/`
 
-### Standalone usage of `src/metrics/`
-
-The evaluation functions in `src/metrics/` are fully independent of GraphINVENT2's training pipeline and can be used directly:
+The functions in `src/metrics/` do not depend on the training pipeline. The editable install
+does not reliably put `src/` on the import path in this repository, so add it explicitly and
+run from the repository root:
 
 ```python
-from metrics import evaluate_unconditional, compute_internal_diversity, compute_test_set_similarity
+import sys
+sys.path.insert(0, "src")
 
-# Load your SMILES
-generated = [...]   # list of generated SMILES strings
-test_set   = [...]  # list of held-out test set SMILES strings
-train_set  = set([...])  # set of training SMILES strings
+from metrics import (
+    evaluate_unconditional,
+    compute_internal_diversity,
+    compute_test_set_similarity,
+)
 
-# Unconditional metrics
+generated = [...]        # list of generated SMILES
+test_set  = [...]        # list of held-out test SMILES
+train_set = {...}        # set of training SMILES
+
 results = evaluate_unconditional(
     generated,
-    reference_mols=test_set,
+    test_set,
     training_smiles=train_set,
     include_fcd=True,
 )
+# keys: validity, uniqueness, novelty, vun, diversity, sa_mean, sa_median, sa_std, fcd
 print(results)
 
-# Internal diversity
 div = compute_internal_diversity(generated, max_mols=5000)
 print(f"Internal diversity: {div['internal_diversity']:.3f}")
 
-# Test-set nearest-neighbour similarity
 sim = compute_test_set_similarity(generated, test_set, top_k=10)
 print(f"Mean NN similarity: {sim['mean_similarity']:.3f}")
 ```
 
-For conditional evaluation:
+Conditional evaluation with explicit criteria:
 
 ```python
+import sys
+sys.path.insert(0, "src")
+
 from metrics import evaluate_conditional, SuccessCriterion
 
 criteria = [
@@ -326,101 +326,110 @@ criteria = [
 ]
 results = evaluate_conditional(generated, test_set, criteria, training_smiles=train_set)
 print(f"Success rate: {results['success_rate']:.3f}")
+print(f"Conditional V.U.N.: {results['conditional_vun']}")
 ```
 
 ---
 
-### Reading results
+## 6. Where results are written
 
 | File | Contents |
-|---|---|
-| `generation.log` | One row per evaluation epoch/step; all scalar metrics as CSV columns. |
-| `oracle_eval.csv` | One row per oracle-call milestone (constrained RL only). |
-| `validation.log` | NLL and UC-JSD per epoch (evaluate mode). |
-| `convergence.log` | Training and validation loss per epoch. |
-| `progress.png` | Auto-generated plot of key metrics over training. |
-| `tensorboard/` | Full metric time-series; view with `tensorboard --logdir output/.../tensorboard/`. |
+|------|----------|
+| `generation.log` | One row per evaluation epoch or step; all scalar metrics as CSV columns, plus normalised property histograms |
+| `validation.log` | Per-molecule NLL on the validation, training, and generated sets, and UC-JSD |
+| `convergence.log` | Learning rate and losses per epoch (or per step, for RL) |
+| `score.log` | `Step, Score` for goal-directed jobs |
+| `oracle_eval.csv` | One row per oracle milestone; goal-directed jobs with `oracle_budget` only |
+| `progress.png` | Nine-panel plot regenerated from `generation.log` and `convergence.log` at every evaluation |
+| `tensorboard/` | Scalar time series when `use_tensorboard` is true |
+
+`oracle_eval.csv` columns: `oracle_count`, `fraction_valid`, `fraction_unique`, `novelty`,
+`sa_score_mean`, `sa_score_median`, `sa_score_std`, `success_rate`, `diversity`, `fcd`,
+`rediscovery_rate`, and `score_<component>_mean` for each scoring component.
 
 ---
 
-## 4. Configurable evaluation parameters
+## 7. Configurable evaluation parameters
 
 | Parameter | Default | Description |
-|---|---|---|
-| `compute_internal_diversity` | `true` | Compute pairwise fingerprint diversity within the generated set. |
-| `diversity_max_molecules` | `10000` | Subsample cap for pairwise diversity; `null` = no limit. |
-| `compute_test_similarity` | `true` | Compute nearest-neighbour similarity to the test set. |
-| `test_similarity_max_refs` | `null` | Subsample cap for test-set references. |
-| `test_similarity_top_k` | `10` | K for top-K mean similarity statistic. |
-| `sample_every` | `10` | Frequency (in epochs/steps) at which generation and evaluation run. |
-| `n_samples` | `100` | Number of molecules generated per evaluation step. |
-| `success_threshold` | `0.5` | Score threshold for success rate in RL evaluation. |
+|-----------|---------|-------------|
+| `compute_internal_diversity` | `true` | Pairwise fingerprint diversity within the generated set |
+| `diversity_max_molecules` | `10000` | Random subsample cap for that comparison; `null` disables |
+| `compute_test_similarity` | `true` | Nearest-neighbour similarity against the test set |
+| `test_similarity_max_refs` | `null` | Stride-based subsample cap on test references |
+| `test_similarity_top_k` | `10` | K for the top-K mean similarity statistic |
+| `sample_every` | `10` | Epochs or steps between evaluations |
+| `n_samples` | `2000` | Molecules generated per evaluation |
+| `success_threshold` | `0.5` | RL score above which a molecule counts as successful |
+| `eval_sample_size` | `30000` | Molecules generated per oracle-milestone checkpoint |
+| `checkpoint_oracle_counts` | `[1000, 3000, 10000]` | Oracle-call milestones at which to checkpoint and evaluate |
+
+Note that `n_samples` defaults to 2000 but the shipped job templates set it to 100, which is
+enough to confirm the pipeline runs and far too few for uniqueness, diversity, or similarity
+statistics to be stable.
 
 ---
 
-## 5. Worked examples
+## 8. Worked examples
 
-### Unconditional: evaluating a pretrained model on ZINC
+### An unconditional model
 
-1. Preprocess ZINC into HDF5 format (see Tutorial 01).
-2. Train with `job_type: unconditional`. Molecules are evaluated every `sample_every` epochs; results appear in `generation.log`.
-3. After training, inspect:
+Train with `job_type: unconditional`; molecules are sampled and evaluated every `sample_every`
+epochs.
 
 ```bash
-# Open the progress plot
-open output/ZINC/unconditional/run1/progress.png
-
-# Check the latest epoch's metrics
-tail -1 output/ZINC/unconditional/run1/generation.log
+open output/ZINC/unconditional/run/progress.png
+tail -1 output/ZINC/unconditional/run/generation.log
 ```
 
-Key columns to check: `fraction_valid`, `fraction_unique`, `novelty`, `internal_diversity`, `sim_mean` (should be < 0.5 for a generative model exploring novel space).
+The columns worth reading together are `fraction_valid_pt` (is the model deciding to stop?),
+`fraction_unique` and `internal_diversity` (is it exploring?), `novelty` and `sim_mean` (is it
+copying?), and the property histograms (is it in the right region at all?). Any one of them
+read alone can be satisfied by a model that is failing in a way the others would expose.
 
----
+### A conditional model
 
-### Conditional: evaluating molecules sampled at pLogS = −1.5
-
-1. Preprocess with a tab-separated TSV containing a `pLogS` column (see Tutorial 05).
-2. Train with `job_type: conditional`, `condition_dim: 1`.
-3. Sample with:
+Sample at a target and compute the property yourself:
 
 ```json
 {
   "job": {
     "job_type": "generate",
     "sample_mode": "generate",
-    "condition_dim": 1,
-    "sample_conditions": {"pLogS": -1.5},
     "n_samples": 1000,
-    "generation_epoch": 100
+    "pretrained_model_path": "./output/chembl_cond/conditional/run/model_restart_100.pth",
+    "conditioning": {"properties": ["pLogS"], "source": "smiles_file"},
+    "sample_conditions": {"pLogS": -1.5}
   }
 }
 ```
 
-Evaluation automatically:
-- Computes `success_rate` using any `success_criteria` you define.
-- Filters the test set to molecules with pLogS within ±0.3 of −1.5 before computing `sim_mean`.
-- Logs `internal_diversity_successful` alongside the overall `internal_diversity`.
+The pipeline will filter the test-set similarity comparison to molecules with pLogS within ±0.3
+of −1.5 and will log `internal_diversity`, but it will not tell you whether the generated
+molecules have the requested pLogS. Compute the property on the output and compare its
+distribution against the target, and against a second run at a well-separated target — a model
+ignoring its condition produces the same distribution for both.
 
----
+### A goal-directed run
 
-### Goal-directed: assessing DRD2 + SA optimisation
-
-After an RL run targeting DRD2 activity and SA score:
-
-1. Open `oracle_eval.csv` to see how validity, success rate, diversity, and FCD evolved at each oracle-call milestone (1K, 3K, 10K calls).
-2. For AUC Top-10, the running top-10 scores are tracked throughout training; the area under that curve is written to `oracle_eval.csv` as `auc_top_10`.
-3. For diversity of the top hits:
+After an RL run, `oracle_eval.csv` gives validity, success rate, diversity, and FCD at each
+oracle milestone, and `score.log` gives the optimisation trace. For the diversity of the top
+hits:
 
 ```python
+import sys
+sys.path.insert(0, "src")
+
 import csv
 from metrics import compute_internal_diversity
 
-# Load the top-scoring generated SMILES from the final checkpoint
 smiles = [row["smiles"] for row in csv.DictReader(open("top_hits.csv"))]
 div = compute_internal_diversity(smiles)
 print(f"Top-hit internal diversity: {div['internal_diversity']:.3f}")
 print(f"Most similar pair: {div['max_internal_similarity']:.3f}")
 ```
 
-Following PMO benchmark best practice (Gao et al., 2022): report results at 10K oracle calls over 5 independent seeds as mean ± std.
+Following PMO practice, report at a fixed oracle budget over at least five seeds as mean ± std,
+set with `"seed": N` for N > 0. Report the diversity of the successful subset alongside the
+score: a mean score that rises while `internal_diversity_successful` falls describes an
+optimiser that has found one exploit, and reporting only the former hides that.

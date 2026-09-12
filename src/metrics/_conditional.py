@@ -51,7 +51,7 @@ def evaluate_conditional(
     dict — all keys from evaluate_unconditional, plus:
         'success_rate'    : float in [0, 1]  (fraction of valid mols passing all criteria)
         'conditional_vun' : float in [0, 1] or None
-                            (success_rate x uniqueness x novelty)
+                            (validity x success_rate x uniqueness x novelty)
         'rediscovery_rate': float or None (None if reference_mols is empty)
 
     Examples
@@ -92,12 +92,16 @@ def evaluate_conditional(
     # ------------------------------------------------------------------
     # Conditional VUN = success_rate x uniqueness x novelty
     # ------------------------------------------------------------------
+    validity = results.get("validity") or 0.0
     uniqueness = results.get("uniqueness") or 0.0
     novelty = results.get("novelty")
     if novelty is None:
         results["conditional_vun"] = None
     else:
-        results["conditional_vun"] = success_rate * uniqueness * novelty
+        # `success_rate` is a fraction *of the valid molecules*, so validity has
+        # to be reinstated explicitly -- otherwise it cancels out and a 25%-valid
+        # model scores the same conditional VUN as a 100%-valid one.
+        results["conditional_vun"] = validity * success_rate * uniqueness * novelty
 
     # ------------------------------------------------------------------
     # Rediscovery rate

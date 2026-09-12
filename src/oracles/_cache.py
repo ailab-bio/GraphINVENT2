@@ -25,18 +25,17 @@ class CachedOracle:
     Examples
     --------
     >>> from oracles import OracleFactory
-    >>> cached = OracleFactory.create_cached("DRD2")
-    >>> scores = cached(["CCO", "c1ccccc1"])
-    >>> print(cached.call_count)
-    2
-    >>> scores_again = cached(["CCO"])   # cached — call_count stays at 2
-    >>> print(cached.call_count)
+    >>> spec = {"type": "python", "target": "mymodule:score"}
+    >>> cached = OracleFactory.create_cached("my_target", spec)   # doctest: +SKIP
+    >>> scores = cached(["CCO", "c1ccccc1"])                      # doctest: +SKIP
+    >>> cached.call_count                                         # doctest: +SKIP
     2
     """
 
     def __init__(self, oracle: "BaseOracle") -> None:
         self._oracle = oracle
         self._cache: dict[str, float] = {}
+        self._uncertainty_cache: dict[str, float] = {}
         self._call_count: int = 0
         # Chronological log of (cumulative_call_count, score) for newly evaluated molecules
         self._optimization_log: list[tuple[int, float]] = []
@@ -99,6 +98,57 @@ class CachedOracle:
         """
         return list(self._optimization_log)
 
+    def predict_with_uncertainty(self, smiles: list) -> tuple:
+        """
+        Score with uncertainty, caching both together.
+
+        The uncertainty has to be cached alongside the score: a converging
+        agent re-proposes molecules constantly, and recomputing the estimate
+        would make the same molecule attract a different reward depending on
+        whether it happened to be a cache hit.
+
+        Raises
+        ------
+        NotImplementedError
+            When the wrapped oracle provides no uncertainty estimate.
+        """
+        if not self.supports_uncertainty:
+            raise NotImplementedError(
+                f"Oracle '{self.name}' does not provide uncertainty estimates."
+            )
+
+        unseen = [s for s in smiles if s is not None and s not in self._cache]
+        seen: set = set()
+        unique_new: list = []
+        for s in unseen:
+            if s not in seen:
+                unique_new.append(s)
+                seen.add(s)
+
+        if unique_new:
+            new_values, new_uncertainties = self._oracle.predict_with_uncertainty(
+                unique_new
+            )
+            for smi, value, uncertainty in zip(
+                unique_new, new_values, new_uncertainties
+            ):
+                self._cache[smi] = float(self._oracle.score_from_raw(value))
+                self._uncertainty_cache[smi] = float(uncertainty)
+                self._call_count += 1
+                self._optimization_log.append((self._call_count, self._cache[smi]))
+
+        scores = [self._cache.get(s, 0.0) if s is not None else 0.0 for s in smiles]
+        uncertainties = [
+            self._uncertainty_cache.get(s, 0.0) if s is not None else 0.0
+            for s in smiles
+        ]
+        return scores, uncertainties
+
+    @property
+    def supports_uncertainty(self) -> bool:
+        """Whether the wrapped oracle can report a predictive spread."""
+        return bool(getattr(self._oracle, "supports_uncertainty", False))
+
     @property
     def name(self) -> str:
         """Delegate to the wrapped oracle's name."""
@@ -107,5 +157,6 @@ class CachedOracle:
     def reset(self) -> None:
         """Clear the cache and reset call counters (useful between runs)."""
         self._cache.clear()
+        self._uncertainty_cache.clear()
         self._call_count = 0
         self._optimization_log.clear()

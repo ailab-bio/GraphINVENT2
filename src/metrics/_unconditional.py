@@ -4,12 +4,23 @@ Unconditional molecular generation metrics.
 
 from __future__ import annotations
 
-import random
-
 import numpy as np
 
+from ._internal_diversity import compute_internal_diversity
 from ._properties import sa_score
 from ._utils import to_mols, to_smiles
+
+
+def _canonicalize(smiles: set[str]) -> set[str]:
+    """Canonical-SMILES form of a set, skipping anything RDKit cannot parse."""
+    from rdkit import Chem
+
+    out: set[str] = set()
+    for smi in smiles:
+        mol = Chem.MolFromSmiles(smi) if smi else None
+        if mol is not None:
+            out.add(Chem.MolToSmiles(mol))
+    return out
 
 
 def evaluate_unconditional(
@@ -106,7 +117,12 @@ def evaluate_unconditional(
         if not unique_smiles:
             novelty = 0.0
         else:
-            novel = unique_smiles - training_smiles
+            # The generated side is canonical (built via MolToSmiles above), so
+            # the training side must be too -- otherwise a model that reproduces
+            # a training molecule written in a different-but-equivalent SMILES
+            # form is scored as novel.
+            training_canonical = _canonicalize(training_smiles)
+            novel = unique_smiles - training_canonical
             novelty = len(novel) / len(unique_smiles)
 
     # ------------------------------------------------------------------
@@ -120,7 +136,11 @@ def evaluate_unconditional(
     # ------------------------------------------------------------------
     # Diversity (average pairwise Tanimoto distance, Morgan ECFP4)
     # ------------------------------------------------------------------
-    diversity = _compute_diversity(list(unique_smiles), subsample=subsample)
+    # sorted() -- unique_smiles is a set, whose iteration order varies with
+    # PYTHONHASHSEED and would make the subsampled diversity irreproducible.
+    diversity = compute_internal_diversity(sorted(unique_smiles), max_mols=subsample)[
+        "internal_diversity"
+    ]
 
     # ------------------------------------------------------------------
     # SA scores
@@ -166,47 +186,6 @@ def evaluate_unconditional(
 # ---------------------------------------------------------------------------
 # Internal helpers (not part of the public API)
 # ---------------------------------------------------------------------------
-
-
-def _compute_diversity(smiles_list: list[str], subsample: int = 1000) -> float:
-    """Average pairwise Tanimoto *distance* using Morgan ECFP4 (2048-bit)."""
-    from rdkit import Chem, DataStructs
-    from rdkit.Chem import AllChem
-
-    mols = []
-    for smi in smiles_list:
-        mol = Chem.MolFromSmiles(smi)
-        if mol is not None:
-            mols.append(mol)
-
-    if len(mols) < 2:
-        return 0.0
-
-    if len(mols) > subsample:
-        random.seed(42)
-        mols = random.sample(mols, subsample)
-
-    fps = []
-    for mol in mols:
-        try:
-            fps.append(AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048))
-        except Exception:
-            pass
-
-    n = len(fps)
-    if n < 2:
-        return 0.0
-
-    total_sim = 0.0
-    count = 0
-    for i in range(n):
-        sims = DataStructs.BulkTanimotoSimilarity(fps[i], fps[i + 1 :])
-        total_sim += sum(sims)
-        count += len(sims)
-
-    if count == 0:
-        return 0.0
-    return 1.0 - (total_sim / count)
 
 
 _fcd_warned = False

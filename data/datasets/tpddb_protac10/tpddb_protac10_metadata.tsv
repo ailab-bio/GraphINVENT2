@@ -1,0 +1,11 @@
+SMILES	TPD_ID	modality	n_heavy_atoms	mol_weight	logp
+O=C(NCc1ccc(Cl)cc1)[C@@H]1C[C@@H](O)CN1C(=O)Cn1ccnc1	TPD-39Z28Z	protac	25	362.82	0.815
+CC(C)[C@@H](C(=O)N1C[C@](C)(O)C[C@H]1C(=O)O)N1Cc2ccccc2C1=O	TPD-G9WKBK	protac	26	360.41	1.103
+CCC(=O)N1CCC(C(=O)Nc2ncc(SCc3ncc(C)o3)s2)CC1	TPD-5VDCXZ	protac	26	394.52	3.319
+CC(=O)NCC(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1	TPD-VIJO87	protac	29	416.5	0.833
+CC(=O)N[C@@H](C)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1	TPD-BN026Z	protac	30	430.53	1.221
+CC(=O)O[C@@H](C)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1	TPD-C86JGL	protac	30	431.51	1.648
+Cc1cc(CC(=O)N2C[C@H](O)C[C@H]2C(=O)NCc2ccc(-c3cc[nH]c3)cc2)on1	TPD-OWKURW	protac	30	408.46	1.799
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(N)C(F)(F)F)cc1	TPD-14Y1Y2	protac	30	442.46	1.586
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)c2ccccc2)cc1	TPD-OGHWA4	protac	30	421.52	3.01
+CC[C@H](NC(C)=O)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1	TPD-ZMU14B	protac	31	444.56	1.611

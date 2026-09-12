@@ -1,0 +1,18 @@
+{
+  "submission": {
+    "graphinvent_path": "./src/graphinvent/",
+    "data_path": "./data/datasets/",
+    "dataset": "tpddb_protac10",
+    "job_name": "run",
+    "use_slurm": false
+  },
+  "job": {
+    "job_type": "generate",
+    "sample_mode": "generate",
+    "device": "cpu",
+    "batch_size": 50,
+    "n_samples": 100,
+    "n_workers": 0,
+    "pretrained_model_path": "./output/tpddb_protac10/unconditional/run/model_restart_200.pth"
+  }
+}

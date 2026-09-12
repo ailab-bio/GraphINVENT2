@@ -1,119 +1,123 @@
-# Tutorial 3: Transfer Learning
+# Tutorial 3: Transfer learning
 
-Transfer learning (also called supervised fine-tuning or domain adaptation) takes a model
-already pretrained on a large general dataset and continues supervised training on a smaller,
-more focused dataset.  The idea is that the pretrained model has already learned general
-structural patterns, so the fine-tuning dataset needs far fewer examples and fewer epochs
-to push the model's distribution towards the target chemical space.
+Transfer learning here means continuing supervised training from a checkpoint on a second,
+usually smaller and narrower, dataset. It is not a separate job type: `unconditional` with
+`resume_from` set to a checkpoint path does exactly this, and `unconditional` with
+`resume_from: null` is pretraining. The training loop, loss, and schedule are identical; only
+the initialisation differs.
 
-Common use cases:
+The reason this works is that most of what the model has to learn is dataset-independent —
+which atoms can bond to which, how rings close, when a fragment is finished. A focused dataset
+of a few thousand molecules is far too small to teach that from scratch, but large enough to
+shift an already-competent model's distribution toward its region of chemical space.
 
-- Adapting a general drug-like-molecule model to a specific target class (e.g. kinase
-  inhibitors, natural products).
-- Adapting a model trained on a synthetic-accessible space to a bioactive-compound
-  database.
+The corresponding risk is that the shift goes too far. Fine-tuning on a narrow set with a
+learning rate suited to pretraining will overwrite the general structure the model relies on,
+and validity collapses before the distribution has moved anywhere useful.
 
 ---
 
 ## Prerequisites
 
-1. A **pretrained model** from [Tutorial 2: Pretraining](./02_pretraining.md).  You need
-   the checkpoint file `model_restart_<N>.pth` from the pretrain job directory.
-2. A **new dataset** (train/valid/test SMILES) that has been **preprocessed** using the
-   same feature parameters as the original pretraining dataset.  See
-   [Tutorial 1: Preprocessing](./01_preprocessing.md).
+1. A checkpoint from [Tutorial 2: Pretraining](./02_pretraining.md), i.e. a
+   `model_restart_<N>.pth` file with a `params_all.json` beside it in the same directory.
+2. The fine-tuning dataset preprocessed with the **same feature vocabulary** as the
+   pretraining dataset. See [Tutorial 1](./01_preprocessing.md).
 
 ---
 
-## Dataset compatibility
+## Vocabulary compatibility
 
-The new (fine-tuning) dataset and the original pretraining dataset **must share the same
-feature encoding**:
+The node and edge feature dimensions are determined by the preprocessing vocabulary, and
+`load_state_dict` requires exact shape agreement, so the two datasets must share:
 
-| Must match | Why |
-|-----------|-----|
-| `atom_types` | Node feature dimension |
-| `formal_charge` | Node feature dimension |
-| `imp_H` | Node feature dimension |
-| `chirality` | Node feature dimension |
-| `max_n_nodes` | Model input/output tensor shapes |
-| `use_aromatic_bonds` | Edge feature dimension |
-| `use_chirality` | Node feature dimension |
-| `use_explicit_H` / `ignore_H` | Node feature dimension |
-| `decoding_route` | Determines subgraph ordering |
+| Must match | Because it sets |
+|-----------|-----------------|
+| `atom_types`, `formal_charge`, `imp_H`, `chirality` | Node feature width |
+| `use_chirality`, `use_explicit_H`, `ignore_H` | Node feature width |
+| `use_aromatic_bonds` | Edge feature width |
+| `max_n_nodes` | Every graph tensor shape and the readout width |
+| `decoding_route` | Which subgraph sequence the targets describe |
 
-The model architecture parameters (`message_passes`, `hidden_node_features`, all MLP
-parameters) must also be identical to those used during pretraining — you cannot change
-the model capacity during transfer learning.
+The reliable way to guarantee this is to preprocess both datasets in a single multi-dataset
+run, which computes one union vocabulary and encodes both against it:
 
----
+```json
+"dataset":     ["pretrain-set", "finetune-set"],
+"smiles_file": [null,           "./data/raw/finetune.smi"]
+```
 
-## How transfer learning works
-
-Transfer learning uses the **same supervised training loop** as pretraining (KL-divergence
-loss, one-cycle LR schedule, gradient accumulation), with two differences:
-
-1. **Initialisation**: the model weights are loaded from the pretrained checkpoint
-   instead of being randomly initialised.
-2. **Learning rate**: a lower initial learning rate (`init_lr`) is recommended to avoid
-   overwriting the pretrained representations too aggressively.
-
-`resume_from` specifies **which pretrain checkpoint to load** as a direct path to the
-`.pth` file, e.g. `"./output/gdb13-debug/unconditional/run/model_restart_100.pth"`.
-Set it to `null` to train from scratch (equivalent to pretraining).
+If the pretraining dataset is already preprocessed, the alternative is to set
+`auto_detect_features: false` on the fine-tuning run and copy the vocabulary out of the
+pretraining dataset's `preprocessing_params.json`. Either way, note that `max_n_nodes` must be
+at least as large as the largest molecule in *both* sets, and that enlarging it changes the
+readout width, which means an existing checkpoint can no longer be loaded.
 
 ---
 
-## Parameters
+## Architecture inheritance, and its one trap
 
-### New parameters (not in pretraining)
+When `resume_from` (or `pretrained_model_path`) is set, `src/graphinvent/parameters/config.py`
+reads the `params_all.json` sitting next to the checkpoint and fills in the GGNN architecture
+parameters from it. That inheritance applies **only to keys absent from your job config**: any
+architecture key you write in the `job` block wins over the checkpoint's value.
 
-| Parameter | Description |
-|-----------|-------------|
-| `resume_from` | Path to the pretrained checkpoint to fine-tune from, e.g. `"./output/gdb13-debug/unconditional/run/model_restart_100.pth"` |
+This matters because `jobs/unconditional/params.json` lists the full architecture block. If you
+set `resume_from` in a copy of that template without also deleting the architecture keys, the
+model is built at the template's sizes rather than the checkpoint's, and the run fails with a
+shape mismatch from `load_state_dict` — or, if the sizes happen to coincide, succeeds while
+silently ignoring what the checkpoint recorded.
 
-### Recommended changes from pretraining defaults
-
-| Parameter | Pretraining | Transfer Learning | Reason |
-|-----------|------------|-------------------|--------|
-| `init_lr` | `1e-4` | `1e-5` | Lower LR to preserve pretrained features |
-| `epochs` | `100` | `50` | Fewer epochs needed; risk of forgetting otherwise |
-| `max_rel_lr` | `10` | `5` | Smaller LR swing |
+Delete the architecture keys from the job block when you set `resume_from`. Keep them only if
+you deliberately want to override an inherited value.
 
 ---
 
-## Directory layout
+## What changes relative to pretraining
 
-For this tutorial we assume:
+Only two things: where the weights come from, and how aggressively they are allowed to move.
+
+| Parameter | Pretraining | Fine-tuning | Reason |
+|-----------|-------------|-------------|--------|
+| `resume_from` | `null` | path to `.pth` | Loads the checkpoint instead of initialising randomly |
+| `init_lr` | `1e-4` | `1e-5` | Smaller steps preserve the pretrained representation |
+| `max_rel_lr` | `10` | `5` | A lower peak in the one-cycle schedule |
+| `epochs` | `100` | `20`–`50` | A small dataset reaches its useful minimum quickly, and further epochs mostly memorise |
+
+These are starting points rather than tuned values. The right learning rate depends on how far
+the fine-tuning distribution is from the pretraining one, and the useful diagnostic is watching
+`fraction_valid_pt` in `generation.log` over the first few evaluation epochs: a sharp drop means
+the updates are too large.
+
+The epoch counter restarts at 1, so after 50 epochs of fine-tuning the final checkpoint is
+`model_restart_50.pth` regardless of how long the pretraining run was.
+
+---
+
+## Directory layout assumed below
 
 ```
-data/
-  datasets/
-    gdb13-debug/          ← original pretraining dataset (already preprocessed)
-      train.h5, valid.h5, test.h5
-    new-dataset/          ← fine-tuning target dataset
-      train.smi, valid.smi, test.smi   ← preprocess this first!
-      train.h5, valid.h5, test.h5      ← produced by preprocessing
+data/datasets/
+  debug/                        pretraining dataset, already preprocessed
+    train.h5  valid.h5  test.h5
+  new-dataset/                  fine-tuning target
+    train.smi valid.smi test.smi
+    train.h5  valid.h5  test.h5
 
-output/
-  gdb13-debug/
-    pretrain/
-      job_0/
-        model_restart_100.pth          ← pretrained model we want to load
+output/debug/unconditional/run/
+  model_restart_100.pth         the checkpoint to fine-tune from
+  params_all.json               architecture read from here
 ```
 
 ---
 
 ## Configuration file
 
-> **Tip:** `jobs/unconditional/params.json` is a template — copy it before editing
-> so the original stays intact and each experiment has its own config file:
-> ```bash
-> cp jobs/unconditional/params.json jobs/unconditional/my_transfer.json
-> python submit.py --config jobs/unconditional/my_transfer.json
-> ```
+```bash
+cp jobs/unconditional/params.json jobs/unconditional/my_transfer.json
+```
 
-Edit your copy of `jobs/unconditional/params.json`:
+Edit the copy, deleting the architecture keys:
 
 ```json
 {
@@ -132,115 +136,78 @@ Edit your copy of `jobs/unconditional/params.json`:
   },
   "job": {
     "job_type": "unconditional",
-    "resume_from": "./output/gdb13-debug/unconditional/run/model_restart_100.pth",
-    "atom_types": ["C", "N", "O", "S", "Cl"],
-    "formal_charge": [-1, 0, 1],
-    "imp_H": [0, 1, 2, 3],
-    "chirality": ["None", "R", "S"],
-    "max_n_nodes": 13,
-    "use_aromatic_bonds": true,
-    "use_canon": true,
-    "use_chirality": false,
-    "use_explicit_H": false,
-    "ignore_H": false,
+    "resume_from": "./output/debug/unconditional/run/model_restart_100.pth",
+
     "device": "cuda",
+    "restart": false,
+    "use_tensorboard": true,
+    "decoding_route": "bfs",
+    "use_aromatic_bonds": true,
+
+    "epochs": 50,
     "batch_size": 1000,
     "block_size": 100000,
-    "accumulation_steps": 256,
-    "epochs": 50,
+    "accumulation_steps": 10,
     "init_lr": 1e-5,
     "max_rel_lr": 5,
     "min_rel_lr": 0.0001,
     "sample_every": 10,
     "n_samples": 2000,
-    "n_workers": 0,
-    "restart": false,
-    "decoding_route": "bfs",
-    "use_tensorboard": true,
-    "enn_depth": 4,
-    "enn_dropout_p": 0.0,
-    "enn_hidden_dim": 250,
-    "mlp1_depth": 4,
-    "mlp1_dropout_p": 0.0,
-    "mlp1_hidden_dim": 500,
-    "mlp2_depth": 4,
-    "mlp2_dropout_p": 0.0,
-    "mlp2_hidden_dim": 500,
-    "gather_att_depth": 4,
-    "gather_att_dropout_p": 0.0,
-    "gather_att_hidden_dim": 250,
-    "gather_emb_depth": 4,
-    "gather_emb_dropout_p": 0.0,
-    "gather_emb_hidden_dim": 250,
-    "gather_width": 100,
-    "hidden_node_features": 100,
-    "message_passes": 3,
-    "message_size": 100
+    "n_workers": 0
   }
 }
 ```
 
-Key fields to change for your use case:
-
-- `"dataset"`: name of your fine-tuning dataset directory
-- `"data_path"`: parent directory of the fine-tuning dataset
-- `"resume_from"`: path to the pretrained checkpoint to load (e.g. `"./output/gdb13-debug/unconditional/run/model_restart_100.pth"`)
-- All feature parameters: must match preprocessing of the fine-tuning dataset
+`submit.py` checks that the `resume_from` path exists before creating any directories, so a
+typo fails immediately rather than after the data loader has been built.
 
 ---
 
 ## Running the job
 
-First preprocess the fine-tuning dataset if you have not already:
+Preprocess the fine-tuning dataset first if you have not already:
 
 ```bash
-# Adjust jobs/preprocess/params.json to point at your new dataset
-python submit.py --config jobs/preprocess/params.json
-```
-
-Then run transfer learning:
-
-```bash
-python submit.py --config jobs/unconditional/params.json
+python submit.py --config jobs/preprocess/my_finetune_dataset.json
+python submit.py --config jobs/unconditional/my_transfer.json
 ```
 
 ---
 
-## Output files
+## Output
 
-Output is written to `output/<dataset>/unconditional/run/`, with the same structure as
-pretraining:
-
-| File | Description |
-|------|-------------|
-| `params_all.json` | All resolved parameters |
-| `convergence.log` | Epoch, LR, train loss, validation loss, UC-JSD |
-| `generation.log` | Per-epoch molecule quality metrics |
-| `validation.log` | Per-epoch NLL statistics |
-| `model_restart_<N>.pth` | Checkpoints saved at evaluation epochs |
-| `generation/` | Generated SMILES, likelihoods, validity flags |
-
-The epoch counter resets to 1 for the new training run, so `model_restart_50.pth` is
-the final checkpoint after 50 epochs of transfer learning.
+Written to `output/<dataset>/unconditional/<job_name>/`, with the same files as a pretraining
+run: `params_all.json`, `convergence.log`, `generation.log`, `validation.log`,
+`model_restart_<N>.pth` at each evaluation epoch, a `generation/` directory of sampled SMILES,
+and `progress.png`. See [Tutorial 2](./02_pretraining.md#output) for what each contains.
 
 ---
 
-## Monitoring and tips
+## Judging whether it worked
 
-Monitor the same metrics as pretraining (`convergence.log`, `generation.log`).
+The loss curve alone will not tell you. Validation NLL nearly always falls after a warm start,
+because the model was already good and the new data is narrow; that is consistent both with
+useful adaptation and with memorising a few hundred molecules.
 
-- If `fraction_valid_pt` drops sharply at the start of training, reduce `init_lr`
-  further or reduce `max_rel_lr`.
-- If the model does not converge to the target distribution, try more `epochs` or a
-  slightly higher `init_lr`.
-- A `fraction_valid_pt` substantially above the pretraining baseline suggests the
-  model is successfully specialising.
+Three things are more informative:
+
+- `fraction_valid_pt` should stay near its pretraining level. A sharp fall in the first few
+  evaluation epochs means `init_lr` or `max_rel_lr` is too high.
+- `novelty` and the test-set similarity columns in `generation.log` distinguish adaptation from
+  memorisation. A model that has memorised a small fine-tuning set produces low novelty and
+  very high nearest-neighbour similarity.
+- The property histograms should move toward the fine-tuning set's, not merely away from the
+  pretraining set's. Both a well-adapted model and a broken one differ from the prior.
+
+If the distribution has not moved at all after the full run, the learning rate is more likely
+to be the cause than the epoch count, since the one-cycle schedule spends most of the run near
+its floor.
 
 ---
 
 ## Next steps
 
-- Generate molecules from the fine-tuned model: [Tutorial 5: Sampling](./05_sampling.md).
-  Set `pretrained_model_path` in the generate config to the transfer-learning checkpoint
-  you want to sample from (e.g. `"./output/new-dataset/unconditional/run/model_restart_50.pth"`).
-- Apply RL on top of transfer learning: [Tutorial 4: Reinforcement Learning](./04_reinforcement_learning.md).
+- Generate from the fine-tuned model: [Tutorial 5: Sampling](./05_sampling.md), with
+  `pretrained_model_path` set to the checkpoint you want, for example
+  `"./output/new-dataset/unconditional/run/model_restart_50.pth"`.
+- Optimise further toward a scoring function: [Tutorial 4: Reinforcement learning](./04_reinforcement_learning.md).
