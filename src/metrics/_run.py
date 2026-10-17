@@ -1,0 +1,469 @@
+"""
+What each job type writes to results/metrics.json, and the report beside it.
+
+One function per job type rather than one function with a parameter for every
+job type's inputs: they need different things, and a signature that accepts all
+of them accepts nonsense too.
+
+Every one of these collects, writes metrics.json, then renders report.html from
+that file. The report is last, so a failure rendering it cannot cost anything
+already saved.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from . import _budget, _core, _efficiency, _html, _json
+
+# CLAUDE.md's goal-directed table combines multiple property thresholds with
+# AND; with one component the job's own threshold is the success threshold.
+DEFAULT_SUCCESS_THRESHOLD = 0.0
+
+
+def read_smiles(path: str) -> list:
+    """
+    SMILES from a .smi or tab-separated file, skipping a header and blanks.
+
+    The generated .smi holds one line per valid molecule and nothing for the
+    rest, so a blank line is not expected here, but the split files may carry a
+    property header and tab-separated columns.
+    """
+    out: list = []
+    try:
+        with open(path) as handle:
+            for i, line in enumerate(handle):
+                token = line.split("\t")[0].split()[0] if line.strip() else ""
+                if not token:
+                    continue
+                if i == 0 and token.upper() == "SMILES":
+                    continue
+                out.append(token)
+    except FileNotFoundError:
+        return []
+    return out
+
+
+def read_smiles_with_property(path: str, property_name: str):
+    """
+    SMILES and one property column from a tab-separated .smi, by header name.
+
+    Returns (smiles, values). A dataset without that column returns empty
+    lists, which the caller reports as a missing input rather than a zero.
+    """
+    try:
+        lines = Path(path).read_text().splitlines()
+    except FileNotFoundError:
+        return [], []
+    if not lines:
+        return [], []
+    header = lines[0].split("\t")
+    if header[0].strip().upper() != "SMILES" or property_name not in [
+        h.strip() for h in header
+    ]:
+        return [], []
+    column = [h.strip() for h in header].index(property_name)
+    smiles: list = []
+    values: list = []
+    for line in lines[1:]:
+        fields = line.split("\t")
+        if len(fields) <= column or not fields[0].strip():
+            continue
+        try:
+            values.append(float(fields[column]))
+        except ValueError:
+            continue
+        smiles.append(fields[0].strip())
+    return smiles, values
+
+
+def _shared_run_fields(constants) -> dict:
+    return {
+        "job_name": str(constants.job_dir).rstrip("/").split("/")[-1],
+        "job_type": constants.job_type,
+        "dataset": str(constants.dataset_dir).rstrip("/"),
+        "seed": constants.seed,
+        "device": constants.device,
+    }
+
+
+def _finish(
+    constants,
+    metrics: dict,
+    unavailable: dict,
+    *,
+    grid_smiles: list | None = None,
+    scored: list | None = None,
+    conditions: list | None = None,
+) -> None:
+    payload = _json.collect(
+        **_shared_run_fields(constants), metrics=metrics, unavailable=unavailable
+    )
+    path = _json.write(payload, constants.results_dir)
+    print(f"* Metrics written to {path}", flush=True)
+    # The report is rendered from the written payload, last, so a failure here
+    # cannot cost the metrics, the checkpoints or the molecules.
+    report = _html.render(
+        payload=payload,
+        results_dir=constants.results_dir,
+        job_dir=constants.job_dir,
+        grid_smiles=grid_smiles,
+        scored=scored,
+        conditions=conditions,
+    )
+    print(f"* Report written to {report}", flush=True)
+
+
+def evaluate_generation(
+    constants,
+    *,
+    generated_smiles: list,
+    model=None,
+    inference_seconds: float | None = None,
+) -> None:
+    """
+    metrics.json and report.html for a `generate` job.
+
+    FCD belongs here and not only in the budget-capped checkpoint evaluation:
+    CLAUDE.md calls it the headline number for unconditional generation, and
+    the test split is its reference set.
+    """
+    metrics: dict = {}
+    unavailable: dict = {}
+
+    training_smiles = read_smiles(constants.training_set)
+    test_smiles = read_smiles(constants.test_set)
+
+    metrics.update(
+        _core.compute_core_metrics(
+            generated_smiles,
+            n_sampled=constants.n_samples,
+            training_smiles=training_smiles,
+        )
+    )
+
+    # fcd, against the test split.
+    from ._unconditional import _compute_fcd
+
+    if test_smiles:
+        value = _compute_fcd(
+            [s for s in _core.canonical_smiles(generated_smiles) if s], test_smiles
+        )
+        metrics["fcd"] = value
+        if value is None:
+            unavailable["fcd"] = (
+                "the fcd package is not installed; it is needed for the "
+                "Frechet ChemNet Distance"
+            )
+    else:
+        metrics["fcd"] = None
+        unavailable["fcd"] = f"no test split at {constants.test_set}"
+
+    # Conditional, continuous properties: only when this checkpoint was
+    # conditioned and the job said what to ask of it.
+    conditions_for_report: list = []
+    requested_conditions = getattr(constants, "sample_conditions", None)
+    if getattr(constants, "condition_dim", 0) > 0 and requested_conditions:
+        metrics.update(
+            _condition_metrics(
+                constants,
+                generated_smiles,
+                requested_conditions,
+                unavailable,
+                conditions_for_report,
+            )
+        )
+
+    _blocked(metrics, unavailable)
+
+    if model is not None:
+        metrics["n_parameters"] = _efficiency.n_parameters(model)
+    metrics["peak_memory_mb"] = _efficiency.peak_memory_mb()
+    if inference_seconds is not None:
+        metrics["inference_s_per_10k"] = _efficiency.inference_s_per_10k(
+            inference_seconds, constants.n_samples
+        )
+
+    unique_valid = sorted({s for s in _core.canonical_smiles(generated_smiles) if s})
+    _finish(
+        constants,
+        metrics,
+        unavailable,
+        grid_smiles=unique_valid,
+        conditions=conditions_for_report or None,
+    )
+
+
+def _condition_metrics(
+    constants, generated_smiles, requested_conditions, unavailable, out_conditions
+) -> dict:
+    """
+    `condition_success_rate_<property>` and `condition_coverage_<property>`,
+    with the unconditional baseline when one is declared.
+    """
+    from ._conditions import MissingInput, compute_continuous_condition_metrics
+    from ._properties import PROPERTY_REGISTRY
+
+    tolerances = getattr(constants, "condition_tolerance", None) or {}
+    baseline_dir = getattr(constants, "baseline_results_dir", None)
+    baseline_smiles = read_smiles(f"{baseline_dir}") if baseline_dir else []
+
+    results: dict = {}
+    # Unique valid molecules, which is how CLAUDE.md denominates every other
+    # property-based rate over a generated sample (filter_pass_rate,
+    # Ro5_pass_rate, near_duplicate_rate, internal_diversity, scaffold_diversity
+    # and the SA scores all say "unique valid molecules"). Counting duplicates
+    # would also let a model lift this rate by repeating one on-target molecule.
+    achieved_smiles = sorted({s for s in _core.canonical_smiles(generated_smiles) if s})
+    from rdkit import Chem
+
+    for name, requested_value in requested_conditions.items():
+        key = f"condition_success_rate_{name}"
+        fn = PROPERTY_REGISTRY.get(name.lower())
+        if fn is None:
+            results[key] = None
+            unavailable[key] = (
+                f"no property function named {name}; known: "
+                f"{', '.join(sorted(PROPERTY_REGISTRY))}"
+            )
+            continue
+        tolerance = tolerances.get(name) if isinstance(tolerances, dict) else tolerances
+        if tolerance is None:
+            results[key] = None
+            unavailable[key] = (
+                f"condition_tolerance is unset for {name}; the metric is defined "
+                "as the fraction within a tolerance of the requested value"
+            )
+            continue
+
+        achieved = []
+        for smi in achieved_smiles:
+            mol = Chem.MolFromSmiles(smi)
+            achieved.append(fn(mol) if mol is not None else None)
+        requested = [float(requested_value)] * len(achieved)
+        for smi, value in zip(achieved_smiles, achieved):
+            if value is not None:
+                out_conditions.append((smi, float(requested_value), float(value)))
+
+        _, training_values = read_smiles_with_property(constants.training_set, name)
+        if not training_values:
+            unavailable[f"condition_coverage_{name}"] = (
+                f"the training split at {constants.training_set} carries no "
+                f"{name} column, so its deciles are unknown"
+            )
+        try:
+            results.update(
+                compute_continuous_condition_metrics(
+                    name,
+                    requested,
+                    achieved,
+                    float(tolerance),
+                    training_values,
+                    baseline_requested=(
+                        [float(requested_value)] * len(baseline_smiles)
+                        if baseline_smiles
+                        else None
+                    ),
+                    baseline_achieved=(
+                        [
+                            (
+                                fn(Chem.MolFromSmiles(s))
+                                if Chem.MolFromSmiles(s) is not None
+                                else None
+                            )
+                            for s in baseline_smiles
+                        ]
+                        if baseline_smiles
+                        else None
+                    ),
+                )
+            )
+        except MissingInput as error:
+            results[key] = None
+            unavailable[key] = " ".join(str(error).split())
+        reason = results.pop("_coverage_unavailable_reason", None)
+        if reason:
+            unavailable[f"condition_coverage_{name}"] = reason
+        if not baseline_smiles:
+            unavailable[f"baseline_condition_success_rate_{name}"] = (
+                "no unconditional baseline sample is declared; set "
+                "baseline_results_dir to the .smi of the same model trained "
+                "without conditioning and sampled the same way"
+            )
+            results[f"baseline_condition_success_rate_{name}"] = None
+    return results
+
+
+def evaluate_goal_directed(
+    constants,
+    *,
+    generated_smiles: list,
+    n_generated: int,
+    scores: list,
+    optimization_log: list,
+    model=None,
+    train_wall_clock_s: float | None = None,
+) -> None:
+    """metrics.json and report.html for a `goal_directed` job."""
+    metrics: dict = {}
+    unavailable: dict = {}
+
+    training_smiles = read_smiles(constants.training_set)
+    metrics.update(
+        _core.compute_core_metrics(
+            generated_smiles,
+            n_sampled=n_generated,
+            training_smiles=training_smiles,
+        )
+    )
+
+    # Unique valid molecules with their best score, which is the denominator
+    # CLAUDE.md gives success_rate.
+    best_by_smiles: dict = {}
+    for smi, score in zip(_core.canonical_smiles(generated_smiles), scores):
+        if smi is None:
+            continue
+        if smi not in best_by_smiles or score > best_by_smiles[smi]:
+            best_by_smiles[smi] = float(score)
+    scored = sorted(best_by_smiles.items())
+
+    threshold = _success_threshold(constants)
+    metrics.update(_budget.compute_set_level_metrics(scored, threshold))
+    metrics["success_threshold"] = threshold
+
+    try:
+        metrics.update(_budget.compute_at_budget_metrics(optimization_log))
+        metrics["auc_top10"] = _budget.compute_auc_top10(optimization_log)
+    except _budget.MissingInput as error:
+        reason = " ".join(str(error).split())
+        for label in _budget.BUDGETS:
+            for key in (
+                f"best_at_{label}",
+                f"top10_mean_at_{label}",
+                f"top100_mean_at_{label}",
+            ):
+                metrics[key] = None
+                unavailable[key] = reason
+        metrics["auc_top10"] = None
+        unavailable["auc_top10"] = reason
+
+    # Group 7: every one of these waits on an input no experiment declares yet.
+    for key, reason in _group7_reasons().items():
+        metrics[key] = None
+        unavailable[key] = reason
+
+    _blocked(metrics, unavailable, goal_directed=True)
+
+    if model is not None:
+        metrics["n_parameters"] = _efficiency.n_parameters(model)
+    metrics["peak_memory_mb"] = _efficiency.peak_memory_mb()
+    if train_wall_clock_s is not None:
+        metrics["train_wall_clock_s"] = float(train_wall_clock_s)
+
+    _finish(
+        constants,
+        metrics,
+        unavailable,
+        grid_smiles=[smi for smi, _ in scored],
+        scored=scored,
+    )
+
+
+def evaluate_training(
+    constants,
+    *,
+    model=None,
+    train_wall_clock_s: float | None = None,
+    nll: dict | None = None,
+    uc_jsd: float | None = None,
+) -> None:
+    """
+    metrics.json and report.html for an `unconditional` or `conditional` job.
+
+    A training job samples molecules only to score itself, so the molecule-level
+    tables belong to the `generate` job that follows it. What belongs here is
+    the model: its size, what it cost, and the likelihood numbers.
+    """
+    metrics: dict = {}
+    unavailable: dict = {}
+
+    if model is not None:
+        metrics["n_parameters"] = _efficiency.n_parameters(model)
+    metrics["peak_memory_mb"] = _efficiency.peak_memory_mb()
+    if train_wall_clock_s is not None:
+        metrics["train_wall_clock_s"] = float(train_wall_clock_s)
+
+    for key in ("nll_train", "nll_validation", "nll_test"):
+        value = (nll or {}).get(key)
+        metrics[key] = value
+        if value is None:
+            unavailable[key] = (
+                "per-split NLL is computed by a generate job with "
+                "sample_mode: evaluate, not during training"
+            )
+    metrics["uc_jsd"] = uc_jsd
+    if uc_jsd is None:
+        unavailable["uc_jsd"] = (
+            "uc_jsd is computed by a generate job with sample_mode: evaluate"
+        )
+
+    _finish(constants, metrics, unavailable)
+
+
+def evaluate_model_scoring(
+    constants,
+    *,
+    nll: dict,
+    uc_jsd: float | None,
+    model=None,
+) -> None:
+    """metrics.json and report.html for `generate` with `sample_mode: evaluate`."""
+    metrics: dict = dict(nll)
+    metrics["uc_jsd"] = uc_jsd
+    unavailable: dict = {}
+    if model is not None:
+        metrics["n_parameters"] = _efficiency.n_parameters(model)
+    metrics["peak_memory_mb"] = _efficiency.peak_memory_mb()
+    _finish(constants, metrics, unavailable)
+
+
+def _success_threshold(constants) -> float:
+    thresholds = getattr(constants, "score_thresholds", None) or []
+    return float(thresholds[0]) if thresholds else DEFAULT_SUCCESS_THRESHOLD
+
+
+def _blocked(metrics: dict, unavailable: dict, *, goal_directed: bool = False) -> None:
+    """
+    The three metrics whose definitions CLAUDE.md does not pin down, plus the
+    one that depends on them.
+
+    They record null and this reason rather than a number computed from a
+    threshold nobody approved: these go in a paper, and a plausible wrong
+    number is worse than an absent one.
+    """
+    reason = (
+        "definition not yet approved: filter_pass_rate names MCF and PAINS "
+        "without a source for MCF, and Ro5_pass_rate / bRo5_pass_rate have no "
+        "numeric thresholds in CLAUDE.md"
+    )
+    keys = ["filter_pass_rate", "Ro5_pass_rate", "bRo5_pass_rate"]
+    if goal_directed:
+        # Needs the structural filters above, so it is blocked on the same
+        # approval; it is a goal-directed metric and belongs to no other job.
+        keys.append("quality_filtered_top10_mean")
+    for key in keys:
+        metrics[key] = None
+        unavailable[key] = reason
+
+
+def _group7_reasons() -> dict:
+    return {
+        "vs_baseline_top10_at_1k": "no screening library is declared by any experiment",
+        "vs_baseline_top10_at_5k": "no screening library is declared by any experiment",
+        "vs_baseline_top10_at_10k": "no screening library is declared by any experiment",
+        "vs_delta_top10_at_1k": "needs vs_baseline_top10_at_1k",
+        "vs_delta_top10_at_5k": "needs vs_baseline_top10_at_5k",
+        "vs_delta_top10_at_10k": "needs vs_baseline_top10_at_10k",
+        "eval_oracle_top10_mean": "no evaluation surrogate is trained yet",
+        "top100_outside_domain_rate": "no optimization surrogate training set is available yet",
+    }

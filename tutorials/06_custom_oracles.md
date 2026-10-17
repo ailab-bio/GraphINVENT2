@@ -1,6 +1,6 @@
 # Defining your own scoring oracles
 
-Goal-directed generation optimises whatever you tell it to optimise, so the
+Goal-directed generation optimizes whatever you tell it to optimize, so the
 scoring function is the part of the setup that determines what you actually
 get. GraphINVENT2 does not ship a catalogue of pre-trained objectives. Instead
 you declare oracles in the job configuration: a model you trained, a docking
@@ -30,7 +30,7 @@ built-in components (`QED`, `target_size=<int>`, `logp_target=<float>`).
 "score_type": "continuous"
 ```
 
-Two fields are common to every oracle and carry most of the modelling
+Two fields are common to every oracle and carry most of the modeling
 decisions.
 
 `transform` maps the oracle's native output onto a [0, 1] desirability. This
@@ -75,7 +75,7 @@ shows up as a model that predicts poorly for no visible reason.
 
 ## Multi-objective and selectivity
 
-Multi-objective optimisation is a longer `score_components` list. Components
+Multi-objective optimization is a longer `score_components` list. Components
 combine as a product when `score_type` is `"continuous"`, or as an AND over
 `score_thresholds` when it is `"binary"`, so a molecule must satisfy every
 criterion to score well.
@@ -175,7 +175,7 @@ Two strategies are available and can be combined.
 
 Score modulation folds reliability into the objective, so an uncertain molecule
 is worth less as a molecule and the agent is steered toward the surrogate's
-applicability domain. It changes what is being optimised.
+applicability domain. It changes what is being optimized.
 
 Loss modulation leaves the score alone and reweights how much each sampled
 molecule contributes to the gradient, following the paper's Eq. 8:
@@ -220,8 +220,8 @@ molecules and looking at the distribution before choosing.
 What this does not do is calibrate uncertainties against each other. After the
 mapping every component yields a weight in [0, 1], but a 0.5 from one component
 does not represent the same degree of doubt as a 0.5 from another. The mapping
-is a per-component modelling choice, not a principled cross-component
-normalisation, and results should be described that way.
+is a per-component modeling choice, not a principled cross-component
+normalization, and results should be described that way.
 
 Score modulation compounds across components even using the geometric mean the
 paper specifies, so with several uncertain components the reward can become

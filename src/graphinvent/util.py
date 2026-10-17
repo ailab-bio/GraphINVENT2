@@ -854,7 +854,7 @@ def write_molecules(
                                            (unique or first duplicate instance) or
                                            0 (duplicate).
     """
-    # RL outputs are labelled by step number; supervised jobs by epoch/label
+    # RL outputs are labeled by step number; supervised jobs by epoch/label
     if constants.job_type == "goal_directed":
         step = epoch.split(" ")[1]
         smi_filename = constants.results_dir + f"generation/step{step}_{label}.smi"
@@ -1035,7 +1035,6 @@ def log_likelihoods_to_tensorboard(
                                                            prior log-likelihoods
                                                            for sampled molecules.
     """
-    # TODO this function may only be called when the tb_writer is not None, and thus this if statement may be redundant
     if tb_writer is not None:
         avg_agent_loglikelihood = torch.mean(agent_loglikelihoods)
         avg_prior_loglikelihood = torch.mean(prior_loglikelihoods)

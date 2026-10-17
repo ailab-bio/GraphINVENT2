@@ -3,7 +3,7 @@
 Pretraining fits the GGNN to a dataset by supervised learning on the decoding routes produced
 during preprocessing. Each training example is a partial molecular graph paired with a target
 distribution over the next action, and the model is asked to reproduce that distribution. The
-loss is the KL divergence between the log-softmax of the model's output and the row-normalised
+loss is the KL divergence between the log-softmax of the model's output and the row-normalized
 target, averaged over the batch.
 
 Nothing about this objective rewards chemistry directly. The model learns which action follows
@@ -27,21 +27,21 @@ molecules is tracked separately during training and why it can lag the loss curv
 
 Training data is read from HDF5 in blocks of `block_size` subgraphs and served as mini-batches
 of `batch_size`. Gradients are accumulated over `accumulation_steps` batches before each
-optimiser step, which gives an effective batch of `batch_size × accumulation_steps` without
+optimizer step, which gives an effective batch of `batch_size × accumulation_steps` without
 holding that many graphs on the device at once.
 
-The learning rate follows a one-cycle schedule sized to the number of optimiser steps rather
+The learning rate follows a one-cycle schedule sized to the number of optimizer steps rather
 than the number of batches, so it starts at `init_lr`, peaks at `init_lr × max_rel_lr`, and
 anneals to `init_lr × min_rel_lr` across the whole run. Sizing it by batch count instead would
 advance the schedule only a fraction of the way and the peak would never be reached; this is
-worth knowing if you change `accumulation_steps`, because doing so changes how many optimiser
+worth knowing if you change `accumulation_steps`, because doing so changes how many optimizer
 steps a run contains.
 
 Every `sample_every` epochs the model generates `n_samples` molecules, the resulting validity,
 uniqueness, novelty, diversity and similarity statistics are appended to `generation.log`, the
 UC-JSD is written to `validation.log`, and a checkpoint is saved. Checkpoints exist only at
 these evaluation epochs, so `sample_every` controls checkpoint granularity as well as
-evaluation cost. Each checkpoint stores the optimiser and scheduler state alongside the
+evaluation cost. Each checkpoint stores the optimizer and scheduler state alongside the
 weights so that a restart resumes Adam's moments and the LR cycle instead of resetting both.
 
 ---
@@ -63,7 +63,7 @@ config at all — leaving them out lets them be inherited.
 | `epochs` | `100` | Number of passes over the training set |
 | `batch_size` | `1000` | Subgraphs per forward/backward pass |
 | `block_size` | `100000` | Subgraphs read from HDF5 into RAM at a time |
-| `accumulation_steps` | `10` | Batches accumulated per optimiser step |
+| `accumulation_steps` | `10` | Batches accumulated per optimizer step |
 | `init_lr` | `1e-4` | Learning rate at the start of the cycle |
 | `max_rel_lr` | `10` | Peak LR as a multiple of `init_lr` |
 | `min_rel_lr` | `0.0001` | Final LR as a multiple of `init_lr` |
@@ -186,7 +186,7 @@ python submit.py --config jobs/unconditional/my_experiment.json
 }
 ```
 
-`resume_from: null` means train from random initialisation. Setting it to a checkpoint path
+`resume_from: null` means train from random initialization. Setting it to a checkpoint path
 turns the same job type into transfer learning, which is [Tutorial 3](./03_transfer_learning.md).
 
 `use_aromatic_bonds` appears here because it determines the edge feature dimension and so must
@@ -216,7 +216,7 @@ the old ones into a timestamped `_previous_run_<stamp>/` rather than overwriting
 | `convergence.log` | `epoch, lr, avg_train_loss, avg_valid_loss, model_score` |
 | `generation.log` | One row per evaluation epoch: validity, uniqueness, novelty, SA scores, diversity and similarity statistics, and property histograms |
 | `validation.log` | Per-molecule NLL on the validation, training, and generated sets, plus UC-JSD |
-| `model_restart_<N>.pth` | Weights, optimiser state, and scheduler state at evaluation epoch N |
+| `model_restart_<N>.pth` | Weights, optimizer state, and scheduler state at evaluation epoch N |
 | `generation/` | `epoch_<N>_batch_<B>.smi`, `.likelihood`, and `.valid` for each evaluation epoch |
 | `progress.png` | Regenerated at every evaluation epoch from `generation.log` and `convergence.log` |
 | `tensorboard/` | Event files when `use_tensorboard` is true |
@@ -283,9 +283,9 @@ tensorboard --logdir output/<dataset>/unconditional/<job_name>/tensorboard/
 ## Restarting
 
 Set `"restart": true` and rerun. The job finds the highest `model_restart_<N>.pth` in the job
-directory and continues from epoch N+1 with the saved optimiser and scheduler state. Note that
+directory and continues from epoch N+1 with the saved optimizer and scheduler state. Note that
 a restart appends to the existing logs rather than backing them up, which is the intended
-behaviour but differs from a fresh run.
+behavior but differs from a fresh run.
 
 ---
 
@@ -297,7 +297,7 @@ behaviour but differs from a fresh run.
 - Train and validation losses diverging: add dropout through `enn_dropout_p`, `mlp1_dropout_p`
   and the other dropout parameters, or reduce capacity.
 - Out of memory: halve `batch_size` and double `accumulation_steps` to keep the effective batch
-  constant. Remember that this also halves the number of optimiser steps per epoch, which
+  constant. Remember that this also halves the number of optimizer steps per epoch, which
   changes the LR schedule.
 - Data loading dominating runtime: increase `block_size` so fewer HDF5 reads are needed, or
   raise `n_workers` above 0.
@@ -308,4 +308,4 @@ behaviour but differs from a fresh run.
 
 - Sample from the trained model: [Tutorial 5: Sampling](./05_sampling.md).
 - Adapt it to a narrower dataset: [Tutorial 3: Transfer learning](./03_transfer_learning.md).
-- Optimise it toward a property: [Tutorial 4: Reinforcement learning](./04_reinforcement_learning.md).
+- Optimize it toward a property: [Tutorial 4: Reinforcement learning](./04_reinforcement_learning.md).

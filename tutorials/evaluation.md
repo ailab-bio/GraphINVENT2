@@ -38,7 +38,7 @@ The fraction of generated graphs that RDKit can sanitise.
 
     validity = n_valid / n_generated
 
-A freshly initialised model is near 0 and a converged one on drug-like data is usually above
+A freshly initialized model is near 0 and a converged one on drug-like data is usually above
 0.7. Invalid graphs are written into the `.smi` output as the placeholder `[Xe]`, which RDKit
 parses successfully as a xenon atom, so validity recomputed by counting successful
 `MolFromSmiles` calls on a raw output file will be far too high; use the `.valid` file. Persistently low validity late in training points at the vocabulary or the bond encoding
@@ -87,7 +87,7 @@ The continuous version of this question is test-set similarity, below.
 A single-number summary of the three above, returned by `evaluate_unconditional` in
 `src/metrics/`. It is not written to `generation.log`. Treating it as the score for a
 generative model is a mistake this codebase deliberately avoids making automatically: the
-product is maximised by a model producing valid, distinct structures unrelated to anything in
+product is maximized by a model producing valid, distinct structures unrelated to anything in
 the training data, which is exactly what a poorly-trained model does.
 
 ### Internal diversity
@@ -112,7 +112,7 @@ A set with fewer than two unique valid molecules returns 0.0 with a warning.
 `max_internal_similarity`. The function also returns the median and the fraction of pairs above
 0.4/0.6/0.8/0.9 if you call it directly. For goal-directed jobs,
 `internal_diversity_successful` repeats the calculation over only the molecules scoring above
-`success_threshold`, which is the number that distinguishes an optimiser that found many good
+`success_threshold`, which is the number that distinguishes an optimizer that found many good
 molecules from one that found one and copied it.
 
 ### Test-set similarity
@@ -335,7 +335,7 @@ print(f"Conditional V.U.N.: {results['conditional_vun']}")
 
 | File | Contents |
 |------|----------|
-| `generation.log` | One row per evaluation epoch or step; all scalar metrics as CSV columns, plus normalised property histograms |
+| `generation.log` | One row per evaluation epoch or step; all scalar metrics as CSV columns, plus normalized property histograms |
 | `validation.log` | Per-molecule NLL on the validation, training, and generated sets, and UC-JSD |
 | `convergence.log` | Learning rate and losses per epoch (or per step, for RL) |
 | `score.log` | `Step, Score` for goal-directed jobs |
@@ -355,7 +355,7 @@ print(f"Conditional V.U.N.: {results['conditional_vun']}")
 |-----------|---------|-------------|
 | `compute_internal_diversity` | `true` | Pairwise fingerprint diversity within the generated set |
 | `diversity_max_molecules` | `10000` | Random subsample cap for that comparison; `null` disables |
-| `compute_test_similarity` | `true` | Nearest-neighbour similarity against the test set |
+| `compute_test_similarity` | `true` | Nearest-neighbor similarity against the test set |
 | `test_similarity_max_refs` | `null` | Stride-based subsample cap on test references |
 | `test_similarity_top_k` | `10` | K for the top-K mean similarity statistic |
 | `sample_every` | `10` | Epochs or steps between evaluations |
@@ -413,7 +413,7 @@ ignoring its condition produces the same distribution for both.
 ### A goal-directed run
 
 After an RL run, `oracle_eval.csv` gives validity, success rate, diversity, and FCD at each
-oracle milestone, and `score.log` gives the optimisation trace. For the diversity of the top
+oracle milestone, and `score.log` gives the optimization trace. For the diversity of the top
 hits:
 
 ```python
@@ -432,4 +432,4 @@ print(f"Most similar pair: {div['max_internal_similarity']:.3f}")
 Following PMO practice, report at a fixed oracle budget over at least five seeds as mean ± std,
 set with `"seed": N` for N > 0. Report the diversity of the successful subset alongside the
 score: a mean score that rises while `internal_diversity_successful` falls describes an
-optimiser that has found one exploit, and reporting only the former hides that.
+optimizer that has found one exploit, and reporting only the former hides that.

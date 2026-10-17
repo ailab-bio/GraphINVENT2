@@ -128,7 +128,7 @@ cannot be used to widen a multi-dataset vocabulary.
 
 `"split_type"` in the `job` block selects one of three strategies.
 
-| `split_type` | Behaviour |
+| `split_type` | Behavior |
 |--------------|-----------|
 | `"random"` | Shuffle, then slice by count. The default. |
 | `"butina"` | Cluster with the Butina algorithm on ECFP4 fingerprints at Tanimoto distance 0.4, then fill train with whole clusters until `train_frac` is reached, valid likewise, test with the remainder. |

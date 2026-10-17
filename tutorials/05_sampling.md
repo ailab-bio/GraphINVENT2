@@ -119,7 +119,7 @@ directory are moved into a timestamped `_previous_run_<stamp>/` first.
 | File | Contents |
 |------|----------|
 | `params_all.json` | Resolved parameters, library versions, git hash, seed |
-| `generation.log` | One row of statistics, labelled `Epoch GEN<N>` where N is the epoch number parsed from the checkpoint filename. Computed from the **first batch only**, not the full sample |
+| `generation.log` | One row of statistics, labeled `Epoch GEN<N>` where N is the epoch number parsed from the checkpoint filename. Computed from the **first batch only**, not the full sample |
 | `<n_samples>_samples.smi` | Generated SMILES |
 | `<n_samples>_samples.likelihood` | Total log-likelihood per molecule |
 | `<n_samples>_samples.valid` | `1.0` or `0.0` per molecule |
@@ -159,7 +159,7 @@ A well-trained model on drug-like data typically reaches `fraction_valid` above 
 than targets. High validity and uniqueness are necessary for a generated set to be worth
 looking at and are not sufficient for it to be interesting: a model can be perfectly valid,
 perfectly unique, and confined to a small region of chemical space. The property histograms in
-`generation.log`, the internal-diversity columns, and the nearest-neighbour similarity to the
+`generation.log`, the internal-diversity columns, and the nearest-neighbor similarity to the
 test set are what show where in chemical space the samples actually fall.
 
 ---

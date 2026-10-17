@@ -324,13 +324,20 @@ job, so guess high.
    produced nothing but its last checkpoint.
 
 **CPU numbers measured here, as a starting point.** 400 drug-like molecules,
-`max_nodes` 70, batch size 250, on a 10-core Apple M-series laptop:
+`max_nodes` 70 (9,413 training subgraphs), batch size 250, on a 10-core Apple
+M-series laptop:
 
 | Job type | Measured | Per unit |
 |---|---|---|
-| `preprocess` | 9.5 s for 400 molecules | ~24 ms per molecule |
-| `unconditional` | 39 s for 2 epochs | ~15 s per epoch over 8,010 subgraphs |
-| `generate` | 5.3 s for 1,000 molecules | ~5 ms per molecule |
+| `preprocess` | 17.8 s for 400 molecules | ~45 ms per molecule |
+| `unconditional` | 50 s for 2 epochs | ~25 s per epoch over 9,413 subgraphs |
+| `generate` | 11.3 s / 26.2 s / 47.2 s for 250 / 1,000 / 2,000 molecules | ~21 ms per molecule, plus ~6 s fixed |
+
+These were measured after HDF5 compression was enabled, which is why
+preprocessing is slower than a bare write would be; see
+[Storage](#storage-and-the-data-root). Generation was measured at four sample
+sizes because it has a fixed start-up cost that a single data point hides: fit
+your own estimate as `fixed + n x per_molecule` rather than scaling one number.
 
 **These must be re-measured on the GPU before they are trusted.** The ratio
 between CPU and GPU will not be uniform across job types: training is dense

@@ -13,11 +13,11 @@ loss = ( log p_agent(x) - log p_prior(x) - σ · score(x) )²
 ```
 
 `p_agent` is the model being updated, `p_prior` is a frozen copy of the starting model, and
-`score(x)` lies in [0, 1]. The squared term is minimised when the agent assigns molecule *x* a
+`score(x)` lies in [0, 1]. The squared term is minimized when the agent assigns molecule *x* a
 log-likelihood exactly `σ · score(x)` above the prior's, so the agent is pushed to upweight
 high-scoring molecules by an amount proportional to their score and to leave everything else
 where the prior had it. The prior is what stops the run from collapsing onto whatever
-degenerate structure maximises the score — without it the optimiser has no reason to keep
+degenerate structure maximizes the score — without it the optimizer has no reason to keep
 producing molecules at all.
 
 A best-agent-so-far (BASF) copy is also kept. Its loss is mixed into the total with weight
@@ -45,7 +45,7 @@ Each generated molecule gets a score in [0, 1] built from one or more components
 |-----------|------------------|
 | `"QED"` | RDKit's quantitative estimate of drug-likeness |
 | `"target_size=N"` | `1 - |n_nodes - N| / (max_n_nodes - N)`; N must satisfy `0 < N < max_n_nodes`, since N equal to `max_n_nodes` divides by zero |
-| `"logp_target=X"` | `1 - |logP - X| / 5`, clamped at 0; drives Crippen logP toward a value rather than maximising it |
+| `"logp_target=X"` | `1 - |logP - X| / 5`, clamped at 0; drives Crippen logP toward a value rather than maximizing it |
 | `"<name>_activity"` | `predict_proba` of a scikit-learn classifier named by `<name>` in `qsar_models` |
 | any name declared in the `oracles` block | Whatever that oracle computes: a surrogate you trained, a Python callable, or an AutoDock Vina docking run |
 
@@ -63,7 +63,7 @@ improving chemistry — a reason to read `score.log` alongside the component mea
 
 ### Combining components
 
-| `score_type` | Behaviour |
+| `score_type` | Behavior |
 |--------------|-----------|
 | `"binary"` | 1 if every component is strictly above its `score_thresholds` entry, else 0 |
 | `"continuous"` | Product of the component scores; thresholds are ignored |
@@ -93,7 +93,7 @@ import pickle
 from sklearn.svm import SVC
 
 clf = SVC(probability=True)
-# fit clf on labelled ECFP4 fingerprints
+# fit clf on labeled ECFP4 fingerprints
 
 with open("data/surrogates/my_qsar_model.pickle", "wb") as f:
     pickle.dump({"classifier_sv": clf}, f)
@@ -132,7 +132,7 @@ which accepts a plain pickled estimator and can also report uncertainty.
 | `alpha` | `0.5` | `0.5` | BASF weight in the loss; 0 uses the agent alone |
 | `epochs` | `100` | `100` | RL steps, when `oracle_budget` is null |
 | `batch_size` | `1000` | `50` | Molecules generated and scored per step |
-| `accumulation_steps` | `10` | `10` | Steps accumulated before an optimiser update |
+| `accumulation_steps` | `10` | `10` | Steps accumulated before an optimizer update |
 | `sample_every` | `10` | `10` | Steps between evaluation, checkpointing, and BASF updates |
 | `n_samples` | `2000` | `100` | Molecules generated at each evaluation |
 | `oracle_budget` | `null` | `null` | Integer caps the run by oracle calls instead of steps |
@@ -155,7 +155,7 @@ exploitation.
 |-----------|-------------|
 | Gentle push, wide exploration | 5–10 |
 | Standard fine-tuning | 20 |
-| Aggressive optimisation, mode collapse likely | 50–100 |
+| Aggressive optimization, mode collapse likely | 50–100 |
 
 These are rules of thumb from published REINVENT settings rather than values validated on this
 codebase. Start at 20. If validity falls and the generated molecules converge on one scaffold,
@@ -246,8 +246,8 @@ Written to `output/<dataset>/goal_directed/<job_name>/`.
 | `score.log` | `Step, Score` — the mean agent score at each evaluation step |
 | `convergence.log` | `step, lr, avg_train_loss, model_score`, one row per step |
 | `generation.log` | Per-evaluation-step molecule statistics, including `success_rate`, `internal_diversity_successful`, and a `score_<component>_mean` column per component |
-| `model_restart_<step>.pth` | Agent weights, optimiser and scheduler state, at each evaluation step |
-| `generation/` | Sampled SMILES and feature plots per step, labelled `agent`, `BASF`, `eval`, and `pre-fine-tuning` |
+| `model_restart_<step>.pth` | Agent weights, optimizer and scheduler state, at each evaluation step |
+| `generation/` | Sampled SMILES and feature plots per step, labeled `agent`, `BASF`, `eval`, and `pre-fine-tuning` |
 | `checkpoint_oracle_<N>.pth` | Only when `oracle_budget` is set: the agent at each milestone in `checkpoint_oracle_counts` |
 | `oracle_eval.csv` | Only when `oracle_budget` is set: full metrics for each milestone checkpoint |
 
@@ -274,7 +274,7 @@ tensorboard --logdir output/<dataset>/goal_directed/<job_name>/tensorboard/
 
 ## Oracles
 
-Most objectives worth optimising cannot be read off the graph. They come from a model fitted to
+Most objectives worth optimizing cannot be read off the graph. They come from a model fitted to
 assay data, from a docking calculation, or from an external service, and GraphINVENT calls all
 of these oracles. An oracle is declared in the `oracles` block of the job config under the
 name it will be referenced by, and then listed in `score_components`:
@@ -329,7 +329,7 @@ unbounded component could dominate the loss without limit.
 Writing `high` below `low` is how a quantity where smaller is better is expressed. The available
 types are `clipped_linear`, `sigmoid`, `step`, and `identity`; omitting `transform` clamps the
 raw value to [0, 1], which is only correct for an oracle that already returns a probability.
-Choosing the endpoints is a modelling decision. The window above says that below -11 kcal/mol
+Choosing the endpoints is a modeling decision. The window above says that below -11 kcal/mol
 nothing is gained, which is defensible for docking because the scoring function cannot rank very
 strong binders, but it is an assumption and belongs in the write-up.
 

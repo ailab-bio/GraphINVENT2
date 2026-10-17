@@ -55,7 +55,7 @@ class OracleFactory:
         TypeError
             If the spec carries keys the oracle class does not accept; the
             message names them, since a silently ignored key would mean the run
-            optimises something other than what was asked for.
+            optimizes something other than what was asked for.
         """
         if not isinstance(spec, dict):
             raise ValueError(

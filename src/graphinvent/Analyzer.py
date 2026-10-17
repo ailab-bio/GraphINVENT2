@@ -6,7 +6,7 @@ Responsibilities
 - Compute and log per-epoch metrics (NLL, UC-JSD, validity, uniqueness) for
   the validation set and the most recently generated molecules.
 - Compute summary statistics of the training set (used as a reference during
-  model evaluation and for normalising scoring functions).
+  model evaluation and for normalizing scoring functions).
 - Write scalar metrics and molecular property histograms to TensorBoard.
 """
 
@@ -203,6 +203,19 @@ class Analyzer:
         util.write_training_status(
             tb_writer=self.tb_writer, score=model_scores["UC-JSD"]
         )
+
+        # Returned, not just logged: metrics.json needs these under CLAUDE.md's
+        # names, and recomputing them there would be a second implementation.
+        nll_test = None
+        if getattr(self, "test_dataloader", None) is not None:
+            print("-- Calculating NLL statistics for test set.", flush=True)
+            _, nll_test = self.get_validation_likelihood(dataset="test")
+        return {
+            "nll_train": float(avg_train_likelihood),
+            "nll_validation": float(avg_valid_likelihood),
+            "nll_test": None if nll_test is None else float(nll_test),
+            "uc_jsd": float(model_scores["UC-JSD"]),
+        }
 
     def evaluate_generated_graphs(
         self,
@@ -924,8 +937,15 @@ class Analyzer:
             dataloader = self.valid_dataloader
         elif dataset == "training":
             dataloader = self.train_dataloader
+        elif dataset == "test":
+            # Only a generate job with sample_mode: evaluate sets this, which
+            # is final evaluation; the test split is not read during training.
+            dataloader = self.test_dataloader
         else:
-            raise ValueError("Invalid dataset entered.")
+            raise ValueError(
+                f"dataset: {dataset} is not a split. "
+                "Use one of: training, validation, test."
+            )
 
         Softmax = torch.nn.Softmax(dim=1)
         n_samples = min(100000, constants.n_samples)  # n graphs to evaluate
@@ -973,7 +993,7 @@ class Analyzer:
             likelihood = likelihood[~torch.isnan(likelihood)]
             # Clamp before the log.  A correct action the model assigns zero
             # probability gives -log(0) = +inf, which propagates through the
-            # mean into `inf` and then makes the UC-JSD normalisation inf/inf,
+            # mean into `inf` and then makes the UC-JSD normalization inf/inf,
             # i.e. nan -- the model score was silently unusable whenever any
             # single action underflowed.
             likelihood = -1 * torch.log(likelihood.clamp(min=1e-12))
@@ -1451,8 +1471,18 @@ class Analyzer:
                 result["internal_diversity_successful"] = float("nan")
 
         # --- Test-set similarity ---
+        # The test split is the reference set for final evaluation and is read
+        # only there: a `generate` job, or the budget-capped checkpoint
+        # evaluation that sets `include_expensive`. It used to be loaded
+        # unconditionally, which made every goal_directed learning step read it
+        # during training. CLAUDE.md holds the split back until the model is
+        # fixed, because a number computed during training is a choice made
+        # during development, and the split stops being held out once read.
+        final_evaluation = include_expensive or constants.job_type == "generate"
         valid_smiles_for_sim = [s for s in all_smiles if s is not None]
-        test_smi_list, test_cond_list = self._load_test_smiles()
+        test_smi_list, test_cond_list = (
+            self._load_test_smiles() if final_evaluation else ([], None)
+        )
         if test_smi_list and valid_smiles_for_sim:
             # Build condition_filter from sample_conditions for conditional jobs
             cond_filter = None

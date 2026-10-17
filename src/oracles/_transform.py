@@ -13,7 +13,7 @@ Separating the transform from the oracle keeps the oracle honest -- it reports
 its native quantity -- and puts the value judgement ("how good is -8.5 kcal/mol")
 in the job configuration, where it belongs and can be varied per target.
 
-Choosing transform parameters is a modelling decision, not a technical one.
+Choosing transform parameters is a modeling decision, not a technical one.
 A ``clipped_linear`` from -4 to -11 kcal/mol encodes an assumption that scores
 below -11 are not meaningfully better, which is defensible for docking because
 Vina's scoring function is not accurate enough to rank very strong binders, but
@@ -41,7 +41,7 @@ def _clipped_linear(value: float, low: float, high: float) -> float:
 
 def _sigmoid(value: float, low: float, high: float, k: float = 1.0) -> float:
     """
-    Smooth ramp centred midway between *low* and *high*.
+    Smooth ramp centered midway between *low* and *high*.
 
     Preferred over ``clipped_linear`` when the objective should keep providing
     gradient signal outside the nominal window: a molecule slightly worse than
@@ -83,7 +83,7 @@ def build_transform(spec: Optional[dict]) -> Callable[[float], float]:
     ----------
     spec
         ``None`` or ``{}`` yields the identity transform, clamped to [0, 1];
-        use it for oracles that already return a probability or a normalised
+        use it for oracles that already return a probability or a normalized
         score.  Otherwise ``spec["type"]`` selects the transform:
 
         ``clipped_linear``
@@ -156,7 +156,7 @@ def apply_direction(score: float, direction: str) -> float:
 
     Selectivity objectives are the reason this exists: designing a molecule
     that binds one target while avoiding another is expressed as two oracles
-    over the same kind of quantity, one maximised and one minimised, rather
+    over the same kind of quantity, one maximized and one minimized, rather
     than as two differently-parameterised transforms.
 
     Raises

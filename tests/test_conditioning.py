@@ -126,8 +126,11 @@ def _but_1_en_3_yne_batch(constants):
 
 
 def test_output_shape_is_unchanged_by_conditioning():
-    """The virtual seed node is stripped before readout, so the action
-    probabilities have the same length with and without a condition."""
+    """Conditioning does not change the length of the action probabilities.
+
+    Necessary but not sufficient for correct stripping: dropping the wrong node
+    keeps this shape. `test_virtual_node_is_stripped_before_readout` is what
+    pins down which node was removed."""
     plain = _model(condition_dim=0)
     conditional = _model(condition_dim=2)
     nodes, edges = _but_1_en_3_yne_batch(plain.constants)
@@ -137,6 +140,57 @@ def test_output_shape_is_unchanged_by_conditioning():
         conditional_out = conditional(nodes, edges, torch.zeros(1, 2))
 
     assert unconditional_out.shape == conditional_out.shape
+
+
+def test_virtual_node_is_stripped_before_readout():
+    """
+    The readout must see the real nodes, not the seed.
+
+    Checking the output length is not enough: removing the last row instead of
+    the seed row keeps the shape and leaves the readout reading the seed's
+    hidden state as if it were node 0, with every real node shifted by one.
+    This leaves the first slot empty of any real atom, so the hidden state
+    there must stay zero -- a padding node has no neighbors, never receives a
+    message, and is never updated. If the seed is still in place, that row
+    carries the condition embedding and is not zero.
+    """
+    model = _model(condition_dim=2)
+    constants = model.constants
+
+    nodes = torch.zeros(1, MAX_N_NODES, constants.n_node_features)
+    edges = torch.zeros(1, MAX_N_NODES, MAX_N_NODES, constants.n_edge_features)
+    # Slot 0 left as padding; two bonded carbons in slots 1 and 2.
+    for i in (1, 2):
+        nodes[0, i, 0] = 1.0
+        nodes[0, i, constants.n_atom_types] = 1.0
+        nodes[0, i, constants.n_atom_types + 1 + 1] = 1.0
+    edges[0, 1, 2, 0] = 1.0
+    edges[0, 2, 1, 0] = 1.0
+
+    seen = {}
+    real_readout = model.readout
+
+    def capture(hidden_nodes, nodes_in, node_mask, **kwargs):
+        seen["hidden_nodes"] = hidden_nodes.detach().clone()
+        seen["nodes_in"] = nodes_in.detach().clone()
+        return real_readout(hidden_nodes, nodes_in, node_mask, **kwargs)
+
+    model.readout = capture
+    try:
+        with torch.no_grad():
+            model(nodes, edges, torch.tensor([[1.5, -0.5]]))
+    finally:
+        del model.readout
+
+    hidden_nodes, nodes_in = seen["hidden_nodes"], seen["nodes_in"]
+    assert hidden_nodes.shape[1] == MAX_N_NODES
+    assert nodes_in.shape[1] == MAX_N_NODES, "nodes_in still carries the seed row"
+    padding = nodes_in.sum(-1) == 0
+    assert padding[0, 0], "slot 0 was meant to be padding"
+    assert torch.count_nonzero(hidden_nodes[padding]) == 0, (
+        "the readout received a non-zero hidden state for a padding slot, so the "
+        "virtual seed node was not the row that got stripped"
+    )
 
 
 def test_condition_vector_changes_the_logits():

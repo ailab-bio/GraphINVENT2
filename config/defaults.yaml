@@ -129,6 +129,11 @@ condition_type: virtual_node
 # property values to generate with, e.g. {"pLogS": -1.5}
 sample_conditions: null
 
+# a generated molecule counts as hitting its requested condition value when the
+# achieved property is within this much of it, per property name. CLAUDE.md's
+# condition_success_rate_<property> is defined against this tolerance.
+condition_tolerance: null
+
 # --- goal-directed RL ------------------------------------------------------
 
 # checkpoint the agent and the frozen prior start from

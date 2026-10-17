@@ -1,0 +1,7 @@
+job_type: generate
+# The second generate mode: score the model rather than sample from it.
+sample_mode: evaluate
+pretrained_model_path: experiments/tutorial_unconditional/jobs/debug/checkpoints/model_restart_4.pth
+n_samples: 100
+batch_size: 50
+device: cpu

@@ -96,7 +96,7 @@ class MLP(torch.nn.Module):
     Multi-layer perceptron with SELU activations and optional AlphaDropout.
 
     Each hidden layer is a `Linear → SELU → AlphaDropout` block.  Xavier
-    uniform initialisation is applied to all weight matrices.  Bias terms are
+    uniform initialization is applied to all weight matrices.  Bias terms are
     always included so that the network can learn from graphs that start as
     all-zeros (e.g. an empty molecule at the first generation step).
 

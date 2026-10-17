@@ -194,19 +194,19 @@ class MolecularGraph:
         Restores R/S stereochemistry recorded by `features_to_atom`.
 
         A CIP code is a property *of the whole molecule*, not of an atom in
-        isolation -- it depends on the neighbour ordering -- so it cannot be
+        isolation -- it depends on the neighbor ordering -- so it cannot be
         written directly onto an atom.  Instead each stereocentre is given a
         tetrahedral tag, RDKit is asked to recompute the CIP codes, and any
-        centre that came out with the wrong handedness is flipped.
+        center that came out with the wrong handedness is flipped.
         """
         from rdkit.Chem import ChiralType
 
-        centres = {
+        centers = {
             idx: code
             for idx, code in self._desired_cip.items()
             if code in ("R", "S") and idx < molecule.GetNumAtoms()
         }
-        if not centres:
+        if not centers:
             return
 
         try:
@@ -214,12 +214,12 @@ class MolecularGraph:
         except (ValueError, RuntimeError):
             return  # too malformed for stereochemistry to be meaningful
 
-        for idx in centres:
+        for idx in centers:
             molecule.GetAtomWithIdx(idx).SetChiralTag(ChiralType.CHI_TETRAHEDRAL_CW)
         rdkit.Chem.AssignStereochemistry(molecule, cleanIt=True, force=True)
 
         flipped = False
-        for idx, code in centres.items():
+        for idx, code in centers.items():
             atom = molecule.GetAtomWithIdx(idx)
             if atom.GetPropsAsDict().get("_CIPCode") != code:
                 atom.SetChiralTag(ChiralType.CHI_TETRAHEDRAL_CCW)
@@ -302,7 +302,7 @@ class MolecularGraph:
             # RDKit recomputes CIP codes from the chiral tags during
             # sanitisation and wipes the property, so R and S both decoded to
             # the same achiral molecule.  `_apply_chirality` sets real tags once
-            # the whole molecule (and hence the neighbour order) exists.
+            # the whole molecule (and hence the neighbor order) exists.
             self._desired_cip[node_idx] = cip_code
 
         return new_atom

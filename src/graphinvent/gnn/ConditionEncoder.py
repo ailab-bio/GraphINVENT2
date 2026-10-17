@@ -1,6 +1,6 @@
 """
 ConditionEncoder: maps a property (condition) vector to a fixed-size embedding
-used to initialise the virtual seed node in the GGNN forward pass.
+used to initialize the virtual seed node in the GGNN forward pass.
 """
 
 import torch
@@ -10,7 +10,7 @@ class ConditionEncoder(torch.nn.Module):
     """
     Two-layer MLP that encodes a conditioning property vector.
 
-    The resulting embedding is used to initialise the hidden state of a virtual
+    The resulting embedding is used to initialize the hidden state of a virtual
     seed node that is prepended to every molecular graph before message passing.
     All real nodes receive a message from the seed at every message-passing
     round, injecting the conditioning signal into the graph representation.

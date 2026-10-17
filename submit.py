@@ -77,8 +77,9 @@ def render_slurm_script(params: dict) -> str:
             "slurm.account is unset, and SLURM rejects a job without one.\n"
             "Set it in config/defaults.yaml, or per experiment:\n"
             "    slurm:\n"
-            "      account: naiss2026-1-234\n"
-            "A GPU job usually needs the -gpu suffix on the account name."
+            "      account: <your-project-id>\n"
+            "Some clusters need a suffix on the account name for GPU jobs; see\n"
+            "the comment on slurm.account in config/defaults.yaml."
         )
 
     partition = slurm["partition"] or (

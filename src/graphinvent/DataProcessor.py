@@ -937,6 +937,21 @@ class DataProcessor:
         edges = np.array([graph_tuple[1] for graph_tuple in data_subgraphs])
         action_probs = np.array(data_action_probs)
 
+        # h5py saturates rather than raising when a value exceeds the dataset
+        # dtype, so a count above int16 would be silently written as 32767 and
+        # quietly distort the target distribution. The counts are bounded by the
+        # number of subgraphs in a group, which is `batch_size`, so this cannot
+        # trigger at the default; it can if `batch_size` is raised far enough.
+        limit = np.iinfo(_dataset_dtype("action_probs")).max
+        if action_probs.max(initial=0) > limit:
+            raise ValueError(
+                f"An action count reached {int(action_probs.max())}, above the "
+                f"{limit} that the action_probs dataset can hold.\n"
+                f"Counts are bounded by batch_size, currently {constants.batch_size}. "
+                "Lower it for preprocessing, or widen the dtype in "
+                "`_dataset_dtype`."
+            )
+
         end_idx = init_idx + group_size  # idx to end slicing
 
         # once data is padded, save it to dataset slice

@@ -85,7 +85,7 @@ Passing `--threshold` binarises the label and trains a classifier, whose oracle
 `"predict"` and which needs a transform to map its native scale onto a
 desirability. The script prints the config block to paste into the `oracles`
 section of a job, and the held-out metrics that say whether the model is worth
-optimising against at all. A surrogate that cannot predict its own test set
+optimizing against at all. A surrogate that cannot predict its own test set
 will still drive an RL run perfectly happily, producing molecules that score
 well and mean nothing.
 

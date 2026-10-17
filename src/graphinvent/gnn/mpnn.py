@@ -20,7 +20,7 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
     Architecture overview
     ---------------------
     1. **Message passing** (repeated `message_passes` times):
-       - One MLP per bond type computes a candidate message from each neighbour's
+       - One MLP per bond type computes a candidate message from each neighbor's
          hidden state, gated by the bond-type indicator.
        - All incoming messages are summed at each node.
        - A shared GRU cell updates each node's hidden state from the summed message.
@@ -31,7 +31,7 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
        - `ActionProbReadout` maps the per-node hidden states *and* the graph embedding to
          the flat, unnormalised Action Probability Distribution (action probabilities) logits.
 
-    The action probabilities logits are later normalised (softmax) and used to sample the next
+    The action probabilities logits are later normalized (softmax) and used to sample the next
     construction step: add a new node, connect two existing nodes, or terminate.
 
     Args:
@@ -50,7 +50,7 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
 
         self.constants = constants
 
-        # One edge-network MLP per bond type: transforms a neighbour's hidden
+        # One edge-network MLP per bond type: transforms a neighbor's hidden
         # state into a message vector, gated by the corresponding bond indicator.
         # An extra MLP (index n_edge_features) handles the virtual edge type used
         # during conditional generation; it is unused for unconditional models.
@@ -130,15 +130,15 @@ class GGNN(gnn.summation_mpnn.SummationMPNN):
         """
         Computes one message vector per directed edge.
 
-        For each bond type i, the neighbour's hidden state is passed through
+        For each bond type i, the neighbor's hidden state is passed through
         `msg_nns[i]` and then masked by the bond-type indicator.  The results
         across all bond types are summed to give a single message per edge.
 
         Args:
             nodes:           Hidden states of source nodes (unused here; the GGNN
-                             formulation conditions messages only on the *neighbour*).
+                             formulation conditions messages only on the *neighbor*).
                              Shape: (n_edges, hidden_node_features)
-            node_neighbours: Hidden states of neighbouring nodes.
+            node_neighbours: Hidden states of neighboring nodes.
                              Shape: (n_edges, hidden_node_features)
             edges:           One-hot bond-type features for each edge.
                              Shape: (n_edges, n_edge_features)

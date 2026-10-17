@@ -887,20 +887,20 @@ class GraphGeneratorRL:
         # node_idx -> desired CIP code for the graph currently being decoded
         desired_cip: dict = {}
 
-        def _apply_chirality(molecule: rdkit.Chem.Mol, centres: dict) -> None:
+        def _apply_chirality(molecule: rdkit.Chem.Mol, centers: dict) -> None:
             """
             Restores R/S stereochemistry recorded while decoding the atoms.
 
-            A CIP code depends on the neighbour ordering, so it cannot be
-            written onto an isolated atom.  Each centre is given a tetrahedral
-            tag, RDKit recomputes the codes, and centres that came out with the
+            A CIP code depends on the neighbor ordering, so it cannot be
+            written onto an isolated atom.  Each center is given a tetrahedral
+            tag, RDKit recomputes the codes, and centers that came out with the
             wrong handedness are flipped.
             """
             from rdkit.Chem import ChiralType
 
             wanted = {
                 i: c
-                for i, c in centres.items()
+                for i, c in centers.items()
                 if c in ("R", "S") and i < molecule.GetNumAtoms()
             }
             if not wanted:

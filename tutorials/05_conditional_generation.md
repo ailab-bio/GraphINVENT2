@@ -1,11 +1,11 @@
 # Tutorial 5: Conditional generation
 
-A conditional model is trained on molecules labelled with continuous property values and
+A conditional model is trained on molecules labeled with continuous property values and
 learns to condition its action distribution on a target vector of those properties. At
 generation time you supply the target and the model samples molecules intended to have it.
 
 The mechanism is a virtual seed node. A property vector is encoded by a small MLP into an
-embedding, that embedding initialises the hidden state of an extra node prepended to every
+embedding, that embedding initializes the hidden state of an extra node prepended to every
 graph, and each real atom receives a message from the seed at every message-passing round via
 a dedicated virtual edge type. The seed is stripped before the readout, so the action
 probability distribution keeps the same shape as in the unconditional model.
@@ -29,7 +29,7 @@ ConditionEncoder (2-layer MLP)
         │
         ├──────────────────────────────► concatenated to the graph embedding
         ▼                                  before the readout
-initialises the virtual seed node (index 0)
+initializes the virtual seed node (index 0)
 ┌───────────────────────────────────────┐
 │  GGNN message passing (T rounds)      │
 │  seed node → real nodes (virtual edge)│
@@ -42,7 +42,7 @@ readout → action probability distribution
 
 ---
 
-## Step 1 — Prepare a labelled dataset
+## Step 1 — Prepare a labeled dataset
 
 The input file must be tab-separated with a header row whose first column is named `SMILES`.
 Every subsequent column is a property.
@@ -284,7 +284,7 @@ Two checks are worth running before drawing conclusions:
   A model can appear to condition well by reproducing the region of chemical space where most
   of its training data with that property value lives, which is a weaker claim than steering.
 
-The nearest-neighbour similarity statistics described in [the evaluation
+The nearest-neighbor similarity statistics described in [the evaluation
 reference](./evaluation.md) are automatically restricted to test molecules whose condition
 values fall within ±0.3 of `sample_conditions`, so the reported `sim_mean` for a conditional
 run compares against the matching part of the test set rather than all of it.

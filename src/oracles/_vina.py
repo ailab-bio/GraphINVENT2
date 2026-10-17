@@ -2,7 +2,7 @@
 AutoDock Vina docking oracle.
 
 Docking gives a structure-based objective for a specific target, which is what
-makes "optimise against this protein" possible without first assembling enough
+makes "optimize against this protein" possible without first assembling enough
 assay data to train a surrogate.  The trade-off is cost: a single pose search
 takes on the order of a second per molecule per CPU core, so an RL run of a few
 hundred steps at batch 64 is tens of thousands of dockings.  Deduplication in
@@ -221,7 +221,7 @@ class VinaOracle(BaseOracle):
     receptor
         Path to the prepared receptor PDBQT.
     center, box_size
-        Search box centre and dimensions in Angstrom.  Both are required:
+        Search box center and dimensions in Angstrom.  Both are required:
         docking into the wrong pocket produces confident, meaningless numbers,
         so there is no default.
     exhaustiveness

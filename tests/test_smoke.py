@@ -148,7 +148,15 @@ def test_goal_directed_optimizes_against_an_oracle(dataset, checkpoint):
             **{**TRAINING, "batch_size": 20},
         },
     )
-    assert (job_dir / "logs" / "score.log").exists()
+    score_log = job_dir / "logs" / "score.log"
+    assert score_log.exists()
+    # Not just existence: the initial pre-fine-tuning evaluation writes a row
+    # before any learning step, so a file with one row means the training loop
+    # recorded nothing.
+    steps = [
+        line for line in score_log.read_text().splitlines() if line.startswith("Step ")
+    ]
+    assert len(steps) > 1, f"score.log recorded no learning step: {steps}"
 
 
 def test_generate_writes_molecules(dataset, checkpoint):

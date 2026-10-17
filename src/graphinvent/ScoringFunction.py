@@ -71,7 +71,7 @@ class ScoringFunction:
     Combines multiple property scores into a single RL reward per molecule.
 
     Each generated molecule is evaluated against the score components listed in
-    ``constants.score_components``.  Component scores are normalised to [0, 1],
+    ``constants.score_components``.  Component scores are normalized to [0, 1],
     then multiplied together (after thresholding) to produce a final scalar.
 
     The score is set to 0 for molecules that were not properly terminated, are
@@ -401,12 +401,12 @@ class ScoringFunction:
 
             elif score_component.startswith("logp_target="):
                 # Crippen logP driven toward a target value rather than
-                # maximised.  Lipophilicity is not monotonically desirable:
+                # maximized.  Lipophilicity is not monotonically desirable:
                 # degraders in particular tend to sit well above the drug-like
                 # window, so the useful objective is to reach a value, not to
                 # exceed it.  The +/- 5 log-unit window is a convention, not a
                 # principled choice; it is wide enough that a randomly
-                # initialised model still receives gradient signal.
+                # initialized model still receives gradient signal.
                 target_logp = float(score_component.split("=", 1)[1])
                 window = 5.0
 

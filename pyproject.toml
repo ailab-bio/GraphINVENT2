@@ -31,6 +31,13 @@ dependencies = [
 # 3.2.0 is the first aarch64 build with GPU support, so that is the floor.
 surrogates = ["xgboost>=3.2.0"]
 
+# uv sync --extra components  — PROTAC-Splitter, for the component-level
+# metrics on bifunctional molecules (Ribes et al., J. Cheminform. 18:30, 2026).
+# Not on PyPI, so it installs from the repository.
+components = [
+    "protac-splitter @ git+https://github.com/ribesstefano/PROTAC-Splitter",
+]
+
 # uv sync --extra docking  — AutoDock Vina oracle (structure-based scoring).
 # vina publishes no aarch64 wheel at any version, so on an ARM cluster this
 # extra does not install; see RUN.md for the conda-forge route.

@@ -12,7 +12,7 @@ class SummationMPNN(torch.nn.Module):
     """
     Abstract base class for summation-based message-passing neural networks (MPNNs).
 
-    In this framework, each node collects messages from its neighbours, sums them,
+    In this framework, each node collects messages from its neighbors, sums them,
     and uses a gating mechanism (GRU) to update its own hidden state.  After a
     fixed number of message-passing rounds the hidden states are pooled into a
     single graph-level embedding and passed to a readout network that predicts the
@@ -36,14 +36,14 @@ class SummationMPNN(torch.nn.Module):
         self, nodes: torch.Tensor, node_neighbours: torch.Tensor, edges: torch.Tensor
     ) -> torch.Tensor:
         """
-        Computes the outgoing message from each (node, neighbour) edge pair.
+        Computes the outgoing message from each (node, neighbor) edge pair.
 
         Must be implemented by every subclass.
 
         Args:
             nodes:           Hidden states of the source nodes.
                              Shape: (total edges in batch, hidden_node_features)
-            node_neighbours: Hidden states of the neighbouring nodes.
+            node_neighbours: Hidden states of the neighboring nodes.
                              Shape: (total edges in batch, hidden_node_features)
             edges:           One-hot bond-type features for each edge.
                              Shape: (total edges in batch, n_edge_features)
@@ -62,9 +62,9 @@ class SummationMPNN(torch.nn.Module):
 
         Args:
             nodes:    Current hidden states.
-                      Shape: (total nodes with at least one neighbour, hidden_node_features)
+                      Shape: (total nodes with at least one neighbor, hidden_node_features)
             messages: Summed incoming messages for each node.
-                      Shape: (total nodes with at least one neighbour, message_size)
+                      Shape: (total nodes with at least one neighbor, message_size)
 
         Returns:
             Updated hidden states. Same shape as `nodes`.
@@ -108,10 +108,10 @@ class SummationMPNN(torch.nn.Module):
 
         Steps:
           1. (Optional) Prepend a virtual seed node whose hidden state is
-             initialised from ``condition_embedding``.  Virtual edges connect the
+             initialized from ``condition_embedding``.  Virtual edges connect the
              seed to every real node, carrying the conditioning signal into all
              message-passing rounds.
-          2. Build a sparse representation of all (batch, node, neighbour) triples
+          2. Build a sparse representation of all (batch, node, neighbor) triples
              from the adjacency matrix.
           3. Run ``message_passes`` rounds of: compute messages → sum per node
              → update hidden state with GRU.
@@ -179,7 +179,7 @@ class SummationMPNN(torch.nn.Module):
             adjacency.nonzero(as_tuple=True)
         )
 
-        # Collect all (batch, node) pairs that have at least one neighbour.
+        # Collect all (batch, node) pairs that have at least one neighbor.
         node_batch_batch_idc, node_batch_node_idc = adjacency.sum(-1).nonzero(
             as_tuple=True
         )
@@ -206,7 +206,7 @@ class SummationMPNN(torch.nn.Module):
             edge_batch_batch_idc, edge_batch_node_idc, edge_batch_nghb_idc, :
         ]
 
-        # Initialise hidden states from input node features (zero-padded to hidden dim).
+        # Initialize hidden states from input node features (zero-padded to hidden dim).
         hidden_nodes = torch.zeros(
             nodes_in.shape[0],
             nodes_in.shape[1],
@@ -217,7 +217,7 @@ class SummationMPNN(torch.nn.Module):
         hidden_nodes[:, :, :n_copy] = nodes_in[:, :, :n_copy].clone()
 
         if condition_embedding is not None:
-            # Initialise the virtual seed node (index 0) from condition_embedding.
+            # Initialize the virtual seed node (index 0) from condition_embedding.
             cond_h = min(condition_embedding.shape[1], self.hidden_node_features)
             hidden_nodes[:, 0, :cond_h] = condition_embedding[:, :cond_h]
 

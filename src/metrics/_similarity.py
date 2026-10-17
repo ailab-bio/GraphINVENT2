@@ -22,7 +22,7 @@ def compute_test_set_similarity(
     max_refs: Optional[int] = None,
 ) -> dict:
     """
-    Compute nearest-neighbour Tanimoto similarity between generated molecules
+    Compute nearest-neighbor Tanimoto similarity between generated molecules
     and a hold-out test set using Morgan fingerprints.
 
     For each valid generated molecule the maximum Tanimoto similarity to any
@@ -62,13 +62,13 @@ def compute_test_set_similarity(
     dict
         Keys:
 
-        * ``mean_similarity`` – mean nearest-neighbour similarity across all
+        * ``mean_similarity`` – mean nearest-neighbor similarity across all
           valid generated molecules.
-        * ``median_similarity`` – median nearest-neighbour similarity.
+        * ``median_similarity`` – median nearest-neighbor similarity.
         * ``top_k_similarity`` – mean similarity of the *top_k* most similar
           generated molecules.
         * ``sim_gt_0_4`` – fraction of valid generated molecules with
-          nearest-neighbour similarity > 0.4.
+          nearest-neighbor similarity > 0.4.
         * ``sim_gt_0_6`` – fraction > 0.6.
         * ``sim_gt_0_8`` – fraction > 0.8.
         * ``sim_gt_0_9`` – fraction > 0.9.
@@ -82,7 +82,7 @@ def compute_test_set_similarity(
           (before condition filtering).
         * ``n_test_after_filter`` – number of test molecules used as references
           after condition filtering and subsampling.
-        * ``per_mol_similarity`` – list of per-molecule nearest-neighbour
+        * ``per_mol_similarity`` – list of per-molecule nearest-neighbor
           similarities (one per *valid* generated molecule), for downstream
           analysis.
     """
@@ -208,7 +208,7 @@ def compute_test_set_similarity(
     n_test_after_filter = len(test_fps)
 
     # ------------------------------------------------------------------
-    # Compute nearest-neighbour similarities (bulk, test fps precomputed)
+    # Compute nearest-neighbor similarities (bulk, test fps precomputed)
     # ------------------------------------------------------------------
     nn_sims: list[float] = []
     for gen_fp in gen_fps:

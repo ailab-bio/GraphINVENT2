@@ -23,7 +23,7 @@ def compute_auc_top_k(
     At each oracle call *t*, the running average of the top-*k* scores seen
     so far is computed (considering only molecules that satisfy all constraints,
     if provided).  The AUC is the area under this curve from t=0 to t=budget,
-    normalised to [0, 1].
+    normalized to [0, 1].
 
     This matches the primary evaluation metric of the PMO benchmark (Gao et
     al., NeurIPS 2022).
@@ -38,7 +38,7 @@ def compute_auc_top_k(
     k : int
         Number of top molecules to track (default 10).
     budget : int
-        Maximum oracle call budget used for normalisation (default 10 000).
+        Maximum oracle call budget used for normalization (default 10 000).
     constraints : list of bool, optional
         Per-entry flag indicating whether the molecule satisfies all
         constraints.  If ``None``, all entries are considered valid.
@@ -133,7 +133,7 @@ def compute_auc_top_k(
         curve_t.append(budget)
         curve_f.append(curve_f[-1])
 
-    # Trapezoidal integration, normalised by the span actually integrated.
+    # Trapezoidal integration, normalized by the span actually integrated.
     span = curve_t[-1]
     if span <= 0:
         return 0.0

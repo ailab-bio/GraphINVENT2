@@ -32,6 +32,21 @@ class CachedOracle:
     2
     """
 
+    @staticmethod
+    def _key(smiles: str) -> str:
+        """
+        Canonical form of *smiles*, which is what the cache is keyed on.
+
+        Two spellings of one molecule have to collapse to one key, or the same
+        compound is submitted twice and the oracle-call count -- the
+        authoritative record of the budget spent -- counts it twice. An
+        unparseable string is used as given; it will score zero either way.
+        """
+        from rdkit import Chem
+
+        mol = Chem.MolFromSmiles(smiles)
+        return Chem.MolToSmiles(mol) if mol is not None else smiles
+
     def __init__(self, oracle: "BaseOracle") -> None:
         self._oracle = oracle
         self._cache: dict[str, float] = {}
@@ -58,15 +73,16 @@ class CachedOracle:
         list of float
             Scores in [0, 1].
         """
-        # Identify new, unique, non-None SMILES that need oracle calls
-        new_smiles = [s for s in smiles if s is not None and s not in self._cache]
-        # deduplicate while preserving order for the oracle call
+        keys = [self._key(s) if s is not None else None for s in smiles]
+
+        # Identify new, unique molecules that need oracle calls.
         seen: set = set()
         unique_new: list = []
-        for s in new_smiles:
-            if s not in seen:
-                unique_new.append(s)
-                seen.add(s)
+        for key in keys:
+            if key is None or key in self._cache or key in seen:
+                continue
+            unique_new.append(key)
+            seen.add(key)
 
         if unique_new:
             new_scores = self._oracle(unique_new)
@@ -75,7 +91,7 @@ class CachedOracle:
                 self._call_count += 1
                 self._optimization_log.append((self._call_count, float(score)))
 
-        return [self._cache.get(s, 0.0) if s is not None else 0.0 for s in smiles]
+        return [self._cache.get(k, 0.0) if k is not None else 0.0 for k in keys]
 
     # ------------------------------------------------------------------
     # Statistics
@@ -117,13 +133,14 @@ class CachedOracle:
                 f"Oracle '{self.name}' does not provide uncertainty estimates."
             )
 
-        unseen = [s for s in smiles if s is not None and s not in self._cache]
+        keys = [self._key(s) if s is not None else None for s in smiles]
         seen: set = set()
         unique_new: list = []
-        for s in unseen:
-            if s not in seen:
-                unique_new.append(s)
-                seen.add(s)
+        for key in keys:
+            if key is None or key in self._cache or key in seen:
+                continue
+            unique_new.append(key)
+            seen.add(key)
 
         if unique_new:
             new_values, new_uncertainties = self._oracle.predict_with_uncertainty(
@@ -137,10 +154,9 @@ class CachedOracle:
                 self._call_count += 1
                 self._optimization_log.append((self._call_count, self._cache[smi]))
 
-        scores = [self._cache.get(s, 0.0) if s is not None else 0.0 for s in smiles]
+        scores = [self._cache.get(k, 0.0) if k is not None else 0.0 for k in keys]
         uncertainties = [
-            self._uncertainty_cache.get(s, 0.0) if s is not None else 0.0
-            for s in smiles
+            self._uncertainty_cache.get(k, 0.0) if k is not None else 0.0 for k in keys
         ]
         return scores, uncertainties
 

@@ -80,7 +80,7 @@ def reliability_weight(
     ``linear``
         ``1 - u / max_uncertainty``, clipped to [0, 1].  This is the paper's
         Eq. 14 (``w = 1 - d``) with an explicit scale, since their distance was
-        already normalised to [0, 1] and a raw surrogate uncertainty is not.
+        already normalized to [0, 1] and a raw surrogate uncertainty is not.
         Requires ``max_uncertainty``: the uncertainty at which a prediction
         becomes worthless.
     ``sigmoid``
@@ -95,7 +95,7 @@ def reliability_weight(
         bounded variant is used here.  It matches the paper's ordering and
         approaches it up to a constant for ``u >> scale``, but it is not the
         identical function, and the difference is absorbed by the batch-mean
-        normalisation in :func:`modulate_loss_weights`.
+        normalization in :func:`modulate_loss_weights`.
     ``exponential``
         ``exp(-beta * u)``.  Decays smoothly with no hard cutoff; useful when
         no principled ``max_uncertainty`` can be named.
@@ -194,8 +194,8 @@ class UncertaintyModulation:
     footing: after the mapping every component yields a weight in [0, 1].
     Nothing here calibrates those weights against each other, so a "0.5" from
     one component does not represent the same degree of doubt as a "0.5" from
-    another; the mapping is a modelling choice per component, not a
-    principled cross-component normalisation.
+    another; the mapping is a modeling choice per component, not a
+    principled cross-component normalization.
 
     Configuration
     -------------
@@ -323,7 +323,7 @@ def combine_score_weights(
     Combine per-component reliability weights into one score multiplier.
 
     Uses the geometric mean, which is what the paper's Eq. 2 reduces to for
-    equal weights: the exponent ``w_i / sum_l w_l`` normalises by the number of
+    equal weights: the exponent ``w_i / sum_l w_l`` normalizes by the number of
     components, so the aggregate does not shrink simply because more of them
     were added.  A raw product does shrink that way, and the effect is severe
     in practice -- two components at reliability 0.18 and 0.08 multiply to
@@ -347,7 +347,7 @@ def combine_score_weights(
 
 def modulate_loss_weights(weights: Sequence[float]) -> np.ndarray:
     """
-    Normalise per-molecule loss weights to preserve the mean gradient scale.
+    Normalize per-molecule loss weights to preserve the mean gradient scale.
 
     Implements the ``w_j / ((1/N) sum_l w_l)`` factor of the paper's Eq. 8.
     Without this division a uniformly-distrusted batch would simply shrink the
@@ -358,7 +358,7 @@ def modulate_loss_weights(weights: Sequence[float]) -> np.ndarray:
     A batch whose weights are all zero -- every molecule maximally distrusted --
     returns ones rather than dividing by zero.  That deliberately declines to
     express "learn nothing from this batch": doing so is the learning-rate
-    change this normalisation exists to avoid, and a batch in which nothing is
+    change this normalization exists to avoid, and a batch in which nothing is
     trusted carries no information about which molecules are better anyway.
     """
     array = np.asarray(weights, dtype=np.float64)

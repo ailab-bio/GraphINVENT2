@@ -9,7 +9,7 @@ by the framework.  Each public method corresponds to one job type:
                        (pretrain) or from a pretrained checkpoint (transfer)
   generation_phase  -- sample new molecules from a trained model
   testing_phase     -- evaluate a trained model on the held-out test set
-  rl_training_phase -- optimise a pretrained model via policy-gradient RL
+  rl_training_phase -- optimize a pretrained model via policy-gradient RL
 """
 
 # load general packages and functions
@@ -38,6 +38,7 @@ from BlockDatasetLoader import BlockDataLoader, HDFDataset
 from DataProcessor import DataProcessor, split_smiles_file
 from GraphGenerator import GraphGenerator
 from GraphGeneratorRL import GraphGeneratorRL
+from rdkit import Chem
 from ScoringFunction import ScoringFunction
 from tqdm import tqdm
 
@@ -52,12 +53,12 @@ class Workflow:
                    subgraphs (the decoding route), and writes node features, edge
                    features, and action probabilities targets to an HDF5 file for fast batch loading.
 
-    pretrain    -- Trains a GGNN model from random initialisation using supervised
+    pretrain    -- Trains a GGNN model from random initialization using supervised
                    learning: the model is trained to reproduce the target action probabilities at
                    each step of the decoding route (KL-divergence loss).
 
     transfer    -- Same supervised training loop as pretrain, but the model is
-                   initialised from a pretrained checkpoint rather than random
+                   initialized from a pretrained checkpoint rather than random
                    weights.  Useful for fine-tuning on a new chemical series.
 
     generate    -- Uses a trained model to autoregressively sample new molecular
@@ -68,7 +69,7 @@ class Workflow:
 
     rl          -- Fine-tunes a pretrained model with augmented log-likelihood
                    policy-gradient RL.  Three model copies are maintained:
-                   the agent (being optimised), a frozen prior (KL anchor), and
+                   the agent (being optimized), a frozen prior (KL anchor), and
                    the best-agent-so-far (BASF, used to update the prior when the
                    agent improves).
 
@@ -113,6 +114,14 @@ class Workflow:
         self.prior_model = None
         self.best_agent_model = None  # tracks the highest-scoring model seen during RL
         self.best_avg_score = 0.0
+        # Every molecule the agent generated, with its score, for the
+        # goal-directed metrics at the end of the run.
+        self.rl_smiles: list = []
+        self.rl_scores: list = []
+        # Graphs the agent generated, including those that are not molecules.
+        # This is N for the validity denominator; counting only the ones that
+        # converted would measure validity of the already-valid.
+        self.rl_n_generated: int = 0
         self.scoring_function = None
 
     def preprocess_test_data(self) -> None:
@@ -821,6 +830,36 @@ class Workflow:
 
             _ = self.evaluate_model(model_to_evaluate=self.model)
 
+        # Checkpoints are otherwise written only by `evaluate_model`, on the
+        # `sample_every` schedule, so a run with fewer epochs than
+        # `sample_every` trained a model, reported success and saved nothing.
+        # CLAUDE.md says this job type produces a checkpoint; this is the one
+        # that guarantees it exists.
+        final_path = (
+            f"{self.constants.checkpoints_dir}model_restart_{self.current_epoch}.pth"
+        )
+        if not os.path.exists(final_path):
+            print(
+                f"* Saving final model state at Epoch {self.current_epoch}.", flush=True
+            )
+            torch.save(
+                obj={
+                    "model": self.model.state_dict(),
+                    "optimizer": self.optimizer.state_dict(),
+                    "scheduler": self.scheduler.state_dict(),
+                },
+                f=final_path,
+                pickle_protocol=pickle.HIGHEST_PROTOCOL,
+            )
+
+        from metrics import _run as metrics_run
+
+        metrics_run.evaluate_training(
+            self.constants,
+            model=self.model,
+            train_wall_clock_s=time.time() - self.start_time,
+        )
+
         self.print_time_elapsed()
 
     def generation_phase(self) -> None:
@@ -843,10 +882,25 @@ class Workflow:
         self.model = util.load_saved_model(model=self.model, path=model_path)
 
         self.model.eval()
+        generation_started = time.time()
         with torch.no_grad():
             self.sample_molecules(n_samples=self.constants.n_samples)
 
         self._concatenate_generation_batches()
+        generation_seconds = time.time() - generation_started
+
+        # Everything already written is safe at this point: the molecules are
+        # on disk and this is the last step of the job.
+        from metrics import _run as metrics_run
+
+        metrics_run.evaluate_generation(
+            self.constants,
+            generated_smiles=metrics_run.read_smiles(
+                f"{self.constants.results_dir}{self.constants.n_samples}_samples.smi"
+            ),
+            model=self.model,
+            inference_seconds=generation_seconds,
+        )
 
         self.print_time_elapsed()
 
@@ -876,9 +930,21 @@ class Workflow:
 
             print("* Evaluating model.", flush=True)
             self.analyzer.model = self.model
-            self.analyzer.evaluate_model(
+            self.analyzer.test_dataloader = self.test_dataloader
+            scores = self.analyzer.evaluate_model(
                 likelihood_per_action=self.likelihood_per_action
             )
+
+        from metrics import _run as metrics_run
+
+        metrics_run.evaluate_model_scoring(
+            self.constants,
+            nll={
+                key: scores[key] for key in ("nll_train", "nll_validation", "nll_test")
+            },
+            uc_jsd=scores["uc_jsd"],
+            model=self.model,
+        )
 
         self.print_time_elapsed()
 
@@ -1069,7 +1135,32 @@ class Workflow:
             self.scheduler.step()
             self.optimizer.zero_grad()
 
+        self._write_optimization_log()
+        self._write_goal_directed_metrics()
+
         self.print_time_elapsed()
+
+    def _write_goal_directed_metrics(self) -> None:
+        """metrics.json and report.html for a goal-directed run."""
+        from metrics import _run as metrics_run
+
+        log_path = Path(self.constants.results_dir) / "optimization_log.jsonl"
+        optimization_log: list = []
+        if log_path.exists():
+            for line in log_path.read_text().splitlines():
+                if line.strip():
+                    entry = json.loads(line)
+                    optimization_log.append((entry["oracle_calls"], entry["score"]))
+
+        metrics_run.evaluate_goal_directed(
+            self.constants,
+            generated_smiles=self.rl_smiles,
+            n_generated=self.rl_n_generated,
+            scores=self.rl_scores,
+            optimization_log=optimization_log,
+            model=self.agent_model,
+            train_wall_clock_s=time.time() - self.start_time,
+        )
 
     def constrained_rl_training_phase(self) -> None:
         """
@@ -1209,6 +1300,7 @@ class Workflow:
 
         # Post-training: evaluate all saved checkpoints
         self.constrained_rl_evaluate_checkpoints()
+        self._write_goal_directed_metrics()
 
         self.print_time_elapsed()
 
@@ -1568,6 +1660,26 @@ class Workflow:
                 precomputed_uniqueness=uniqueness,
             )
 
+        # Accumulated across the whole run, not just this step: the
+        # goal-directed metrics are about everything the optimization
+        # produced, and `best_at_<budget>` is cumulative by definition.
+        # Learning-step batches only -- the evaluation and pre-fine-tuning
+        # batches are the agent measuring itself, and folding them in would
+        # mix two different samples into one reported number.
+        if is_agent and model_a_label not in ("eval", "pre-fine-tuning"):
+            self.rl_n_generated += len(graphs)
+            for graph, score in zip(graphs, scores.tolist()):
+                molecule = graph.get_molecule()
+                if molecule is None:
+                    continue
+                try:
+                    smiles = Chem.MolToSmiles(molecule)
+                except Exception:
+                    continue
+                if smiles:
+                    self.rl_smiles.append(smiles)
+                    self.rl_scores.append(float(score))
+
         if is_agent:
             util.log_likelihoods_to_tensorboard(
                 tb_writer=tb_writer,
@@ -1603,9 +1715,7 @@ class Workflow:
 
     def train_epoch(
         self,
-    ) -> (
-        float
-    ):  # TODO here come back and create a separate function for when batch size is > than acc steps
+    ) -> float:
         """
         Performs one training epoch.
 
@@ -1770,7 +1880,7 @@ class Workflow:
         # Loss modulation: reweight how much each molecule contributes to the
         # gradient by how much its property predictions can be trusted, leaving
         # the objective itself unchanged (Medina & Janet, arXiv:2606.24990,
-        # Eq. 8).  The weights are already normalised to mean 1, so this
+        # Eq. 8).  The weights are already normalized to mean 1, so this
         # redistributes learning signal rather than rescaling it -- an
         # unnormalised weighting would act as a covert learning-rate change.
         weights = self.scoring_function.loss_weights(len(loss))

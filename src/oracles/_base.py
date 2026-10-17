@@ -16,7 +16,7 @@ class BaseOracle(ABC):
     energy in kcal/mol, a predicted pIC50, a classifier probability -- and the
     base class converts that to the bounded desirability the RL objective needs,
     via the configured transform and direction.  Keeping the two apart means a
-    surrogate can be swapped between a "maximise affinity" and an "avoid
+    surrogate can be swapped between a "maximize affinity" and an "avoid
     off-target" role without retraining or rewriting it.
 
     Subclasses implement :meth:`predict`, and optionally
@@ -35,7 +35,7 @@ class BaseOracle(ABC):
         Transform spec (see :mod:`._transform`).  ``None`` means the oracle
         already returns a value in [0, 1].
     direction
-        ``"maximize"`` (default) or ``"minimize"``.  Minimising expresses an
+        ``"maximize"`` (default) or ``"minimize"``.  Minimizing expresses an
         anti-target: the score is inverted after the transform.
 
     Examples

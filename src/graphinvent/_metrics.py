@@ -102,8 +102,10 @@ def compute_diversity(smiles_list: list, subsample: int = 1000) -> float:
         return 0.0
 
     if len(mols) > subsample:
-        random.seed(42)
-        mols = random.sample(mols, subsample)
+        # A private generator, not `random.seed(42)`: reseeding the global one
+        # resets Python's random stream for everything that runs after this
+        # metric, which is a side effect a metric has no business having.
+        mols = random.Random(42).sample(mols, subsample)
 
     fps = []
     for mol in mols:
@@ -226,7 +228,7 @@ def compute_test_set_similarity(
     max_refs=None,
 ) -> dict:
     """
-    Nearest-neighbour Tanimoto similarity (Morgan ECFP4, 2048 bits) between
+    Nearest-neighbor Tanimoto similarity (Morgan ECFP4, 2048 bits) between
     generated molecules and a hold-out test set.
 
     Thin wrapper around ``metrics.compute_test_set_similarity`` from

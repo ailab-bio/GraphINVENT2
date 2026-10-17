@@ -51,13 +51,6 @@ def evaluate_goal_directed(
     -------
     dict — all keys from evaluate_conditional, plus:
         'oracle_calls'      : int
-        'sample_efficiency' : None  (not yet implemented)
-
-    Notes
-    -----
-    ``'sample_efficiency'`` is not yet implemented.  It is intended to measure
-    how many oracle calls are needed to find a given number of successful
-    molecules.  Currently returns None.
 
     Examples
     --------
@@ -78,7 +71,5 @@ def evaluate_goal_directed(
     )
 
     results["oracle_calls"] = oracle_calls  # type: ignore[assignment]
-    # sample_efficiency: stub — not yet implemented
-    results["sample_efficiency"] = None  # TODO: implement efficiency metric
 
     return results

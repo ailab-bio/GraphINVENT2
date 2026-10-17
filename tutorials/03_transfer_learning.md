@@ -4,7 +4,7 @@ Transfer learning here means continuing supervised training from a checkpoint on
 usually smaller and narrower, dataset. It is not a separate job type: `unconditional` with
 `resume_from` set to a checkpoint path does exactly this, and `unconditional` with
 `resume_from: null` is pretraining. The training loop, loss, and schedule are identical; only
-the initialisation differs.
+the initialization differs.
 
 The reason this works is that most of what the model has to learn is dataset-independent —
 which atoms can bond to which, how rings close, when a fragment is finished. A focused dataset
@@ -79,7 +79,7 @@ Only two things: where the weights come from, and how aggressively they are allo
 
 | Parameter | Pretraining | Fine-tuning | Reason |
 |-----------|-------------|-------------|--------|
-| `resume_from` | `null` | path to `.pth` | Loads the checkpoint instead of initialising randomly |
+| `resume_from` | `null` | path to `.pth` | Loads the checkpoint instead of initializing randomly |
 | `init_lr` | `1e-4` | `1e-5` | Smaller steps preserve the pretrained representation |
 | `max_rel_lr` | `10` | `5` | A lower peak in the one-cycle schedule |
 | `epochs` | `100` | `20`–`50` | A small dataset reaches its useful minimum quickly, and further epochs mostly memorise |
@@ -195,7 +195,7 @@ Three things are more informative:
   evaluation epochs means `init_lr` or `max_rel_lr` is too high.
 - `novelty` and the test-set similarity columns in `generation.log` distinguish adaptation from
   memorisation. A model that has memorised a small fine-tuning set produces low novelty and
-  very high nearest-neighbour similarity.
+  very high nearest-neighbor similarity.
 - The property histograms should move toward the fine-tuning set's, not merely away from the
   pretraining set's. Both a well-adapted model and a broken one differ from the prior.
 
@@ -210,4 +210,4 @@ its floor.
 - Generate from the fine-tuned model: [Tutorial 5: Sampling](./05_sampling.md), with
   `pretrained_model_path` set to the checkpoint you want, for example
   `"./output/new-dataset/unconditional/run/model_restart_50.pth"`.
-- Optimise further toward a scoring function: [Tutorial 4: Reinforcement learning](./04_reinforcement_learning.md).
+- Optimize further toward a scoring function: [Tutorial 4: Reinforcement learning](./04_reinforcement_learning.md).

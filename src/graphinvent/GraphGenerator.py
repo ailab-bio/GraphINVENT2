@@ -39,7 +39,7 @@ class GraphGenerator:
     buffer; generation ends when all graphs in the batch have terminated or the
     maximum number of nodes has been reached.
 
-    Vectorised batch operations are used throughout to keep GPU utilisation high;
+    Vectorised batch operations are used throughout to keep GPU utilization high;
     this does make some methods harder to follow, but the overall flow is:
     ``__init__`` → ``sample()`` → ``build_graphs()`` (loop) → clean up & return.
     """
@@ -678,7 +678,7 @@ class GraphGenerator:
         invalid_idc, max_node_idc = self.get_invalid_actions(f_add_idc, f_conn_idc)
 
         # change "connect to" index for graphs trying to add more than max n nodes
-        f_add_idc[-1][max_node_idc] = 0  # TODO changed this from 5 to -1
+        f_add_idc[-1][max_node_idc] = 0
 
         return f_add_idc, f_conn_idc, f_term_idc, invalid_idc, likelihoods
 
@@ -728,9 +728,7 @@ class GraphGenerator:
         invalid_add_empty_idc = uniques[counts > 1].unsqueeze(dim=1)  # set intersection
 
         # get invalid indices for when adding more nodes than possible
-        invalid_madd_idc = torch.nonzero(
-            f_add_idc[-1].float() >= n_max_nodes
-        )  # TODO changed from 5 to -1
+        invalid_madd_idc = torch.nonzero(f_add_idc[-1].float() >= n_max_nodes)
 
         # get invalid indices for when connecting a node to nonexisting node
         invalid_conn_idc = torch.nonzero(f_conn_idc[1] >= self.n_nodes[f_conn_idc[0]])
@@ -739,9 +737,7 @@ class GraphGenerator:
         invalid_conn_nonex_idc = torch.nonzero(self.n_nodes[f_conn_idc[0]] == 0)
 
         # get invalid indices for when creating self-loops
-        invalid_sconn_idc = torch.nonzero(
-            f_conn_idc[1] == f_conn_idc[-1]
-        )  # TODO changed from 3 to -1
+        invalid_sconn_idc = torch.nonzero(f_conn_idc[1] == f_conn_idc[-1])
 
         # get invalid indices for when attemting to add multiple edges
         invalid_dconn_idc = torch.nonzero(
@@ -791,20 +787,20 @@ class GraphGenerator:
         # node_idx -> desired CIP code for the graph currently being decoded
         desired_cip: dict = {}
 
-        def _apply_chirality(molecule: rdkit.Chem.Mol, centres: dict) -> None:
+        def _apply_chirality(molecule: rdkit.Chem.Mol, centers: dict) -> None:
             """
             Restores R/S stereochemistry recorded while decoding the atoms.
 
-            A CIP code depends on the neighbour ordering, so it cannot be
-            written onto an isolated atom.  Each centre is given a tetrahedral
-            tag, RDKit recomputes the codes, and centres that came out with the
+            A CIP code depends on the neighbor ordering, so it cannot be
+            written onto an isolated atom.  Each center is given a tetrahedral
+            tag, RDKit recomputes the codes, and centers that came out with the
             wrong handedness are flipped.
             """
             from rdkit.Chem import ChiralType
 
             wanted = {
                 i: c
-                for i, c in centres.items()
+                for i, c in centers.items()
                 if c in ("R", "S") and i < molecule.GetNumAtoms()
             }
             if not wanted:
