@@ -3,7 +3,21 @@ epochs: 4
 batch_size: 50
 accumulation_steps: 1
 sample_every: 2
-n_samples: 20
+n_samples: 100
 device: cpu
+# Training samples at `sample_every` to score itself, and a conditional model
+# cannot be sampled without being told what to ask for.
 sample_conditions:
-  logP: 1.0
+  logp: 2.5
+  mol_weight: 350.0
+condition_tolerance:
+  logp: 0.5
+  mol_weight: 25.0
+
+# Walltime by the RUN.md Part 1 procedure: 95 s measured on CPU for 4 epochs; x1.5 and rounded up.
+# THIS IS A CPU EXTRAPOLATION. RUN.md Part 1 says these must be
+# re-measured on the GPU before they are trusted; nothing here was run
+# on a GPU or a cluster.
+slurm:
+  time: "01:00:00"
+  gpus: 1

@@ -1,3 +1,9 @@
-# Optimize the pretrained debug model toward QED with policy-gradient RL.
-dataset_dir: debug
+# Optimize the ZINC 1k prior toward QED with policy-gradient RL.
+#
+# QED is trivially gameable and the run is expected to collapse onto a narrow
+# chemotype. That is the point: it is the cheapest available test that
+# top100_scaffold_count and quality_filtered_top10_mean actually detect
+# collapse. See manuscript/experiment-plan.md for what collapsed behavior
+# looks like, so a future reader can tell a working detector from a broken one.
+dataset_dir: zinc1k
 seed: 1

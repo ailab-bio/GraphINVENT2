@@ -1,0 +1,18 @@
+job_type: preprocess
+smiles_file: data/datasets/zinc1k/zinc1k.smi
+split_type: scaffold
+train_frac: 0.8
+valid_frac: 0.1
+batch_size: 1000
+# max_n_nodes is left to detection: CLAUDE.md's rule is the 99th-percentile
+# heavy-atom count, which for this subset is 34.
+
+# Preprocessing is CPU-only work, so it asks for no GPU.
+
+# Walltime by the RUN.md Part 1 procedure: 3 s measured on CPU for 1,000 ZINC molecules; 30 min is pure margin.
+# THIS IS A CPU EXTRAPOLATION. RUN.md Part 1 says these must be
+# re-measured on the GPU before they are trusted; nothing here was run
+# on a GPU or a cluster.
+slurm:
+  time: "00:30:00"
+  gpus: 0

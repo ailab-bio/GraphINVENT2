@@ -16,6 +16,10 @@ manuscript/*
 # src/graphinvent/tools/tpddb-create-dataset.py rather than vendored here; the
 # small derived subset under data/datasets/ is kept, with its provenance.
 data/raw/
+# Derived files are rebuilt by the preprocessing scripts from the dated raw
+# snapshot, so they are not committed either. The 1k development subset under
+# data/datasets/zinc1k/ is the deliberate exception.
+data/processed/
 
 # Ignore all .h5 files in the entire project
 *.h5

@@ -1,16 +1,19 @@
 job_type: preprocess
-smiles_file: data/datasets/tpddb_protac10_logp/tpddb_protac10_logp.smi
+smiles_file: data/datasets/zinc1k/zinc1k_logp_mw.smi
 split_type: scaffold
 train_frac: 0.8
 valid_frac: 0.1
-batch_size: 100
-# One property column, logP, read from the tab-separated SMILES file.
-condition_dim: 1
+batch_size: 1000
+# Two property columns, so condition_dim is 2.
+condition_dim: 2
 conditioning:
-  properties: ["logP"]
+  properties: ["logp", "mol_weight"]
   source: smiles_file
 
-# Preprocessing is CPU-only work, so it asks for no GPU and lands on the CPU
-# partition. Nested blocks merge key by key, so the rest of slurm: is inherited.
+# Walltime by the RUN.md Part 1 procedure: 4 s measured on CPU; 30 min is pure margin.
+# THIS IS A CPU EXTRAPOLATION. RUN.md Part 1 says these must be
+# re-measured on the GPU before they are trusted; nothing here was run
+# on a GPU or a cluster.
 slurm:
+  time: "00:30:00"
   gpus: 0

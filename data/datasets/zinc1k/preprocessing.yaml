@@ -1,0 +1,50 @@
+atom_types:
+- Br
+- C
+- Cl
+- F
+- I
+- N
+- O
+- S
+chirality:
+- None
+- R
+- S
+condition_dim: 0
+conditioning: null
+decoding_route: bfs
+formal_charge:
+- -1
+- 0
+- 1
+ignore_H: false
+imp_H:
+- 0
+- 1
+- 2
+- 3
+max_n_nodes: 34
+run_info:
+  cuda_version: n/a
+  device_name: mps
+  git_hash: 37069f3
+  numpy_version: 2.4.4
+  python_version: 3.13.5
+  rdkit_version: 2025.09.6
+  timestamp: '2026-10-17T19:47:18'
+  torch_version: 2.11.0
+split:
+  n_dropped_oversized: 5
+  n_test: 99
+  n_train: 796
+  n_valid: 100
+  seed: 1
+  smiles_file: data/datasets/zinc1k/zinc1k.smi
+  strategy: scaffold
+  train_frac: 0.8
+  valid_frac: 0.1
+use_aromatic_bonds: true
+use_canon: true
+use_chirality: false
+use_explicit_H: false

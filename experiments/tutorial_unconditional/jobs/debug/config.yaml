@@ -3,5 +3,13 @@ epochs: 4
 batch_size: 50
 accumulation_steps: 1
 sample_every: 2
-n_samples: 50
+n_samples: 100
 device: cpu
+
+# Walltime by the RUN.md Part 1 procedure: 66 s measured on CPU for 4 epochs over ~16k subgraphs; x1.5 and rounded up.
+# THIS IS A CPU EXTRAPOLATION. RUN.md Part 1 says these must be
+# re-measured on the GPU before they are trusted; nothing here was run
+# on a GPU or a cluster.
+slurm:
+  time: "01:00:00"
+  gpus: 1

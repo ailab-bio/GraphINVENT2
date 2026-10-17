@@ -1,3 +1,6 @@
-# Condition generation on logP, read from the dataset's property column.
-dataset_dir: tpddb_protac10_logp
+# Condition generation on logP and molecular weight, both computed exactly by
+# RDKit, so the continuous conditional metrics are measurable with no surrogate
+# in the loop. Same 1,000-molecule ZINC250k subset as the unconditional
+# experiment, with the two properties as tab-separated columns.
+dataset_dir: zinc1k_logp_mw
 seed: 1

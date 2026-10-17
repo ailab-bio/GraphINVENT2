@@ -1,11 +1,21 @@
 job_type: generate
 sample_mode: generate
 pretrained_model_path: experiments/tutorial_conditional/jobs/logp/checkpoints/model_restart_4.pth
-n_samples: 60
-batch_size: 30
+n_samples: 100
+batch_size: 50
 device: cpu
 sample_conditions:
-  logP: 1.0
-# A generated molecule counts as hitting the request within this much logP.
+  logp: 2.5
+  mol_weight: 350.0
+# A molecule counts as hitting its request within this much of the asked value.
 condition_tolerance:
-  logP: 0.5
+  logp: 0.5
+  mol_weight: 25.0
+
+# Walltime by the RUN.md Part 1 procedure: 4 s measured on CPU for 100 samples; x1.5 and rounded up.
+# THIS IS A CPU EXTRAPOLATION. RUN.md Part 1 says these must be
+# re-measured on the GPU before they are trusted; nothing here was run
+# on a GPU or a cluster.
+slurm:
+  time: "01:00:00"
+  gpus: 1
