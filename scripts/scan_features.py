@@ -17,8 +17,10 @@ Usage:
 """
 
 import argparse
+import math
 import sys
 
+import numpy as np
 from rdkit import Chem
 from rdkit.Chem.rdmolfiles import SmilesMolSupplier
 
@@ -51,12 +53,19 @@ def scan_features(
         ignore_H      : If True, implicit H counts are not collected.
 
     Returns:
-        A dict with keys: atom_types, formal_charge, imp_H, max_n_nodes.
+        A dict with keys: atom_types, formal_charge, imp_H, max_n_nodes,
+        n_nodes_observed_max.
+
+        `max_n_nodes` is the 99th-percentile heavy-atom count, which is what
+        preprocessing pads to; the observed maximum is reported beside it so
+        the size of the tail is visible. Reporting the maximum as
+        `max_n_nodes`, as this tool used to, disagreed with the number the
+        code actually uses.
     """
     atom_types_set = set()
     formal_charge_set = set()
     imp_H_set = set()
-    max_n_nodes = 0
+    n_nodes = []
 
     for path in smi_paths:
         supplier = load_molecules(path)
@@ -65,9 +74,7 @@ def scan_features(
                 continue
             if use_explicit_H and not ignore_H:
                 mol = Chem.AddHs(mol)
-            n = mol.GetNumAtoms()
-            if n > max_n_nodes:
-                max_n_nodes = n
+            n_nodes.append(mol.GetNumAtoms())
             for atom in mol.GetAtoms():
                 atom_types_set.add(atom.GetSymbol())
                 formal_charge_set.add(atom.GetFormalCharge())
@@ -78,7 +85,10 @@ def scan_features(
         "atom_types": sorted(atom_types_set),
         "formal_charge": sorted(formal_charge_set),
         "imp_H": sorted(imp_H_set),
-        "max_n_nodes": max_n_nodes,
+        "max_n_nodes": (
+            int(math.ceil(float(np.percentile(n_nodes, 99)))) if n_nodes else 0
+        ),
+        "n_nodes_observed_max": max(n_nodes) if n_nodes else 0,
     }
 
 
@@ -130,7 +140,11 @@ def main():
     print(f"formal_charge : {features['formal_charge']}")
     if not args.ignore_H:
         print(f"imp_H         : {features['imp_H']}")
-    print(f"max_n_nodes   : {features['max_n_nodes']}")
+    print(f"max_n_nodes   : {features['max_n_nodes']}  (99th percentile)")
+    print(
+        f"observed max  : {features['n_nodes_observed_max']}  "
+        "(molecules above max_n_nodes are dropped at splitting)"
+    )
     print()
     print("Done.", flush=True)
 

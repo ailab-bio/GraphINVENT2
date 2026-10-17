@@ -4,3 +4,8 @@ split_type: scaffold
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 100
+
+# Preprocessing is CPU-only work, so it asks for no GPU and lands on the CPU
+# partition. Nested blocks merge key by key, so the rest of slurm: is inherited.
+slurm:
+  gpus: 0

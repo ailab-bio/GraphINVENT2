@@ -47,12 +47,12 @@ what multi-objective selectivity requires.
 
 ## Training a surrogate
 
-`src/graphinvent/tools/train-surrogate.py` takes a table of SMILES and labels
+`scripts/train-surrogate.py` takes a table of SMILES and labels
 and produces a pickled random forest in the format the `sklearn` oracle
 expects:
 
 ```bash
-python src/graphinvent/tools/train-surrogate.py \
+python scripts/train-surrogate.py \
     --input data/assays/egfr.csv --smiles-column smiles --label-column pIC50 \
     --threshold 6.0 --split scaffold --output data/surrogates/egfr_rf.pkl
 ```

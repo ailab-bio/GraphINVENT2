@@ -589,7 +589,7 @@ def _build_run_info() -> dict:
     }
 
 
-def write_preprocessing_parameters(params: namedtuple) -> None:
+def write_preprocessing_parameters(params: namedtuple, n_oversized: int = 0) -> None:
     """
     Record how a dataset was preprocessed, in ``preprocessing.yaml``.
 
@@ -625,6 +625,9 @@ def write_preprocessing_parameters(params: namedtuple) -> None:
         "train_frac": params.train_frac,
         "valid_frac": params.valid_frac,
         "smiles_file": params.smiles_file,
+        # Molecules above max_n_nodes, dropped before splitting. Part of the
+        # split record because the dataset is not the input file without it.
+        "n_dropped_oversized": n_oversized,
         **{
             f"n_{split}": (
                 sum(1 for _ in open(dataset_dir / f"{split}.smi"))
@@ -670,37 +673,50 @@ def write_graphs_to_smi(
     """
     validity_tensor = torch.zeros(len(molecular_graphs_list), device=constants.device)
     uniqueness_tensor = torch.ones(len(molecular_graphs_list), device=constants.device)
-    smiles = []
+    # A set, not a list: the membership test below runs once per molecule, and
+    # scanning a growing list made writing a batch quadratic in its size.
+    seen_smiles: set = set()
 
-    with open(smi_filename, "w") as smi_file:
-        if write:
-            smi_writer = rdkit.Chem.rdmolfiles.SmilesWriter(smi_file)
-
+    # Written by hand rather than with RDKit's SmilesWriter, which puts a
+    # `SMILES Name` header on every file it opens: line i of the .smi has to be
+    # the same molecule as line i of the .likelihood and the .valid, and a
+    # header in one of the three breaks that for every line below it.
+    #
+    # An invalid graph contributes no line at all. It used to be written as
+    # `[Xe]`, which RDKit parses as valid xenon, so every unphysical graph came
+    # back as a valid molecule on the next read. A blank-line placeholder would
+    # not work either, because SmilesMolSupplier skips blank lines, so the
+    # positions would collapse on the next read anyway. The index of each
+    # molecule that was written is recorded in the .valid, which is what keeps
+    # the mapping back to the generated batch.
+    #
+    # Opened only when writing: `write=False` means the caller wants the
+    # validity and uniqueness of this batch and no file, and truncating the
+    # .smi to compute them would delete the batch written at the last
+    # evaluation step.
+    smi_file = open(smi_filename, "w") if write else None
+    try:
         for idx, molecular_graph in enumerate(molecular_graphs_list):
             mol = molecular_graph.get_molecule()
             try:
                 mol.UpdatePropertyCache(strict=False)
                 rdkit.Chem.SanitizeMol(mol)
                 current_smiles = MolToSmiles(mol)
-                if (
-                    len(current_smiles) == 0
-                ):  # TODO would we rather leave it blank for an empty SMILES?
+                if len(current_smiles) == 0:
                     raise ValueError
-                if write:
-                    smi_writer.write(mol)
+                if smi_file is not None:
+                    smi_file.write(f"{current_smiles}\n")
                 validity_tensor[idx] = 1
-                if current_smiles in smiles:
+                if current_smiles in seen_smiles:
                     uniqueness_tensor[idx] = 0
-                smiles.append(current_smiles)
+                seen_smiles.add(current_smiles)
             except (ValueError, RuntimeError, AttributeError):
-                # molecule cannot be written to file (likely contains unphysical
-                # aromatic bond(s) or an unphysical valence), so put placeholder
-                if write:
-                    # `validity_tensor` remains 0
-                    smi_writer.write(rdkit.Chem.MolFromSmiles("[Xe]"))
-
-        if write:
-            smi_writer.close()
+                # Unphysical valence or aromatic bonds: not a molecule, so
+                # nothing is written and `validity_tensor` stays 0.
+                pass
+    finally:
+        if smi_file is not None:
+            smi_file.close()
 
     fraction_valid = torch.sum(validity_tensor, dim=0) / len(validity_tensor)
 
@@ -800,11 +816,17 @@ def write_molecules(
     epoch: str,
     write: bool = False,
     label: str = "test",
+    index_offset: int = 0,
 ) -> Tuple[list, list, list]:
     """
     Writes generated molecular graphs and their NLLs. In writing the structures
     to a SMILES file, determines if structures are valid and returns this
     information (to avoid recomputing later).
+
+    Three files are written, and line i of each is the same molecule: the .smi
+    holds the molecule, the .likelihood its NLL, and the .valid its index in
+    the generated batch. Only valid molecules appear, so the .valid is how an
+    invalid graph is accounted for: its index is the one that is missing.
 
     Args:
     ----
@@ -815,6 +837,10 @@ def write_molecules(
         write (bool)                     : Whether or not to write the molecules
                                            to SMILES.
         label (str)                      : Label to use when saving the molecules.
+        index_offset (int)               : Index of this batch's first graph in
+                                           the whole generated set, so indices
+                                           stay unique once the per-batch files
+                                           are concatenated.
 
     Returns:
     -------
@@ -838,31 +864,37 @@ def write_molecules(
     fraction_valid, validity_tensor, uniqueness_tensor = write_graphs_to_smi(
         smi_filename=smi_filename, molecular_graphs_list=molecules, write=write
     )
-    # save the NLLs and validity status
-    write_likelihoods(
-        likelihood_filename=f"{smi_filename[:-3]}likelihood",
-        likelihoods=final_likelihoods,
-    )
-    write_validity(
-        validity_file_path=f"{smi_filename[:-3]}valid", validity_tensor=validity_tensor
-    )
+    # Written only alongside a .smi: the three files are read by line number
+    # against each other, so writing one of them for a batch whose .smi was not
+    # written would misalign all three. Subset to the molecules the .smi
+    # actually holds, in the same order.
+    if write:
+        kept = [idx for idx, valid in enumerate(validity_tensor.tolist()) if valid]
+        write_likelihoods(
+            likelihood_filename=f"{smi_filename[:-3]}likelihood",
+            likelihoods=[final_likelihoods[idx] for idx in kept],
+        )
+        write_validity(
+            validity_file_path=f"{smi_filename[:-3]}valid",
+            indices=[index_offset + idx for idx in kept],
+        )
 
     return fraction_valid, validity_tensor, uniqueness_tensor
 
 
-def write_likelihoods(likelihood_filename: str, likelihoods: torch.Tensor) -> None:
+def write_likelihoods(likelihood_filename: str, likelihoods: list) -> None:
     """
     Writes the final likelihoods of each molecule to a file in the same order as
     the molecules are written in the corresponding SMILES file.
 
     Args:
     ----
-        likelihood_filename (str)  : Path to the likelihood-containing file.
-        likelihoods (torch.Tensor) : Likelihoods.
+        likelihood_filename (str) : Path to the likelihood-containing file.
+        likelihoods (list)        : One likelihood per written molecule.
     """
     with open(likelihood_filename, "w") as likelihood_file:
         for likelihood in likelihoods:
-            likelihood_file.write(f"{likelihood}\n")
+            likelihood_file.write(f"{float(likelihood)}\n")
 
 
 def save_training_set_properties(training_set_properties: dict) -> None:
@@ -962,21 +994,23 @@ def write_validation_scores(
             tb_writer.add_scalar("Evaluation/uc_jsd", uc_jsd, epoch)
 
 
-def write_validity(validity_file_path: str, validity_tensor: torch.Tensor) -> None:
+def write_validity(validity_file_path: str, indices: list) -> None:
     """
-    Writes the validity (0 or 1) of each molecule to a file in the same
-    order as the molecules are written in the corresponding SMILES file.
+    Writes the index, in the generated batch, of each molecule written to the
+    corresponding SMILES file, one per line and in the same order.
+
+    A 0/1 validity column would not line up with the .smi, since an invalid
+    graph has no line there. These indices do, and the invalid graphs are the
+    indices this file skips.
 
     Args:
     ----
-        validity_file_path (str)       : Path to validity file.
-        validity_tensor (torch.Tensor) : A binary vector indicating the chemical
-                                         validity of the input graphs using either
-                                         a 1 (valid) or 0 (invalid).
+        validity_file_path (str) : Path to validity file.
+        indices (list)           : Index of each written molecule.
     """
     with open(validity_file_path, "w") as valid_file:
-        for valid in validity_tensor:
-            valid_file.write(f"{valid}\n")
+        for index in indices:
+            valid_file.write(f"{index}\n")
 
 
 def log_likelihoods_to_tensorboard(

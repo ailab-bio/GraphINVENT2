@@ -254,6 +254,9 @@ class Analyzer:
             epoch=epoch_key,
             write=True,
             label=label,
+            # Every batch holds the same number of graphs, so this is the
+            # index of its first graph in the whole generated set.
+            index_offset=generation_batch_idx * len(generated_graphs),
         )
         prop_dict[(epoch_key, "fraction_valid")] = fraction_valid
         prop_dict[(epoch_key, "validity_tensor")] = validity_tensor

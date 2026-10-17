@@ -10,6 +10,7 @@ A key left unset is inherited. ``resolve`` does the merge and all validation;
 by ``main.run``, before the modules that read it are imported.
 """
 
+import math
 import os
 from collections import namedtuple
 from pathlib import Path
@@ -197,11 +198,20 @@ def _validate(params: dict, config_path: Path) -> None:
             f"Valid values: {', '.join(JOB_TYPES)}"
         )
 
-    dataset_dir = params.get("dataset_dir")
-    if not dataset_dir:
+    if not params.get("dataset_dir"):
         raise ValueError(f"{config_path} does not set dataset_dir.")
-    if job_type != "preprocess" and not Path(dataset_dir).is_dir():
-        raise ValueError(f"dataset_dir {dataset_dir} does not exist.")
+    # A relative dataset_dir hangs off data_root, so moving the data to a
+    # project filesystem is one setting rather than an edit to every job.
+    dataset_dir = Path(params["dataset_dir"])
+    if not dataset_dir.is_absolute():
+        dataset_dir = Path(params["data_root"]) / dataset_dir
+    params["dataset_dir"] = str(dataset_dir)
+    if job_type != "preprocess" and not dataset_dir.is_dir():
+        raise ValueError(
+            f"dataset_dir {dataset_dir} does not exist.\n"
+            f"data_root is {params['data_root']}; a relative dataset_dir is "
+            "resolved against it."
+        )
 
     if params["use_explicit_H"] and params["ignore_H"]:
         raise ValueError(
@@ -285,10 +295,31 @@ def _apply_checkpoint_architecture(params: dict, explicit: dict) -> None:
 
 
 def _resolve_device(params: dict) -> None:
-    if params["device"] != "cuda" or torch.cuda.is_available():
+    """
+    Resolve `device` against what this machine actually has.
+
+    One pattern for all three supported devices: an accelerator that is asked
+    for but absent falls back, so the same job directory runs on a laptop and
+    on a GPU node unchanged. A device name that is not one of the three is a
+    typo, and that fails rather than silently running somewhere unintended.
+    """
+    requested = params["device"]
+    if requested not in ("cpu", "cuda", "mps"):
+        raise ValueError(
+            f"device: {requested} is not a device. Use one of: cpu, cuda, mps."
+        )
+
+    available = {
+        "cpu": True,
+        "cuda": torch.cuda.is_available(),
+        "mps": torch.backends.mps.is_available(),
+    }
+    if available[requested]:
         return
-    params["device"] = "mps" if torch.backends.mps.is_available() else "cpu"
-    print(f"* CUDA not available; using device '{params['device']}'.", flush=True)
+
+    fallback = "mps" if available["mps"] else "cpu"
+    params["device"] = fallback
+    print(f"* {requested} not available; using device '{fallback}'.", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -305,13 +336,19 @@ def scan_smiles_features(
     Scan SMILES files for the feature vocabulary preprocessing needs.
 
     Returns the sorted element symbols, formal charges and implicit hydrogen
-    counts present, and the largest heavy-atom count. ``imp_H`` is empty when
-    hydrogens are explicit or ignored. Missing paths are skipped.
+    counts present, and the 99th-percentile heavy-atom count. ``imp_H`` is
+    empty when hydrogens are explicit or ignored. Missing paths are skipped.
+
+    The 99th percentile rather than the maximum, because every stored tensor is
+    padded to this width: the `edges` dataset grows with its square, so one
+    outlier molecule used to set the size of every row in the dataset.
+    Molecules above the cap are dropped at splitting time and counted in
+    `preprocessing.yaml`.
     """
     atom_types_set = set()
     formal_charge_set = set()
     imp_H_set = set()
-    max_n_nodes = 0
+    n_nodes: list = []
 
     for path in smi_paths:
         if not os.path.exists(path):
@@ -334,20 +371,20 @@ def scan_smiles_features(
                 continue
             if use_explicit_H and not ignore_H:
                 mol = AddHs(mol)
-            n = mol.GetNumAtoms()
-            if n > max_n_nodes:
-                max_n_nodes = n
+            n_nodes.append(mol.GetNumAtoms())
             for atom in mol.GetAtoms():
                 atom_types_set.add(atom.GetSymbol())
                 formal_charge_set.add(atom.GetFormalCharge())
                 if not use_explicit_H and not ignore_H:
                     imp_H_set.add(atom.GetTotalNumHs())
 
+    # Rounded up, so the cap includes the percentile molecule itself.
+    percentile_99 = int(math.ceil(float(np.percentile(n_nodes, 99)))) if n_nodes else 0
     return (
         sorted(atom_types_set),
         sorted(formal_charge_set),
         sorted(imp_H_set),
-        max_n_nodes,
+        percentile_99,
     )
 
 
@@ -454,7 +491,14 @@ def _detect_features(params: dict) -> None:
         del detected["imp_H"]
 
     if params["auto_detect_features"]:
+        # max_n_nodes is the exception to auto-detection winning: it is a
+        # recorded decision about the dataset, not an observation of it, and it
+        # sets the width of every stored tensor. A config that states it keeps
+        # it, so a run is reproducible when the detected percentile shifts.
+        stated_max_n_nodes = params.get("max_n_nodes") or 0
         params.update(detected)
+        if stated_max_n_nodes:
+            params["max_n_nodes"] = stated_max_n_nodes
     else:
         # Any field left empty is still detected; the rest come from the config.
         for key, value in detected.items():

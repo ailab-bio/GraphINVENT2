@@ -184,10 +184,23 @@ class SummationMPNN(torch.nn.Module):
             as_tuple=True
         )
 
-        # message_summation_matrix[i, j] = 1 iff edge j is incident to node i.
-        same_batch = node_batch_batch_idc.view(-1, 1) == edge_batch_batch_idc
-        same_node = node_batch_node_idc.view(-1, 1) == edge_batch_node_idc
-        message_summation_matrix = (same_batch * same_node).float()
+        # Which row of the node batch each edge sends its message to.
+        #
+        # The original formulation built a dense (n_nodes x n_edges) incidence
+        # matrix here and multiplied it by the message terms every message pass.
+        # That is O(n_nodes * n_edges * hidden) work and O(n_nodes * n_edges)
+        # memory to compute a sum with O(n_edges * hidden) terms in it: at a
+        # batch of 1000 graphs with 40 nodes each the matrix alone is billions
+        # of entries. The scatter below is the same sum, gathered by index.
+        node_row_of = torch.full(
+            adjacency.shape[:2], -1, dtype=torch.long, device=self.constants.device
+        )
+        node_row_of[node_batch_batch_idc, node_batch_node_idc] = torch.arange(
+            node_batch_node_idc.shape[0], device=self.constants.device
+        )
+        # Never -1: an edge's destination node has that edge as a neighbor, so
+        # it is in the node batch by construction.
+        edge_target_rows = node_row_of[edge_batch_batch_idc, edge_batch_node_idc]
 
         edge_batch_edges = edges_in[
             edge_batch_batch_idc, edge_batch_node_idc, edge_batch_nghb_idc, :
@@ -224,7 +237,12 @@ class SummationMPNN(torch.nn.Module):
             if len(message_terms.size()) == 1:
                 message_terms = message_terms.unsqueeze(0)
 
-            messages = torch.matmul(message_summation_matrix, message_terms)
+            messages = torch.zeros(
+                node_batch_nodes.shape[0],
+                message_terms.shape[1],
+                dtype=message_terms.dtype,
+                device=self.constants.device,
+            ).index_add_(0, edge_target_rows, message_terms)
 
             node_batch_nodes = self.update(node_batch_nodes, messages)
             hidden_nodes[node_batch_batch_idc, node_batch_node_idc, :] = (

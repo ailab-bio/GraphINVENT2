@@ -1,3 +1,3 @@
 # Condition generation on logP, read from the dataset's property column.
-dataset_dir: data/datasets/tpddb_protac10_logp
+dataset_dir: tpddb_protac10_logp
 seed: 1

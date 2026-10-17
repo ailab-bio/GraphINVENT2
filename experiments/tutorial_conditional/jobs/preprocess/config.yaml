@@ -9,3 +9,8 @@ condition_dim: 1
 conditioning:
   properties: ["logP"]
   source: smiles_file
+
+# Preprocessing is CPU-only work, so it asks for no GPU and lands on the CPU
+# partition. Nested blocks merge key by key, so the rest of slurm: is inherited.
+slurm:
+  gpus: 0

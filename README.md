@@ -264,7 +264,7 @@ packages (`test_metrics.py`, `test_metrics_module.py`).
   add `sys.path.insert(0, "src")` in scripts that import the `metrics` or `oracles` packages.
 - **`data/surrogates/QSAR_model_example.pickle` is a zero-byte placeholder**, not a model.
   Referencing it from `score_components` fails at startup. Train a surrogate of your own with
-  `src/graphinvent/tools/train-surrogate.py` and declare it as an oracle instead.
+  `scripts/train-surrogate.py` and declare it as an oracle instead.
 - **`generation.log` statistics come from the first generation batch only**, so with
   `n_samples` larger than `batch_size` they describe a subset of the run.
 - **Invalid graphs are written to `.smi` as `[Xe]`**, which RDKit parses successfully as a xenon

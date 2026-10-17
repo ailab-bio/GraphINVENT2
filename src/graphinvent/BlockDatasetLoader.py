@@ -180,10 +180,9 @@ class HDFDataset(torch.utils.data.Dataset):
         # read-only dataset directories and made swmr a no-op warning
         hdf_file = h5py.File(self.path, "r", swmr=True)
 
-        # load each HDF dataset; "APDs" is the legacy key from the original GraphINVENT
         self.nodes = hdf_file.get("nodes")
         self.edges = hdf_file.get("edges")
-        self.action_probs = hdf_file.get("action_probs") or hdf_file.get("APDs")
+        self.action_probs = hdf_file.get("action_probs")
 
         # Optional conditioning dataset (None for unconditional models).
         self.condition_vector = hdf_file.get("condition_vector")

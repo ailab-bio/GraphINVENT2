@@ -13,7 +13,18 @@
 # preprocess | unconditional | conditional | goal_directed | generate
 job_type: null
 
-# dataset directory holding train.smi, valid.smi, test.smi and the HDF5 files
+# Where datasets live. A relative dataset_dir is resolved against this, so a
+# cluster points it at a project filesystem instead of editing every job.
+# Cluster home directories have small quotas and preprocessed HDF5 runs to tens
+# of gigabytes, so on a cluster this is an absolute path on the project
+# filesystem, e.g.
+#   data_root: /nobackup/proj/disk/naiss2024-5-630/GraphINVENT2/data/datasets
+# The experiments root needs no setting of its own: the job directory is the
+# argument to submit.py, so it is wherever the repository was cloned.
+data_root: data/datasets
+
+# dataset directory holding train.smi, valid.smi, test.smi and the HDF5 files;
+# relative paths are taken as relative to data_root
 dataset_dir: null
 
 # 0 = non-deterministic; any positive integer fixes all RNG sources
@@ -161,9 +172,34 @@ sample_mode: generate
 
 # --- SLURM -----------------------------------------------------------------
 
+# Everything that differs between clusters lives here. Another cluster is a
+# different block, not a code change. The values below are Arrhenius.
+
 slurm:
+  # MANDATORY: the project to charge. Submission fails without it.
+  # A GPU job may need a -gpu suffix on the account name while a CPU job uses
+  # the bare name; on Arrhenius it does, e.g. naiss2024-5-630-gpu for a GPU job
+  # and naiss2024-5-630 for a CPU one.
   account: null
+
+  # Left unset, partition_gpu is used when gpus > 0 and partition_cpu otherwise.
   partition: null
-  time: "0-06:00:00"
-  gpus: 0
+  partition_cpu: cpu
+  partition_gpu: gpu
+
+  # Always set explicitly: the Arrhenius default is 2 hours, which kills a
+  # real training run part-way through. See the walltime procedure in RUN.md.
+  time: "24:00:00"
+
+  # One GH200 superchip: one GPU, one task, 72 cores. Not a whole node.
+  gpus: 1
+  ntasks: 1
+  cpus_per_task: 72
+
+  # null leaves it to the partition default, which on a GPU node is the memory
+  # attached to the requested superchip.
   memory: null
+
+  # Lmod modules, loaded in order. A different cluster is a different list.
+  modules:
+    - GPU/buildenv-nvhpc/25.9-cu13.0

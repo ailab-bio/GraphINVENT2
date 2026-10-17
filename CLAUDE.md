@@ -32,13 +32,13 @@ When a task is ambiguous, ask rather than building the general version that cove
 
 Two environments, and the code must work in both without edits.
 
-**A MacBook, for development.** Everything small runs locally: the four tests, the three development experiments, every tutorial, and any debugging. These must work on Apple silicon with no GPU, on CPU. If a change makes the laptop path slower or harder, that is a regression even when the cluster path gets faster, because the laptop is where the code is actually written.
+**A MacBook, for development.** Everything small runs locally: the four tests, every tutorial experiment under `experiments/tutorial_*`, and any debugging. These must work on Apple silicon with no GPU, on CPU. If a change makes the laptop path slower or harder, that is a regression even when the cluster path gets faster, because the laptop is where the code is actually written.
 
 **A SLURM cluster, for the real runs.** Prior pretraining, the PROTAC and molecular glue experiments, and anything else measured in hours. Arrhenius is the cluster in use, but nothing Arrhenius-specific belongs in the code. Partition names, account strings, module loads, walltimes and filesystem roots are configuration; another cluster is a different `slurm:` block, not a code change. If you find yourself writing `if cluster == "arrhenius"`, stop.
 
 What this requires in practice:
 
-- **Two devices supported: CPU and CUDA.** Device checks follow one pattern; `pin_memory` stays CUDA-only. A job must produce the same metrics on all three within floating-point tolerance, and the tests must pass on a laptop with no GPU.
+- **Three devices supported: CPU, CUDA and MPS.** Device checks follow one pattern: an accelerator that is configured but absent falls back, so the same job directory runs on a laptop and on a GPU node unchanged, while a device name that is none of the three is a typo and fails. `pin_memory` stays CUDA-only. A job must produce the same metrics on all three within floating-point tolerance, and the tests must pass on a laptop with no GPU.
 - **The same job directory runs in both places unchanged.** The runner is a command-line choice, never a config key. See [Running jobs](#running-jobs).
 - **No architecture assumptions.** Arrhenius GPU nodes are aarch64 with CUDA 13, not x86, so every dependency must resolve on both macOS arm64 and Linux aarch64. A dependency that only ships x86 wheels is not usable here, whatever else it offers.
 - **Paths are configuration.** Cluster home directories have small quotas and data belongs on project filesystems, so `data/` and `experiments/` roots are configurable and never hard-coded.
@@ -52,7 +52,7 @@ Hyperparameter search is out of scope for this project. Values come from prior G
 
 The RL settings are fixed: BAR loss with `alpha = 0.5`, `sigma = 10` for property-shaping objectives and `20` for activity objectives, best agent updated every 5 learning steps, 1,000 molecules per learning step, 200 learning steps, and a score of zero for invalid, improperly terminated and duplicate molecules.
 
-`max_nodes` is the exception, because it is set by the data rather than chosen: take it from the 99th percentile heavy-atom count of the dataset and record the number. Note that preprocessing decomposes each molecule into one subgraph per construction action, so training-set size, HDF5 size and epoch time all grow superlinearly with molecule size. Measure on a small subset before committing to a full preprocessing run.
+`max_nodes` is the exception, because it is set by the data rather than chosen: take it from the 99th percentile heavy-atom count of the dataset and record the number. Preprocessing detects that percentile itself, and a value stated in the config overrides the detection so a run stays reproducible. Molecules above `max_nodes` cannot be represented at that padding width and are dropped before splitting, counted in `preprocessing.yaml`. Note that preprocessing decomposes each molecule into one subgraph per construction action, so training-set size, HDF5 size and epoch time all grow superlinearly with molecule size. Measure on a small subset before committing to a full preprocessing run.
 
 Any other change to a hyperparameter needs a stated reason and my approval first.
 
@@ -60,19 +60,19 @@ Any other change to a hyperparameter needs a stated reason and my approval first
 
 ## Setup
 
-Python 3.11. Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; that pair is the single source of truth. Nothing else declares dependencies, on any machine.
+Python 3.13. Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; that pair is the single source of truth. Nothing else declares dependencies, on any machine.
 
 ```bash
 # PyTorch first, matched to your platform (see pytorch.org)
 uv pip install torch
 
 uv sync                     # core
-uv sync --extra oracles     # TDC, for RL and oracle-based evaluation
 uv sync --extra surrogates  # XGBoost, for activity surrogates
+uv sync --extra docking     # AutoDock Vina, for structure-based scoring
 uv sync --extra dev         # ruff, pytest
 ```
 
-Keep the dependency list short. RDKit, PyTorch, h5py, numpy, PyYAML and matplotlib are core. TDC, XGBoost, FCD and AiZynthFinder are optional extras used by RL and evaluation only. Adding a core dependency needs a reason, and any dependency must resolve on both macOS arm64 and Linux aarch64.
+Keep the dependency list short. RDKit, PyTorch, h5py, numpy, PyYAML and matplotlib are core. XGBoost and AutoDock Vina are optional extras used by RL and evaluation only; there is no TDC dependency, and oracles are surrogates, docking, or custom callables. Adding a core dependency needs a reason, and any dependency must resolve on both macOS arm64 and Linux aarch64.
 
 ---
 
@@ -85,7 +85,8 @@ src/oracles/          oracle wrappers, surrogates, and the call-counting cache
 config/defaults.yaml  every parameter and its default value
 experiments/          one directory per experiment (see below)
 tutorials/            one walkthrough per job type
-scripts/              data download and preparation
+scripts/              standalone utilities: dataset preparation, feature scanning,
+                      surrogate training, and the cluster self-test
 submit.py             entry point
 visualize.py          render a .smi file to a grid image
 ```
@@ -320,6 +321,8 @@ Only the non-obvious parts are recorded here. Read the code for the rest.
 
 **Data flow.** SMILES → `DataProcessor` → HDF5 (per-subgraph nodes, edges, action probabilities) → `BlockDataLoader` → GGNN → action logits → `GraphGenerator` (add atom / add bond / terminate).
 
+The HDF5 is written gzip-compressed with the byte shuffle, in chunks of whole rows. `action_probs` and `edges` are one-hot and over 99% zeros, so this is around a 600x reduction on disk for about 6% added loader time on CPU; it is what makes a large set at `max_nodes` 120 storable at all.
+
 **Conditional generation.** When `condition_dim > 0`, the GGNN builds a `ConditionEncoder` (2-layer MLP) and one extra `msg_nn` for a virtual edge type. The condition vector is encoded into a seed embedding that initializes a virtual node prepended to the graph; every real node receives messages from the seed at each round. The seed is stripped before readout, so the output shape is unchanged, but the readout *input* is not: the condition embedding is also concatenated to the graph embedding, making `graph_emb_size = gather_width + condition_embedding_dim`. That concatenation is load-bearing. The first action of every molecule is taken on an empty graph, where no real node exists to carry the seed's message.
 
 `DataProcessor` stores `condition_vector` (float32, `n_subgraphs × condition_dim`) in the HDF5. `HDFDataset` yields 4-tuples when that dataset exists and 3-tuples otherwise.
@@ -340,7 +343,7 @@ matplotlib is the only plotting dependency. Do not add seaborn, plotly, or anyth
 
 - **Run from the repo root with `python submit.py`.** The editable install writes a `.pth` file that does not survive a repository path containing spaces, so console entry points and `from metrics import ...` fail. Moving the repository to a path without spaces would remove this constraint; until then, do not rely on the installed entry point.
 - **`[Xe]` is not a molecule.** Invalid graphs must not be written to `.smi` as `[Xe]`, because RDKit parses that as valid xenon and it silently inflates validity. Write nothing and record the index.
-- **Generated-file line alignment.** `.smi`, `.likelihood` and `.valid` must line up by line number, with no per-batch headers.
+- **Generated-file line alignment.** `.smi`, `.likelihood` and `.valid` must line up by line number, with no per-batch headers. Only valid molecules get a line, so the `.valid` holds each written molecule's index in the generated batch; the indices it skips are the invalid graphs. A placeholder line is not an option in either direction: `[Xe]` reads back as valid xenon, and a blank line is skipped on the next read, which collapses the alignment it was meant to preserve.
 - **The test split is not touched during development.** Not for early stopping, not for a quick sanity check, not for choosing a hyperparameter.
 - **No cluster-specific code paths.** Anything that differs between Arrhenius and another SLURM cluster is a value in `slurm:`, not a branch in Python.
 
@@ -357,7 +360,7 @@ Not yet implemented, as of the last update to this file:
 - Virtual screening baseline, fixed-budget sample efficiency, AUC, top-100 diversity, quality-filtered top-k
 - The optimization and evaluation surrogate pair, and the applicability-domain check
 - Model efficiency metrics
-- SLURM support: `--slurm`, the template, `run.sbatch`, and the `slurm:` config block. Nothing has been run on Arrhenius, and the aarch64 plus CUDA 13 environment is unverified
+- SLURM support exists — `--slurm`, the one template, `run.sbatch`, and the `slurm:` config block — but no job has been submitted to a scheduler, and the aarch64 plus CUDA 13 environment is unverified. The rendering and the error paths are tested; `sbatch`, the module names, the partition names and the account suffix are not
 - Tutorials: `tutorials/` still describes the pre-restructure interface
 
 Open defects are in `TODO.md`. For now just append to that file, do not execute or try to solve anything in that file.

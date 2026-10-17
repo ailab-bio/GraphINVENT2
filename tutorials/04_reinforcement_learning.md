@@ -111,7 +111,7 @@ Paths are resolved relative to the directory `submit.py` runs from.
 a model. It is the default value of `qsar_models` in `defaults.py`, but entries whose key does
 not appear in `score_components` are skipped, so it only causes a problem if you actually list
 `drd2_activity`. Doing so fails at startup with `QSAR model file is empty or corrupt`. Train a
-model of your own with `src/graphinvent/tools/train-surrogate.py`; the `qsar_models` route is
+model of your own with `scripts/train-surrogate.py`; the `qsar_models` route is
 kept for backwards compatibility, and a new objective is better declared as an `sklearn` oracle,
 which accepts a plain pickled estimator and can also report uncertainty.
 
@@ -304,7 +304,7 @@ most cases:
 | `"python"` | Any importable `f(list[str]) -> list[float]` | `target`, written as `"package.module:function"`, plus optional `kwargs` |
 | `"vina"` | AutoDock Vina docking against a prepared receptor | `receptor` (a PDBQT file), `center`, `box_size`, `exhaustiveness`, `n_workers` |
 
-`src/graphinvent/tools/train-surrogate.py` produces a model in the form the `sklearn` type
+`scripts/train-surrogate.py` produces a model in the form the `sklearn` type
 expects from a table of SMILES and labels, and prints the config block to paste in. The
 `python` type is the escape hatch for anything that does not fit a pickled estimator: a PyTorch
 model, an in-house web service, a physics calculation.

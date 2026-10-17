@@ -220,7 +220,8 @@ def split_smiles_file(
     train_frac: float,
     valid_frac: float,
     seed: int,
-) -> None:
+    max_n_nodes: int,
+) -> int:
     """
     Read `smiles_file`, split it, and write train.smi / valid.smi / test.smi
     into `dataset_dir`.
@@ -235,6 +236,11 @@ def split_smiles_file(
         train_frac  : Fraction of molecules for the training set.
         valid_frac  : Fraction for the validation set.
         seed        : Seed for the random split.
+        max_n_nodes : Heavy-atom cap. Larger molecules cannot be represented at
+                      this padding width and are dropped before splitting.
+
+    Returns:
+        The number of molecules dropped for exceeding `max_n_nodes`.
     """
     smiles_file = Path(smiles_file)
     dataset_dir = Path(dataset_dir)
@@ -259,19 +265,34 @@ def split_smiles_file(
 
     seen: dict = {}
     keep: list = []
+    n_oversized = 0
     for i, smi in enumerate(smiles):
         mol = Chem.MolFromSmiles(smi)
+        # Dropped here, in the same pass, because every stored tensor is padded
+        # to `max_n_nodes` and a larger molecule has nowhere to go. Dropping
+        # before the split keeps the three splits consistent with each other,
+        # and the count is recorded in preprocessing.yaml.
+        if mol is not None and mol.GetNumAtoms() > max_n_nodes:
+            n_oversized += 1
+            continue
         key = Chem.MolToSmiles(mol) if mol is not None else smi
         if key in seen:
             continue
         seen[key] = i
         keep.append(i)
-    n_dupes = len(smiles) - len(keep)
+    n_dupes = len(smiles) - len(keep) - n_oversized
+    if n_oversized:
+        print(
+            f"  Removed {n_oversized} molecule(s) larger than max_n_nodes "
+            f"({max_n_nodes}) before splitting.",
+            flush=True,
+        )
     if n_dupes:
         print(
             f"  Removed {n_dupes} duplicate molecule(s) before splitting.",
             flush=True,
         )
+    if n_dupes or n_oversized:
         smiles = [smiles[i] for i in keep]
         if has_conditions:
             condition_vectors = [condition_vectors[i] for i in keep]
@@ -327,6 +348,7 @@ def split_smiles_file(
         f"molecules to {dataset_dir}/",
         flush=True,
     )
+    return n_oversized
 
 
 def _dataset_dtype(name: str) -> np.dtype:
@@ -344,6 +366,34 @@ def _dataset_dtype(name: str) -> np.dtype:
     if name == "action_probs":
         return np.dtype("int16")
     return np.dtype("int8")
+
+
+def _row_bytes(shape: tuple, dtype: np.dtype) -> int:
+    """Uncompressed size of one row of a dataset with this shape and dtype."""
+    return max(1, int(np.prod(shape[1:])) * dtype.itemsize)
+
+
+def _copy_block_rows(dataset: h5py.Dataset) -> int:
+    """
+    Rows of *dataset* to copy at once, sized to about 64 MB.
+
+    One row of a 72-node `edges` dataset is 20 KB, so a fixed row count is
+    either wasteful or useless depending on `max_n_nodes`.
+    """
+    return max(1, (64 << 20) // _row_bytes(dataset.shape, dataset.dtype))
+
+
+def _chunk_shape(shape: tuple, dtype: np.dtype) -> tuple:
+    """
+    Chunk shape for a compressed dataset: whole rows, about 4 MB per chunk.
+
+    Chunks are whole rows so that reading row i decompresses only chunks that
+    are entirely wanted; the loader reads long contiguous spans, so there is no
+    read amplification. A chunk has to be a few megabytes for gzip to find
+    anything, and these arrays are mostly zeros.
+    """
+    rows = max(1, (4 << 20) // _row_bytes(shape, dtype))
+    return (min(rows, shape[0]), *shape[1:])
 
 
 class DataProcessor:
@@ -476,8 +526,8 @@ class DataProcessor:
 
                     break
 
-        print("* Resaving datasets in unchunked format.")
-        self.resave_datasets_unchunked()
+        print("* Resaving datasets compressed.")
+        self.resave_datasets_compressed()
 
     def restart_preprocessing_job(self) -> None:
         """
@@ -507,23 +557,44 @@ class DataProcessor:
         # create a dictionary of empty HDF datasets (`self.dataset`)
         self.create_datasets(hdf_file=self.hdf_file)
 
-    def resave_datasets_unchunked(self) -> None:
+    def resave_datasets_compressed(self) -> None:
         """
-        Resaves the HDF datasets in an unchunked format to remove initial
-        padding.
+        Resaves the HDF datasets compressed, dropping the initial padding.
+
+        `action_probs` and `edges` are both one-hot and over 99% zeros, and
+        stored dense they are the bulk of the dataset on disk: a 10,000-molecule
+        set at `max_nodes` 120 is over a hundred gigabytes uncompressed. gzip at
+        level 4 with the byte shuffle costs a few minutes once, here, and is
+        decompressed by HDF5 on the loader's own threads afterwards.
+
+        Copied a block of rows at a time. Reading each dataset whole first held
+        all three in memory at once, which on a 72-node dataset is several
+        gigabytes and set the memory ceiling for the whole preprocessing job.
         """
         with h5py.File(f"{self.path[:-3]}h5.chunked", "r", swmr=True) as chunked_file:
-            keys = list(chunked_file.keys())
-            data = [chunked_file.get(key)[:] for key in keys]
-            data_zipped = tuple(zip(data, keys))
-
-            with h5py.File(f"{self.path[:-3]}h5", "w") as unchunked_file:
-                for d, k in tqdm(data_zipped):
+            with h5py.File(f"{self.path[:-3]}h5", "w") as output_file:
+                for key in chunked_file:
+                    source = chunked_file[key]
                     # Must match `create_datasets`; re-casting to int8 here
                     # silently undid the wider dtype used while writing.
-                    unchunked_file.create_dataset(
-                        k, chunks=None, data=d, dtype=_dataset_dtype(k)
+                    dtype = _dataset_dtype(key)
+                    target = output_file.create_dataset(
+                        key,
+                        shape=source.shape,
+                        dtype=dtype,
+                        chunks=_chunk_shape(source.shape, dtype),
+                        compression="gzip",
+                        compression_opts=4,
+                        # A no-op for the int8 datasets, worth having for the
+                        # int16 `action_probs` and float32 `condition_vector`.
+                        shuffle=True,
                     )
+                    rows = _copy_block_rows(source)
+                    for start in tqdm(
+                        range(0, source.shape[0], rows), desc=key, leave=False
+                    ):
+                        stop = start + rows
+                        target[start:stop] = source[start:stop]
 
         # remove the restart file and chunked file (don't need them anymore)
         os.remove(self.restart_index_file)
@@ -544,6 +615,15 @@ class DataProcessor:
         """
         data_subgraphs, data_action_probs, molecular_graph_list = [], [], []
         data_condition_vectors: List[np.ndarray] = []
+
+        # Maps the hash of a subgraph's bytes to the indices in
+        # `data_subgraphs` that hash to it. Scanning the list and comparing
+        # arrays instead was quadratic in the group size and dominated
+        # preprocessing: a 400-molecule run spent 48 s of 87 s on 12 million
+        # array comparisons. Hashes rather than the bytes themselves because a
+        # subgraph is ~20 KB and the group holds a thousand of them; the
+        # arrays are still compared on a hit, so the match stays exact.
+        subgraph_index: dict = {}
 
         molecules_processed = 0  # keep track of the number of molecules processed
 
@@ -579,27 +659,22 @@ class DataProcessor:
                     data_condition_vectors.append(mol_condition)
                 else:
                     # Deduplicate identical subgraphs, merging their action
-                    # counts.  The append must be guarded by whether a match was
-                    # found: the old `count == len(data_subgraphs)` test was also
-                    # true when the match was the LAST entry, so such subgraphs
-                    # were merged and appended, double-counting their actions.
-                    matched = False
-                    for idx, existing_subgraph in enumerate(data_subgraphs):
-                        try:
-                            nodes_equal = (subgraph[0] == existing_subgraph[0]).all()
-                        except AttributeError:
-                            nodes_equal = False
-                        try:
-                            edges_equal = (subgraph[1] == existing_subgraph[1]).all()
-                        except AttributeError:
-                            edges_equal = False
-                        if nodes_equal and edges_equal:
-                            data_action_probs[idx] += action_probs
-                            matched = True
+                    # counts.
+                    key = hash((subgraph[0].tobytes(), subgraph[1].tobytes()))
+                    match = None
+                    for idx in subgraph_index.get(key, ()):
+                        existing = data_subgraphs[idx]
+                        if np.array_equal(subgraph[0], existing[0]) and np.array_equal(
+                            subgraph[1], existing[1]
+                        ):
+                            match = idx
                             break
-                    if not matched:
+                    if match is None:
+                        subgraph_index.setdefault(key, []).append(len(data_subgraphs))
                         data_subgraphs.append(subgraph)
                         data_action_probs.append(action_probs)
+                    else:
+                        data_action_probs[match] += action_probs
 
             # This molecule's whole decoding route is now in the buffer.
             molecules_processed += 1

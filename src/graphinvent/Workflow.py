@@ -540,13 +540,7 @@ class Workflow:
                     if not os.path.exists(batch_path):
                         continue
                     with open(batch_path) as in_f:
-                        lines = in_f.readlines()
-                    if ext == ".smi" and lines and "SMILES" in lines[0]:
-                        # RDKit's SmilesWriter puts a header on every batch
-                        # file; keeping them would make line i of the .smi a
-                        # different molecule from line i of the .likelihood.
-                        lines = lines[1:]
-                    out_f.writelines(lines)
+                        out_f.writelines(in_f.readlines())
 
         # remove individual batch files
         for batch_smi in batch_smis:
@@ -692,6 +686,10 @@ class Workflow:
         """
         dataset_dir = self.constants.dataset_dir
 
+        # Only Mode A splits, so only Mode A can drop anything for being too
+        # large; the other routes take the .smi files as given.
+        self.n_oversized = 0
+
         smiles_file = getattr(self.constants, "smiles_file", None)
         restart = self.constants.restart
 
@@ -708,13 +706,14 @@ class Workflow:
 
             # --- Mode A: split a single SMILES file ---
             if smiles_file:
-                split_smiles_file(
+                self.n_oversized = split_smiles_file(
                     smiles_file=smiles_file,
                     dataset_dir=dataset_dir,
                     split_type=self.constants.split_type,
                     train_frac=self.constants.train_frac,
                     valid_frac=self.constants.valid_frac,
                     seed=self.constants.seed,
+                    max_n_nodes=self.constants.max_n_nodes,
                 )
             else:
                 # --- Mode B: verify all three .smi files are present ---
@@ -1529,12 +1528,18 @@ class Workflow:
                 generator.sample(agent_model=model_a, prior_model=model_b)
             )
 
-        # Compute validity/uniqueness first (needed for scoring)
+        # The property analysis and its plots cost more than the learning step
+        # itself and run twice per step, so they happen on the same schedule as
+        # model evaluation. Validity and uniqueness are not optional: the loss
+        # needs them every step, so they are always computed, and only the
+        # files and the analysis are skipped.
+        analyze = self.current_epoch % self.constants.sample_every == 0
+
         _, validity, uniqueness = util.write_molecules(
             molecules=graphs,
             final_likelihoods=model_a_loglikelihoods,
             epoch=f"Step {self.current_epoch} {model_a_label}",
-            write=True,
+            write=analyze,
             label=model_a_label,
         )
 
@@ -1547,20 +1552,21 @@ class Workflow:
         )
 
         # Analyze properties and save results (skip re-writing molecules)
-        validity, uniqueness = self.analyzer.evaluate_generated_graphs_rl(
-            generated_graphs=graphs,
-            termination=termination,
-            agent_loglikelihoods=model_a_loglikelihoods,
-            prior_loglikelihoods=model_b_loglikelihoods,
-            training_set_properties=self.training_set_properties,
-            step=self.current_epoch,
-            is_agent=is_agent,
-            label=model_a_label,
-            scores=scores,
-            component_scores=component_scores,
-            precomputed_validity=validity,
-            precomputed_uniqueness=uniqueness,
-        )
+        if analyze:
+            validity, uniqueness = self.analyzer.evaluate_generated_graphs_rl(
+                generated_graphs=graphs,
+                termination=termination,
+                agent_loglikelihoods=model_a_loglikelihoods,
+                prior_loglikelihoods=model_b_loglikelihoods,
+                training_set_properties=self.training_set_properties,
+                step=self.current_epoch,
+                is_agent=is_agent,
+                label=model_a_label,
+                scores=scores,
+                component_scores=component_scores,
+                precomputed_validity=validity,
+                precomputed_uniqueness=uniqueness,
+            )
 
         if is_agent:
             util.log_likelihoods_to_tensorboard(
@@ -1620,7 +1626,7 @@ class Workflow:
             enumerate(self.train_dataloader), total=len(self.train_dataloader)
         ):
             if self.constants.device != "cpu":
-                batch = [b.to(self.constants.device) for b in batch]
+                batch = [b.to(self.constants.device, non_blocking=True) for b in batch]
 
             if len(batch) == 4:
                 nodes, edges, target_output, condition_vector = batch
@@ -1678,7 +1684,9 @@ class Workflow:
                 enumerate(self.valid_dataloader), total=len(self.valid_dataloader)
             ):
                 if self.constants.device != "cpu":
-                    batch = [b.to(self.constants.device) for b in batch]
+                    batch = [
+                        b.to(self.constants.device, non_blocking=True) for b in batch
+                    ]
 
                 if len(batch) == 4:
                     nodes, edges, target_output, condition_vector = batch
@@ -1708,8 +1716,7 @@ class Workflow:
         """
         # define activation function; note that one must use the softmax in the
         # KLDiv, never the sigmoid, as the distribution must sum to 1
-        LogSoftmax = torch.nn.LogSoftmax(dim=1)
-        output = LogSoftmax(output)
+        output = torch.nn.functional.log_softmax(output, dim=1)
 
         # normalize the target output (as can contain information on > 1 graph);
         # clamp the denominator so an all-zero target row yields zeros rather
@@ -1718,11 +1725,9 @@ class Workflow:
             target_output, dim=1, keepdim=True
         ).clamp(min=1e-12)
 
-        # define loss function and calculate the los
-        criterion = torch.nn.KLDivLoss(reduction="batchmean")
-        loss = criterion(target=target_output, input=output)
-
-        return loss
+        return torch.nn.functional.kl_div(
+            input=output, target=target_output, reduction="batchmean"
+        )
 
     def compute_loss_component(
         self,

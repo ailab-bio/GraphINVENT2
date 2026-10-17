@@ -31,7 +31,7 @@ that builds the decoding route cannot order a disconnected graph and will
 reject salts and mixtures.
 
 Usage:
-    python src/graphinvent/tools/tpddb-create-dataset.py \
+    python scripts/tpddb-create-dataset.py \
         --modality both --n-molecules 10 --output data/datasets/tpddb_small/
 """
 
@@ -293,7 +293,7 @@ def main() -> int:
             "modalities": sorted({r["modality"] for r in selected}),
         },
         "regenerate_with": (
-            "python src/graphinvent/tools/tpddb-create-dataset.py "
+            "python scripts/tpddb-create-dataset.py "
             f"--modality {args.modality} --n-molecules {args.n_molecules} "
             f"--output {args.output}/"
         ),

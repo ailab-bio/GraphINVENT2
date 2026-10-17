@@ -638,7 +638,9 @@ class PreprocessingGraph(MolecularGraph):
             f_add[tuple([0] + fv_nonzero_idc + [0])] = 1
 
         # concatenate `f_add`, `f_conn`, and `f_term` (`f_term`==0)
-        action_probs = np.concatenate((f_add.ravel(), f_conn.ravel(), np.array([0])))
+        action_probs = np.concatenate(
+            (f_add.ravel(), f_conn.ravel(), np.array([0], dtype=np.int32))
+        )
         return action_probs
 
     def get_final_action_probs(self) -> np.ndarray:
@@ -663,7 +665,9 @@ class PreprocessingGraph(MolecularGraph):
         f_conn = np.zeros(self.constants.dim_f_conn, dtype=np.int32)
 
         # concatenate `f_add`, `f_conn`, and `f_term` (`f_term`==0)
-        action_probs = np.concatenate((f_add.ravel(), f_conn.ravel(), np.array([1])))
+        action_probs = np.concatenate(
+            (f_add.ravel(), f_conn.ravel(), np.array([1], dtype=np.int32))
+        )
         return action_probs
 
     def get_graph_state(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -729,16 +733,34 @@ class PreprocessingGraph(MolecularGraph):
         Pads arrays to size corresponding to largest graph in training, testing,
         and validation datasets.
         """
-        # initialize the padded graph representation arrays
+        if self.n_nodes > self.constants.max_n_nodes:
+            # Splitting drops oversized molecules, but a dataset whose three
+            # .smi files were written elsewhere never went through that, and
+            # the assignment below would fail on a broadcast error that says
+            # nothing about why.
+            raise ValueError(
+                f"A molecule has {self.n_nodes} heavy atoms, but max_n_nodes is "
+                f"{self.constants.max_n_nodes}, so it cannot be represented.\n"
+                "Either raise max_n_nodes in the config and preprocess again, or "
+                "remove the molecule from the split files. Run\n"
+                "    python scripts/scan_features.py --smi <your>.smi\n"
+                "to see the 99th-percentile and the observed maximum atom count."
+            )
+
+        # int8, matching the HDF5 storage dtype: these are one-hot arrays, and
+        # numpy's float64 default made every padded graph eight times larger
+        # than the row it ends up as on disk.
         node_features_padded = np.zeros(
-            (self.constants.max_n_nodes, self.constants.n_node_features)
+            (self.constants.max_n_nodes, self.constants.n_node_features),
+            dtype=np.int8,
         )
         edge_features_padded = np.zeros(
             (
                 self.constants.max_n_nodes,
                 self.constants.max_n_nodes,
                 self.constants.n_edge_features,
-            )
+            ),
+            dtype=np.int8,
         )
 
         # pad up to size of largest graph

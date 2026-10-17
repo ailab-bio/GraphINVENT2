@@ -21,7 +21,7 @@ Input is a CSV or TSV with a SMILES column and a label column. Classification
 labels may be 0/1 or a continuous activity thresholded with --threshold.
 
 Usage:
-    python src/graphinvent/tools/train-surrogate.py \
+    python scripts/train-surrogate.py \
         --input data/assays/egfr.csv --smiles-column smiles --label-column pIC50 \
         --threshold 6.0 --split scaffold --output data/surrogates/egfr_rf.pkl
 """

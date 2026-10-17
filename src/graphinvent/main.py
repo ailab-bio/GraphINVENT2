@@ -41,7 +41,9 @@ def run(constants) -> None:
         # failed auto-detection left an empty vocabulary on disk, which every
         # later run then loaded in preference to re-detecting, failing far away
         # with "Input C not in allowable set []".
-        util.write_preprocessing_parameters(params=constants)
+        util.write_preprocessing_parameters(
+            params=constants, n_oversized=workflow.n_oversized
+        )
     else:
         {
             "unconditional": workflow.unconditional_training_phase,

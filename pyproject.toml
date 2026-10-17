@@ -8,17 +8,17 @@ version = "2.0.0"
 description = "Graph-based molecular generation and optimization with GGNNs and RL"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 
-# Core dependencies — PyTorch is listed here as a minimum version.
-# For GPU support install the CUDA-specific build first (see README).
+# torch >= 2.11 is a hard floor, not a preference: on Linux aarch64 the plain
+# PyPI wheel is CPU-only up to and including 2.10, so a looser pin resolves to
+# a build where torch.cuda.is_available() is False with no error anywhere.
+# See RUN.md for the cu130 index, which is the alternative route.
 dependencies = [
-    "torch>=2.0",
-    "torchvision",
-    "torchaudio",
+    "torch>=2.11",
     "rdkit>=2023.3",
-    "numpy",
-    "h5py",
+    "numpy<2.5",
+    "h5py>=3.8",
     "pyyaml",
     "tqdm",
     "scikit-learn",
@@ -27,7 +27,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# pip install -e ".[docking]"  — AutoDock Vina oracle (structure-based scoring)
+# uv sync --extra surrogates  — XGBoost activity models.
+# 3.2.0 is the first aarch64 build with GPU support, so that is the floor.
+surrogates = ["xgboost>=3.2.0"]
+
+# uv sync --extra docking  — AutoDock Vina oracle (structure-based scoring).
+# vina publishes no aarch64 wheel at any version, so on an ARM cluster this
+# extra does not install; see RUN.md for the conda-forge route.
 docking = ["vina", "meeko"]
 
 # pip install -e ".[dev]"  — linting / type checking during development
@@ -37,7 +43,7 @@ dev = ["black", "ruff", "mypy", "pytest", "pre-commit"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"graphinvent" = ["tools/*", "parameters/*", "gnn/*"]
+"graphinvent" = ["parameters/*", "gnn/*"]
 "metrics" = []
 "oracles" = []
 
@@ -47,11 +53,11 @@ where = ["src"]
 
 [tool.black]
 line-length = 88
-target-version = ["py39", "py310", "py311", "py312"]
+target-version = ["py313"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]   # pycodestyle errors/warnings, pyflakes, isort
@@ -68,7 +74,7 @@ python_files = ["test_*.py"]
 python_functions = ["test_*"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.13"
 ignore_missing_imports = true
 warn_unused_ignores = true
 warn_return_any = false   # too noisy for ML code with Any-typed tensors

@@ -20,6 +20,8 @@ sys.path[:0] = [str(REPO_ROOT / "src"), str(REPO_ROOT / "src" / "graphinvent")]
 
 from parameters import config  # noqa: E402
 
+TEMPLATE = REPO_ROOT / "config" / "slurm.sh.template"
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a GraphINVENT2 job.")
@@ -56,43 +58,69 @@ def main() -> None:
     print(f"* Resolved configuration written to {resolved_path}", flush=True)
 
     if args.slurm:
-        submit_to_slurm(params)
+        script_path = write_slurm_script(params)
+        print(f"* Submitting {script_path}", flush=True)
+        subprocess.run(["sbatch", str(script_path)], check=True)
     else:
         import main as graphinvent_main
 
         graphinvent_main.run(constants)
 
 
-def submit_to_slurm(params: dict) -> None:
-    """Render the SLURM template into the job's logs/ and submit it."""
+def render_slurm_script(params: dict) -> str:
+    """Render the one SLURM template for this job."""
     slurm = params["slurm"]
-    job_dir = Path(params["job_dir"])
+    job_dir = Path(params["job_dir"]).resolve()
 
-    directives = [f"#SBATCH --account={slurm['account']}"] if slurm["account"] else []
-    if slurm["partition"]:
-        directives.append(f"#SBATCH --partition={slurm['partition']}")
+    if not slurm["account"]:
+        raise ValueError(
+            "slurm.account is unset, and SLURM rejects a job without one.\n"
+            "Set it in config/defaults.yaml, or per experiment:\n"
+            "    slurm:\n"
+            "      account: naiss2026-1-234\n"
+            "A GPU job usually needs the -gpu suffix on the account name."
+        )
+
+    partition = slurm["partition"] or (
+        slurm["partition_gpu"] if slurm["gpus"] else slurm["partition_cpu"]
+    )
+
+    extra = []
     if slurm["gpus"]:
-        directives.append(f"#SBATCH --gpus={slurm['gpus']}")
+        extra.append(f"#SBATCH --gpus={slurm['gpus']}")
     if slurm["memory"]:
-        directives.append(f"#SBATCH --mem={slurm['memory']}")
+        extra.append(f"#SBATCH --mem={slurm['memory']}")
 
-    template = (REPO_ROOT / "config" / "slurm.sh.template").read_text()
-    script = template.format(
+    return TEMPLATE.read_text().format(
+        account=slurm["account"],
+        partition=partition,
         job_name=job_dir.name,
         time=slurm["time"],
+        ntasks=slurm["ntasks"],
+        cpus_per_task=slurm["cpus_per_task"],
+        resources="".join(line + "\n" for line in extra),
         # Absolute: sbatch resolves the log paths before the script runs cd.
-        logs_dir=f"{job_dir.resolve()}/logs/",
-        resources="\n".join(directives) + "\n" if directives else "",
-        # shlex.quote because this repository's own path contains spaces.
+        logs_dir=f"{job_dir}/logs/",
+        modules="\n".join(f"module load {m}" for m in slurm["modules"]),
+        # shlex.quote because a repository path may contain spaces.
         repo_root=shlex.quote(str(REPO_ROOT)),
         python=shlex.quote(sys.executable),
         job_dir=shlex.quote(str(job_dir)),
     )
 
+
+def write_slurm_script(params: dict) -> Path:
+    """
+    Write the rendered script to the job's logs/ and to run.sbatch beside the
+    config, so the submitted script can be read or resubmitted by hand.
+    """
+    script = render_slurm_script(params)
+    job_dir = Path(params["job_dir"])
+
     script_path = job_dir / "logs" / "submit.sh"
     script_path.write_text(script)
-    print(f"* SLURM script written to {script_path}", flush=True)
-    subprocess.run(["sbatch", str(script_path)], check=True)
+    (job_dir / "run.sbatch").write_text(script)
+    return script_path
 
 
 if __name__ == "__main__":

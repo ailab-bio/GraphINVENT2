@@ -1,8 +1,16 @@
-# Tools
+# Scripts
 
-Standalone utilities for dataset preparation, inspection, and analysis.
-All scripts are located in `src/graphinvent/tools/` and should be run from the
-repository root.
+Standalone utilities for dataset preparation, inspection, and analysis, plus the
+cluster self-test. Everything here is run from the repository root; none of it is
+imported by the package.
+
+| Script | Purpose |
+|---|---|
+| `scan_features.py` | report a dataset's feature vocabulary and `max_n_nodes` |
+| `tpddb-create-dataset.py` | build a degrader dataset from TPDdb |
+| `train-surrogate.py` | fit an activity surrogate for goal-directed runs |
+| `cluster_selftest.py` | check the whole stack on a new machine or node |
+| `cluster_selftest.sbatch` | the same check, submitted to SLURM |
 
 ---
 
@@ -19,7 +27,7 @@ Scans one or more SMILES files and reports the molecular feature vocabulary
 > two datasets share a compatible feature space before transfer learning.
 
 ```bash
-python src/graphinvent/tools/scan_features.py --smi path/to/train.smi path/to/valid.smi path/to/test.smi
+python scripts/scan_features.py --smi path/to/train.smi path/to/valid.smi path/to/test.smi
 ```
 
 Optional flags match the corresponding preprocessing parameters:
@@ -40,7 +48,7 @@ Builds a dataset of targeted protein degraders from
 tab-separated files, so the download needs no login or API key.
 
 ```bash
-python src/graphinvent/tools/tpddb-create-dataset.py \
+python scripts/tpddb-create-dataset.py \
     --modality both --n-molecules 10 --output data/datasets/tpddb_small/
 ```
 
@@ -67,7 +75,7 @@ intended route to a target-specific objective: the model is trained on data you
 supply, so its quality and provenance are yours to report.
 
 ```bash
-python src/graphinvent/tools/train-surrogate.py \
+python scripts/train-surrogate.py \
     --input data/assays/egfr.csv --smiles-column smiles --label-column pIC50 \
     --threshold 6.0 --split scaffold --output data/surrogates/egfr_rf.pkl
 ```
@@ -89,54 +97,25 @@ of congeneric series measures memorisation.
 
 ---
 
-## Large-dataset preprocessing
+## Cluster self-test
 
-### `submit-split-preprocessing-supercloud.py`
+### `cluster_selftest.py`
 
-For very large datasets that are more efficiently preprocessed in parallel across
-multiple compute nodes.
-
-**Step 1 — split the dataset** (run in an interactive session):
-```bash
-python src/graphinvent/tools/submit-split-preprocessing-supercloud.py --type split
-```
-
-**Step 2 — submit the preprocessing jobs**:
-```bash
-python src/graphinvent/tools/submit-split-preprocessing-supercloud.py --type submit
-```
-
-**Step 3 — aggregate the resulting HDF files**:
-```bash
-python src/graphinvent/tools/submit-split-preprocessing-supercloud.py --type aggregate
-```
-
----
-
-## Combining HDF files
-
-### `combine_HDFs.py`
-
-Combines multiple preprocessed HDF files into one.  Useful when a large dataset
-was preprocessed in chunks.  Edit the variables at the bottom of the script to
-set the dataset name, feature dimensions, and number of splits, then run:
+Checks the stack end to end — interpreter and architecture, torch and CUDA,
+RDKit, h5py on the configured data root, XGBoost, a GGNN forward and backward
+pass, and one development job — stopping at the first failure and saying what to
+do about it.
 
 ```bash
-python src/graphinvent/tools/combine_HDFs.py
+python scripts/cluster_selftest.py                 # here, whatever device exists
+python scripts/cluster_selftest.py --require-cuda  # fail if no GPU is visible
 ```
 
----
+### `cluster_selftest.sbatch`
 
-## Utilities
+The same check on a GPU node. The account is passed on the command line because
+it is the one value that differs per person:
 
-### `utils.py`
-
-Shared helper used by the deprecated individual scripts (`load_molecules`).
-
----
-
-## Deprecated individual scripts
-
-`atom_types.py`, `formal_charges.py`, and `max_n_nodes.py` are superseded by
-`scan_features.py`, which collects all three in a single pass.  They are kept
-for backwards compatibility.
+```bash
+sbatch -A <your-project>-gpu scripts/cluster_selftest.sbatch
+```
