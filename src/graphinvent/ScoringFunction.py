@@ -66,6 +66,24 @@ def _ensure_src_on_path() -> None:
         sys.path.insert(0, src_dir)
 
 
+class _BuiltinOracle:
+    """
+    A built-in property scorer in the shape `CachedOracle` expects.
+
+    Not a subclass of anything: `CachedOracle` only calls the object and reads
+    `name` and `supports_uncertainty` off it, so this is the whole contract.
+    """
+
+    supports_uncertainty = False
+
+    def __init__(self, name: str, scorer) -> None:
+        self.name = name
+        self._scorer = scorer
+
+    def __call__(self, smiles_list: list) -> list:
+        return self._scorer(smiles_list)
+
+
 class ScoringFunction:
     """
     Combines multiple property scores into a single RL reward per molecule.
@@ -183,22 +201,84 @@ class ScoringFunction:
 
     def _init_oracles(self) -> None:
         """
-        Build every oracle named in ``constants.oracles``.
+        Build every oracle named in ``constants.oracles``, plus the built-in
+        property oracles.
 
         Constructed eagerly so a missing model file, an unreadable receptor, or
         a typo in a spec fails at job start rather than after the first batch
         of molecules has been generated.
         """
-        specs = dict(getattr(self.constants, "oracles", None) or {})
-        if not specs:
-            self._check_components_resolvable()
-            return
-
         _ensure_src_on_path()
         from oracles import OracleFactory
 
-        self._oracles = OracleFactory.from_specs(specs)
+        specs = dict(getattr(self.constants, "oracles", None) or {})
+        if specs:
+            self._oracles = OracleFactory.from_specs(specs)
+        self._register_builtin_oracles()
         self._check_components_resolvable()
+
+    def _register_builtin_oracles(self) -> None:
+        """
+        Wrap the built-in property components in cached oracles.
+
+        CLAUDE.md defines an oracle call as one unique molecule submitted to
+        the oracle, and when a job is scored on QED then QED *is* the oracle.
+        Computing it inline meant it was never counted: `oracle_calls` fell back
+        to the number of molecules scored, `optimization_log` stayed empty, and
+        every sample-efficiency metric -- `best_at_*`, `top10_mean_at_*`,
+        `top100_mean_at_*`, `auc_top10` -- was permanently null. A budget that
+        counts nothing also does not bind, so a budget-capped run never stopped
+        on its budget.
+
+        `target_size=` is deliberately not routed here. It scores the generated
+        graph's node count rather than the molecule, so it is a structural
+        constraint rather than something submitted to an oracle, and a
+        SMILES-keyed cache would give the wrong answer for a graph that is not
+        a molecule.
+        """
+        from rdkit import Chem
+        from rdkit.Chem import Crippen
+
+        from oracles import CachedOracle
+
+        def qed_scorer(smiles_list: list) -> list:
+            scores = []
+            for smi in smiles_list:
+                mol = Chem.MolFromSmiles(smi) if smi else None
+                try:
+                    scores.append(float(QED.qed(mol)) if mol is not None else 0.0)
+                except (ValueError, RuntimeError):
+                    scores.append(0.0)
+            return scores
+
+        def logp_target_scorer(target: float, window: float = 5.0):
+            def scorer(smiles_list: list) -> list:
+                scores = []
+                for smi in smiles_list:
+                    mol = Chem.MolFromSmiles(smi) if smi else None
+                    try:
+                        value = (
+                            Crippen.MolLogP(mol) if mol is not None else target - window
+                        )
+                    except (ValueError, RuntimeError):
+                        value = target - window
+                    scores.append(max(0.0, 1.0 - abs(value - target) / window))
+                return scores
+
+            return scorer
+
+        for component in self.score_components:
+            if component in self._oracles:
+                continue
+            if component == "QED":
+                self._oracles[component] = CachedOracle(
+                    _BuiltinOracle("QED", qed_scorer)
+                )
+            elif component.startswith("logp_target="):
+                target = float(component.split("=", 1)[1])
+                self._oracles[component] = CachedOracle(
+                    _BuiltinOracle(component, logp_target_scorer(target))
+                )
 
     def _check_components_resolvable(self) -> None:
         """
@@ -373,7 +453,25 @@ class ScoringFunction:
         contributions_to_score = []
 
         for score_component in self.score_components:
-            if score_component.startswith("target_size="):
+            if score_component in self._oracles:
+                # First, so a built-in registered as a cached oracle is metered
+                # rather than falling through to an inline branch below.
+                oracle = self._oracles[score_component]
+                smiles = self._graphs_to_smiles(graphs)
+                if (
+                    self._modulation.enabled
+                    and self._modulation.is_configured(score_component)
+                    and oracle.supports_uncertainty
+                ):
+                    scores_list, uncertainties = oracle.predict_with_uncertainty(smiles)
+                    self._component_uncertainty[score_component] = uncertainties
+                else:
+                    scores_list = oracle(smiles)
+                contributions_to_score.append(
+                    torch.tensor(scores_list, device=self.device, dtype=torch.float32)
+                )
+
+            elif score_component.startswith("target_size="):
                 target_size = int(score_component.split("=", 1)[1])
 
                 assert (

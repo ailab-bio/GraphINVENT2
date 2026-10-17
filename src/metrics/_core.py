@@ -204,6 +204,13 @@ def compute_core_metrics(
         results["scaffold_diversity"] = None
         results["n_scaffolds"] = 0
 
+    # filter_pass_rate, Ro5_pass_rate, bRo5_pass_rate -- same denominator.
+    from ._filters import compute_filter_metrics
+
+    filter_metrics, filter_unavailable = compute_filter_metrics(unique_valid_smiles)
+    results.update(filter_metrics)
+    results["_filter_unavailable"] = filter_unavailable
+
     # Synthetic accessibility over unique valid molecules.
     from rdkit import Chem
 

@@ -1,0 +1,6 @@
+# Cloned repositories, their virtual environments and downloaded weights are
+# reproduced by install.sh at pinned versions, so they are not committed.
+# README.md, install.sh and data/ are.
+*/
+!data/
+hf-cache/

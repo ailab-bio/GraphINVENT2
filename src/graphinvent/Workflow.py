@@ -494,12 +494,10 @@ class Workflow:
         gen_dir = results_dir + "generation"
         if os.path.isdir(gen_dir):
             candidates.append(gen_dir)
-        for p in Path(results_dir).glob("*_samples.smi"):
-            stem = p.stem
-            for ext in (".smi", ".likelihood", ".valid"):
-                f = results_dir + stem + ext
-                if os.path.exists(f):
-                    candidates.append(f)
+        for ext in (".smi", ".likelihood", ".valid"):
+            f = results_dir + "molecules" + ext
+            if os.path.exists(f):
+                candidates.append(f)
         if os.path.exists(logs_dir + "generation.log"):
             candidates.append(logs_dir + "generation.log")
 
@@ -532,7 +530,6 @@ class Workflow:
         import re as _re
 
         gen_dir = self.constants.results_dir + "generation/"
-        n = self.constants.n_samples
 
         batch_smis = sorted(
             Path(gen_dir).glob("batch_*.smi"),
@@ -541,7 +538,7 @@ class Workflow:
         if not batch_smis:
             return
 
-        out_base = self.constants.results_dir + f"{n}_samples"
+        out_base = self.constants.results_dir + "molecules"
         for ext in (".smi", ".likelihood", ".valid"):
             with open(out_base + ext, "w") as out_f:
                 for batch_smi in batch_smis:
@@ -896,7 +893,7 @@ class Workflow:
         metrics_run.evaluate_generation(
             self.constants,
             generated_smiles=metrics_run.read_smiles(
-                f"{self.constants.results_dir}{self.constants.n_samples}_samples.smi"
+                f"{self.constants.results_dir}molecules.smi"
             ),
             model=self.model,
             inference_seconds=generation_seconds,

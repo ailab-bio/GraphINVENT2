@@ -32,13 +32,13 @@ When a task is ambiguous, ask rather than building the general version that cove
 
 Two environments, and the code must work in both without edits.
 
-**A MacBook, for development.** Everything small runs locally: the four tests, every tutorial experiment under `experiments/tutorial_*`, and any debugging. These must work on Apple silicon with no GPU, on CPU. If a change makes the laptop path slower or harder, that is a regression even when the cluster path gets faster, because the laptop is where the code is actually written.
+**A MacBook, for development.** Everything small runs locally: the four tests, the three development experiments, every tutorial, and any debugging. These must work on Apple silicon with no GPU, on CPU or MPS. If a change makes the laptop path slower or harder, that is a regression even when the cluster path gets faster, because the laptop is where the code is actually written.
 
 **A SLURM cluster, for the real runs.** Prior pretraining, the PROTAC and molecular glue experiments, and anything else measured in hours. Arrhenius is the cluster in use, but nothing Arrhenius-specific belongs in the code. Partition names, account strings, module loads, walltimes and filesystem roots are configuration; another cluster is a different `slurm:` block, not a code change. If you find yourself writing `if cluster == "arrhenius"`, stop.
 
 What this requires in practice:
 
-- **Three devices supported: CPU, CUDA and MPS.** Device checks follow one pattern: an accelerator that is configured but absent falls back, so the same job directory runs on a laptop and on a GPU node unchanged, while a device name that is none of the three is a typo and fails. `pin_memory` stays CUDA-only. A job must produce the same metrics on all three within floating-point tolerance, and the tests must pass on a laptop with no GPU.
+- **Three devices supported: CPU, CUDA and MPS.** Device checks follow one pattern; `pin_memory` stays CUDA-only. A job must produce the same metrics on all three within floating-point tolerance, and the tests must pass on a laptop with no GPU.
 - **The same job directory runs in both places unchanged.** The runner is a command-line choice, never a config key. See [Running jobs](#running-jobs).
 - **No architecture assumptions.** Arrhenius GPU nodes are aarch64 with CUDA 13, not x86, so every dependency must resolve on both macOS arm64 and Linux aarch64. A dependency that only ships x86 wheels is not usable here, whatever else it offers.
 - **Paths are configuration.** Cluster home directories have small quotas and data belongs on project filesystems, so `data/` and `experiments/` roots are configurable and never hard-coded.
@@ -52,7 +52,7 @@ Hyperparameter search is out of scope for this project. Values come from prior G
 
 The RL settings are fixed: BAR loss with `alpha = 0.5`, `sigma = 10` for property-shaping objectives and `20` for activity objectives, best agent updated every 5 learning steps, 1,000 molecules per learning step, 200 learning steps, and a score of zero for invalid, improperly terminated and duplicate molecules.
 
-`max_nodes` is the exception, because it is set by the data rather than chosen: take it from the 99th percentile heavy-atom count of the dataset and record the number. Preprocessing detects that percentile itself, and a value stated in the config overrides the detection so a run stays reproducible. Molecules above `max_nodes` cannot be represented at that padding width and are dropped before splitting, counted in `preprocessing.yaml`. Note that preprocessing decomposes each molecule into one subgraph per construction action, so training-set size, HDF5 size and epoch time all grow superlinearly with molecule size. Measure on a small subset before committing to a full preprocessing run.
+`max_nodes` is the exception, because it is set by the data rather than chosen: take it from the 99th percentile heavy-atom count of the dataset and record the number. Note that preprocessing decomposes each molecule into one subgraph per construction action, so training-set size, HDF5 size and epoch time all grow superlinearly with molecule size. Measure on a small subset before committing to a full preprocessing run.
 
 Any other change to a hyperparameter needs a stated reason and my approval first.
 
@@ -60,19 +60,19 @@ Any other change to a hyperparameter needs a stated reason and my approval first
 
 ## Setup
 
-Python 3.13. Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; that pair is the single source of truth. Nothing else declares dependencies, on any machine.
+Python 3.11. Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; that pair is the single source of truth. Nothing else declares dependencies, on any machine.
 
 ```bash
 # PyTorch first, matched to your platform (see pytorch.org)
 uv pip install torch
 
 uv sync                     # core
+uv sync --extra oracles     # TDC, for RL and oracle-based evaluation
 uv sync --extra surrogates  # XGBoost, for activity surrogates
-uv sync --extra docking     # AutoDock Vina, for structure-based scoring
 uv sync --extra dev         # ruff, pytest
 ```
 
-Keep the dependency list short. RDKit, PyTorch, h5py, numpy, PyYAML and matplotlib are core. XGBoost and AutoDock Vina are optional extras used by RL and evaluation only; there is no TDC dependency, and oracles are surrogates, docking, or custom callables. Adding a core dependency needs a reason, and any dependency must resolve on both macOS arm64 and Linux aarch64.
+Keep the dependency list short. RDKit, PyTorch, h5py, numpy, PyYAML and matplotlib are core. TDC, XGBoost, FCD and AiZynthFinder are optional extras used by RL and evaluation only. Adding a core dependency needs a reason, and any dependency must resolve on both macOS arm64 and Linux aarch64.
 
 ---
 
@@ -84,12 +84,37 @@ src/metrics/          evaluation (see Evaluation metrics)
 src/oracles/          oracle wrappers, surrogates, and the call-counting cache
 config/defaults.yaml  every parameter and its default value
 experiments/          one directory per experiment (see below)
+tools/                external tools and data this repository depends on (see below)
 tutorials/            one walkthrough per job type
-scripts/              standalone utilities: dataset preparation, feature scanning,
-                      surrogate training, and the cluster self-test
+scripts/              data download and preparation
 submit.py             entry point
 visualize.py          render a .smi file to a grid image
 ```
+
+### External tools
+
+Many metrics and oracles depend on software that is not a plain PyPI install: packages distributed only from
+GitHub, data files extracted from other projects, and model weights downloaded on first use. Those dependencies
+are invisible unless they are collected in one place, and an invisible dependency is one that fails on a cluster
+at midnight.
+
+```
+tools/
+    README.md      the inventory: one entry per tool or data file
+    install.sh     clones and downloads everything at its pinned version; idempotent
+    data/          small externally sourced data files, committed, provenance in the README
+    .gitignore     clones and downloaded weights are not committed
+```
+
+Every entry in `README.md` records what the tool is, which metrics or oracles need it, the source URL, the exact
+pinned version or commit, the license, the install command, and whether it is required or optional. When an
+optional tool is absent, the README says which metrics will record null, so a sparse `metrics.json` is explicable
+without reading code.
+
+Downloaded model weights are pinned to a path under `tools/`, never left to a library's default cache. Cluster home
+directories have small quotas and a surprise download into one is a failure waiting to happen.
+
+A dependency that is used but not recorded in `tools/README.md` is a bug.
 
 ### Experiments
 
@@ -98,6 +123,7 @@ Every run lives in an experiment directory. Nothing is written outside one.
 ```
 experiments/<experiment_name>/
     experiment.yaml              optional; settings shared by all jobs here
+    results/                     optional; cross-job aggregates only, such as aggregate.json over seeds
     jobs/
         <job_name>/
             config.yaml          this job's settings
@@ -106,6 +132,8 @@ experiments/<experiment_name>/
             checkpoints/         model state
             logs/                stdout, stderr, tensorboard
 ```
+
+`metrics.json` and `report.html` are written by every job type that produces metrics, which is `generate` in both modes, `goal_directed`, `unconditional` and `conditional`, since model efficiency is reported for every trained model.
 
 `<experiment_name>` describes the question, not the method: `conditional_logp_zinc`, not `run3`. A job directory is self-contained and can be copied or deleted on its own.
 
@@ -202,8 +230,9 @@ All metrics live in `src/metrics/` and have exactly one implementation. Do not c
 
 ### Reporting conventions
 
-- Sample **N = 10,000** molecules and run **3 seeds**; report mean and standard deviation.
-- **Key names are exactly as tabulated below.** No reference-set suffixes: the reference set for each metric is fixed by its definition here, and the definition is the documentation.
+- Sample **N = 10,000** molecules and run **3 seeds**; report mean and standard deviation. What a seed controls differs by job: in a `generate` job it controls sampling from a fixed checkpoint, so one job runs the seed list and reports mean and standard deviation across them; in a `goal_directed` job it controls the optimization run itself, so each seed is its own job and the aggregate is written to `experiments/<exp>/results/aggregate.json`.
+- **Key names are exactly as tabulated below.** No reference-set suffixes: the reference set for each metric is fixed by its definition here, and the definition is the documentation. Three additions are allowed: the supporting counts `n_sampled`, `n_valid`, `n_unique_valid` and `n_unique_valid_novel`, which make every funnel denominator reconstructable; a `baseline_` prefix for the unconditional baseline of a conditional metric; and a `_<class>` suffix for the per-class breakdown of a categorical conditional metric, which keeps the dictionary flat.
+- **Metrics come from the sample that matches their meaning.** For a goal-directed job, sample-efficiency and top-100 metrics are computed over the optimization trajectory, because that is what spending oracle calls means; generation-quality metrics are computed over a fresh sample from the best agent, because that is the model you would deploy. Each metric's docstring and the report state which sample it used.
 - **Validity, uniqueness and novelty compose as a funnel**, computed sequentially on the surviving subset. Each stage is reported both as a conditional rate and as a fraction of N, since the two answer different questions.
 - **Validity means parsed and sanitized without repair.** RDKit is not permitted to fix valences or charges. A molecule that only parses after repair is invalid.
 - **Every conditional metric is reported alongside its unconditional baseline**, meaning the same model trained without conditioning and sampled the same way. A conditional number with no baseline cannot be read, because nothing separates conditioning from the base rate of the corpus.
@@ -230,7 +259,7 @@ All metrics live in `src/metrics/` and have exactly one implementation. Do not c
 | Key | Definition |
 |---|---|
 | `fcd` | Fréchet ChemNet Distance between generated molecules and the test split |
-| `nll_train`, `nll_validation`, `nll_test` | mean negative log-likelihood of a 10k sample from each split under the model (`sample_mode: evaluate`) |
+| `nll_train`, `nll_validation`, `nll_test` | mean negative log-likelihood of a 10k sample from each split under the model (`sample_mode: evaluate`), per molecule and summed over construction actions. Comparable across splits of one dataset, not across datasets with different molecule sizes |
 | `uc_jsd` | uniformity-completeness JSD (`sample_mode: evaluate`) |
 
 FCD is the headline number for unconditional generation. V.U.N. saturates on modern models and no longer separates them; distribution match does.
@@ -321,8 +350,6 @@ Only the non-obvious parts are recorded here. Read the code for the rest.
 
 **Data flow.** SMILES → `DataProcessor` → HDF5 (per-subgraph nodes, edges, action probabilities) → `BlockDataLoader` → GGNN → action logits → `GraphGenerator` (add atom / add bond / terminate).
 
-The HDF5 is written gzip-compressed with the byte shuffle, in chunks of whole rows. `action_probs` and `edges` are one-hot and over 99% zeros, so this is around a 600x reduction on disk for about 6% added loader time on CPU; it is what makes a large set at `max_nodes` 120 storable at all.
-
 **Conditional generation.** When `condition_dim > 0`, the GGNN builds a `ConditionEncoder` (2-layer MLP) and one extra `msg_nn` for a virtual edge type. The condition vector is encoded into a seed embedding that initializes a virtual node prepended to the graph; every real node receives messages from the seed at each round. The seed is stripped before readout, so the output shape is unchanged, but the readout *input* is not: the condition embedding is also concatenated to the graph embedding, making `graph_emb_size = gather_width + condition_embedding_dim`. That concatenation is load-bearing. The first action of every molecule is taken on an empty graph, where no real node exists to carry the seed's message.
 
 `DataProcessor` stores `condition_vector` (float32, `n_subgraphs × condition_dim`) in the HDF5. `HDFDataset` yields 4-tuples when that dataset exists and 3-tuples otherwise.
@@ -343,7 +370,7 @@ matplotlib is the only plotting dependency. Do not add seaborn, plotly, or anyth
 
 - **Run from the repo root with `python submit.py`.** The editable install writes a `.pth` file that does not survive a repository path containing spaces, so console entry points and `from metrics import ...` fail. Moving the repository to a path without spaces would remove this constraint; until then, do not rely on the installed entry point.
 - **`[Xe]` is not a molecule.** Invalid graphs must not be written to `.smi` as `[Xe]`, because RDKit parses that as valid xenon and it silently inflates validity. Write nothing and record the index.
-- **Generated-file line alignment.** `.smi`, `.likelihood` and `.valid` must line up by line number, with no per-batch headers. Only valid molecules get a line, so the `.valid` holds each written molecule's index in the generated batch; the indices it skips are the invalid graphs. A placeholder line is not an option in either direction: `[Xe]` reads back as valid xenon, and a blank line is skipped on the next read, which collapses the alignment it was meant to preserve.
+- **Generated-file line alignment.** `.smi`, `.likelihood` and `.valid` must line up by line number, with no per-batch headers.
 - **The test split is not touched during development.** Not for early stopping, not for a quick sanity check, not for choosing a hyperparameter.
 - **No cluster-specific code paths.** Anything that differs between Arrhenius and another SLURM cluster is a value in `slurm:`, not a branch in Python.
 
@@ -360,7 +387,7 @@ Not yet implemented, as of the last update to this file:
 - Virtual screening baseline, fixed-budget sample efficiency, AUC, top-100 diversity, quality-filtered top-k
 - The optimization and evaluation surrogate pair, and the applicability-domain check
 - Model efficiency metrics
-- SLURM support exists — `--slurm`, the one template, `run.sbatch`, and the `slurm:` config block — but no job has been submitted to a scheduler, and the aarch64 plus CUDA 13 environment is unverified. The rendering and the error paths are tested; `sbatch`, the module names, the partition names and the account suffix are not
+- SLURM support: `--slurm`, the template, `run.sbatch`, and the `slurm:` config block. Nothing has been run on Arrhenius, and the aarch64 plus CUDA 13 environment is unverified
 - Tutorials: `tutorials/` still describes the pre-restructure interface
 
 Open defects are in `TODO.md`. For now just append to that file, do not execute or try to solve anything in that file.

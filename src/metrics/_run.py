@@ -12,6 +12,7 @@ already saved.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from . import _budget, _core, _efficiency, _html, _json
@@ -134,13 +135,13 @@ def evaluate_generation(
     training_smiles = read_smiles(constants.training_set)
     test_smiles = read_smiles(constants.test_set)
 
-    metrics.update(
-        _core.compute_core_metrics(
-            generated_smiles,
-            n_sampled=constants.n_samples,
-            training_smiles=training_smiles,
-        )
+    core = _core.compute_core_metrics(
+        generated_smiles,
+        n_sampled=constants.n_samples,
+        training_smiles=training_smiles,
     )
+    unavailable.update(core.pop("_filter_unavailable", {}))
+    metrics.update(core)
 
     # fcd, against the test split.
     from ._unconditional import _compute_fcd
@@ -176,13 +177,13 @@ def evaluate_generation(
 
     _blocked(metrics, unavailable)
 
-    if model is not None:
-        metrics["n_parameters"] = _efficiency.n_parameters(model)
-    metrics["peak_memory_mb"] = _efficiency.peak_memory_mb()
-    if inference_seconds is not None:
-        metrics["inference_s_per_10k"] = _efficiency.inference_s_per_10k(
-            inference_seconds, constants.n_samples
-        )
+    _efficiency_metrics(
+        metrics,
+        unavailable,
+        model=model,
+        inference_seconds=inference_seconds,
+        n_sampled=constants.n_samples,
+    )
 
     unique_valid = sorted({s for s in _core.canonical_smiles(generated_smiles) if s})
     _finish(
@@ -207,6 +208,8 @@ def _condition_metrics(
     tolerances = getattr(constants, "condition_tolerance", None) or {}
     baseline_dir = getattr(constants, "baseline_results_dir", None)
     baseline_smiles = read_smiles(f"{baseline_dir}") if baseline_dir else []
+    if baseline_smiles:
+        _check_baseline_comparable(constants, baseline_dir)
 
     results: dict = {}
     # Unique valid molecules, which is how CLAUDE.md denominates every other
@@ -309,13 +312,13 @@ def evaluate_goal_directed(
     unavailable: dict = {}
 
     training_smiles = read_smiles(constants.training_set)
-    metrics.update(
-        _core.compute_core_metrics(
-            generated_smiles,
-            n_sampled=n_generated,
-            training_smiles=training_smiles,
-        )
+    core = _core.compute_core_metrics(
+        generated_smiles,
+        n_sampled=n_generated,
+        training_smiles=training_smiles,
     )
+    unavailable.update(core.pop("_filter_unavailable", {}))
+    metrics.update(core)
 
     # Unique valid molecules with their best score, which is the denominator
     # CLAUDE.md gives success_rate.
@@ -354,11 +357,9 @@ def evaluate_goal_directed(
 
     _blocked(metrics, unavailable, goal_directed=True)
 
-    if model is not None:
-        metrics["n_parameters"] = _efficiency.n_parameters(model)
-    metrics["peak_memory_mb"] = _efficiency.peak_memory_mb()
-    if train_wall_clock_s is not None:
-        metrics["train_wall_clock_s"] = float(train_wall_clock_s)
+    _efficiency_metrics(
+        metrics, unavailable, model=model, train_wall_clock_s=train_wall_clock_s
+    )
 
     _finish(
         constants,
@@ -383,15 +384,19 @@ def evaluate_training(
     A training job samples molecules only to score itself, so the molecule-level
     tables belong to the `generate` job that follows it. What belongs here is
     the model: its size, what it cost, and the likelihood numbers.
+
+    `nll_train`, `nll_validation` and `nll_test` are **per molecule, summed
+    over construction actions** -- the molecule's negative log-likelihood under
+    the model, not a per-action or per-token average. They are comparable
+    across the three splits of one dataset, which is what the three keys are
+    for, and not across datasets whose molecules differ in size.
     """
     metrics: dict = {}
     unavailable: dict = {}
 
-    if model is not None:
-        metrics["n_parameters"] = _efficiency.n_parameters(model)
-    metrics["peak_memory_mb"] = _efficiency.peak_memory_mb()
-    if train_wall_clock_s is not None:
-        metrics["train_wall_clock_s"] = float(train_wall_clock_s)
+    _efficiency_metrics(
+        metrics, unavailable, model=model, train_wall_clock_s=train_wall_clock_s
+    )
 
     for key in ("nll_train", "nll_validation", "nll_test"):
         value = (nll or {}).get(key)
@@ -421,10 +426,77 @@ def evaluate_model_scoring(
     metrics: dict = dict(nll)
     metrics["uc_jsd"] = uc_jsd
     unavailable: dict = {}
-    if model is not None:
-        metrics["n_parameters"] = _efficiency.n_parameters(model)
-    metrics["peak_memory_mb"] = _efficiency.peak_memory_mb()
+    _efficiency_metrics(metrics, unavailable, model=model)
     _finish(constants, metrics, unavailable)
+
+
+def _check_baseline_comparable(constants, baseline_smi_path: str) -> None:
+    """
+    Fail unless the baseline sample was drawn the same way as this one.
+
+    A baseline drawn at a different sample size or under a different seed
+    silently changes every conditional comparison, and nothing else in the
+    pipeline would notice: the numbers stay plausible and the conclusion moves.
+    """
+    baseline_metrics = Path(baseline_smi_path).parent / "metrics.json"
+    if not baseline_metrics.exists():
+        raise ValueError(
+            f"baseline_results_dir points at {baseline_smi_path}, but there is "
+            f"no metrics.json beside it at {baseline_metrics}.\n"
+            "The baseline has to be a completed generate job, so its sample "
+            "size and seed can be checked against this one."
+        )
+    baseline = json.loads(baseline_metrics.read_text())
+    their_n = baseline["metrics"].get("n_sampled")
+    their_seed = baseline["run"].get("seed")
+    if their_n != constants.n_samples or their_seed != constants.seed:
+        raise ValueError(
+            "The unconditional baseline was not sampled like this job, so the "
+            "conditional comparison would not be like for like.\n"
+            f"  this job: n_samples={constants.n_samples}, seed={constants.seed}\n"
+            f"  baseline: n_samples={their_n}, seed={their_seed}\n"
+            f"  baseline: {baseline_metrics}\n"
+            "Re-run the baseline generate job with the same n_samples and seed."
+        )
+
+
+def _efficiency_metrics(
+    metrics: dict,
+    unavailable: dict,
+    *,
+    model=None,
+    train_wall_clock_s: float | None = None,
+    inference_seconds: float | None = None,
+    n_sampled: int | None = None,
+) -> None:
+    """
+    The four model-efficiency keys, always all four.
+
+    An undefined one records null with its reason rather than being left out,
+    because an absent key cannot be told apart from a metric nobody attempted.
+    """
+    metrics["n_parameters"] = None if model is None else _efficiency.n_parameters(model)
+    if model is None:
+        unavailable["n_parameters"] = "no model in scope for this job"
+
+    metrics["peak_memory_mb"] = _efficiency.peak_memory_mb()
+
+    metrics["train_wall_clock_s"] = (
+        None if train_wall_clock_s is None else float(train_wall_clock_s)
+    )
+    if train_wall_clock_s is None:
+        unavailable["train_wall_clock_s"] = "this job type does not train a model"
+
+    metrics["inference_s_per_10k"] = (
+        _efficiency.inference_s_per_10k(inference_seconds, n_sampled)
+        if inference_seconds is not None and n_sampled
+        else None
+    )
+    if metrics["inference_s_per_10k"] is None:
+        unavailable["inference_s_per_10k"] = (
+            "this job type does not sample molecules, so there is no generation "
+            "time to rescale"
+        )
 
 
 def _success_threshold(constants) -> float:
@@ -441,19 +513,15 @@ def _blocked(metrics: dict, unavailable: dict, *, goal_directed: bool = False) -
     threshold nobody approved: these go in a paper, and a plausible wrong
     number is worse than an absent one.
     """
-    reason = (
-        "definition not yet approved: filter_pass_rate names MCF and PAINS "
-        "without a source for MCF, and Ro5_pass_rate / bRo5_pass_rate have no "
-        "numeric thresholds in CLAUDE.md"
-    )
-    keys = ["filter_pass_rate", "Ro5_pass_rate", "bRo5_pass_rate"]
-    if goal_directed:
-        # Needs the structural filters above, so it is blocked on the same
-        # approval; it is a goal-directed metric and belongs to no other job.
-        keys.append("quality_filtered_top10_mean")
-    for key in keys:
-        metrics[key] = None
-        unavailable[key] = reason
+    # filter_pass_rate and Ro5_pass_rate are implemented; bRo5_pass_rate is
+    # not, because its thresholds could not be verified at the source, and
+    # quality_filtered_top10_mean needs only the structural filters, so it is
+    # computed by the goal-directed path rather than blocked here.
+    if goal_directed and "quality_filtered_top10_mean" not in metrics:
+        metrics["quality_filtered_top10_mean"] = None
+        unavailable["quality_filtered_top10_mean"] = (
+            "needs scored molecules with their SA scores"
+        )
 
 
 def _group7_reasons() -> dict:

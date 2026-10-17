@@ -44,7 +44,10 @@ GROUPS: list = [
             "bRo5_pass_rate",
         ],
     ),
-    ("Unconditional", ["fcd", "nll_train", "nll_validation", "nll_test", "uc_jsd"]),
+    (
+        "Unconditional (nll_* are per molecule, summed over construction actions)",
+        ["fcd", "nll_train", "nll_validation", "nll_test", "uc_jsd"],
+    ),
     (
         "Goal-directed",
         [

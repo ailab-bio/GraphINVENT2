@@ -174,7 +174,8 @@ def test_generate_writes_molecules(dataset, checkpoint):
             "seed": 1,
         },
     )
-    assert (job_dir / "results" / "40_samples.smi").exists()
+    # CLAUDE.md's Job types table names this file molecules.smi.
+    assert (job_dir / "results" / "molecules.smi").exists()
 
 
 def test_generate_in_evaluate_mode_scores_the_model(dataset, checkpoint):

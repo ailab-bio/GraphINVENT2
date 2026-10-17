@@ -1,0 +1,104 @@
+#!/bin/bash
+# Install every external tool this project's metrics and oracles need, at the
+# version pinned in README.md. Idempotent: it reports what it installed and
+# what was already present, and re-running it changes nothing.
+#
+#   bash tools/install.sh
+#
+# Run from anywhere; paths are resolved relative to this script.
+set -euo pipefail
+
+TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="$(dirname "$TOOLS")"
+
+# Pins. Change one here and in README.md together.
+PROTAC_SPLITTER_URL="https://github.com/ribesstefano/PROTAC-Splitter.git"
+PROTAC_SPLITTER_SHA="f1920122e1aa4f1d5f3643b8e92e72e99826e43a"
+MCF_URL="https://raw.githubusercontent.com/molecularsets/moses/master/moses/metrics/mcf.csv"
+MCF_SHA256="f4a2bfacb4cb8877"   # first 16 hex of sha256; see README.md
+
+installed=()
+present=()
+
+echo "== GraphINVENT2 external tools =="
+echo "   target: $TOOLS"
+echo
+
+# ---------------------------------------------------------------------------
+# PROTAC-Splitter: component-level metrics (Group 5).
+#
+# Built into its OWN virtual environment, not the project's. Its XGBoost
+# edge-classifier was pickled under xgboost<3 and fails to load under the
+# xgboost>=3.2 this project needs for aarch64 GPU support, with
+# "'XGBModel' object has no attribute 'feature_weights'". The two pins cannot
+# coexist, so src/metrics/_components.py calls into this interpreter.
+# ---------------------------------------------------------------------------
+if [ -x "$TOOLS/PROTAC-Splitter/.venv/bin/python" ]; then
+    present+=("PROTAC-Splitter (venv exists)")
+else
+    echo "-- installing PROTAC-Splitter at ${PROTAC_SPLITTER_SHA:0:8}"
+    if [ ! -d "$TOOLS/PROTAC-Splitter/.git" ]; then
+        git clone "$PROTAC_SPLITTER_URL" "$TOOLS/PROTAC-Splitter"
+    fi
+    git -C "$TOOLS/PROTAC-Splitter" fetch --quiet origin
+    git -C "$TOOLS/PROTAC-Splitter" checkout --quiet "$PROTAC_SPLITTER_SHA"
+    python3 -m venv "$TOOLS/PROTAC-Splitter/.venv"
+    "$TOOLS/PROTAC-Splitter/.venv/bin/python" -m pip install --quiet --upgrade pip
+    "$TOOLS/PROTAC-Splitter/.venv/bin/python" -m pip install --quiet \
+        "$TOOLS/PROTAC-Splitter"
+    installed+=("PROTAC-Splitter + its own venv")
+fi
+
+# Its XGBoost weights (~17 MB) download from the HuggingFace Hub on first use.
+# Pinned here rather than left to the library's default cache: a cluster home
+# directory has a small quota and a surprise download into one fails at
+# midnight. src/metrics/_components.py sets HF_HOME to this path.
+mkdir -p "$TOOLS/hf-cache"
+if [ -n "$(find "$TOOLS/hf-cache" -name '*.json' -o -name '*.ubj' 2>/dev/null | head -1)" ]; then
+    present+=("PROTAC-Splitter model weights (hf-cache populated)")
+else
+    echo "-- warming the PROTAC-Splitter model cache"
+    HF_HOME="$TOOLS/hf-cache" "$TOOLS/PROTAC-Splitter/.venv/bin/python" - <<'PROBE' || \
+        echo "   (download failed; component metrics will record null until it succeeds)"
+from rdkit import RDLogger
+RDLogger.DisableLog("rdApp.*")
+from protac_splitter import split_protac
+split_protac("CCO", model="xgboost", verbose=0)
+PROBE
+    installed+=("PROTAC-Splitter model weights into tools/hf-cache")
+fi
+
+# ---------------------------------------------------------------------------
+# MOSES MCF SMARTS: filter_pass_rate. Committed, because it is 739 bytes of
+# data rather than a package, and the upstream file has no release tag.
+# ---------------------------------------------------------------------------
+if [ -s "$TOOLS/data/mcf.csv" ]; then
+    present+=("tools/data/mcf.csv")
+else
+    echo "-- fetching MOSES mcf.csv"
+    curl -fsSL "$MCF_URL" -o "$TOOLS/data/mcf.csv"
+    installed+=("tools/data/mcf.csv")
+fi
+got="$(shasum -a 256 "$TOOLS/data/mcf.csv" | cut -c1-16)"
+if [ "$got" != "$MCF_SHA256" ]; then
+    echo "!! tools/data/mcf.csv checksum is $got, expected $MCF_SHA256"
+    echo "   The upstream file changed. Check it before trusting filter_pass_rate."
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# fcd: the fcd metric. Plain PyPI, but it downloads ChemNet weights on first
+# use, so the cache goes under tools/ for the same quota reason as above.
+# ---------------------------------------------------------------------------
+if "$REPO/.venv/bin/python" -c "import fcd" 2>/dev/null; then
+    present+=("fcd")
+else
+    echo "-- fcd is not installed; the fcd metric will record null"
+    echo "   install with: uv pip install fcd   (then re-run this script)"
+fi
+
+echo
+echo "installed:"; for x in "${installed[@]:-}"; do [ -n "$x" ] && echo "  + $x"; done
+echo "already present:"; for x in "${present[@]:-}"; do [ -n "$x" ] && echo "  = $x"; done
+echo
+echo "Done. See tools/README.md for what records null when a tool is absent."
