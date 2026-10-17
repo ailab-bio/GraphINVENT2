@@ -163,7 +163,6 @@ class GraphGenerator:
         # action or an invalid action is sampled, until `self.batch_size` number
         # of graphs have been generated
         while n_generated_so_far < self.batch_size:
-
             # predict the action probabilities for this batch of graphs
             if self.condition_vector is not None:
                 cond = self.condition_vector.expand(self.nodes.shape[0], -1)

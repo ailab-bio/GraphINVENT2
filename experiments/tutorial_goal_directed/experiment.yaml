@@ -1,0 +1,3 @@
+# Optimize the pretrained debug model toward QED with policy-gradient RL.
+dataset_dir: data/datasets/debug
+seed: 1

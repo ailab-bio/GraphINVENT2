@@ -501,7 +501,6 @@ class PreprocessingGraph(MolecularGraph):
 
         # loop until all nodes have been visited
         while len(nodes_visited) < self.n_nodes:
-
             neighbor_nodes = []
             for bond_type in range(self.constants.n_edge_features):
                 neighbor_nodes.extend(

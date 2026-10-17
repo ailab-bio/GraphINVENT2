@@ -8,7 +8,6 @@ docker/graphinvent.sif
 .vscode/*
 .claude/*
 TODO.md
-CLAUDE.md
 manuscript/*
 
 # Ignore raw third-party database downloads. TPDdb publishes no explicit
@@ -26,8 +25,10 @@ train.csv
 # Ignore CSV files in the data/pre-training/ directory
 data/pre-training/*.csv
 
-# Ignore anything created in the `output/` directory and any SLURM output files
-output/*
+# Ignore everything a job writes; only config.yaml and experiment.yaml are kept
+experiments/*/jobs/*/results/
+experiments/*/jobs/*/checkpoints/
+experiments/*/jobs/*/logs/
 slurm*.out
 
 # Ignore Python cache files and directories

@@ -1,0 +1,8 @@
+#!/bin/bash
+#SBATCH --job-name={job_name}
+#SBATCH --time={time}
+#SBATCH --output={logs_dir}slurm-%j.out
+#SBATCH --error={logs_dir}slurm-%j.err
+{resources}export QT_QPA_PLATFORM=offscreen
+cd {repo_root}
+{python} submit.py {job_dir}

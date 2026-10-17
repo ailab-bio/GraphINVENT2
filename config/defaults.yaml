@@ -1,0 +1,169 @@
+# Every GraphINVENT2 parameter and its default value.
+#
+# Three layers are merged key by key, later wins:
+#   1. this file
+#   2. experiments/<exp>/experiment.yaml   (optional)
+#   3. experiments/<exp>/jobs/<job>/config.yaml
+#
+# Omitting a key inherits it. The merged result is written to the job's
+# results/config.resolved.yaml.
+
+# --- what to run -----------------------------------------------------------
+
+# preprocess | unconditional | conditional | goal_directed | generate
+job_type: null
+
+# dataset directory holding train.smi, valid.smi, test.smi and the HDF5 files
+dataset_dir: null
+
+# 0 = non-deterministic; any positive integer fixes all RNG sources
+seed: 0
+
+# cuda | mps | cpu; "cuda" falls back to mps then cpu when unavailable
+device: cuda
+
+# --- preprocessing ---------------------------------------------------------
+
+# source file to split into train/valid/test; null = dataset_dir is pre-split
+smiles_file: null
+
+# scaffold | random | custom
+split_type: scaffold
+train_frac: 0.8
+valid_frac: 0.1
+
+# derive atom_types, formal_charge, imp_H and max_n_nodes from the SMILES
+auto_detect_features: true
+
+# extra .smi file or dataset directory to include in the feature scan, so a
+# transfer-learning pair shares one vocabulary
+extra_dataset: null
+
+# feature vocabulary; empty means auto-detected
+atom_types: []
+formal_charge: []
+imp_H: []
+chirality: ["None", "R", "S"]
+max_n_nodes: 0
+
+use_aromatic_bonds: true
+use_canon: true
+use_chirality: false
+use_explicit_H: false
+ignore_H: false
+
+# breadth-first ("bfs") or depth-first ("dfs") decoding route
+decoding_route: bfs
+
+# resume an interrupted preprocessing or training job from its saved state
+restart: false
+
+# --- training --------------------------------------------------------------
+
+batch_size: 1000
+block_size: 100000
+epochs: 100
+init_lr: 1.0e-4
+max_rel_lr: 10
+min_rel_lr: 1.0e-4
+accumulation_steps: 10
+n_workers: 0
+
+# epochs between sampling runs during training
+sample_every: 10
+# molecules generated per sampling run
+n_samples: 2000
+
+use_tensorboard: false
+
+# checkpoint to continue training from; setting it makes an unconditional job
+# a transfer-learning job
+resume_from: null
+
+# --- model architecture ----------------------------------------------------
+#
+# These keys come from the checkpoint when resume_from or pretrained_model_path
+# is set. Setting one to a conflicting value there is an error.
+
+enn_depth: 2
+enn_dropout_p: 0.0
+enn_hidden_dim: 128
+mlp1_depth: 2
+mlp1_dropout_p: 0.0
+mlp1_hidden_dim: 256
+mlp2_depth: 2
+mlp2_dropout_p: 0.0
+mlp2_hidden_dim: 256
+gather_att_depth: 2
+gather_att_dropout_p: 0.0
+gather_att_hidden_dim: 128
+gather_emb_depth: 2
+gather_emb_dropout_p: 0.0
+gather_emb_hidden_dim: 128
+gather_width: 100
+hidden_node_features: 100
+message_passes: 3
+message_size: 100
+
+# --- conditional generation ------------------------------------------------
+
+# null = unconditional; {"properties": ["pLogS"], "source": "smiles_file"}
+conditioning: null
+# 0 = unconditional; N = N-dimensional property vector
+condition_dim: 0
+# condition encoder output size; 0 means use hidden_node_features
+condition_embedding_dim: 0
+# injection mechanism; only "virtual_node" is implemented
+condition_type: virtual_node
+# property values to generate with, e.g. {"pLogS": -1.5}
+sample_conditions: null
+
+# --- goal-directed RL ------------------------------------------------------
+
+# checkpoint the agent and the frozen prior start from
+pretrained_model_path: null
+
+# "target_size={int}", "logp_target={float}", "QED", "{name}_activity", or the
+# name of an entry in `oracles`
+score_components: ["QED"]
+score_thresholds: [0.5]
+# "continuous" ignores the thresholds; "binary" scores 1 iff all are met
+score_type: binary
+
+# paths to pickled scikit-learn activity models, keyed by score component
+qsar_models: {}
+
+# user-defined oracles, {name: spec}; spec has "type" ("sklearn" | "python" |
+# "vina") plus that type's parameters, and optional "transform"/"direction"
+oracles: {}
+
+# uncertainty-aware reward and loss shaping (Medina & Janet, arXiv:2606.24990)
+# "mode": none | score | loss | both; "components" maps a component to its method
+uncertainty_modulation: {}
+
+# contribution of the score to the augmented log-likelihood
+sigma: 20
+# contribution of the best agent so far (BASF) to the loss, in [0, 1]
+alpha: 0.5
+
+# total oracle call budget; null = run for `epochs` steps instead
+oracle_budget: null
+# oracle call counts at which to checkpoint and evaluate
+checkpoint_oracle_counts: [1000, 3000, 10000]
+eval_sample_size: 30000
+# a molecule is a success at or above this score
+success_threshold: 0.5
+
+# --- generation and evaluation ---------------------------------------------
+
+# "generate" writes molecules and metrics; "evaluate" computes NLL and UC-JSD
+sample_mode: generate
+
+# --- SLURM -----------------------------------------------------------------
+
+slurm:
+  account: null
+  partition: null
+  time: "0-06:00:00"
+  gpus: 0
+  memory: null

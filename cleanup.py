@@ -1,7 +1,7 @@
 """
 Cleanup tool for GraphINVENT2.
 
-Removes stale output runs, preprocessed HDF5/split-SMILES files, and
+Removes job results, preprocessed HDF5/split-SMILES files, and
 _previous_run_* backup directories.  Always shows an itemised preview and
 requires the user to type "yes" before anything is deleted.
 
@@ -10,7 +10,7 @@ Usage examples
 # Preview everything that would be removed (dry run)
 python cleanup.py --all --dry-run
 
-# Clean output directories only
+# Clean job results, checkpoints and logs only
 python cleanup.py --outputs
 
 # Clean preprocessed data only (HDF5 + auto-generated split .smi files)
@@ -23,7 +23,7 @@ python cleanup.py --backups
 python cleanup.py --all
 
 # Scope to specific paths
-python cleanup.py --outputs --output-dir ./output/debug
+python cleanup.py --outputs --experiments-dir experiments
 python cleanup.py --preprocessed --dataset-dir data/datasets/debug data/datasets/test
 """
 
@@ -59,23 +59,20 @@ def _fmt_size(path: Path) -> str:
         return "?"
 
 
-def _collect_outputs(output_dir: Path) -> list[Path]:
+def _collect_outputs(experiments_dir: Path) -> list[Path]:
     """
-    Collect all job-run directories under *output_dir*.
+    Collect the results/, checkpoints/ and logs/ directories of every job under
+    *experiments_dir*, leaving each job's config.yaml in place.
 
-    Structure:  output/<dataset>/<job_type>/<job_name>/
-                output/<dataset>/<job_type>/<job_name>/tensorboard/
-
-    Everything at depth >= 1 inside output_dir is considered a target so the
-    user can remove a whole dataset subtree or a single job run depending on
-    which output_dir they pass.
+    Structure:  experiments/<experiment>/jobs/<job>/{results,checkpoints,logs}/
     """
     targets: list[Path] = []
-    if not output_dir.exists():
-        return targets
-    for child in sorted(output_dir.iterdir()):
-        if child.is_dir():
-            targets.append(child)
+    for job_dir in sorted(experiments_dir.glob("*/jobs/*")):
+        targets += [
+            job_dir / name
+            for name in ("results", "checkpoints", "logs")
+            if (job_dir / name).is_dir()
+        ]
     return targets
 
 
@@ -219,7 +216,7 @@ def _parse_args() -> argparse.Namespace:
     what.add_argument(
         "--outputs",
         action="store_true",
-        help="Remove directories inside --output-dir (job run outputs).",
+        help="Remove the results/, checkpoints/ and logs/ of every job.",
     )
     what.add_argument(
         "--preprocessed",
@@ -244,11 +241,11 @@ def _parse_args() -> argparse.Namespace:
     # Where to look
     where = parser.add_argument_group("where to look")
     where.add_argument(
-        "--output-dir",
+        "--experiments-dir",
         type=Path,
-        default=Path("output"),
+        default=Path("experiments"),
         metavar="PATH",
-        help="Root output directory to clean (default: ./output).",
+        help="Experiments directory to clean (default: ./experiments).",
     )
     where.add_argument(
         "--dataset-dir",
@@ -311,19 +308,19 @@ def main() -> None:
         _add(
             [
                 p
-                for p in _collect_outputs(args.output_dir)
+                for p in _collect_outputs(args.experiments_dir)
                 if not p.name.startswith(_BACKUP_PREFIX)
             ]
         )
     elif args.outputs:
-        _add(_collect_outputs(args.output_dir))
+        _add(_collect_outputs(args.experiments_dir))
 
     if args.preprocessed:
         _add(_collect_preprocessed(dataset_dirs))
 
     if args.backups:
         search_roots = list(dataset_dirs) + (
-            [args.output_dir] if args.output_dir.exists() else []
+            [args.experiments_dir] if args.experiments_dir.exists() else []
         )
         _add(_collect_backups(search_roots))
 

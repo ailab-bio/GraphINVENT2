@@ -1,0 +1,9 @@
+job_type: conditional
+epochs: 4
+batch_size: 50
+accumulation_steps: 1
+sample_every: 2
+n_samples: 20
+device: cpu
+sample_conditions:
+  logP: 1.0

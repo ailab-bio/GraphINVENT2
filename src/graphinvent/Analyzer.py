@@ -28,6 +28,13 @@ import util
 from parameters.config import constants
 from torch.utils.tensorboard import SummaryWriter
 
+# Pairwise Tanimoto over the generated set is O(n^2), so it runs on a
+# subsample once the set is larger than this.
+DIVERSITY_MAX_MOLECULES = 10000
+
+# K for the top-K nearest-neighbor similarity against the test set.
+TEST_SIMILARITY_TOP_K = 10
+
 
 class Analyzer:
     """
@@ -185,9 +192,9 @@ class Analyzer:
         # write results to disk
         import os as _os
 
-        _val_log = constants.job_dir + "validation.log"
+        _val_log = constants.logs_dir + "validation.log"
         util.write_validation_scores(
-            output_dir=constants.job_dir,
+            output_dir=constants.logs_dir,
             epoch_key=epoch_key,
             model_scores=model_scores,
             tb_writer=self.tb_writer,
@@ -237,11 +244,7 @@ class Analyzer:
         prop_dict[(epoch_key, "run_time")] = round(time.time() - self.start_time, 2)
 
         # calculate validity list now, so as not to write to CSV in previous step
-        _is_generate_mode = constants.job_type == "generate" or (
-            constants.job_type == "sample"
-            and getattr(constants, "sample_mode", "generate") == "generate"
-        )
-        if _is_generate_mode:
+        if constants.job_type == "generate":
             label = f"batch_{generation_batch_idx}"
         else:
             label = f"epoch_{epoch_key[6:]}_batch_{generation_batch_idx}"
@@ -263,33 +266,31 @@ class Analyzer:
 
         # write these properties to disk, only for the first generation batch
         if generation_batch_idx == 0:
-            output = constants.job_dir  # shorthand
+            output = constants.logs_dir  # shorthand
 
             # Compute novelty and SA score for all job types
-            _top_k = int(getattr(constants, "test_similarity_top_k", 10))
+            _top_k = TEST_SIMILARITY_TOP_K
             _extra_cols = [
                 "novelty",
                 "sa_score_mean",
                 "sa_score_median",
                 "sa_score_std",
             ]
-            if getattr(constants, "compute_internal_diversity", True):
-                _extra_cols += [
-                    "internal_diversity",
-                    "mean_internal_similarity",
-                    "max_internal_similarity",
-                ]
-            if getattr(constants, "compute_test_similarity", True):
-                _extra_cols += [
-                    "sim_mean",
-                    "sim_median",
-                    f"sim_top{_top_k}",
-                    "sim_gt_0_4",
-                    "sim_gt_0_6",
-                    "sim_gt_0_8",
-                    "sim_gt_0_9",
-                    "exact_rediscovery_count",
-                ]
+            _extra_cols += [
+                "internal_diversity",
+                "mean_internal_similarity",
+                "max_internal_similarity",
+            ]
+            _extra_cols += [
+                "sim_mean",
+                "sim_median",
+                f"sim_top{_top_k}",
+                "sim_gt_0_4",
+                "sim_gt_0_6",
+                "sim_gt_0_8",
+                "sim_gt_0_9",
+                "exact_rediscovery_count",
+            ]
             validity_t = prop_dict.get((epoch_key, "validity_tensor"))
             if validity_t is not None:
                 ext = self._compute_extended_metrics(
@@ -312,17 +313,17 @@ class Analyzer:
             )
             self.plot_progress(
                 log_path=f"{output}generation.log",
-                job_dir=output,
+                output_dir=output,
             )
 
             # join ts properties with prop_dict for plotting
             merged_properties = {**prop_dict, **training_set_properties}
 
             # plot properties for this epoch
-            if _is_generate_mode:
-                plot_filename = f"{output}generation/features.png"
+            if constants.job_type == "generate":
+                plot_filename = f"{output}features.png"
             else:
-                plot_filename = f"{output}generation/features_{epoch_key[6:]}.png"
+                plot_filename = f"{output}features_{epoch_key[6:]}.png"
             self.plot_molecular_properties(
                 properties=merged_properties, plot_filename=plot_filename
             )
@@ -420,13 +421,12 @@ class Analyzer:
             "sa_score_std",
             "success_rate",
         ]
-        if getattr(constants, "compute_internal_diversity", True):
-            _extra_cols += [
-                "internal_diversity",
-                "mean_internal_similarity",
-                "max_internal_similarity",
-                "internal_diversity_successful",
-            ]
+        _extra_cols += [
+            "internal_diversity",
+            "mean_internal_similarity",
+            "max_internal_similarity",
+            "internal_diversity_successful",
+        ]
         if is_agent:
             ext = self._compute_extended_metrics(
                 generated_graphs=generated_graphs,
@@ -445,7 +445,7 @@ class Analyzer:
                         _extra_cols.append(_comp_key)
 
         # write these properties to disk
-        output = constants.job_dir
+        output = constants.logs_dir
         util.properties_to_csv(
             prop_dict=prop_dict,
             csv_filename=f"{output}generation.log",
@@ -456,7 +456,7 @@ class Analyzer:
         )
         self.plot_progress(
             log_path=f"{output}generation.log",
-            job_dir=output,
+            output_dir=output,
         )
 
         # join ts properties with prop_dict for plotting
@@ -464,7 +464,7 @@ class Analyzer:
 
         # plot properties for this epoch
         plot_label = epoch_key[5:].replace(" ", "_")
-        plot_filename = f"{output}generation/features{plot_label}.png"
+        plot_filename = f"{output}features{plot_label}.png"
         self.plot_molecular_properties(
             properties=merged_properties, plot_filename=plot_filename
         )
@@ -933,7 +933,6 @@ class Analyzer:
 
         # `batch` contains constants.n_samples subgraphs during validation
         for idx, batch in enumerate(dataloader):
-
             # for really large dataloaders (like that of the training set), the
             # line below ensures that the validation NLL is only calculated
             # until the number of structures analyzed is roughly equivalent to
@@ -1033,7 +1032,6 @@ class Analyzer:
 
         # plot the results for the training set and for each epoch
         for epoch_key in keys_to_plot:
-
             # set the plot labels
             if epoch_key == "Training set":
                 m, c, ls = "*", "goldenrod", "-"
@@ -1158,11 +1156,11 @@ class Analyzer:
         """
         score_val = float(score)
         if not append:
-            with open(constants.job_dir + "score.log", "w") as output_file:
+            with open(constants.logs_dir + "score.log", "w") as output_file:
                 output_file.write("Step, Score\n")
                 output_file.write(f"Step {step}, {score_val:.8f}\n")
         else:
-            with open(constants.job_dir + "score.log", "a") as output_file:
+            with open(constants.logs_dir + "score.log", "a") as output_file:
                 output_file.write(f"Step {step}, {score_val:.8f}\n")
 
         if self.create_tensorboard:
@@ -1410,7 +1408,7 @@ class Analyzer:
         }
 
         if scores is not None:
-            threshold = float(getattr(constants, "success_threshold", 0.5))
+            threshold = float(constants.success_threshold)
             result["success_rate"] = metrics.compute_success_rate(scores, threshold)
 
         if include_expensive:
@@ -1423,68 +1421,62 @@ class Analyzer:
                 )
 
         # --- Internal diversity ---
-        if getattr(constants, "compute_internal_diversity", True):
-            all_valid_smiles = [s for s in all_smiles if s is not None]
-            max_mols = getattr(constants, "diversity_max_molecules", 10000)
-            div = metrics.compute_internal_diversity(
-                all_valid_smiles, max_mols=max_mols
-            )
-            result["internal_diversity"] = div["internal_diversity"]
-            result["mean_internal_similarity"] = div["mean_internal_similarity"]
-            result["max_internal_similarity"] = div["max_internal_similarity"]
+        all_valid_smiles = [s for s in all_smiles if s is not None]
+        max_mols = DIVERSITY_MAX_MOLECULES
+        div = metrics.compute_internal_diversity(all_valid_smiles, max_mols=max_mols)
+        result["internal_diversity"] = div["internal_diversity"]
+        result["mean_internal_similarity"] = div["mean_internal_similarity"]
+        result["max_internal_similarity"] = div["max_internal_similarity"]
 
-            # For RL/goal-directed: also compute diversity on successful subset
-            if scores is not None:
-                threshold = float(getattr(constants, "success_threshold", 0.5))
-                n = len(generated_graphs)
-                successful_smiles = [
-                    all_smiles[i]
-                    for i in range(n)
-                    if i < len(scores)
-                    and float(scores[i]) > threshold
-                    and all_smiles[i] is not None
-                ]
-                if len(successful_smiles) >= 2:
-                    div_top = metrics.compute_internal_diversity(
-                        successful_smiles, max_mols=max_mols
-                    )
-                    result["internal_diversity_successful"] = div_top[
-                        "internal_diversity"
-                    ]
-                else:
-                    result["internal_diversity_successful"] = float("nan")
+        # For RL/goal-directed: also compute diversity on successful subset
+        if scores is not None:
+            threshold = float(constants.success_threshold)
+            n = len(generated_graphs)
+            successful_smiles = [
+                all_smiles[i]
+                for i in range(n)
+                if i < len(scores)
+                and float(scores[i]) > threshold
+                and all_smiles[i] is not None
+            ]
+            if len(successful_smiles) >= 2:
+                div_top = metrics.compute_internal_diversity(
+                    successful_smiles, max_mols=max_mols
+                )
+                result["internal_diversity_successful"] = div_top["internal_diversity"]
+            else:
+                result["internal_diversity_successful"] = float("nan")
 
         # --- Test-set similarity ---
-        if getattr(constants, "compute_test_similarity", True):
-            valid_smiles_for_sim = [s for s in all_smiles if s is not None]
-            test_smi_list, test_cond_list = self._load_test_smiles()
-            if test_smi_list and valid_smiles_for_sim:
-                # Build condition_filter from sample_conditions for conditional jobs
-                cond_filter = None
-                sample_conds = getattr(constants, "sample_conditions", None)
-                if sample_conds and test_cond_list is not None:
-                    cond_filter = {
-                        name: {"value": float(val), "tolerance": 0.3}
-                        for name, val in sample_conds.items()
-                    }
-                top_k = int(getattr(constants, "test_similarity_top_k", 10))
-                max_refs = getattr(constants, "test_similarity_max_refs", None)
-                sim = metrics.compute_test_set_similarity(
-                    valid_smiles_for_sim,
-                    test_smi_list,
-                    top_k=top_k,
-                    condition_filter=cond_filter,
-                    test_conditions=test_cond_list,
-                    max_refs=max_refs,
-                )
-                result["sim_mean"] = sim["mean_similarity"]
-                result["sim_median"] = sim["median_similarity"]
-                result[f"sim_top{top_k}"] = sim["top_k_similarity"]
-                result["sim_gt_0_4"] = sim["sim_gt_0_4"]
-                result["sim_gt_0_6"] = sim["sim_gt_0_6"]
-                result["sim_gt_0_8"] = sim["sim_gt_0_8"]
-                result["sim_gt_0_9"] = sim["sim_gt_0_9"]
-                result["exact_rediscovery_count"] = sim["exact_rediscovery_count"]
+        valid_smiles_for_sim = [s for s in all_smiles if s is not None]
+        test_smi_list, test_cond_list = self._load_test_smiles()
+        if test_smi_list and valid_smiles_for_sim:
+            # Build condition_filter from sample_conditions for conditional jobs
+            cond_filter = None
+            sample_conds = constants.sample_conditions
+            if sample_conds and test_cond_list is not None:
+                cond_filter = {
+                    name: {"value": float(val), "tolerance": 0.3}
+                    for name, val in sample_conds.items()
+                }
+            top_k = TEST_SIMILARITY_TOP_K
+            max_refs = None
+            sim = metrics.compute_test_set_similarity(
+                valid_smiles_for_sim,
+                test_smi_list,
+                top_k=top_k,
+                condition_filter=cond_filter,
+                test_conditions=test_cond_list,
+                max_refs=max_refs,
+            )
+            result["sim_mean"] = sim["mean_similarity"]
+            result["sim_median"] = sim["median_similarity"]
+            result[f"sim_top{top_k}"] = sim["top_k_similarity"]
+            result["sim_gt_0_4"] = sim["sim_gt_0_4"]
+            result["sim_gt_0_6"] = sim["sim_gt_0_6"]
+            result["sim_gt_0_8"] = sim["sim_gt_0_8"]
+            result["sim_gt_0_9"] = sim["sim_gt_0_9"]
+            result["exact_rediscovery_count"] = sim["exact_rediscovery_count"]
 
         return result
 
@@ -1498,7 +1490,7 @@ class Analyzer:
         csv_path: str,
     ) -> None:
         """
-        Runs the full evaluation suite for an constrained_rl checkpoint and writes
+        Runs the full evaluation suite for a budget-capped RL checkpoint and writes
         one row to oracle_eval.csv.
 
         Args:
@@ -1579,7 +1571,7 @@ class Analyzer:
     # Progress plot
     # ------------------------------------------------------------------
 
-    def plot_progress(self, log_path: str, job_dir: str) -> None:
+    def plot_progress(self, log_path: str, output_dir: str) -> None:
         """
         Read ``generation.log`` (and ``convergence.log`` for loss curves) and
         plot 8 panels over training progress in a 3×3 grid:
@@ -1589,7 +1581,7 @@ class Analyzer:
         - run_time, training/validation loss, learning rate (row 2)
 
         Error bars (±std) are drawn for all metrics except run_time.
-        The figure is saved to ``<job_dir>/progress.png`` at every epoch/step.
+        The figure is saved to ``<output_dir>/progress.png`` at every epoch/step.
         """
         if not os.path.exists(log_path):
             return
@@ -1663,7 +1655,7 @@ class Analyzer:
         # -----------------------------------------------------------
         # Parse convergence.log for training / validation loss
         # -----------------------------------------------------------
-        convergence_path = os.path.join(job_dir, "convergence.log")
+        convergence_path = os.path.join(output_dir, "convergence.log")
         conv_xs: list = []
         train_losses: list = []
         valid_losses: list = []
@@ -1789,6 +1781,6 @@ class Analyzer:
         a_lr.set_xlabel(loss_x_label, fontsize=8)
         a_lr.tick_params(labelsize=7)
 
-        out_path = os.path.join(job_dir, "progress.png")
+        out_path = os.path.join(output_dir, "progress.png")
         fig.savefig(out_path, dpi=100, bbox_inches="tight")
         plt.close(fig)

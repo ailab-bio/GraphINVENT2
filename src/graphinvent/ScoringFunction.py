@@ -28,6 +28,7 @@ reward or the gradient contribution per component; see
 """
 
 # load general packages and functions
+import pickle
 from collections import namedtuple
 
 import numpy as np
@@ -35,6 +36,18 @@ import sklearn
 import torch
 from rdkit import DataStructs
 from rdkit.Chem import QED, AllChem, Crippen
+
+
+def _load_qsar_model(name: str, path: str) -> sklearn.base.BaseEstimator:
+    """Unpickle the scikit-learn classifier behind a `<name>_activity` component."""
+    with open(path, "rb") as f:
+        model = pickle.load(f)
+    if "classifier_sv" not in model:
+        raise KeyError(
+            f"The QSAR model at {path}, named by score component '{name}', "
+            "has no 'classifier_sv' key. Check how the model was saved."
+        )
+    return model["classifier_sv"]
 
 
 def _ensure_src_on_path() -> None:
@@ -74,7 +87,13 @@ class ScoringFunction:
         """
         self.score_components = constants.score_components  # list
         self.score_type = constants.score_type  # list
-        self.qsar_models = constants.qsar_models  # dict
+        # Only the models a score component actually names are loaded; a stale
+        # entry left in the config costs nothing.
+        self.qsar_models = {
+            name: _load_qsar_model(name, path)
+            for name, path in constants.qsar_models.items()
+            if name in self.score_components
+        }
         self.device = constants.device
         self.max_n_nodes = constants.max_n_nodes
         self.score_thresholds = constants.score_thresholds
@@ -355,7 +374,6 @@ class ScoringFunction:
 
         for score_component in self.score_components:
             if score_component.startswith("target_size="):
-
                 target_size = int(score_component.split("=", 1)[1])
 
                 assert (

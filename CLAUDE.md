@@ -257,6 +257,14 @@ Only the non-obvious parts are recorded here. Read the code for the rest.
 
 ---
 
+## Plots
+
+Every plot in this repository follows the AIME Lab plot style guide. The palette and the matplotlib rcParams live in `src/metrics/plot_style.py`, copied verbatim from the guide; every figure-producing function imports them and sets nothing else, with no per-plot colors, fonts, or sizes. The palette, in cycle order, is Deep Teal `#2D4F54`, Royal Purple `#7B539E`, Soft Lavender `#B8A0D2`, Forest Green `#5A9448`, Muted Plum `#9E4A78` and Dark Slate `#3A3D4A`, with Dark Slate used for all text, axes and annotations in place of black. Sans serif throughout, 11 pt labels and 9.5 pt ticks, all four spines visible at 1.2 pt, no grid, no legend frame. Never put a title inside a plot; titles belong in the figure caption. Panel labels go outside the axes, left of the y-tick labels, via `ax.text(-0.18, 0.97, "(a)", transform=ax.transAxes, fontsize=13, fontweight="bold", va="top", ha="left", color=DARK_SLATE)`. Axis labels carry units. Save every figure as both `.png` at 300 dpi and `.pdf`, into the job's `results/` directory. Any inline SVG in `results/report.html` uses these same hex values, so the report and the paper figures match.
+
+matplotlib is the only plotting dependency. Do not add seaborn, plotly, or anything else.
+
+---
+
 ## Hard constraints
 
 - **Run from the repo root with `python submit.py`.** The editable install writes a `.pth` file that does not survive a repository path containing spaces, so console entry points and `from metrics import ...` fail. Moving the repository to a path without spaces would remove this constraint; until then, do not rely on the installed entry point.
@@ -270,17 +278,14 @@ Only the non-obvious parts are recorded here. Read the code for the rest.
 
 Not yet implemented, as of the last update to this file:
 
-- `experiments/` layout; the repository still has root-level `jobs/` and `output/`
-- YAML configs; currently JSON via `params.json`
-- Three-layer config merge and `config.resolved.yaml`
-- Architecture keys being authoritative from the checkpoint; current precedence is the reverse
-- Three-way split with scaffold splitting as default, recorded in `preprocessing.yaml`, and the split-disjointness test
-- FCD, near-duplicate rate, synthesizability and filter metrics
+- `results/metrics.json`: no job writes one. The metrics in `src/metrics/` are
+  not called from `src/graphinvent/`, which still logs to `logs/generation.log`
+- Near-duplicate rate, scaffold diversity, structural-alert filters, Ro5 and bRo5
 - Visualization and HTML reports after each job in the code
 - All conditional metrics beyond MAE
 - Virtual screening baseline, fixed-budget sample efficiency, AUC, top-100 diversity, quality-filtered top-k
 - Model efficiency metrics
-- Tutorials
+- Tutorials: `tutorials/` still describes the pre-restructure interface
 
 Open defects are in `TODO.md`. For now just append to that file, do not execute or try to solve anything in that file.
 

@@ -30,6 +30,7 @@ import numpy as np
 import torch
 import torch.utils.tensorboard
 import util
+import yaml
 
 # load GraphINVENT-specific functions
 from Analyzer import Analyzer
@@ -202,10 +203,9 @@ class Workflow:
             end_epoch (int)   : Epoch at which to end training.
         """
 
-        job_dir = self.constants.job_dir
         job_type = self.constants.job_type
 
-        if job_type in ("rl", "constrained_rl", "goal_directed"):
+        if job_type == "goal_directed":
             # Reinforcement learning: load a pretrained checkpoint then set up
             # three model copies (agent, frozen prior, best-agent-so-far).
             print("* Defining models for RL fine-tuning.", flush=True)
@@ -215,13 +215,7 @@ class Workflow:
 
             self.restart_epoch = util.get_restart_epoch()
 
-            if self.constants.pretrained_model_path:
-                prior_checkpoint = self.constants.pretrained_model_path
-            else:
-                prior_checkpoint = (
-                    f"{self.constants.pretrained_model_dir}"
-                    f"model_restart_{self.constants.generation_epoch}.pth"
-                )
+            prior_checkpoint = self.constants.pretrained_model_path
 
             _opt_state = None
             _sched_state = None
@@ -229,8 +223,7 @@ class Workflow:
             if self.constants.restart:
                 # Restart: resume the agent from the RL job checkpoint.
                 print("-- Resuming RL agent from checkpoint.", flush=True)
-                agent_dir = self.constants.job_dir
-                _ckpt_path = f"{agent_dir}model_restart_{self.restart_epoch}.pth"
+                _ckpt_path = f"{self.constants.checkpoints_dir}model_restart_{self.restart_epoch}.pth"
                 _ckpt = torch.load(_ckpt_path, map_location="cpu")
                 if isinstance(_ckpt, dict) and "model" in _ckpt:
                     # New-format checkpoint with optimizer/scheduler states
@@ -242,28 +235,16 @@ class Workflow:
                     self.agent_model.load_state_dict(_ckpt)
                 # The prior is always the original pretrained model.
                 print("-- Loading frozen prior from pretrained checkpoint.", flush=True)
-                try:
-                    self.prior_model = util.load_saved_model(
-                        model=self.prior_model, path=prior_checkpoint
-                    )
-                except FileNotFoundError:
-                    self.prior_model = util.load_saved_model(
-                        model=self.prior_model,
-                        path=f"{self.constants.dataset_dir}pretrained_model.pth",
-                    )
+                self.prior_model = util.load_saved_model(
+                    model=self.prior_model, path=prior_checkpoint
+                )
                 self._freeze(self.prior_model)
             else:
                 # Fresh RL start: load pretrained checkpoint as both agent and prior.
                 print("-- Loading pretrained model checkpoint.", flush=True)
-                try:
-                    self.agent_model = util.load_saved_model(
-                        model=self.agent_model, path=prior_checkpoint
-                    )
-                except FileNotFoundError:
-                    self.agent_model = util.load_saved_model(
-                        model=self.agent_model,
-                        path=f"{self.constants.dataset_dir}pretrained_model.pth",
-                    )
+                self.agent_model = util.load_saved_model(
+                    model=self.agent_model, path=prior_checkpoint
+                )
                 self.prior_model = self._freeze(deepcopy(self.agent_model))
 
             self.best_agent_model = self._freeze(deepcopy(self.agent_model))
@@ -283,7 +264,7 @@ class Workflow:
             # spent (one batch of molecules scored per step).  Sizing the cycle
             # from `epochs` in the budget-capped case makes scheduler.step()
             # overrun total_steps and raise part-way through training.
-            if getattr(self.constants, "oracle_budget", None) is not None:
+            if self.constants.oracle_budget is not None:
                 n_rl_steps = math.ceil(
                     self.constants.oracle_budget / self.constants.batch_size
                 )
@@ -310,8 +291,8 @@ class Workflow:
                 print("-- Restoring scheduler state from checkpoint.", flush=True)
                 self.scheduler.load_state_dict(_sched_state)
 
-        elif job_type in ("transfer", "unconditional", "conditional") and getattr(
-            self.constants, "resume_from", None
+        elif (
+            job_type in ("unconditional", "conditional") and self.constants.resume_from
         ):
             # Transfer learning or unconditional with resume_from: load a pretrained checkpoint,
             # then continue with supervised (KL-divergence) training on a new dataset.
@@ -320,16 +301,9 @@ class Workflow:
             self.model = self.create_model()
 
             print("-- Loading pretrained model checkpoint.", flush=True)
-            _resume_path = (
-                getattr(self.constants, "resume_from", None)
-                or self.constants.pretrained_model_path
+            self.model = util.load_saved_model(
+                model=self.model, path=self.constants.resume_from
             )
-            if not _resume_path:
-                _resume_path = (
-                    f"{self.constants.pretrained_model_dir}"
-                    f"model_restart_{self.constants.generation_epoch}.pth"
-                )
-            self.model = util.load_saved_model(model=self.model, path=_resume_path)
 
             print("-- Defining optimizer.", flush=True)
             self.optimizer = torch.optim.Adam(
@@ -351,7 +325,7 @@ class Workflow:
 
             print("-- Loading model from previous checkpoint.", flush=True)
             self.restart_epoch = util.get_restart_epoch()
-            _ckpt_path = f"{job_dir}model_restart_{self.restart_epoch}.pth"
+            _ckpt_path = f"{self.constants.checkpoints_dir}model_restart_{self.restart_epoch}.pth"
             self.model = util.load_saved_model(model=self.model, path=_ckpt_path)
             _ckpt = torch.load(_ckpt_path, map_location="cpu", weights_only=False)
             _opt_state = _ckpt.get("optimizer") if isinstance(_ckpt, dict) else None
@@ -504,19 +478,21 @@ class Workflow:
         subdirectory, matching the pattern used by preprocessing and training.
         """
         job_dir = self.constants.job_dir
+        results_dir = self.constants.results_dir
+        logs_dir = self.constants.logs_dir
 
         candidates = []
-        gen_dir = job_dir + "generation"
+        gen_dir = results_dir + "generation"
         if os.path.isdir(gen_dir):
             candidates.append(gen_dir)
-        for p in Path(job_dir).glob("*_samples.smi"):
+        for p in Path(results_dir).glob("*_samples.smi"):
             stem = p.stem
             for ext in (".smi", ".likelihood", ".valid"):
-                f = job_dir + stem + ext
+                f = results_dir + stem + ext
                 if os.path.exists(f):
                     candidates.append(f)
-        if os.path.exists(job_dir + "generation.log"):
-            candidates.append(job_dir + "generation.log")
+        if os.path.exists(logs_dir + "generation.log"):
+            candidates.append(logs_dir + "generation.log")
 
         if not candidates:
             return
@@ -546,7 +522,7 @@ class Workflow:
         """
         import re as _re
 
-        gen_dir = self.constants.job_dir + "generation/"
+        gen_dir = self.constants.results_dir + "generation/"
         n = self.constants.n_samples
 
         batch_smis = sorted(
@@ -556,7 +532,7 @@ class Workflow:
         if not batch_smis:
             return
 
-        out_base = self.constants.job_dir + f"{n}_samples"
+        out_base = self.constants.results_dir + f"{n}_samples"
         for ext in (".smi", ".likelihood", ".valid"):
             with open(out_base + ext, "w") as out_f:
                 for batch_smi in batch_smis:
@@ -579,14 +555,7 @@ class Workflow:
                 if os.path.exists(p):
                     os.remove(p)
 
-        # move features.png to the job root then delete the now-empty generation/ dir
-        features_src = Path(gen_dir) / "features.png"
-        if features_src.exists():
-            shutil.move(str(features_src), self.constants.job_dir + "features.png")
-        try:
-            Path(gen_dir).rmdir()  # only removes if empty; safe to ignore if not
-        except OSError:
-            pass
+        Path(gen_dir).rmdir()
 
         print(f"* Generated molecules written to: {out_base}.smi", flush=True)
 
@@ -601,24 +570,31 @@ class Workflow:
         the generation/ subdirectory.
         """
         job_dir = self.constants.job_dir
+        results_dir = self.constants.results_dir
+        logs_dir = self.constants.logs_dir
+        checkpoints_dir = self.constants.checkpoints_dir
         job_type = self.constants.job_type
 
         log_names = ["convergence.log", "generation.log", "validation.log"]
-        if job_type in ("rl", "constrained_rl", "goal_directed"):
+        if job_type == "goal_directed":
             log_names.append("score.log")
 
-        stale = [job_dir + name for name in log_names if os.path.exists(job_dir + name)]
+        stale = [
+            logs_dir + name for name in log_names if os.path.exists(logs_dir + name)
+        ]
         # Collect any saved model checkpoints.
-        stale += [str(p) for p in Path(job_dir).glob("model_restart_*.pth")]
+        stale += [str(p) for p in Path(checkpoints_dir).glob("model_restart_*.pth")]
         # Include the generation/ subdirectory if it exists.
-        generation_dir = job_dir + "generation"
+        generation_dir = results_dir + "generation"
         if os.path.isdir(generation_dir):
             stale.append(generation_dir)
         # For constrained_rl / goal_directed with oracle_budget: also back up oracle checkpoint files and eval CSV.
-        if job_type in ("constrained_rl", "goal_directed"):
-            stale += [str(p) for p in Path(job_dir).glob("checkpoint_oracle_*.pth")]
-            if os.path.exists(job_dir + "oracle_eval.csv"):
-                stale.append(job_dir + "oracle_eval.csv")
+        if job_type == "goal_directed":
+            stale += [
+                str(p) for p in Path(checkpoints_dir).glob("checkpoint_oracle_*.pth")
+            ]
+            if os.path.exists(results_dir + "oracle_eval.csv"):
+                stale.append(results_dir + "oracle_eval.csv")
 
         if not stale:
             return
@@ -640,28 +616,29 @@ class Workflow:
 
     def _check_restart_params_match(self, dataset_dir: str) -> bool:
         """
-        Returns True if ``preprocessing_params.json`` in ``dataset_dir`` exists
-        and all keys it contains match the current constants.
+        Returns True if ``preprocessing.yaml`` in ``dataset_dir`` exists and
+        all keys it contains match the current constants.
 
         If the file is absent or any value differs, prints a warning and returns
         False so the caller can fall back to a fresh start.
         """
-        preproc_json = Path(dataset_dir) / "preprocessing_params.json"
-        if not preproc_json.exists():
+        recorded = Path(dataset_dir) / "preprocessing.yaml"
+        if not recorded.exists():
             print(
-                "* restart=True but no preprocessing_params.json found in "
+                "* restart=True but no preprocessing.yaml found in "
                 f"{dataset_dir} — starting fresh.",
                 flush=True,
             )
             return False
 
-        with open(preproc_json) as f:
-            saved = json.load(f)
+        with open(recorded) as f:
+            saved = yaml.safe_load(f)
+        saved.update(saved.pop("split", {}))
 
-        # Compare only the keys that actually determine the HDF contents.  The
-        # file also holds bookkeeping written after the fact (`run_info`,
-        # `n_train`/`n_valid`/`n_test`), which has no counterpart on `constants`
-        # and would make every restart look like a mismatch.
+        # Compare only the keys that determine the HDF contents. The file also
+        # holds bookkeeping written after the fact (`run_info`, the split
+        # counts), which has no counterpart on `constants` and would make every
+        # restart look like a mismatch.
         comparable = (
             "atom_types",
             "formal_charge",
@@ -674,14 +651,16 @@ class Workflow:
             "use_explicit_H",
             "ignore_H",
             "decoding_route",
-            "split_type",
+            "strategy",
             "train_frac",
             "valid_frac",
         )
+        current = {"strategy": self.constants.split_type}
         mismatches = {
-            key: (saved[key], getattr(self.constants, key, None))
+            key: (saved[key], current.get(key, getattr(self.constants, key, None)))
             for key in comparable
-            if key in saved and saved[key] != getattr(self.constants, key, None)
+            if key in saved
+            and saved[key] != current.get(key, getattr(self.constants, key, None))
         }
         if mismatches:
             lines = "\n".join(
@@ -717,7 +696,7 @@ class Workflow:
         restart = self.constants.restart
 
         # If restart=True, validate that current params match the saved
-        # preprocessing_params.json.  If they don't match, the dataset was
+        # preprocessing.yaml.  If they don't match, the dataset was
         # built with different settings — force a fresh start instead.
         if restart:
             restart = self._check_restart_params_match(dataset_dir)
@@ -732,9 +711,10 @@ class Workflow:
                 split_smiles_file(
                     smiles_file=smiles_file,
                     dataset_dir=dataset_dir,
-                    split_type=getattr(self.constants, "split_type", "random"),
-                    train_frac=getattr(self.constants, "train_frac", 0.8),
-                    valid_frac=getattr(self.constants, "valid_frac", 0.1),
+                    split_type=self.constants.split_type,
+                    train_frac=self.constants.train_frac,
+                    valid_frac=self.constants.valid_frac,
+                    seed=self.constants.seed,
                 )
             else:
                 # --- Mode B: verify all three .smi files are present ---
@@ -758,10 +738,7 @@ class Workflow:
             if os.path.exists(self.train_smi_path):
                 self.preprocess_train_data()
 
-            util.update_preprocessing_stats(dataset_dir)
-
         else:  # resume an interrupted preprocessing job with matching params
-
             # Determine where to resume based on which HDF files already exist.
             if os.path.exists(self.train_h5_path):
                 print(
@@ -804,8 +781,6 @@ class Workflow:
                     f"{dataset_dir}. Set 'restart': false to start from scratch."
                 )
 
-            util.update_preprocessing_stats(dataset_dir)
-
     def training_phase(self) -> None:
         """
         Trains model and generates graphs.
@@ -833,7 +808,6 @@ class Workflow:
 
         print("* Beginning training.", flush=True)
         for epoch in range(start_epoch, end_epoch):
-
             self.current_epoch = epoch
             avg_train_loss = self.train_epoch()
             avg_valid_loss = self.validation_epoch()
@@ -861,15 +835,9 @@ class Workflow:
             valid_dataloader=None, train_dataloader=None, start_time=self.start_time
         )
 
-        if self.constants.pretrained_model_path:
-            model_path = self.constants.pretrained_model_path
-        else:
-            self.restart_epoch = self.constants.generation_epoch
-            model_path = (
-                f"{self.constants.job_dir}" f"model_restart_{self.restart_epoch}.pth"
-            )
+        model_path = self.constants.pretrained_model_path
 
-        os.makedirs(self.constants.job_dir + "generation/", exist_ok=True)
+        os.makedirs(self.constants.results_dir + "generation/", exist_ok=True)
 
         print(f"* Loading model from: {model_path}", flush=True)
         self.model = self.create_model()
@@ -898,19 +866,8 @@ class Workflow:
             train_dataloader=self.train_dataloader,
             start_time=self.start_time,
         )
-        if self.constants.pretrained_model_path:
-            model_path = self.constants.pretrained_model_path
-            print(f"* Loading model from: {model_path}", flush=True)
-        else:
-            self.restart_epoch = util.get_restart_epoch()
-            print(
-                f"* Loading model from previous saved state (Epoch "
-                f"{self.restart_epoch}).",
-                flush=True,
-            )
-            model_path = (
-                f"{self.constants.job_dir}" f"model_restart_{self.restart_epoch}.pth"
-            )
+        model_path = self.constants.pretrained_model_path
+        print(f"* Loading model from: {model_path}", flush=True)
         self.model = self.create_model()
         self.model = util.load_saved_model(model=self.model, path=model_path)
 
@@ -952,10 +909,9 @@ class Workflow:
         -------
             score (float) : Model score for fine-tuning job, otherwise simply None.
         """
-        if self.constants.job_type in ("rl", "constrained_rl", "goal_directed"):
+        if self.constants.job_type == "goal_directed":
             model_to_evaluate.eval()
             with torch.no_grad():
-
                 _, score = self.sample_molecules_rl(
                     model_a=model_to_evaluate,
                     model_b=self.prior_model,
@@ -969,7 +925,7 @@ class Workflow:
                 )
                 # `pickle.HIGHEST_PROTOCOL` good for large objects
                 model_path = (
-                    f"{self.constants.job_dir}"
+                    f"{self.constants.checkpoints_dir}"
                     f"model_restart_{self.current_epoch}.pth"
                 )
                 torch.save(
@@ -995,7 +951,7 @@ class Workflow:
                 )
                 # `pickle.HIGHEST_PROTOCOL` good for large objects
                 model_path = (
-                    f"{self.constants.job_dir}"
+                    f"{self.constants.checkpoints_dir}"
                     f"model_restart_{self.current_epoch}.pth"
                 )
                 # Save optimizer/scheduler alongside the weights so a restart
@@ -1070,7 +1026,6 @@ class Workflow:
         accum_counter = 0
 
         for step in range(start_step, end_step):
-
             self.current_epoch = step
             loss, score_a = self.rl_training_step()
 
@@ -1177,7 +1132,6 @@ class Workflow:
         step = 0
 
         while oracle_calls < self.constants.oracle_budget:
-
             self.current_epoch = step
             loss, score_a = self.rl_training_step()
 
@@ -1219,7 +1173,7 @@ class Workflow:
             while remaining_milestones and oracle_calls >= remaining_milestones[0]:
                 milestone = remaining_milestones.pop(0)
                 ckpt_path = (
-                    f"{self.constants.job_dir}" f"checkpoint_oracle_{milestone}.pth"
+                    f"{self.constants.checkpoints_dir}checkpoint_oracle_{milestone}.pth"
                 )
                 print(
                     f"* Saving oracle checkpoint at {milestone} oracle calls "
@@ -1273,7 +1227,7 @@ class Workflow:
         log = self.scoring_function.optimization_log
         if not log:
             return
-        path = self.constants.job_dir + "optimization_log.jsonl"
+        path = self.constants.results_dir + "optimization_log.jsonl"
         with open(path, "w") as f:
             for call_count, score in log:
                 f.write(json.dumps({"oracle_calls": call_count, "score": score}) + "\n")
@@ -1289,7 +1243,7 @@ class Workflow:
         and writes results to ``oracle_eval.csv``.
         """
         print("* Starting oracle checkpoint evaluation.", flush=True)
-        csv_path = self.constants.job_dir + "oracle_eval.csv"
+        csv_path = self.constants.results_dir + "oracle_eval.csv"
         checkpoint_milestones = sorted(self.constants.checkpoint_oracle_counts)
 
         eval_model = self.create_model()
@@ -1297,7 +1251,7 @@ class Workflow:
 
         for oracle_count in checkpoint_milestones:
             ckpt_path = (
-                f"{self.constants.job_dir}" f"checkpoint_oracle_{oracle_count}.pth"
+                f"{self.constants.checkpoints_dir}checkpoint_oracle_{oracle_count}.pth"
             )
             if not os.path.exists(ckpt_path):
                 print(
@@ -1328,8 +1282,7 @@ class Workflow:
             all_terminations = []
 
             print(
-                f"  Generating {n_batches} batches "
-                f"({batch_size} molecules each)...",
+                f"  Generating {n_batches} batches ({batch_size} molecules each)...",
                 flush=True,
             )
             generator = GraphGenerator(model=eval_model, batch_size=batch_size)
@@ -1351,7 +1304,7 @@ class Workflow:
                 # globs for; it previously wrote generation/oracle_eval_<N>.smi
                 # and the evaluator found nothing.
                 smi_filename=(
-                    f"{self.constants.job_dir}" f"checkpoint_{oracle_count}_samples.smi"
+                    f"{self.constants.results_dir}checkpoint_{oracle_count}_samples.smi"
                 ),
                 molecular_graphs_list=all_graphs,
                 write=True,
@@ -1429,7 +1382,7 @@ class Workflow:
         if not self.constants.restart:
             print("* Touching output files.", flush=True)
             # begin writing `generation.log` file
-            csv_path_and_filename = self.constants.job_dir + "generation.log"
+            csv_path_and_filename = self.constants.logs_dir + "generation.log"
             util.properties_to_csv(
                 prop_dict=self.training_set_properties,
                 csv_filename=csv_path_and_filename,
@@ -1442,7 +1395,7 @@ class Workflow:
             util.write_training_status(tb_writer=self.analyzer.tb_writer, append=False)
 
             # create `generation/` subdirectory to write generation output to
-            os.makedirs(self.constants.job_dir + "generation/", exist_ok=True)
+            os.makedirs(self.constants.results_dir + "generation/", exist_ok=True)
 
     def sample_molecules(self, n_samples: int, evaluation: bool = False) -> None:
         """
@@ -1461,7 +1414,7 @@ class Workflow:
         # Every caller writes per-batch files here; `generation_phase` created
         # the directory but `testing_phase` did not, so sample_mode="evaluate"
         # died on a missing path after loading the model.
-        os.makedirs(self.constants.job_dir + "generation/", exist_ok=True)
+        os.makedirs(self.constants.results_dir + "generation/", exist_ok=True)
         generation_batch_size = min(self.constants.batch_size, n_samples)
         n_generation_batches = math.ceil(n_samples / generation_batch_size)
 
@@ -1721,7 +1674,6 @@ class Workflow:
 
         self.model.eval()
         with torch.no_grad():
-
             for batch_idx, batch in tqdm(
                 enumerate(self.valid_dataloader), total=len(self.valid_dataloader)
             ):
@@ -1849,14 +1801,8 @@ class Workflow:
         """
         Generates molecules or evaluates a trained model.
 
-        Replaces the former `generate` (sample_mode='generate') and `test`
-        (sample_mode='evaluate') job types.
+        `sample_mode` selects which.
         """
-        # Backward compat: the deprecated "test" job_type always implied evaluate mode.
-        if self.constants.job_type == "test":
-            self.testing_phase()
-            return
-
         mode = self.constants.sample_mode
         if mode == "generate":
             self.generation_phase()

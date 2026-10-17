@@ -147,33 +147,15 @@ def _write_smiles_with_conditions(
                 f.write(smi + "\n")
 
 
-def _random_split(
-    smiles: List[str],
-    train_frac: float,
-    valid_frac: float,
-    seed: int = 42,
-) -> Tuple[List[str], List[str], List[str]]:
-    """Shuffle with a fixed seed and split into train / valid / test."""
-    train_idx, valid_idx, test_idx = _random_split_indices(
-        len(smiles), train_frac, valid_frac, seed
-    )
-    return (
-        [smiles[i] for i in train_idx],
-        [smiles[i] for i in valid_idx],
-        [smiles[i] for i in test_idx],
-    )
-
-
 def _random_split_indices(
     n: int,
     train_frac: float,
     valid_frac: float,
-    seed: int = 42,
+    seed: int,
 ) -> Tuple[List[int], List[int], List[int]]:
     """Return shuffled integer indices split into train / valid / test."""
-    rng = random.Random(seed)
     indices = list(range(n))
-    rng.shuffle(indices)
+    random.Random(seed).shuffle(indices)
 
     n_train = int(round(n * train_frac))
     n_valid = int(round(n * valid_frac))
@@ -185,123 +167,50 @@ def _random_split_indices(
     )
 
 
-def _butina_split_indices(
+def _scaffold_split_indices(
     smiles: List[str],
     train_frac: float,
     valid_frac: float,
 ) -> Tuple[List[int], List[int], List[int]]:
-    """Butina clustering split returning integer indices."""
-    try:
-        from rdkit import Chem
-        from rdkit.Chem import AllChem, DataStructs
-        from rdkit.ML.Cluster import Butina
-    except ImportError as exc:
-        raise ImportError(
-            "Butina splitting requires RDKit. "
-            "Install it with: conda install -c conda-forge rdkit"
-        ) from exc
+    """
+    Group molecules by Bemis-Murcko scaffold and assign whole groups to splits.
 
-    fps, valid_indices, invalid_count = [], [], 0
-    for orig_idx, smi in enumerate(smiles):
+    Largest group first, so the small tail lands in validation and test and the
+    three splits share no scaffold. A random split would put close analogues on
+    both sides and overstate generalization.
+    """
+    from rdkit import Chem
+    from rdkit.Chem.Scaffolds import MurckoScaffold
+
+    groups: dict = {}
+    for i, smi in enumerate(smiles):
         mol = Chem.MolFromSmiles(smi)
         if mol is None:
-            invalid_count += 1
-            continue
-        fps.append(AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048))
-        valid_indices.append(orig_idx)
+            raise ValueError(f"RDKit cannot parse SMILES on line {i + 1}: {smi}")
+        scaffold = MurckoScaffold.MurckoScaffoldSmiles(mol=mol, includeChirality=False)
+        groups.setdefault(scaffold, []).append(i)
 
-    if invalid_count:
-        print(
-            f"  Warning: {invalid_count} SMILES failed RDKit parsing "
-            "and will be excluded from the Butina split.",
-            flush=True,
-        )
+    # Ties break on the scaffold SMILES so the split does not depend on the
+    # order the dictionary happened to be built in.
+    ordered = sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    print(f"  {len(ordered)} distinct Bemis-Murcko scaffolds.", flush=True)
 
-    n = len(valid_indices)
-    if n == 0:
-        raise ValueError("No valid SMILES found for Butina splitting.")
-
-    print(f"  Computing Tanimoto distance matrix for {n} molecules …", flush=True)
-    dists = []
-    for i in range(1, n):
-        sims = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
-        dists.extend([1.0 - s for s in sims])
-
-    clusters = Butina.ClusterData(dists, n, cutoff=0.4, isDistData=True)
-
+    n = len(smiles)
     n_train_target = int(round(n * train_frac))
     n_valid_target = int(round(n * valid_frac))
 
-    train_idx, valid_idx, test_idx = [], [], []
-    n_assigned_train, n_assigned_valid = 0, 0
-
-    for cluster in clusters:
-        orig_cluster = [valid_indices[i] for i in cluster]
-        if n_assigned_train < n_train_target:
-            train_idx.extend(orig_cluster)
-            n_assigned_train += len(orig_cluster)
-        elif n_assigned_valid < n_valid_target:
-            valid_idx.extend(orig_cluster)
-            n_assigned_valid += len(orig_cluster)
+    train_idx: List[int] = []
+    valid_idx: List[int] = []
+    test_idx: List[int] = []
+    for _, members in ordered:
+        if len(train_idx) < n_train_target:
+            train_idx.extend(members)
+        elif len(valid_idx) < n_valid_target:
+            valid_idx.extend(members)
         else:
-            test_idx.extend(orig_cluster)
+            test_idx.extend(members)
 
     return train_idx, valid_idx, test_idx
-
-
-def _butina_split(
-    smiles: List[str],
-    train_frac: float,
-    valid_frac: float,
-) -> Tuple[List[str], List[str], List[str]]:
-    """
-    Cluster SMILES with the Butina algorithm (ECFP4 / Tanimoto distance ≤ 0.4)
-    and assign clusters to splits so the test set is chemically dissimilar to
-    the training set.
-    """
-    train_idx, valid_idx, test_idx = _butina_split_indices(
-        smiles, train_frac, valid_frac
-    )
-    return (
-        [smiles[i] for i in train_idx],
-        [smiles[i] for i in valid_idx],
-        [smiles[i] for i in test_idx],
-    )
-
-
-def _custom_split(
-    smiles: List[str],
-    train_frac: float,
-    valid_frac: float,
-) -> Tuple[List[str], List[str], List[str]]:
-    """
-    Placeholder for a user-defined splitting strategy.
-
-    Replace the body of this function with your own logic.  The function must
-    return three lists of SMILES strings: (train, valid, test).
-
-    Example skeleton:
-
-        # 1. Compute a custom score or property for each molecule.
-        scores = [my_score_fn(smi) for smi in smiles]
-
-        # 2. Sort or partition by those scores.
-        sorted_smiles = [smi for _, smi in sorted(zip(scores, smiles))]
-
-        # 3. Slice into splits.
-        n = len(sorted_smiles)
-        n_train = int(round(n * train_frac))
-        n_valid = int(round(n * valid_frac))
-        train = sorted_smiles[:n_train]
-        valid = sorted_smiles[n_train:n_train + n_valid]
-        test  = sorted_smiles[n_train + n_valid:]
-        return train, valid, test
-    """
-    raise NotImplementedError(
-        "Custom split selected but _custom_split() has not been implemented.  "
-        "Edit _custom_split() in graphinvent/DataProcessor.py and replace "
-        "this placeholder with your splitting logic."
-    )
 
 
 def split_smiles_file(
@@ -310,6 +219,7 @@ def split_smiles_file(
     split_type: str,
     train_frac: float,
     valid_frac: float,
+    seed: int,
 ) -> None:
     """
     Read `smiles_file`, split it, and write train.smi / valid.smi / test.smi
@@ -321,9 +231,10 @@ def split_smiles_file(
     Args:
         smiles_file : Path to the input SMILES file (plain or TSV).
         dataset_dir : Directory where the split .smi files will be written.
-        split_type  : One of "random", "butina", or "custom".
+        split_type  : One of "scaffold", "random", or "custom".
         train_frac  : Fraction of molecules for the training set.
         valid_frac  : Fraction for the validation set.
+        seed        : Seed for the random split.
     """
     smiles_file = Path(smiles_file)
     dataset_dir = Path(dataset_dir)
@@ -372,24 +283,19 @@ def split_smiles_file(
         flush=True,
     )
 
-    if split_type == "random":
-        train_idx, valid_idx, test_idx = _random_split_indices(
-            len(smiles), train_frac, valid_frac
-        )
-    elif split_type == "butina":
-        train_idx, valid_idx, test_idx = _butina_split_indices(
+    if split_type == "scaffold":
+        train_idx, valid_idx, test_idx = _scaffold_split_indices(
             smiles, train_frac, valid_frac
         )
-    elif split_type == "custom":
-        raise NotImplementedError(
-            "Custom split selected but _custom_split() has not been implemented.  "
-            "Edit split_smiles_file() in graphinvent/DataProcessor.py and add "
-            "your splitting logic."
+    elif split_type == "random":
+        train_idx, valid_idx, test_idx = _random_split_indices(
+            len(smiles), train_frac, valid_frac, seed
         )
     else:
-        raise ValueError(
-            f"Unknown split_type '{split_type}'. "
-            "Choose from: 'random', 'butina', 'custom'."
+        raise NotImplementedError(
+            "split_type: custom selected, but no custom split is implemented. "
+            "Add your splitting logic to split_smiles_file() in "
+            "graphinvent/DataProcessor.py."
         )
 
     train_smi = [smiles[i] for i in train_idx]
@@ -522,7 +428,6 @@ class DataProcessor:
         # in `create_datasets` with "name already exists"; a fresh run must
         # start from an empty file.
         with h5py.File(chunked_path, "a" if resuming else "w") as self.hdf_file:
-
             self.restart_index_file = restart_index_file
 
             if resuming:
@@ -538,9 +443,7 @@ class DataProcessor:
             # this is where we fill the datasets with actual data by looping
             # over subgraphs in blocks of size `constants.batch_size`
             for idx in range(0, self.total_n_subgraphs, constants.batch_size):
-
                 if not self.skip_collection:
-
                     self.get_molecule_subset()
 
                     # add `constants.batch_size` subgraphs from
@@ -662,7 +565,6 @@ class DataProcessor:
             n_subgraphs = graph.get_decoding_route_length()
 
             for new_subgraph_idx in range(n_subgraphs):
-
                 # `get_decoding_route_state() returns a list of [`subgraph`, `action_probs`],
                 subgraph, action_probs = graph.get_decoding_route_state(
                     subgraph_idx=new_subgraph_idx
@@ -902,7 +804,6 @@ class DataProcessor:
             group_size (int)        : Size of "group" (i.e. slice of graphs).
         """
         if self.is_training_set:
-
             analyzer = Analyzer()
             batch_properties = analyzer.evaluate_training_set(
                 preprocessing_graphs=molecular_graphs

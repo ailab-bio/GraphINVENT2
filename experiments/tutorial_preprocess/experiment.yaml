@@ -1,0 +1,3 @@
+# Turn a SMILES file into training-ready HDF5 and fix the three splits.
+dataset_dir: data/datasets/debug
+seed: 1

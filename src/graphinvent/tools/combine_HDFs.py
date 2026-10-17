@@ -46,7 +46,6 @@ def load_ts_properties_from_csv(csv_path: str) -> Union[dict, None]:
     # fix file types within dict in going from `csv_dict` --> `properties_dict`
     properties_dict = {}
     for key, value in csv_dict.items():
-
         # first determine if key is a tuple
         key = eval(key)
         if len(key) > 1:
@@ -74,7 +73,6 @@ def write_ts_properties_to_csv(ts_properties_dict: dict) -> None:
     dict_path = f"data/{dataset}/{split}.csv"
 
     with open(dict_path, "w") as csv_file:
-
         csv_writer = csv.writer(csv_file, delimiter=";")
         for key, value in ts_properties_dict.items():
             if "validity_tensor" in key:

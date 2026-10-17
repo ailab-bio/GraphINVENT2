@@ -55,10 +55,10 @@ def evaluate_unconditional(
         'uniqueness' : float in [0, 1]
         'novelty'    : float in [0, 1] or None
         'vun'        : float in [0, 1] (validity x uniqueness x novelty) or None
-        'diversity'  : float in [0, 1]
-        'sa_mean'    : float
-        'sa_median'  : float
-        'sa_std'     : float
+        'internal_diversity' : float in [0, 1]
+        'sa_score_mean'      : float
+        'sa_score_median'    : float
+        'sa_score_std'       : float
         'fcd'        : float or None
 
     Examples
@@ -77,10 +77,10 @@ def evaluate_unconditional(
             "uniqueness": 0.0,
             "novelty": None if training_smiles is None else 0.0,
             "vun": None,
-            "diversity": 0.0,
-            "sa_mean": float("nan"),
-            "sa_median": float("nan"),
-            "sa_std": float("nan"),
+            "internal_diversity": 0.0,
+            "sa_score_mean": float("nan"),
+            "sa_score_median": float("nan"),
+            "sa_score_std": float("nan"),
             "fcd": None,
         }
 
@@ -175,10 +175,10 @@ def evaluate_unconditional(
         "uniqueness": uniqueness,
         "novelty": novelty,
         "vun": vun,
-        "diversity": diversity,
-        "sa_mean": sa_mean,
-        "sa_median": sa_median,
-        "sa_std": sa_std,
+        "internal_diversity": diversity,
+        "sa_score_mean": sa_mean,
+        "sa_score_median": sa_median,
+        "sa_score_std": sa_std,
         "fcd": fcd_value,
     }
 

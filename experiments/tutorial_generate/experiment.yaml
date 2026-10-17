@@ -1,0 +1,3 @@
+# Sample molecules from a trained checkpoint and evaluate them.
+dataset_dir: data/datasets/debug
+seed: 1

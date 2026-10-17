@@ -68,8 +68,7 @@ class OracleFactory:
         oracle_type = spec.pop("type", None)
         if oracle_type is None:
             raise ValueError(
-                f"Oracle '{name}' has no 'type'. "
-                f"Choose from: {sorted(ORACLE_TYPES)}."
+                f"Oracle '{name}' has no 'type'. Choose from: {sorted(ORACLE_TYPES)}."
             )
         if oracle_type not in ORACLE_TYPES:
             raise ValueError(

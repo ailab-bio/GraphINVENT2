@@ -5,7 +5,6 @@ Contains various miscellaneous useful functions.
 import ast
 import csv
 import datetime
-import json
 import re
 import subprocess
 import sys
@@ -20,6 +19,7 @@ matplotlib.use("Agg")
 import numpy as np
 import rdkit
 import torch
+import yaml
 from matplotlib import pyplot as plt
 from parameters.config import constants
 from rdkit import RDLogger
@@ -55,14 +55,10 @@ def _checkpoint_epoch() -> int:
     """
     Epoch number of the checkpoint being sampled.
 
-    Taken from the `model_restart_<N>.pth` filename when an explicit checkpoint
-    path was given, since `generation_epoch` describes a directory-based lookup
-    that such a job never performs.
+    Taken from the `model_restart_<N>.pth` filename.
     """
-    if getattr(constants, "pretrained_model_path", ""):
-        match = re.search(r"model_restart_(\d+)\.pth", constants.pretrained_model_path)
-        return int(match.group(1)) if match else 0
-    return constants.generation_epoch
+    match = re.search(r"model_restart_(\d+)\.pth", constants.pretrained_model_path)
+    return int(match.group(1)) if match else 0
 
 
 def get_last_epoch() -> str:
@@ -75,9 +71,9 @@ def get_last_epoch() -> str:
           "convergence.log".
     """
 
-    convergence_path = constants.job_dir + "convergence.log"
+    convergence_path = constants.logs_dir + "convergence.log"
 
-    if constants.job_type in ("rl", "constrained_rl", "goal_directed"):
+    if constants.job_type == "goal_directed":
         # RL logs use "Step N" labels; extract just "Step N"
         try:
             epoch_key_tmp, _, _ = read_row(path=convergence_path, row=-1, col=(0, 1, 2))
@@ -91,16 +87,9 @@ def get_last_epoch() -> str:
         except (ValueError, FileNotFoundError):
             epoch_key = "Epoch 1"
 
-        _sample_mode = getattr(constants, "sample_mode", "generate")
-        _is_evaluate = constants.job_type == "test" or (
-            constants.job_type in ("sample", "generate") and _sample_mode == "evaluate"
-        )
-        if _is_evaluate:
-            # checked first: job_type is "generate" for both modes since the
-            # refactor, so testing job_type alone would always pick "generate".
-            epoch_key = f"Epoch EVAL{_checkpoint_epoch()}"
-        elif constants.job_type in ("generate", "sample"):
-            epoch_key = f"Epoch GEN{_checkpoint_epoch()}"
+        if constants.job_type == "generate":
+            mode = "EVAL" if constants.sample_mode == "evaluate" else "GEN"
+            epoch_key = f"Epoch {mode}{_checkpoint_epoch()}"
 
     return epoch_key
 
@@ -202,12 +191,9 @@ def get_restart_epoch() -> Union[int, str]:
     -------
         epoch (int or str) :
     """
-    if (
-        constants.job_type in ("rl", "constrained_rl", "goal_directed")
-        and constants.restart
-    ):
+    if constants.job_type == "goal_directed" and constants.restart:
         # RL restart: find the last saved step from score.log.
-        ft_log_path = constants.job_dir + "score.log"
+        ft_log_path = constants.logs_dir + "score.log"
         if not Path(ft_log_path).exists():
             raise FileNotFoundError(
                 f"RL restart requires '{ft_log_path}' but the file was not found. "
@@ -227,24 +213,14 @@ def get_restart_epoch() -> Union[int, str]:
                 f"Could not determine the last RL step from '{ft_log_path}'. "
                 "The file may be empty or corrupted."
             )
-    elif constants.job_type in ("rl", "constrained_rl", "goal_directed"):
-        # Fresh RL start: if a direct checkpoint path was given, the epoch
-        # number is meaningless for step counting — start from 0.
-        # Otherwise use generation_epoch (only set when using pretrained_model_dir).
-        if constants.pretrained_model_path:
-            epoch = 0
-        else:
-            epoch = constants.generation_epoch
-    elif (
-        constants.restart
-        or constants.job_type == "test"
-        or (
-            constants.job_type in ("sample", "generate")
-            and getattr(constants, "sample_mode", "generate") == "evaluate"
-        )
+    elif constants.job_type == "goal_directed":
+        # The checkpoint's epoch number means nothing for RL step counting.
+        epoch = 0
+    elif constants.restart or (
+        constants.job_type == "generate" and constants.sample_mode == "evaluate"
     ):
         # Supervised restart or test: find the last saved epoch from generation.log.
-        generation_path = constants.job_dir + "generation.log"
+        generation_path = constants.logs_dir + "generation.log"
         if not Path(generation_path).exists():
             raise FileNotFoundError(
                 f"Restart requires '{generation_path}' but the file was not found. "
@@ -582,172 +558,86 @@ def write_last_molecule_idx(
         txt_file.write(str(last_molecule_idx) + ", " + str(dataset_size))
 
 
-class _ConstantsEncoder(json.JSONEncoder):  # this might be dead code?
-    """JSON encoder that handles non-serializable types gracefully."""
-
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
-        # RDKit BondType and other opaque objects → string representation
-        return str(obj)
-
-
-def _build_run_info(seed: int = 0) -> dict:
-    """
-    Collect reproducibility metadata: timestamp, library versions, git commit,
-    device details, and the random seed used for this run.
-
-    Returns a dict suitable for embedding in any params_all.json.
-    """
-    # --- timestamp ---
-    timestamp = datetime.datetime.now().isoformat(timespec="seconds")
-
-    # --- library versions ---
-    try:
-        import rdkit as _rdkit
-
-        rdkit_version = _rdkit.__version__
-    except Exception:
-        rdkit_version = "unknown"
-    try:
-        cuda_version = torch.version.cuda or "n/a"
-    except Exception:
-        cuda_version = "unknown"
-
-    # --- device details ---
+def _build_run_info() -> dict:
+    """Collect timestamp, library versions, git commit and device details."""
     device_name = "cpu"
     if torch.cuda.is_available():
-        try:
-            device_name = torch.cuda.get_device_name(0)
-        except Exception:
-            device_name = "cuda (unknown model)"
-    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device_name = torch.cuda.get_device_name(0)
+    elif torch.backends.mps.is_available():
         device_name = "mps"
 
-    # --- git commit hash ---
     try:
         git_hash = (
             subprocess.check_output(
-                ["git", "rev-parse", "--short", "HEAD"],
-                stderr=subprocess.DEVNULL,
+                ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL
             )
             .decode()
             .strip()
         )
-    except Exception:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         git_hash = "unknown"
 
     return {
-        "timestamp": timestamp,
+        "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
         "python_version": sys.version.split()[0],
-        "torch_version": torch.__version__,
+        "torch_version": str(torch.__version__),
         "numpy_version": np.__version__,
-        "rdkit_version": rdkit_version,
-        "cuda_version": cuda_version,
+        "rdkit_version": rdkit.__version__,
+        "cuda_version": str(torch.version.cuda or "n/a"),
         "device_name": device_name,
         "git_hash": git_hash,
-        "seed": seed,
     }
-
-
-def write_job_parameters(params: namedtuple) -> None:
-    """
-    Writes all resolved job parameters/hyperparameters to ``params_all.json``,
-    together with a ``run_info`` block containing reproducibility metadata
-    (timestamp, library versions, git hash, device, seed).
-
-    Args:
-        params: Resolved constants namedtuple.
-    """
-    dict_path = Path(params.job_dir) / "params_all.json"
-    params_dict = {field: getattr(params, field) for field in params._fields}
-    params_dict["run_info"] = _build_run_info(seed=getattr(params, "seed", 0))
-
-    with open(dict_path, "w") as f:
-        json.dump(params_dict, f, indent=2, cls=_ConstantsEncoder)
-        # json.dump writes no trailing newline, which trips the
-        # end-of-file-fixer pre-commit hook every time one of these
-        # generated files is regenerated and committed.
-        f.write("\n")
 
 
 def write_preprocessing_parameters(params: namedtuple) -> None:
     """
-    Writes the feature-vocabulary parameters needed to verify preprocessing
-    consistency to ``preprocessing_params.json`` in the dataset directory,
-    together with split configuration and a ``run_info`` block.
+    Record how a dataset was preprocessed, in ``preprocessing.yaml``.
 
-    The actual split counts (n_train, n_valid, n_test) are appended later by
-    :func:`update_preprocessing_stats` once the split files exist on disk.
-
-    Args:
-        params: Resolved constants namedtuple.
+    Every later job on the dataset reads its feature vocabulary from here, and
+    the split block is the authoritative record of how the three splits were
+    made: changing it means a new dataset, not a re-run.
     """
-    dict_path = Path(params.dataset_dir) / "preprocessing_params.json"
-    vocab_keys = {
-        "atom_types",
-        "formal_charge",
-        "imp_H",
-        "chirality",
-        "max_n_nodes",
-        "use_aromatic_bonds",
-        "use_canon",
-        "use_chirality",
-        "use_explicit_H",
-        "ignore_H",
-        # Recorded so downstream jobs know the encoding they must match: the
-        # decoding route depends on `decoding_route`, and the ORDER of
-        # `conditioning["properties"]` fixes the meaning of each slot in the
-        # stored condition vectors.
-        "decoding_route",
-        "conditioning",
-        "condition_dim",
+    dataset_dir = Path(params.dataset_dir)
+    recorded = {
+        key: getattr(params, key)
+        for key in (
+            "atom_types",
+            "formal_charge",
+            "imp_H",
+            "chirality",
+            "max_n_nodes",
+            "use_aromatic_bonds",
+            "use_canon",
+            "use_chirality",
+            "use_explicit_H",
+            "ignore_H",
+            # The decoding route fixes the subgraph sequence, and the ORDER of
+            # conditioning["properties"] fixes the meaning of each slot in the
+            # stored condition vectors.
+            "decoding_route",
+            "conditioning",
+            "condition_dim",
+        )
     }
-    split_keys = {"split_type", "train_frac", "valid_frac", "smiles_file"}
-    keys_to_write = vocab_keys | split_keys
-    preproc_dict = {
-        key: getattr(params, key) for key in keys_to_write if hasattr(params, key)
+    recorded["split"] = {
+        "strategy": params.split_type,
+        "seed": params.seed,
+        "train_frac": params.train_frac,
+        "valid_frac": params.valid_frac,
+        "smiles_file": params.smiles_file,
+        **{
+            f"n_{split}": (
+                sum(1 for _ in open(dataset_dir / f"{split}.smi"))
+                if (dataset_dir / f"{split}.smi").exists()
+                else 0
+            )
+            for split in ("train", "valid", "test")
+        },
     }
-    preproc_dict["run_info"] = _build_run_info(seed=getattr(params, "seed", 0))
-    with open(dict_path, "w") as f:
-        json.dump(preproc_dict, f, indent=2)
-        f.write("\n")
+    recorded["run_info"] = _build_run_info()
 
-
-def update_preprocessing_stats(dataset_dir: str) -> None:
-    """
-    Append split counts (n_train, n_valid, n_test) to the existing
-    ``preprocessing_params.json`` in *dataset_dir* by counting lines in the
-    ``train.smi``, ``valid.smi``, and ``test.smi`` files.
-
-    Safe to call even if a split file is absent (count is recorded as 0).
-
-    Args:
-        dataset_dir: Path to the dataset directory.
-    """
-    base = Path(dataset_dir)
-    json_path = base / "preprocessing_params.json"
-    if not json_path.exists():
-        return
-
-    with open(json_path) as f:
-        data = json.load(f)
-
-    for split, fname in [
-        ("n_train", "train.smi"),
-        ("n_valid", "valid.smi"),
-        ("n_test", "test.smi"),
-    ]:
-        p = base / fname
-        data[split] = sum(1 for _ in open(p)) if p.exists() else 0
-
-    with open(json_path, "w") as f:
-        json.dump(data, f, indent=2)
-        f.write("\n")
+    with open(dataset_dir / "preprocessing.yaml", "w") as f:
+        yaml.safe_dump(recorded, f, sort_keys=True, default_flow_style=False)
 
 
 def write_graphs_to_smi(
@@ -783,12 +673,10 @@ def write_graphs_to_smi(
     smiles = []
 
     with open(smi_filename, "w") as smi_file:
-
         if write:
             smi_writer = rdkit.Chem.rdmolfiles.SmilesWriter(smi_file)
 
         for idx, molecular_graph in enumerate(molecular_graphs_list):
-
             mol = molecular_graph.get_molecule()
             try:
                 mol.UpdatePropertyCache(strict=False)
@@ -843,15 +731,11 @@ def write_training_status(
         append (bool)                        : If True, appends to existing file.
                                                If False, creates a new file.
     """
-    convergence_path = constants.job_dir + "convergence.log"
+    convergence_path = constants.logs_dir + "convergence.log"
     # RL progress is measured in steps; all supervised jobs use epochs
-    epoch_label = (
-        "Step"
-        if constants.job_type in ("rl", "constrained_rl", "goal_directed")
-        else "Epoch"
-    )
+    epoch_label = "Step" if constants.job_type == "goal_directed" else "Epoch"
 
-    is_rl = constants.job_type in ("rl", "constrained_rl", "goal_directed")
+    is_rl = constants.job_type == "goal_directed"
 
     if not append:  # create the file
         with open(convergence_path, "w") as output_file:
@@ -865,21 +749,12 @@ def write_training_status(
                     f"avg_valid_loss, model_score\n"
                 )
     else:  # append to existing file
-        if constants.job_type in [
-            "pretrain",
-            "transfer",
-            "rl",
-            "constrained_rl",
-            "unconditional",
-            "conditional",
-            "goal_directed",
-        ]:
+        if constants.job_type in ("unconditional", "conditional", "goal_directed"):
             if score is None:
                 with open(convergence_path, "a") as output_file:
                     if is_rl:
                         output_file.write(
-                            f"{epoch_label} {epoch}, {lr:.8f}, "
-                            f"{training_loss:.8f}, "
+                            f"{epoch_label} {epoch}, {lr:.8f}, {training_loss:.8f}, "
                         )
                     else:
                         output_file.write(
@@ -954,11 +829,11 @@ def write_molecules(
                                            0 (duplicate).
     """
     # RL outputs are labelled by step number; supervised jobs by epoch/label
-    if constants.job_type in ("rl", "constrained_rl", "goal_directed"):
+    if constants.job_type == "goal_directed":
         step = epoch.split(" ")[1]
-        smi_filename = constants.job_dir + f"generation/step{step}_{label}.smi"
+        smi_filename = constants.results_dir + f"generation/step{step}_{label}.smi"
     else:
-        smi_filename = constants.job_dir + f"generation/{label}.smi"
+        smi_filename = constants.results_dir + f"generation/{label}.smi"
 
     fraction_valid, validity_tensor, uniqueness_tensor = write_graphs_to_smi(
         smi_filename=smi_filename, molecular_graphs_list=molecules, write=write
@@ -1002,7 +877,6 @@ def save_training_set_properties(training_set_properties: dict) -> None:
     dict_path = f"{training_set[:-4]}.csv"
 
     with open(dict_path, "w") as csv_file:
-
         csv_writer = csv.writer(csv_file, delimiter=";")
         for key, value in training_set_properties.items():
             if "validity_tensor" in key:

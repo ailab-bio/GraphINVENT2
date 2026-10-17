@@ -1,0 +1,7 @@
+job_type: unconditional
+epochs: 4
+batch_size: 50
+accumulation_steps: 1
+sample_every: 2
+n_samples: 50
+device: cpu

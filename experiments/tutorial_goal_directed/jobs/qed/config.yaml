@@ -1,0 +1,10 @@
+job_type: goal_directed
+pretrained_model_path: experiments/tutorial_unconditional/jobs/debug/checkpoints/model_restart_4.pth
+score_components: ["QED"]
+score_thresholds: [0.0]
+score_type: continuous
+epochs: 4
+batch_size: 20
+accumulation_steps: 1
+n_samples: 20
+device: cpu

@@ -19,6 +19,7 @@ dependencies = [
     "rdkit>=2023.3",
     "numpy",
     "h5py",
+    "pyyaml",
     "tqdm",
     "scikit-learn",
     "matplotlib",
@@ -31,10 +32,6 @@ docking = ["vina", "meeko"]
 
 # pip install -e ".[dev]"  — linting / type checking during development
 dev = ["black", "ruff", "mypy", "pytest", "pre-commit"]
-
-[project.scripts]
-# Run jobs from anywhere in the repo: graphinvent-submit --config jobs/pretrain/params.json
-graphinvent-submit = "submit:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

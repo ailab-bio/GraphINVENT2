@@ -1,0 +1,3 @@
+# Train a generative model on the debug dataset.
+dataset_dir: data/datasets/debug
+seed: 1

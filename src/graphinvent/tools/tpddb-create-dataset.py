@@ -307,7 +307,7 @@ def main() -> int:
 
     print(f"* Wrote {len(selected)} molecules to {smi_path}", flush=True)
     print(
-        f"  heavy atoms {min(sizes)}-{max(sizes)}, " f"logP {min(logps)}-{max(logps)}",
+        f"  heavy atoms {min(sizes)}-{max(sizes)}, logP {min(logps)}-{max(logps)}",
         flush=True,
     )
     print(f"  provenance: {args.output / 'PROVENANCE.json'}", flush=True)
