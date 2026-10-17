@@ -8,6 +8,7 @@ docker/graphinvent.sif
 .vscode/*
 .claude/*
 TODO.md
+CHANGES.md
 manuscript/*
 
 # Ignore raw third-party database downloads. TPDdb publishes no explicit
