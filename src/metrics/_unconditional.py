@@ -195,25 +195,53 @@ def _compute_fcd(
     generated_smiles: list[str],
     reference_smiles: list[str],
 ) -> float | None:
-    """Frechet ChemNet Distance; returns None if fcd_torch is unavailable."""
+    """
+    Frechet ChemNet Distance, or None when it cannot be computed.
+
+    Composed from `get_predictions` and `calculate_frechet_distance` rather
+    than calling `fcd.get_fcd`, for one reason: `get_fcd` does not expose
+    `n_jobs`, so it inherits the default of 1, and `get_predictions` turns that
+    into `DataLoader(..., num_workers=1)` -- one worker process. Called from a
+    job that is itself a subprocess, that worker deadlocks: the generate smoke
+    test hung indefinitely at 0% CPU, with and without pytest's output capture,
+    and an orphaned process kept a core busy afterwards. `n_jobs=0` loads in
+    this process, which removes the deadlock and is also about forty times
+    faster on a small sample.
+
+    None is returned when the `fcd` package is absent or either set is empty;
+    the caller records the reason.
+    """
     global _fcd_warned
+
+    gen = [s for s in generated_smiles if s]
+    ref = [s for s in reference_smiles if s]
+    if not gen or not ref:
+        return None
+
     try:
         import fcd as fcd_lib
-
-        gen = [s for s in generated_smiles if s]
-        ref = [s for s in reference_smiles if s]
-        if not gen or not ref:
-            return None
-        return float(fcd_lib.get_fcd(gen, ref))
     except ImportError:
         if not _fcd_warned:
             print(
-                "-- Warning: fcd_torch not installed; FCD metric will be skipped. "
-                "Install with: pip install fcd_torch",
+                "-- Warning: the fcd package is not installed; the fcd metric "
+                "will be skipped. Install with: uv pip install fcd",
                 flush=True,
             )
             _fcd_warned = True
         return None
-    except Exception as exc:
-        print(f"-- Warning: FCD computation failed: {exc}", flush=True)
+
+    try:
+        model = fcd_lib.load_ref_model()
+        act_gen = fcd_lib.get_predictions(model, gen, n_jobs=0)
+        act_ref = fcd_lib.get_predictions(model, ref, n_jobs=0)
+        return float(
+            fcd_lib.calculate_frechet_distance(
+                mu1=np.mean(act_gen, axis=0),
+                sigma1=np.cov(act_gen.T),
+                mu2=np.mean(act_ref, axis=0),
+                sigma2=np.cov(act_ref.T),
+            )
+        )
+    except Exception as error:
+        print(f"-- Warning: FCD computation failed: {error}", flush=True)
         return None

@@ -233,11 +233,26 @@ def _validate(params: dict, config_path: Path) -> None:
         if params["smiles_file"] and not Path(params["smiles_file"]).exists():
             raise ValueError(f"smiles_file {params['smiles_file']} does not exist.")
 
-    if job_type in ("unconditional", "conditional") and params["resume_from"]:
-        if not Path(params["resume_from"]).exists():
+    if job_type in ("unconditional", "conditional"):
+        if params["resume_from"] and not Path(params["resume_from"]).exists():
             raise ValueError(
                 f"resume_from {params['resume_from']} does not exist. Remove "
                 "the key to train from scratch."
+            )
+        # A training job loads weights from `resume_from` and never from
+        # `pretrained_model_path`, which belongs to generate and goal_directed.
+        # Setting the wrong one used to pass validation and be ignored, so a
+        # transfer-learning run silently trained from scratch: measured on the
+        # development set, epoch-1 validation loss was 2.870 either way, against
+        # 2.217 for a real resume.
+        if params.get("pretrained_model_path"):
+            raise ValueError(
+                f"job_type: {job_type} does not read pretrained_model_path, so "
+                "the weights would be ignored and this would train from "
+                "scratch.\n"
+                "Transfer learning is an unconditional job with resume_from "
+                "set. Rename the key:\n"
+                f"    resume_from: {params['pretrained_model_path']}"
             )
 
     if job_type in ("goal_directed", "generate"):

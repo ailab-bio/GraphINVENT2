@@ -88,6 +88,43 @@ print(json.dumps(out))
 """
 
 
+def cap_attachment_points(fragment_smiles: str) -> str | None:
+    """
+    A fragment's SMILES with its `[*:n]` attachment points replaced by hydrogen.
+
+    PROTAC-Splitter returns fragments carrying the dummy atoms that mark where
+    they were cut. Fingerprinting or scoring those directly compares a molecule
+    that has extra atoms against reference ligands that do not: measured on a
+    real predicted E3 fragment, ECFP4 Tanimoto to thalidomide was 0.711 with the
+    dummy and 1.000 once capped, and its SA score 3.558 against 2.597. So
+    `e3_recognizable_rate` was computed against a similarity systematically too
+    low, and `warhead_sa_score_mean` against a score systematically too high.
+
+    Returns None when the capped fragment will not parse.
+    """
+    from rdkit import Chem
+
+    if not fragment_smiles:
+        return None
+    mol = Chem.MolFromSmiles(fragment_smiles)
+    if mol is None:
+        return None
+    editable = Chem.RWMol(mol)
+    # Reverse order: removing an atom renumbers the ones after it.
+    for atom in sorted(
+        (a for a in editable.GetAtoms() if a.GetAtomicNum() == 0),
+        key=lambda a: a.GetIdx(),
+        reverse=True,
+    ):
+        editable.RemoveAtom(atom.GetIdx())
+    try:
+        capped = editable.GetMol()
+        Chem.SanitizeMol(capped)
+    except Exception:
+        return None
+    return Chem.MolToSmiles(capped) or None
+
+
 class MissingInput(Exception):
     """A metric's input is absent. The message says which and where from."""
 
@@ -170,9 +207,14 @@ def compute_component_metrics(
     # The core table recomputed over target-binding components only. The
     # whole-molecule core metrics stay whole-molecule and are reported
     # separately; these carry the warhead_ prefix CLAUDE.md tabulates.
-    warheads = [d["poi"] for d in split_ok]
+    # Capped before anything is computed on them: a dummy atom is not part of
+    # the warhead. The denominator stays the number that split, so a fragment
+    # that will not parse once capped still counts against it.
+    warheads = [cap_attachment_points(d["poi"]) for d in split_ok]
     warhead_core = compute_core_metrics(
-        warheads, n_sampled=len(warheads), training_smiles=training_warheads
+        [w for w in warheads if w],
+        n_sampled=len(warheads),
+        training_smiles=training_warheads,
     )
     warhead_core.pop("_filter_unavailable", None)
     for key, value in warhead_core.items():
@@ -193,7 +235,8 @@ def compute_component_metrics(
 
     similarities: list = []
     for d in split_ok:
-        mol = Chem.MolFromSmiles(d["e3"]) if d["e3"] else None
+        capped = cap_attachment_points(d["e3"])
+        mol = Chem.MolFromSmiles(capped) if capped else None
         if mol is None:
             continue
         sims = DataStructs.BulkTanimotoSimilarity(ecfp4(mol), known_fps)

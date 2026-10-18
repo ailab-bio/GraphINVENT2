@@ -34,12 +34,20 @@ def ecfp4(mol):
     return generator.GetFingerprint(mol)
 
 
-def canonical_smiles(smiles_or_mols: list) -> list:
+def canonical_smiles(smiles_or_mols: list, *, isomeric: bool = True) -> list:
     """
     Canonical SMILES of each input that RDKit parses and sanitizes, in order.
 
     Entries RDKit rejects become None, so the result stays aligned with the
     input and the caller can still count them.
+
+    `isomeric` must match the chemistry the model can express. With
+    `use_chirality: false` the graph representation carries no chiral tag, so a
+    generated molecule is always flat while a training molecule read from disk
+    is not. Comparing the two isomerically then means a flat string can never
+    equal a stereo-specified one, and `novelty` reads 1.0 for a model that has
+    memorized its training set perfectly: measured on TPD-DB, where 64% of
+    PROTACs carry stereochemistry, that pinned the whole funnel.
     """
     from rdkit import Chem
 
@@ -53,7 +61,7 @@ def canonical_smiles(smiles_or_mols: list) -> list:
             out.append(None)
             continue
         try:
-            smi = Chem.MolToSmiles(mol)
+            smi = Chem.MolToSmiles(mol, isomericSmiles=isomeric)
         except Exception:
             out.append(None)
             continue
@@ -107,6 +115,7 @@ def compute_core_metrics(
     training_smiles: list,
     *,
     subsample: int = 10000,
+    isomeric: bool = True,
 ) -> dict:
     """
     The core metric table from CLAUDE.md, for one sample of generated molecules.
@@ -124,13 +133,17 @@ def compute_core_metrics(
         near_duplicate_rate.
     subsample
         Cap for the pairwise internal-diversity computation.
+    isomeric
+        Whether to compare molecules with stereochemistry. Pass the job's
+        `use_chirality`, so the funnel is computed at the level of chemistry
+        the model can actually express; see `canonical_smiles`.
 
     Returns
     -------
     dict of the CLAUDE.md core keys, plus `n_sampled` and the funnel counts so
     a reader can reconstruct every denominator.
     """
-    smiles_or_none = canonical_smiles(generated)
+    smiles_or_none = canonical_smiles(generated, isomeric=isomeric)
     valid_smiles = [s for s in smiles_or_none if s is not None]
     n_valid = len(valid_smiles)
 
@@ -145,7 +158,9 @@ def compute_core_metrics(
     # Funnel stage 3: unique valid absent from the training split / unique valid.
     # The training side is canonicalized too, or a molecule the model copied and
     # wrote differently would count as novel.
-    training_canonical = {s for s in canonical_smiles(training_smiles) if s}
+    training_canonical = {
+        s for s in canonical_smiles(training_smiles, isomeric=isomeric) if s
+    }
     novel_smiles = [s for s in unique_valid_smiles if s not in training_canonical]
     n_novel = len(novel_smiles)
     novelty = n_novel / n_unique_valid if n_unique_valid else 0.0

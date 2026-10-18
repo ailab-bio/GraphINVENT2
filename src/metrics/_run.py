@@ -78,6 +78,18 @@ def read_smiles_with_property(path: str, property_name: str):
     return smiles, values
 
 
+def _isomeric(constants) -> bool:
+    """
+    Whether this job's molecules should be compared with stereochemistry.
+
+    The graph representation only carries a chiral tag when `use_chirality` is
+    set, so comparing isomerically on a flat representation makes every
+    generated molecule look novel. One accessor, so the funnel, the condition
+    metrics and the report grid cannot disagree about it.
+    """
+    return bool(getattr(constants, "use_chirality", False))
+
+
 def _shared_run_fields(constants) -> dict:
     return {
         "job_name": str(constants.job_dir).rstrip("/").split("/")[-1],
@@ -139,6 +151,7 @@ def evaluate_generation(
         generated_smiles,
         n_sampled=constants.n_samples,
         training_smiles=training_smiles,
+        isomeric=_isomeric(constants),
     )
     unavailable.update(core.pop("_filter_unavailable", {}))
     metrics.update(core)
@@ -148,7 +161,14 @@ def evaluate_generation(
 
     if test_smiles:
         value = _compute_fcd(
-            [s for s in _core.canonical_smiles(generated_smiles) if s], test_smiles
+            [
+                s
+                for s in _core.canonical_smiles(
+                    generated_smiles, isomeric=_isomeric(constants)
+                )
+                if s
+            ],
+            test_smiles,
         )
         metrics["fcd"] = value
         if value is None:
@@ -185,7 +205,15 @@ def evaluate_generation(
         n_sampled=constants.n_samples,
     )
 
-    unique_valid = sorted({s for s in _core.canonical_smiles(generated_smiles) if s})
+    unique_valid = sorted(
+        {
+            s
+            for s in _core.canonical_smiles(
+                generated_smiles, isomeric=_isomeric(constants)
+            )
+            if s
+        }
+    )
     _finish(
         constants,
         metrics,
@@ -193,6 +221,39 @@ def evaluate_generation(
         grid_smiles=unique_valid,
         conditions=conditions_for_report or None,
     )
+
+
+def requested_per_molecule(constants, property_name: str, n_molecules: int) -> list:
+    """
+    The value requested of each generated molecule, in generation order.
+
+    A stratified run asks for a different value per batch, so the request is
+    not a single scalar and `condition_coverage_<property>` needs to know which
+    molecule was asked for what. `results/condition_requests.json` records one
+    request per batch and `.valid` records each written molecule's index in the
+    generated set, so the two together recover it.
+
+    Falls back to the single configured value when the job did not stratify.
+    """
+    requests_path = Path(constants.results_dir) / "condition_requests.json"
+    valid_path = Path(constants.results_dir) / "molecules.valid"
+    if not requests_path.exists() or not valid_path.exists():
+        return []
+    try:
+        requests = json.loads(requests_path.read_text())
+        indices = [int(line) for line in valid_path.read_text().split()]
+    except (json.JSONDecodeError, ValueError):
+        return []
+    if not requests or len(indices) != n_molecules:
+        return []
+
+    batch_size = max(1, int(constants.batch_size))
+    out: list = []
+    for index in indices:
+        request = requests[min(index // batch_size, len(requests) - 1)]
+        value = request.get(property_name)
+        out.append(float(value) if value is not None else None)
+    return out
 
 
 def _condition_metrics(
@@ -212,12 +273,25 @@ def _condition_metrics(
         _check_baseline_comparable(constants, baseline_dir)
 
     results: dict = {}
-    # Unique valid molecules, which is how CLAUDE.md denominates every other
-    # property-based rate over a generated sample (filter_pass_rate,
-    # Ro5_pass_rate, near_duplicate_rate, internal_diversity, scaffold_diversity
-    # and the SA scores all say "unique valid molecules"). Counting duplicates
-    # would also let a model lift this rate by repeating one on-target molecule.
-    achieved_smiles = sorted({s for s in _core.canonical_smiles(generated_smiles) if s})
+    # In generation order, not sorted, because each molecule's requested value
+    # is looked up by its position. Deduplicated while keeping the first
+    # occurrence: CLAUDE.md denominates every other property rate over unique
+    # valid molecules, and counting duplicates would let a model lift the rate
+    # by repeating one on-target molecule.
+    ordered = [
+        s
+        for s in _core.canonical_smiles(generated_smiles, isomeric=_isomeric(constants))
+        if s
+    ]
+    seen: set = set()
+    keep_positions: list = []
+    achieved_smiles: list = []
+    for position, smi in enumerate(ordered):
+        if smi in seen:
+            continue
+        seen.add(smi)
+        keep_positions.append(position)
+        achieved_smiles.append(smi)
     from rdkit import Chem
 
     for name, requested_value in requested_conditions.items():
@@ -243,10 +317,16 @@ def _condition_metrics(
         for smi in achieved_smiles:
             mol = Chem.MolFromSmiles(smi)
             achieved.append(fn(mol) if mol is not None else None)
-        requested = [float(requested_value)] * len(achieved)
-        for smi, value in zip(achieved_smiles, achieved):
-            if value is not None:
-                out_conditions.append((smi, float(requested_value), float(value)))
+
+        per_molecule = requested_per_molecule(constants, name, len(ordered))
+        if per_molecule:
+            requested = [per_molecule[i] for i in keep_positions]
+        else:
+            # The job asked one value of everything, so every molecule shares it.
+            requested = [float(requested_value)] * len(achieved)
+        for smi, want, got in zip(achieved_smiles, requested, achieved):
+            if got is not None and want is not None:
+                out_conditions.append((smi, float(want), float(got)))
 
         _, training_values = read_smiles_with_property(constants.training_set, name)
         if not training_values:
@@ -316,6 +396,7 @@ def evaluate_goal_directed(
         generated_smiles,
         n_sampled=n_generated,
         training_smiles=training_smiles,
+        isomeric=_isomeric(constants),
     )
     unavailable.update(core.pop("_filter_unavailable", {}))
     metrics.update(core)
@@ -323,7 +404,9 @@ def evaluate_goal_directed(
     # Unique valid molecules with their best score, which is the denominator
     # CLAUDE.md gives success_rate.
     best_by_smiles: dict = {}
-    for smi, score in zip(_core.canonical_smiles(generated_smiles), scores):
+    for smi, score in zip(
+        _core.canonical_smiles(generated_smiles, isomeric=_isomeric(constants)), scores
+    ):
         if smi is None:
             continue
         if smi not in best_by_smiles or score > best_by_smiles[smi]:

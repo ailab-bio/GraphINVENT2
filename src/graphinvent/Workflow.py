@@ -1485,6 +1485,58 @@ class Workflow:
             # create `generation/` subdirectory to write generation output to
             os.makedirs(self.constants.results_dir + "generation/", exist_ok=True)
 
+    def _condition_requests(
+        self, prop_names: list, sample_conds: dict, n_batches: int
+    ) -> list:
+        """
+        The condition values to request, one dict per generation batch.
+
+        A property whose configured value is the string "from_train" is spread
+        across the deciles of its training distribution, so every decile of
+        `condition_coverage_<property>` is exercised. Any other value is used
+        as given for every batch.
+
+        The requests are written to `results/condition_requests.json` so the
+        metrics can attribute each generated molecule to what was asked of it.
+        """
+        import json as _json
+
+        import numpy as _np
+
+        from metrics._run import read_smiles_with_property
+
+        spread: dict = {}
+        for name in prop_names:
+            if str(sample_conds[name]).strip().lower() != "from_train":
+                continue
+            _, values = read_smiles_with_property(self.constants.training_set, name)
+            finite = [v for v in values if v is not None and _np.isfinite(v)]
+            if len(finite) < 10:
+                raise ValueError(
+                    f"sample_conditions[{name}] is 'from_train', but the "
+                    f"training split at {self.constants.training_set} has "
+                    f"{len(finite)} usable {name} values and ten deciles need "
+                    "at least ten. Give an explicit value instead."
+                )
+            # Decile midpoints, so each request sits inside its own bucket.
+            spread[name] = [
+                float(_np.quantile(finite, q)) for q in _np.arange(0.05, 1.0, 0.1)
+            ]
+
+        requests = []
+        for idx in range(max(1, n_batches)):
+            request = {}
+            for name in prop_names:
+                if name in spread:
+                    request[name] = spread[name][idx % len(spread[name])]
+                else:
+                    request[name] = float(sample_conds[name])
+            requests.append(request)
+
+        path = Path(self.constants.results_dir) / "condition_requests.json"
+        path.write_text(_json.dumps(requests, indent=2) + "\n")
+        return requests
+
     def sample_molecules(self, n_samples: int, evaluation: bool = False) -> None:
         """
         Generates molecular graphs and evaluates them. Generates the graphs in
@@ -1529,8 +1581,19 @@ class Workflow:
                     f"'sample_conditions' is missing value(s) for {missing}; "
                     f"this model was conditioned on {prop_names}."
                 )
+            # A property may ask for a single value, or for "from_train", which
+            # spreads the requests across the deciles of the training
+            # distribution. CLAUDE.md defines condition_coverage_<property> as a
+            # per-decile success rate reported as ten numbers, and a single
+            # broadcast value can only ever populate one decile and leave nine
+            # null -- so the metric designed to expose "works only near the
+            # middle of the distribution" could never fire.
+            per_batch_requests = self._condition_requests(
+                prop_names, sample_conds, n_generation_batches
+            )
             cond_arr = np.array(
-                [float(sample_conds[k]) for k in prop_names], dtype=np.float32
+                [float(per_batch_requests[0][k]) for k in prop_names],
+                dtype=np.float32,
             )
             condition_vector = torch.tensor(
                 cond_arr, device=self.constants.device
@@ -1545,6 +1608,17 @@ class Workflow:
         # generate graphs in batches
         for idx in range(0, n_generation_batches):
             print("Batch", idx, "of", n_generation_batches)
+            if condition_vector is not None:
+                # One request per batch, so a stratified run covers the whole
+                # distribution without the generator having to carry a
+                # different condition per row through a shrinking batch.
+                generator.condition_vector = torch.tensor(
+                    np.array(
+                        [float(per_batch_requests[idx][k]) for k in prop_names],
+                        dtype=np.float32,
+                    ),
+                    device=self.constants.device,
+                ).unsqueeze(0)
 
             # generate one batch of graphs
             graphs, action_likelihoods, final_loglikelihoods, termination = (

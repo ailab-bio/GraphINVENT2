@@ -171,6 +171,7 @@ def _scaffold_split_indices(
     smiles: List[str],
     train_frac: float,
     valid_frac: float,
+    seed: int,
 ) -> Tuple[List[int], List[int], List[int]]:
     """
     Group molecules by Bemis-Murcko scaffold and assign whole groups to splits.
@@ -178,7 +179,20 @@ def _scaffold_split_indices(
     Largest group first, so the small tail lands in validation and test and the
     three splits share no scaffold. A random split would put close analogues on
     both sides and overstate generalization.
+
+    Groups of equal size are ordered by `seed`, not by their scaffold SMILES.
+    Alphabetical tie-breaking looks harmless and is not: for a bifunctional
+    corpus most scaffolds are singletons, so once the large groups are consumed
+    the walk proceeds in alphabetical order of the scaffold string. Every CRBN
+    degrader's Murcko scaffold starts with the same glutarimide-phthalimide
+    prefix, so they formed one contiguous alphabetical block that landed
+    entirely in the tail: measured on the 21,429-molecule TPD-DB PROTAC set,
+    train came out 64.5% CRBN while validation and test came out 99.6% and
+    99.4% CRBN. That made `fcd` and `nll_test` a measurement against one E3
+    chemistry, and checkpoint selection likewise.
     """
+    import random as _random
+
     from rdkit import Chem
     from rdkit.Chem.Scaffolds import MurckoScaffold
 
@@ -190,9 +204,12 @@ def _scaffold_split_indices(
         scaffold = MurckoScaffold.MurckoScaffoldSmiles(mol=mol, includeChirality=False)
         groups.setdefault(scaffold, []).append(i)
 
-    # Ties break on the scaffold SMILES so the split does not depend on the
-    # order the dictionary happened to be built in.
-    ordered = sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    # Shuffle first, then sort by descending group size. Python's sort is
+    # stable, so equal-sized groups keep the shuffled order and the tail is a
+    # random sample of singletons rather than an alphabetical sweep.
+    ordered = sorted(groups.items(), key=lambda kv: kv[0])
+    _random.Random(seed).shuffle(ordered)
+    ordered.sort(key=lambda kv: -len(kv[1]))
     print(f"  {len(ordered)} distinct Bemis-Murcko scaffolds.", flush=True)
 
     n = len(smiles)
@@ -306,7 +323,7 @@ def split_smiles_file(
 
     if split_type == "scaffold":
         train_idx, valid_idx, test_idx = _scaffold_split_indices(
-            smiles, train_frac, valid_frac
+            smiles, train_frac, valid_frac, seed
         )
     elif split_type == "random":
         train_idx, valid_idx, test_idx = _random_split_indices(

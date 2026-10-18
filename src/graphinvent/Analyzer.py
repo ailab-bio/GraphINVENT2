@@ -36,6 +36,15 @@ DIVERSITY_MAX_MOLECULES = 10000
 TEST_SIMILARITY_TOP_K = 10
 
 
+def _is_number(value) -> bool:
+    """Whether a configured condition value is a number rather than a sentinel."""
+    try:
+        float(value)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
 class Analyzer:
     """
     Evaluates and logs molecular generation quality throughout training.
@@ -1488,9 +1497,13 @@ class Analyzer:
             cond_filter = None
             sample_conds = constants.sample_conditions
             if sample_conds and test_cond_list is not None:
+                # A stratified job records "from_train" rather than a number,
+                # because it asks a different value of each batch. There is no
+                # single value to filter the reference set by, so skip those.
                 cond_filter = {
                     name: {"value": float(val), "tolerance": 0.3}
                     for name, val in sample_conds.items()
+                    if _is_number(val)
                 }
             top_k = TEST_SIMILARITY_TOP_K
             max_refs = None

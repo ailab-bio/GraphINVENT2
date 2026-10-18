@@ -1,12 +1,12 @@
 job_type: generate
 sample_mode: generate
 pretrained_model_path: experiments/tutorial_conditional/jobs/logp/checkpoints/model_restart_4.pth
-n_samples: 100
-batch_size: 50
+n_samples: 200
+batch_size: 20
 device: cpu
 sample_conditions:
-  logp: 2.5
-  mol_weight: 350.0
+  logp: from_train
+  mol_weight: from_train
 # A molecule counts as hitting its request within this much of the asked value.
 condition_tolerance:
   logp: 0.5

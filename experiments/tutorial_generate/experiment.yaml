@@ -1,3 +1,8 @@
-# Sample molecules from a trained checkpoint and evaluate them.
-dataset_dir: debug
+# Sample from a trained prior and evaluate the sample.
+#
+# Same 1,000-molecule ZINC250k subset the prior was trained on, so the feature
+# vocabulary in the dataset matches the one baked into the checkpoint. Pointing
+# this at a different dataset makes the checkpoint fail to load, which is what
+# happened when the other tutorials were moved to zinc1k and this one was not.
+dataset_dir: zinc1k
 seed: 1
