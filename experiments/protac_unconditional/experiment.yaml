@@ -1,0 +1,24 @@
+# PROTAC design. Task corpus is the curated TPD-DB PROTAC set; the base corpus
+# is the PROTAC-Splitter enumerated recombinant library.
+#
+# max_nodes 108 is the 99th-percentile heavy-atom count MEASURED on the curated
+# set (21,429 RDKit-parsable rows: median 63, p99 108, max 141). The Prompt E
+# brief said 120; 108 is what CLAUDE.md's 99th-percentile rule gives. Using 120
+# would pad every stored tensor by 11% in the node dimension and 23% in the
+# edge dimension for no gain.
+dataset_dir: tpddb_protac
+max_n_nodes: 108
+
+# Bifunctional: RetroTAC scores the whole PROTAC, SA score scores the warheads,
+# and quality_filtered_top10_mean gates on RetroTAC.
+bifunctional: true
+
+# Seeds 1, 2, 3 and NOT 0, 1, 2: main.py guards seeding on `seed > 0`, so seed 0
+# is never applied. Verified: two seed-0 generate runs produced different
+# molecules. Seeds 2 and 3 are run by copying the job directory and changing
+# this key until the multi-seed aggregator exists.
+seed: 1
+
+slurm:
+  account: naiss2024-5-630-gpu
+  partition: gpu

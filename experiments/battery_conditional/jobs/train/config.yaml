@@ -1,0 +1,18 @@
+job_type: conditional
+dataset_dir: battp30k
+resume_from: experiments/battery_unconditional/jobs/prior_scratch/checkpoints/model_restart_60.pth
+epochs: 40
+batch_size: 1000
+accumulation_steps: 512
+sample_every: 10
+n_samples: 2000
+device: cuda
+sample_conditions:
+  dipole: 2.0
+condition_tolerance:
+  dipole: 0.75
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "16:00:00"
+  gpus: 1

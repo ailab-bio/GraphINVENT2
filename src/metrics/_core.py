@@ -147,6 +147,22 @@ def compute_core_metrics(
     valid_smiles = [s for s in smiles_or_none if s is not None]
     n_valid = len(valid_smiles)
 
+    # You cannot have more valid molecules than you sampled. If this fires, the
+    # generated list was not truncated to n_samples before being measured, and
+    # every rate below is divided by the wrong denominator: validity would come
+    # out above 1.0. A batch can come back larger than batch_size, so this is a
+    # reachable state rather than a theoretical one, and it is latent on a
+    # low-validity model -- it only shows once the model is good, which is to
+    # say on exactly the runs worth reporting. Raise rather than report a rate
+    # above one.
+    if n_valid > n_sampled:
+        raise ValueError(
+            f"{n_valid} valid molecules from n_sampled={n_sampled}. The "
+            "generated list was not truncated to n_samples before being "
+            "measured, so every funnel rate would divide by the wrong "
+            "denominator. See Workflow.sample_molecules."
+        )
+
     # Funnel stage 1: valid / N.
     validity = n_valid / n_sampled if n_sampled else 0.0
 

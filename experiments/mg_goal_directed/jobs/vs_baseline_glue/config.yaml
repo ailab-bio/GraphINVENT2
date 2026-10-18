@@ -1,0 +1,13 @@
+# Virtual screening over the glue train+validation split at matched budget.
+# NOT YET IMPLEMENTED as a job type (L27).
+job_type: generate
+sample_mode: generate
+pretrained_model_path: experiments/mg_unconditional/jobs/prior_transfer/checkpoints/model_restart_20.pth
+n_samples: 10000
+batch_size: 500
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "01:00:00"
+  gpus: 0

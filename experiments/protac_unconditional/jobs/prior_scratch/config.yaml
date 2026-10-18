@@ -1,0 +1,16 @@
+job_type: unconditional
+dataset_dir: tpddb_protac
+# No resume_from. This is the control that makes prior_transfer a result.
+# Every other key matches prior_transfer, or the comparison is confounded.
+epochs: 20
+batch_size: 500
+accumulation_steps: 4
+sample_every: 5
+n_samples: 10000
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing in this experiment has
+# run on Arrhenius. The basis of each estimate is stated beside it; re-measure
+# by the RUN.md Part 1 walltime procedure after the first successful run.
+slurm:
+  time: "12:00:00"
+  gpus: 1

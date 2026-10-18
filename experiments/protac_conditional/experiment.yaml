@@ -1,0 +1,21 @@
+dataset_dir: tpddb_protac_cond
+max_n_nodes: 108
+bifunctional: true
+seed: 1
+slurm:
+  account: naiss2024-5-630-gpu
+  partition: gpu
+
+# Categorical conditioning on the degraded protein, encoded as three numeric
+# 0/1 columns rather than as a label. There is no categorical code path:
+# _read_smiles_with_conditions reads numeric property columns only. A one-hot
+# label IS three numeric columns, so this needs no new code and the float32
+# condition_vector carries it unchanged.
+condition_dim: 3
+conditioning:
+  properties: ["is_ar", "is_btk", "is_egfr"]
+  source: smiles_file
+condition_tolerance:
+  is_ar: 0.5
+  is_btk: 0.5
+  is_egfr: 0.5

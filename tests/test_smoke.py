@@ -145,7 +145,15 @@ def test_goal_directed_optimizes_against_an_oracle(dataset, checkpoint):
             "score_components": ["QED"],
             "score_thresholds": [0.0],
             "score_type": "continuous",
-            **{**TRAINING, "batch_size": 20},
+            # The RL schedule has its own keys; a goal_directed job that sets
+            # `epochs` or `sample_every` is rejected, so TRAINING's supervised
+            # names are translated rather than reused.
+            **{
+                k: v for k, v in TRAINING.items() if k not in ("epochs", "sample_every")
+            },
+            "rl_steps": TRAINING["epochs"],
+            "rl_eval_every": TRAINING["sample_every"],
+            "batch_size": 20,
         },
     )
     score_log = job_dir / "logs" / "score.log"
@@ -177,6 +185,27 @@ def test_generate_writes_molecules(dataset, checkpoint):
     # CLAUDE.md's Job types table names this file molecules.smi.
     assert (job_dir / "results" / "molecules.smi").exists()
 
+    # A batch can come back larger than batch_size, so the generated list is
+    # truncated to n_samples before anything measures it. Without that,
+    # validity divides by n_samples while counting more molecules than that and
+    # exceeds 1.0 on a model with high validity. This is the only place that
+    # check can live: it needs a real generation run.
+    import json
+
+    payload = json.loads((job_dir / "results" / "metrics.json").read_text())
+    reported = payload["metrics"]
+    assert reported["n_sampled"] == 40
+    assert reported["validity"] <= 1.0, (
+        f"validity {reported['validity']} exceeds 1.0, so the generated list "
+        "was not truncated to n_samples before being measured"
+    )
+    assert reported["n_valid"] <= reported["n_sampled"]
+    assert "validity_n_generated_raw" in reported, (
+        "the pre-truncation count must be recorded, or the over-production is "
+        "hidden rather than visible"
+    )
+    assert reported["validity_n_generated_raw"] >= reported["n_sampled"]
+
 
 def test_generate_in_evaluate_mode_scores_the_model(dataset, checkpoint):
     job_dir = dataset.parent / "exp" / "jobs" / "evaluate"
@@ -193,4 +222,18 @@ def test_generate_in_evaluate_mode_scores_the_model(dataset, checkpoint):
             "seed": 1,
         },
     )
-    assert (job_dir / "logs" / "generation.log").exists()
+    # `sample_mode: evaluate` exists to compute NLL and UC-JSD, and
+    # metrics.json is where CLAUDE.md puts them. It used to assert that
+    # logs/generation.log existed, which the generate path no longer writes:
+    # that file recorded the first generation batch only, so every rate in it
+    # described `batch_size` molecules while the sample was `n_samples`.
+    import json
+
+    payload = json.loads((job_dir / "results" / "metrics.json").read_text())
+    reported = payload["metrics"]
+    for key in ("nll_train", "nll_validation", "nll_test", "uc_jsd"):
+        assert key in reported, f"{key} missing from metrics.json"
+    assert reported["nll_train"] is not None, (
+        "evaluate mode computed no training-set NLL, which is the one thing "
+        "this job type is for"
+    )

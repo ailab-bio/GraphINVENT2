@@ -1,0 +1,15 @@
+# Battery electrolyte solvent design, reproducing the non-fluorinated
+# low-permittivity campaign of Zhang, Mercado, Le & Zhang, ACS Nano 2026, 20,
+# 20714-20729 (doi 10.1021/acsnano.6c06255).
+#
+# max_nodes 16 is NOT a measured 99th percentile: the Batt-SLM selection
+# criteria bound heavy atoms at 2 < n < 17, so 16 is the hard ceiling and
+# n_dropped_oversized must be zero. If it is not zero, the corpus is not the
+# one the criteria describe.
+dataset_dir: battslm
+max_n_nodes: 16
+bifunctional: false
+seed: 1
+slurm:
+  account: naiss2024-5-630-gpu
+  partition: gpu

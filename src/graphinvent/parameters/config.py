@@ -186,6 +186,12 @@ def resolve(job_dir: Path) -> dict:
     return params
 
 
+def _job_keys(config_path: Path) -> set:
+    """The keys this job's own config.yaml sets, ignoring what it inherits."""
+    own = _read_yaml(Path(config_path))
+    return set(own) if isinstance(own, dict) else set()
+
+
 def _validate(params: dict, config_path: Path) -> None:
     job_type = params.get("job_type")
     if job_type is None:
@@ -254,6 +260,22 @@ def _validate(params: dict, config_path: Path) -> None:
                 "set. Rename the key:\n"
                 f"    resume_from: {params['pretrained_model_path']}"
             )
+
+    # A learning step is not an epoch. The RL path has its own keys, so a
+    # goal_directed job that sets the supervised ones is naming the wrong
+    # thing: silently honoring `epochs` there is how the two schedules came to
+    # share a value in the first place.
+    if job_type == "goal_directed":
+        for supervised, rl_key in (
+            ("epochs", "rl_steps"),
+            ("sample_every", "rl_eval_every"),
+        ):
+            if supervised in _job_keys(config_path):
+                raise ValueError(
+                    f"job_type: goal_directed does not read '{supervised}'.\n"
+                    f"A learning step is not an epoch; use '{rl_key}' instead.\n"
+                    f"    {rl_key}: {params.get(supervised)}"
+                )
 
     if job_type in ("goal_directed", "generate"):
         checkpoint = params.get("pretrained_model_path")
@@ -553,6 +575,16 @@ def _detect_features(params: dict) -> None:
 def derive(params: dict) -> namedtuple:
     """Add the feature vocabulary and tensor shapes, and freeze the result."""
     params = dict(params)
+
+    # The RL schedule has its own config keys, and `_validate` rejects the
+    # supervised ones on a goal_directed job. They are mapped onto the internal
+    # schedule here, once, rather than at each of the ten places the training
+    # loop reads them: the config surface is `rl_*` and the loop is unchanged.
+    if params["job_type"] == "goal_directed":
+        params["epochs"] = params["rl_steps"]
+        params["sample_every"] = params["rl_eval_every"]
+        if params.get("rl_batch_size"):
+            params["batch_size"] = params["rl_batch_size"]
 
     if params["job_type"] == "preprocess":
         _detect_features(params)

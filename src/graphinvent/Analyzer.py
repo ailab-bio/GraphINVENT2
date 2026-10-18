@@ -11,12 +11,10 @@ Responsibilities
 """
 
 # load general packages and functions
-import csv
 import os
 import time
 from typing import Tuple, Union
 
-import _metrics as metrics
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,6 +25,12 @@ import util
 # load GraphINVENT-specific functions
 from parameters.config import constants
 from torch.utils.tensorboard import SummaryWriter
+
+from metrics import (
+    compute_core_metrics,
+    compute_internal_diversity,
+    compute_test_set_similarity,
+)
 
 # Pairwise Tanimoto over the generated set is O(n^2), so it runs on a
 # subsample once the set is larger than this.
@@ -229,48 +233,39 @@ class Analyzer:
     def evaluate_generated_graphs(
         self,
         generated_graphs: list,
-        termination: torch.Tensor,
         loglikelihoods: torch.Tensor,
-        training_set_properties: dict,
         generation_batch_idx: int,
     ) -> None:
         """
-        Computes molecular properties for input set of generated graphs, saves
-        results to CSV, and writes `generated_graphs` to disk as a SMILES file.
-        Properties are expensive to calculate, so only done for the first batch
-        of generated molecules.
+        Write one batch of generated graphs to disk as the aligned
+        `.smi`/`.likelihood`/`.valid` trio.
+
+        This used to also compute molecular properties and append a row to
+        `logs/generation.log`, and it did both for the first batch only, because
+        the properties were expensive. That made every logged rate describe the
+        first `batch_size` molecules while the `.smi` file held the whole
+        sample: at the reporting convention of N = 10,000 with a batch of 1,000,
+        a tenth of the sample reported as the run's result. `results/metrics.json`
+        now computes every metric once over the whole sample, so the log, its
+        three first-batch guards and the two figures drawn from it are gone
+        rather than fixed.
+
+        What remains is the part nothing else does: writing the molecules.
 
         Args:
         ----
             generated_graphs (list)    : Contains `GenerationGraph`s.
-            termination (torch.Tensor) : Molecular termination details; contains
-                                         1 at index if graph from `generated_graphs`
-                                         was "properly" terminated, 0 otherwise.
-            likelihoods (torch.Tensor) : Contains final NLL of each item in
-                                         `generated_graphs`.
-            training_set_properties (dict)       : Contains training set properties.
-            generation_batch_idx (int) : Generation batch index.
+            loglikelihoods (torch.Tensor) : Final NLL of each graph.
+            generation_batch_idx (int) : Index of this batch in the sample.
         """
         epoch_key = util.get_last_epoch()
 
-        if generation_batch_idx == 0:
-            # calculate molecular properties of generated set
-            prop_dict = self.get_molecular_properties(
-                molecules=generated_graphs, epoch_key=epoch_key, termination=termination
-            )
-        else:
-            prop_dict = {}  # initialize the property dictionary
-
-        # add a few additional properties to the propery dictionary
-        prop_dict[(epoch_key, "final_likelihood")] = loglikelihoods
-        prop_dict[(epoch_key, "run_time")] = round(time.time() - self.start_time, 2)
-
-        # calculate validity list now, so as not to write to CSV in previous step
         if constants.job_type == "generate":
             label = f"batch_{generation_batch_idx}"
         else:
             label = f"epoch_{epoch_key[6:]}_batch_{generation_batch_idx}"
-        fraction_valid, validity_tensor, _ = util.write_molecules(
+
+        util.write_molecules(
             molecules=generated_graphs,
             final_likelihoods=loglikelihoods,
             epoch=epoch_key,
@@ -280,78 +275,6 @@ class Analyzer:
             # index of its first graph in the whole generated set.
             index_offset=generation_batch_idx * len(generated_graphs),
         )
-        prop_dict[(epoch_key, "fraction_valid")] = fraction_valid
-        prop_dict[(epoch_key, "validity_tensor")] = validity_tensor
-
-        # compute ±std across 3 molecule subsets (only for the first batch)
-        if generation_batch_idx == 0 and termination is not None:
-            stds = self._compute_error_bars(generated_graphs, termination)
-            for k, v in stds.items():
-                prop_dict[(epoch_key, k)] = v
-
-        # write these properties to disk, only for the first generation batch
-        if generation_batch_idx == 0:
-            output = constants.logs_dir  # shorthand
-
-            # Compute novelty and SA score for all job types
-            _top_k = TEST_SIMILARITY_TOP_K
-            _extra_cols = [
-                "novelty",
-                "sa_score_mean",
-                "sa_score_median",
-                "sa_score_std",
-            ]
-            _extra_cols += [
-                "internal_diversity",
-                "mean_internal_similarity",
-                "max_internal_similarity",
-            ]
-            _extra_cols += [
-                "sim_mean",
-                "sim_median",
-                f"sim_top{_top_k}",
-                "sim_gt_0_4",
-                "sim_gt_0_6",
-                "sim_gt_0_8",
-                "sim_gt_0_9",
-                "exact_rediscovery_count",
-            ]
-            validity_t = prop_dict.get((epoch_key, "validity_tensor"))
-            if validity_t is not None:
-                ext = self._compute_extended_metrics(
-                    generated_graphs=generated_graphs,
-                    validity_tensor=validity_t,
-                )
-                for k, v in ext.items():
-                    prop_dict[(epoch_key, k)] = v
-            else:
-                for k in _extra_cols:
-                    prop_dict[(epoch_key, k)] = float("nan")
-
-            util.properties_to_csv(
-                prop_dict=prop_dict,
-                csv_filename=f"{output}generation.log",
-                epoch_key=epoch_key,
-                tb_writer=self.tb_writer,
-                append=True,
-                extra_cols=_extra_cols,
-            )
-            self.plot_progress(
-                log_path=f"{output}generation.log",
-                output_dir=output,
-            )
-
-            # join ts properties with prop_dict for plotting
-            merged_properties = {**prop_dict, **training_set_properties}
-
-            # plot properties for this epoch
-            if constants.job_type == "generate":
-                plot_filename = f"{output}features.png"
-            else:
-                plot_filename = f"{output}features_{epoch_key[6:]}.png"
-            self.plot_molecular_properties(
-                properties=merged_properties, plot_filename=plot_filename
-            )
 
     def evaluate_generated_graphs_rl(
         self,
@@ -443,8 +366,6 @@ class Analyzer:
             "novelty",
             "sa_score_mean",
             "sa_score_median",
-            "sa_score_std",
-            "success_rate",
         ]
         _extra_cols += [
             "internal_diversity",
@@ -469,32 +390,46 @@ class Analyzer:
                     if _comp_key not in _extra_cols:
                         _extra_cols.append(_comp_key)
 
-        # write these properties to disk
-        output = constants.logs_dir
-        util.properties_to_csv(
-            prop_dict=prop_dict,
-            csv_filename=f"{output}generation.log",
-            epoch_key=epoch_key,
-            tb_writer=self.tb_writer,
-            append=True,
-            extra_cols=_extra_cols,
-        )
-        self.plot_progress(
-            log_path=f"{output}generation.log",
-            output_dir=output,
-        )
-
-        # join ts properties with prop_dict for plotting
-        merged_properties = {**prop_dict, **training_set_properties}
-
-        # plot properties for this epoch
-        plot_label = epoch_key[5:].replace(" ", "_")
-        plot_filename = f"{output}features{plot_label}.png"
-        self.plot_molecular_properties(
-            properties=merged_properties, plot_filename=plot_filename
-        )
+        # The per-step series goes to TensorBoard, which CLAUDE.md names as the
+        # place to watch a run, rather than to logs/generation.log, which is
+        # gone. Every scalar in prop_dict is written, not the five
+        # properties_to_csv used to forward: internal_diversity, novelty and
+        # fraction_unique are the ones that matter, because the collapse of
+        # diversity over optimization steps is what the metric suite exists to
+        # make visible, and they were CSV-only before.
+        self._rl_step_scalars_to_tensorboard(prop_dict, epoch_key)
 
         return validity, uniqueness
+
+    def _rl_step_scalars_to_tensorboard(self, prop_dict: dict, epoch_key: str) -> None:
+        """
+        Write every scalar for one RL evaluation step to TensorBoard.
+
+        `use_tensorboard` is false by default, so this is silent unless the job
+        asks for it. The three goal-directed experiment directories set it to
+        true for that reason: without it an optimization run keeps no per-step
+        record of validity, uniqueness, novelty or internal diversity at all,
+        and those four are the trajectory the diversity-collapse figure is
+        drawn from.
+        """
+        if self.tb_writer is None:
+            return
+
+        # "Step 12 agent" -> 12. The label carries the model as well as the
+        # step, so the model becomes part of the tag and the step the x-axis.
+        parts = epoch_key.split()
+        try:
+            step = int(parts[1])
+        except (IndexError, ValueError):
+            return
+        model_label = "_".join(parts[2:]) or "agent"
+
+        for (key_epoch, name), value in prop_dict.items():
+            if key_epoch != epoch_key:
+                continue
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                continue
+            self.tb_writer.add_scalar(f"RL/{model_label}/{name}", float(value), step)
 
     def evaluate_training_set(self, preprocessing_graphs: list) -> dict:
         """
@@ -1421,63 +1356,63 @@ class Analyzer:
             dict with float values (or None for optional metrics that failed).
         """
         all_smiles = [g.get_smiles() for g in generated_graphs]
-        valid_mols = []
-        for idx, graph in enumerate(generated_graphs):
-            if validity_tensor[idx] == 1:
-                try:
-                    valid_mols.append(graph.get_molecule())
-                except Exception:
-                    pass
 
         training_smiles = self._load_training_smiles()
-        sa_mean, sa_median, sa_std = metrics.compute_sa_scores(valid_mols)
 
+        # One implementation per metric. This used to call a second copy in
+        # src/graphinvent/_metrics.py whose definitions had drifted from
+        # src/metrics/: success_rate compared with a strict `>` where the
+        # config key reads as "at least", internal diversity subsampled to
+        # 1,000 against the specified 10,000, and SA score averaged over valid
+        # rather than unique valid molecules. CLAUDE.md requires exactly one
+        # implementation, so the numbers come from src/metrics/_core.py.
+        #
+        # Four keys this function used to return are gone rather than ported:
+        # success_rate, rediscovery_rate, sa_score_std and
+        # internal_diversity_successful. The first is defined in
+        # src/metrics/_budget.py and reported in metrics.json, which is where
+        # CLAUDE.md puts it; the other three are not in the specification at
+        # all. Reporting them from here was the duplication.
+        core = compute_core_metrics(
+            all_smiles,
+            n_sampled=len(generated_graphs),
+            training_smiles=sorted(training_smiles),
+            isomeric=bool(getattr(constants, "use_chirality", False)),
+        )
+        core.pop("_filter_unavailable", None)
         result = {
-            "novelty": metrics.compute_novelty(all_smiles, training_smiles),
-            "sa_score_mean": sa_mean,
-            "sa_score_median": sa_median,
-            "sa_score_std": sa_std,
+            "novelty": core["novelty"],
+            "sa_score_mean": core["sa_score_mean"],
+            "sa_score_median": core["sa_score_median"],
+            "internal_diversity": core["internal_diversity"],
         }
 
-        if scores is not None:
-            threshold = float(constants.success_threshold)
-            result["success_rate"] = metrics.compute_success_rate(scores, threshold)
+        # mean and max internal similarity are not part of the core table, so
+        # they come from the one implementation that does define them.
+        valid_smiles = [s for s in all_smiles if s is not None]
+        if len(valid_smiles) >= 2:
+            div = compute_internal_diversity(
+                sorted(set(valid_smiles)), max_mols=DIVERSITY_MAX_MOLECULES
+            )
+            result["mean_internal_similarity"] = div["mean_internal_similarity"]
+            result["max_internal_similarity"] = div["max_internal_similarity"]
+        else:
+            result["mean_internal_similarity"] = float("nan")
+            result["max_internal_similarity"] = float("nan")
 
-        if include_expensive:
-            valid_smiles = [s for s in all_smiles if s is not None]
-            result["diversity"] = metrics.compute_diversity(valid_smiles)
-            if reference_smiles is not None:
-                result["fcd"] = metrics.compute_fcd(valid_smiles, reference_smiles)
-                result["rediscovery_rate"] = metrics.compute_rediscovery_rate(
-                    valid_smiles, set(reference_smiles)
-                )
+        if include_expensive and reference_smiles is not None:
+            from metrics._unconditional import _compute_fcd
 
-        # --- Internal diversity ---
-        all_valid_smiles = [s for s in all_smiles if s is not None]
-        max_mols = DIVERSITY_MAX_MOLECULES
-        div = metrics.compute_internal_diversity(all_valid_smiles, max_mols=max_mols)
-        result["internal_diversity"] = div["internal_diversity"]
-        result["mean_internal_similarity"] = div["mean_internal_similarity"]
-        result["max_internal_similarity"] = div["max_internal_similarity"]
+            isomeric = bool(getattr(constants, "use_chirality", False))
+            from metrics._core import canonical_smiles as _canon
 
-        # For RL/goal-directed: also compute diversity on successful subset
-        if scores is not None:
-            threshold = float(constants.success_threshold)
-            n = len(generated_graphs)
-            successful_smiles = [
-                all_smiles[i]
-                for i in range(n)
-                if i < len(scores)
-                and float(scores[i]) > threshold
-                and all_smiles[i] is not None
-            ]
-            if len(successful_smiles) >= 2:
-                div_top = metrics.compute_internal_diversity(
-                    successful_smiles, max_mols=max_mols
-                )
-                result["internal_diversity_successful"] = div_top["internal_diversity"]
-            else:
-                result["internal_diversity_successful"] = float("nan")
+            fcd_result = _compute_fcd(
+                [x for x in _canon(valid_smiles, isomeric=isomeric) if x],
+                [x for x in _canon(reference_smiles, isomeric=isomeric) if x],
+            )
+            result["fcd"] = fcd_result["value"]
+            result["fcd_n_generated"] = fcd_result["n_generated"]
+            result["fcd_n_reference"] = fcd_result["n_reference"]
 
         # --- Test-set similarity ---
         # The test split is the reference set for final evaluation and is read
@@ -1507,7 +1442,7 @@ class Analyzer:
                 }
             top_k = TEST_SIMILARITY_TOP_K
             max_refs = None
-            sim = metrics.compute_test_set_similarity(
+            sim = compute_test_set_similarity(
                 valid_smiles_for_sim,
                 test_smi_list,
                 top_k=top_k,
@@ -1616,217 +1551,3 @@ class Analyzer:
     # ------------------------------------------------------------------
     # Progress plot
     # ------------------------------------------------------------------
-
-    def plot_progress(self, log_path: str, output_dir: str) -> None:
-        """
-        Read ``generation.log`` (and ``convergence.log`` for loss curves) and
-        plot 8 panels over training progress in a 3×3 grid:
-
-        - fraction_valid, fraction_valid_pt, fraction_pt (row 0)
-        - avg_n_nodes, avg_n_edges, fraction_unique (row 1)
-        - run_time, training/validation loss, learning rate (row 2)
-
-        Error bars (±std) are drawn for all metrics except run_time.
-        The figure is saved to ``<output_dir>/progress.png`` at every epoch/step.
-        """
-        if not os.path.exists(log_path):
-            return
-
-        # -----------------------------------------------------------
-        # Parse generation.log
-        # -----------------------------------------------------------
-        SCALAR_COLS = [
-            "fraction_valid",
-            "fraction_valid_pt",
-            "fraction_pt",
-            "run_time",
-            "avg_n_nodes",
-            "avg_n_edges",
-            "fraction_unique",
-        ]
-        xs: list = []
-        data: dict = {k: [] for k in SCALAR_COLS}
-        err: dict = {k: [] for k in SCALAR_COLS}
-        x_label = "Epoch"
-
-        with open(log_path, "r", encoding="utf-8") as fh:
-            reader = csv.DictReader(fh, skipinitialspace=True)
-            for row in reader:
-                set_key = row.get("set", "").strip()
-
-                if set_key.startswith("Epoch"):
-                    try:
-                        x = int(set_key.split()[1])
-                    except (IndexError, ValueError):
-                        continue
-                    x_label = "Epoch"
-                elif set_key.startswith("Step"):
-                    parts = set_key.split()
-                    # RL rows: "Step N agent" | "Step N prior" | "Step N basf"
-                    # Only plot the agent policy rows.
-                    if len(parts) < 3 or parts[2] != "agent":
-                        continue
-                    try:
-                        x = int(parts[1])
-                    except (IndexError, ValueError):
-                        continue
-                    x_label = "RL Step"
-                else:
-                    continue
-
-                xs.append(x)
-
-                for col in SCALAR_COLS:
-                    raw = row.get(col, "").strip()
-                    if "\u00b1" in raw:
-                        mean_s, std_s = raw.split("\u00b1", 1)
-                        try:
-                            data[col].append(float(mean_s))
-                            err[col].append(float(std_s))
-                        except ValueError:
-                            data[col].append(float("nan"))
-                            err[col].append(None)
-                    else:
-                        try:
-                            data[col].append(float(raw))
-                        except ValueError:
-                            data[col].append(float("nan"))
-                        err[col].append(None)
-
-        if not xs:
-            return
-
-        xs_arr = np.array(xs)
-
-        # -----------------------------------------------------------
-        # Parse convergence.log for training / validation loss
-        # -----------------------------------------------------------
-        convergence_path = os.path.join(output_dir, "convergence.log")
-        conv_xs: list = []
-        train_losses: list = []
-        valid_losses: list = []
-        learning_rates: list = []
-        has_valid_loss = False
-        loss_x_label = x_label  # same axis label as the generation panels
-
-        if os.path.exists(convergence_path):
-            with open(convergence_path, "r", encoding="utf-8") as fh:
-                reader = csv.DictReader(fh, skipinitialspace=True)
-                fields = reader.fieldnames or []
-                has_valid_loss = "avg_valid_loss" in fields
-                # first-column name is "epoch" (pretrain/transfer) or "step" (rl)
-                epoch_col = "step" if "step" in fields else "epoch"
-                loss_x_label = "RL Step" if epoch_col == "step" else "Epoch"
-                for row in reader:
-                    set_key = (row.get(epoch_col) or "").strip()
-                    parts = set_key.split()
-                    if len(parts) < 2:
-                        continue
-                    try:
-                        x = int(parts[1])
-                    except ValueError:
-                        continue
-                    try:
-                        tl = float(row.get("avg_train_loss") or "nan")
-                    except ValueError:
-                        continue
-                    conv_xs.append(x)
-                    train_losses.append(tl)
-                    try:
-                        learning_rates.append(float(row.get("lr") or "nan"))
-                    except ValueError:
-                        learning_rates.append(float("nan"))
-                    if has_valid_loss:
-                        try:
-                            vl = float(row.get("avg_valid_loss") or "nan")
-                        except ValueError:
-                            vl = float("nan")
-                        valid_losses.append(vl)
-
-        # -----------------------------------------------------------
-        # Build figure: 3 cols × 3 rows, last cell empty
-        # -----------------------------------------------------------
-        metric_specs = [
-            ("fraction_valid", "Fraction Valid", True),
-            ("fraction_valid_pt", "Fraction Valid (prop. term.)", True),
-            ("fraction_pt", "Fraction Prop. Terminated", True),
-            ("avg_n_nodes", "Avg Nodes / Graph", True),
-            ("avg_n_edges", "Avg Edges / Node", True),
-            ("fraction_unique", "Fraction Unique", True),
-            ("run_time", "Run Time (s)", False),
-        ]
-
-        matplotlib.rc("figure", figsize=(12, 9))
-        fig, ax = plt.subplots(3, 3)
-        fig.subplots_adjust(hspace=0.55, wspace=0.4)
-
-        for plot_idx, (col, title, has_std) in enumerate(metric_specs):
-            r, c = divmod(plot_idx, 3)
-            a = ax[r, c]
-            ys = np.array(data[col], dtype=float)
-
-            if has_std and any(v is not None for v in err[col]):
-                errs = np.array(
-                    [v if v is not None else 0.0 for v in err[col]],
-                    dtype=float,
-                )
-                a.errorbar(
-                    xs_arr,
-                    ys,
-                    yerr=errs,
-                    fmt="o-",
-                    color="cadetblue",
-                    ecolor="lightsteelblue",
-                    capsize=3,
-                    linewidth=1.5,
-                )
-            else:
-                a.plot(xs_arr, ys, "o-", color="cadetblue", linewidth=1.5)
-
-            a.set_title(title, fontsize=9)
-            a.set_xlabel(x_label, fontsize=8)
-            a.tick_params(labelsize=7)
-
-        # slot 7 (row=2, col=1): training and validation loss from convergence.log
-        a_loss = ax[2, 1]
-        if conv_xs:
-            conv_xs_arr = np.array(conv_xs)
-            a_loss.plot(
-                conv_xs_arr,
-                train_losses,
-                "o-",
-                color="cadetblue",
-                linewidth=1.5,
-                label="Train",
-            )
-            if has_valid_loss and valid_losses:
-                a_loss.plot(
-                    conv_xs_arr,
-                    valid_losses,
-                    "s--",
-                    color="coral",
-                    linewidth=1.5,
-                    label="Valid",
-                )
-            a_loss.legend(fontsize=7, loc="best")
-        a_loss.set_title("Loss", fontsize=9)
-        a_loss.set_xlabel(loss_x_label, fontsize=8)
-        a_loss.tick_params(labelsize=7)
-
-        # slot 8 (row=2, col=2): learning rate from convergence.log
-        a_lr = ax[2, 2]
-        if conv_xs and learning_rates:
-            a_lr.plot(
-                np.array(conv_xs),
-                np.array(learning_rates, dtype=float),
-                "o-",
-                color="mediumpurple",
-                linewidth=1.5,
-            )
-        a_lr.set_title("Learning Rate", fontsize=9)
-        a_lr.set_xlabel(loss_x_label, fontsize=8)
-        a_lr.tick_params(labelsize=7)
-
-        out_path = os.path.join(output_dir, "progress.png")
-        fig.savefig(out_path, dpi=100, bbox_inches="tight")
-        plt.close(fig)

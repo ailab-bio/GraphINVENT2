@@ -133,6 +133,7 @@ def evaluate_generation(
     generated_smiles: list,
     model=None,
     inference_seconds: float | None = None,
+    n_generated_raw: int | None = None,
 ) -> None:
     """
     metrics.json and report.html for a `generate` job.
@@ -156,6 +157,12 @@ def evaluate_generation(
     unavailable.update(core.pop("_filter_unavailable", {}))
     metrics.update(core)
 
+    # How many graphs the generator actually produced before truncation to
+    # n_samples. A batch can come back larger than batch_size, so this is
+    # normally above n_sampled; the gap is what used to push validity over 1.0.
+    if n_generated_raw is not None:
+        metrics["validity_n_generated_raw"] = int(n_generated_raw)
+
     # Whole-PROTAC synthesizability, for bifunctional datasets only.
     _retrotac_metrics(constants, generated_smiles, metrics, unavailable)
 
@@ -163,22 +170,38 @@ def evaluate_generation(
     from ._unconditional import _compute_fcd
 
     if test_smiles:
-        value, reason = _compute_fcd(
+        # Both sides through the same canonicalization with the same isomeric
+        # flag. ChemNet reads SMILES characters, so a flattened generated set
+        # against a raw stereo-bearing reference is a distribution shift rather
+        # than a comparison.
+        isomeric = _isomeric(constants)
+        result = _compute_fcd(
             [
                 s
-                for s in _core.canonical_smiles(
-                    generated_smiles, isomeric=_isomeric(constants)
-                )
+                for s in _core.canonical_smiles(generated_smiles, isomeric=isomeric)
                 if s
             ],
-            test_smiles,
+            [s for s in _core.canonical_smiles(test_smiles, isomeric=isomeric) if s],
         )
-        metrics["fcd"] = value
-        if value is None:
-            unavailable["fcd"] = reason
+        metrics["fcd"] = result["value"]
+        metrics["fcd_n_generated"] = result["n_generated"]
+        metrics["fcd_n_reference"] = result["n_reference"]
+        if result["value"] is None:
+            unavailable["fcd"] = result["reason"]
+        elif result["biased"]:
+            unavailable["fcd_comparability"] = (
+                f"insufficient_sample: computed from {result['n_generated']} "
+                f"generated against {result['n_reference']} reference molecules, "
+                "which is above the floor but below the 10,000 published values "
+                "use. Comparable between our own runs, not to a published number."
+            )
     else:
         metrics["fcd"] = None
-        unavailable["fcd"] = f"no test split at {constants.test_set}"
+        metrics["fcd_n_generated"] = 0
+        metrics["fcd_n_reference"] = 0
+        unavailable["fcd"] = (
+            f"not_applicable_to_job_type: no test split at {constants.test_set}"
+        )
 
     # Conditional, continuous properties: only when this checkpoint was
     # conditioned and the job said what to ask of it.

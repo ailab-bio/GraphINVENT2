@@ -897,6 +897,7 @@ class Workflow:
             ),
             model=self.model,
             inference_seconds=generation_seconds,
+            n_generated_raw=getattr(self, "n_generated_raw", None),
         )
 
         self.print_time_elapsed()
@@ -1469,16 +1470,6 @@ class Workflow:
         """
         if not self.constants.restart:
             print("* Touching output files.", flush=True)
-            # begin writing `generation.log` file
-            csv_path_and_filename = self.constants.logs_dir + "generation.log"
-            util.properties_to_csv(
-                prop_dict=self.training_set_properties,
-                csv_filename=csv_path_and_filename,
-                epoch_key="Training set",
-                tb_writer=self.analyzer.tb_writer,
-                append=False,
-            )
-
             # begin writing `convergence.log` file
             util.write_training_status(tb_writer=self.analyzer.tb_writer, append=False)
 
@@ -1605,6 +1596,17 @@ class Workflow:
             condition_vector=condition_vector,
         )
 
+        # A batch can come back larger than `batch_size`: observed 30 and 32
+        # graphs from a batch_size of 20, so `n_generation_batches` batches can
+        # exceed `n_samples`. Every funnel metric divides by `n_samples`, so
+        # left untruncated a model with high validity reports validity above
+        # 1.0 -- latent at the low validity of a briefly-trained model and
+        # firing on exactly the runs worth reporting. Truncate to exactly
+        # `n_samples` before anything measures the sample, and keep the raw
+        # count so the over-production stays visible rather than hidden.
+        n_emitted = 0
+        self.n_generated_raw = 0
+
         # generate graphs in batches
         for idx in range(0, n_generation_batches):
             print("Batch", idx, "of", n_generation_batches)
@@ -1625,12 +1627,18 @@ class Workflow:
                 generator.sample()
             )
 
+            self.n_generated_raw += len(graphs)
+            room = n_samples - n_emitted
+            if len(graphs) > room:
+                graphs = graphs[:room]
+                final_loglikelihoods = final_loglikelihoods[:room]
+                termination = termination[:room]
+            n_emitted += len(graphs)
+
             # analyze properties of new graphs and save results
             self.analyzer.evaluate_generated_graphs(
                 generated_graphs=graphs,
-                termination=termination,
                 loglikelihoods=final_loglikelihoods,
-                training_set_properties=self.training_set_properties,
                 generation_batch_idx=idx,
             )
 
@@ -1639,6 +1647,9 @@ class Workflow:
             # (more efficient than saving all)
             if evaluation and idx == 0:
                 self.likelihood_per_action = action_likelihoods
+
+            if n_emitted >= n_samples:
+                break
 
     def sample_molecules_rl(
         self,
@@ -1741,15 +1752,37 @@ class Workflow:
             self.rl_n_generated += len(graphs)
             for graph, score in zip(graphs, scores.tolist()):
                 molecule = graph.get_molecule()
-                if molecule is None:
+                # An invalid graph is not a molecule, and skipping it here is
+                # how validity is measured: `rl_n_generated` counts everything
+                # the policy produced and is the denominator N, while
+                # `rl_smiles` holds only what became a molecule. This skip is
+                # load-bearing, not defensive.
+                #
+                # The zero-atom case is the same thing wearing a disguise. A
+                # graph that terminates before its first atom comes back as an
+                # empty RWMol rather than None, and the old code dropped it
+                # only because MolToSmiles returns "" for it and "" is falsy.
+                # That happened to be the right outcome for the wrong reason;
+                # it is stated here instead.
+                if molecule is None or molecule.GetNumAtoms() == 0:
                     continue
-                try:
-                    smiles = Chem.MolToSmiles(molecule)
-                except Exception:
-                    continue
-                if smiles:
-                    self.rl_smiles.append(smiles)
-                    self.rl_scores.append(float(score))
+                # Anything past that point is a sanitized RDKit molecule, so a
+                # failure to write SMILES for it is a real defect rather than
+                # an invalid generation. It used to be swallowed, which dropped
+                # the molecule from the trajectory after `rl_n_generated` had
+                # already counted it and so skewed every trajectory numerator
+                # by a silent amount. Let it raise.
+                smiles = Chem.MolToSmiles(molecule)
+                if not smiles:
+                    raise ValueError(
+                        "MolToSmiles returned an empty string for a sanitized "
+                        f"molecule with {molecule.GetNumAtoms()} atoms at RL "
+                        f"step {self.current_epoch}. That is a bug in the graph "
+                        "construction, not an invalid generation, which is "
+                        "already handled above."
+                    )
+                self.rl_smiles.append(smiles)
+                self.rl_scores.append(float(score))
 
         if is_agent:
             util.log_likelihoods_to_tensorboard(

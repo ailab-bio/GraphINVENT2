@@ -1,0 +1,14 @@
+job_type: unconditional
+dataset_dir: zinc250k
+max_n_nodes: 54
+epochs: 40
+batch_size: 1000
+accumulation_steps: 16
+sample_every: 10
+n_samples: 10000
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "36:00:00"
+  gpus: 1

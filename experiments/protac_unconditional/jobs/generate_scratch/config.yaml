@@ -1,0 +1,13 @@
+job_type: generate
+sample_mode: generate
+dataset_dir: tpddb_protac
+pretrained_model_path: experiments/protac_unconditional/jobs/prior_scratch/checkpoints/model_restart_20.pth
+n_samples: 10000
+batch_size: 500
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing in this experiment has
+# run on Arrhenius. The basis of each estimate is stated beside it; re-measure
+# by the RUN.md Part 1 walltime procedure after the first successful run.
+slurm:
+  time: "04:00:00"
+  gpus: 1

@@ -429,20 +429,23 @@ Not yet implemented:
 - **Multi-seed reporting.** Nothing writes `experiments/<exp>/results/aggregate.json`,
   and `submit.py` runs exactly one job directory with one `seed`, so the three
   seeds the reporting conventions require are produced by hand.
-- **Exactly one implementation of each metric.** `src/graphinvent/_metrics.py`
-  is a second implementation that `Analyzer` imports, and it reaches
-  `logs/generation.log`, TensorBoard and `results/oracle_eval.csv` with
-  definitions that differ from `src/metrics/` (`success_rate` uses `>` there and
-  `>=` here). `src/metrics/_unconditional.evaluate_unconditional` and its two
-  siblings are a third, exported but uncalled. `nll_*` and `uc_jsd` have their
-  only implementation in `Analyzer`, outside `src/metrics/`.
+- **`nll_*` and `uc_jsd` have their only implementation in `Analyzer`**, outside
+  `src/metrics/`. Every other metric now has exactly one implementation there:
+  `src/graphinvent/_metrics.py` and the dead `evaluate_unconditional` layer were
+  deleted on 2026-10-18.
 - **The plot style guide, applied to the existing figures.**
   `src/metrics/plot_style.py` carries the palette and rcParams; `Analyzer`'s
   figures still hardcode their own colors, save PNG only, and write to `logs/`.
 - **Nothing has been run on Arrhenius.** The aarch64 plus CUDA 13 environment
   is unverified, and so is whether the Lmod `module` function survives into the
   batch script.
-- **Tutorials:** `tutorials/` still describes the pre-restructure interface.
+- **Tutorials:** `tutorials/` still describes the pre-restructure interface, and
+  documents `logs/generation.log` throughout. **No job writes that file as of
+  2026-10-18.** Per-run metrics are in `results/metrics.json` and the per-step
+  RL trajectory is in `logs/tensorboard/`, which needs `use_tensorboard: true`.
+- **Figures:** `progress.png` and `features*.png` are gone. The figure-producing
+  code that remains does not yet use `src/metrics/plot_style.py`, so the plot
+  style guide is still unapplied.
 
 Open defects are in `TODO.md`. For now just append to that file, do not execute
 or try to solve anything in that file.

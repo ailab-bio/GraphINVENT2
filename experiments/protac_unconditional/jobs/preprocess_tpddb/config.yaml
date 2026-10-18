@@ -1,0 +1,22 @@
+job_type: preprocess
+smiles_file: data/datasets/tpddb_protac/tpddb_protac.smi
+# warhead_scaffold, because a whole-molecule Bemis-Murcko scaffold of a PROTAC
+# contains every ring system and is nearly unique per compound, so a
+# whole-molecule scaffold split degenerates to random and leaks analogues.
+# NOTE: warhead_scaffold is named in CLAUDE.md but NOT IMPLEMENTED. Until it is,
+# this must not be run with split_type: scaffold and the result reported as a
+# scaffold split.
+split_type: warhead_scaffold
+train_frac: 0.8
+valid_frac: 0.1
+batch_size: 1000
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing in this experiment has
+# run on Arrhenius. The basis of each estimate is stated beside it; re-measure
+# by the RUN.md Part 1 walltime procedure after the first successful run.
+# Basis: 21,429 molecules at max_nodes 108, against 1,000 ZINC molecules at
+# max_nodes 27 taking 15 s. Scaled by molecule count and by the square of
+# max_nodes, with margin.
+slurm:
+  time: "08:00:00"
+  gpus: 0
+  memory: "64G"

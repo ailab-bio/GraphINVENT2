@@ -1,0 +1,15 @@
+job_type: preprocess
+smiles_file: data/datasets/battslm/battslm.smi
+dataset_dir: battslm
+# The published split: 5,000 of 115,756 held out as test (4.32%), remainder 9:1.
+# So train 0.861, valid 0.096, test 0.043.
+split_type: scaffold
+train_frac: 0.861
+valid_frac: 0.096
+batch_size: 1000
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "04:00:00"
+  gpus: 0
+  memory: "32G"

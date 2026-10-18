@@ -127,6 +127,11 @@ class ScoringFunction:
         # user-supplied objectives (a trained surrogate, a docking run, an
         # arbitrary callable); `score_components` references them by name.
         self._oracles: dict = {}
+        # The composite-score log, which is what the budget curves integrate.
+        # Keyed on unique molecules, because CLAUDE.md defines an oracle call
+        # as one unique molecule submitted and cache hits as free.
+        self._composite_seen: set = set()
+        self._composite_log: list = []
         # Fallback budget counter for components with no external oracle
         # (QED, target_size, logp_target).
         self.n_molecules_scored: int = 0
@@ -328,15 +333,22 @@ class ScoringFunction:
     @property
     def optimization_log(self) -> list:
         """
-        Chronological (cumulative_call_count, score) record from the oracles.
+        Chronological (cumulative_unique_molecules, composite_score) record.
 
-        Empty without an external oracle, since only a real oracle defines the
-        call-indexed curve the AUC Top-k metric integrates over.
+        This is the curve `auc_top10` and every `*_at_<budget>` integrate, so it
+        has to be the score the policy was actually trained on. It used to
+        return the log of whichever oracle had the highest call count, which is
+        one component of the objective rather than the objective: correct for a
+        single-component run and wrong for every multi-objective one. The
+        battery campaign's S7 is a geometric mean of six components, so a curve
+        over one of them describes nothing.
+
+        The count is unique molecules scored, which is CLAUDE.md's definition of
+        an oracle call. It is maintained here rather than taken from an oracle
+        so that it exists for a built-in component too, where there is no
+        external oracle to ask.
         """
-        if not self._oracles:
-            return []
-        busiest = max(self._oracles.values(), key=lambda o: o.call_count)
-        return busiest.optimization_log
+        return list(self._composite_log)
 
     def compute_score(
         self,
@@ -435,7 +447,25 @@ class ScoringFunction:
         # remove contribution of improperly-terminated molecules to the score
         final_score = final_score * termination
 
+        self._record_composite(graphs, final_score)
+
         return final_score, component_scores
+
+    def _record_composite(self, graphs: list, final_score: torch.Tensor) -> None:
+        """
+        Append (cumulative_unique_molecules, composite_score) for molecules not
+        scored before.
+
+        Called once per batch, after every masking step, so the logged value is
+        the reward the policy saw and not an intermediate.
+        """
+        smiles = self._graphs_to_smiles(graphs)
+        scores = final_score.detach().cpu().tolist()
+        for smi, score in zip(smiles, scores):
+            if smi is None or smi in self._composite_seen:
+                continue
+            self._composite_seen.add(smi)
+            self._composite_log.append((len(self._composite_seen), float(score)))
 
     def get_contributions_to_score(self, graphs: list) -> list:
         """

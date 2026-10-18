@@ -1,0 +1,33 @@
+job_type: goal_directed
+pretrained_model_path: experiments/battery_unconditional/jobs/prior_scratch/checkpoints/model_restart_60.pth
+# The published fine-tuning schedule, mapped onto the rl_* keys. These differ
+# from the Atance et al. defaults CLAUDE.md gives (200 steps, best agent every
+# 5, eval every 5): the step count and cadence agree, the batch size is this
+# experiment's own, and the published runs were early-stopped near 100 steps.
+rl_steps: 200
+rl_best_agent_every: 5
+rl_eval_every: 5
+rl_batch_size: 256
+accumulation_steps: 1
+n_samples: 2000
+# Published: score weight 20, best-agent scaling 0.5. These match CLAUDE.md's
+# fixed RL settings for an activity objective.
+sigma: 20
+alpha: 0.5
+# BLOCKER: the six S7 components are not implemented. Named here so the
+# dependency is visible; this job cannot run until they exist.
+score_components: ["battery_s7"]
+score_type: continuous
+success_threshold: 0.0
+success_definition: "the published Figure S21f hit rate: novel, maximum Tanimoto > 0.2 to KBS-409 excluding the F/P-holdout, viscosity <= 2.0 cP, melting point <= 313.15 K, E_red < 0.0 V, E_ox > 5.0 V and permittivity < 10. NOT a threshold on S7: S7 is a geometric mean containing binary terms, so a single failed filter zeroes it and 0.5 on S7 means nothing comparable to 0.5 on QED. success_threshold is 0.0 here only because the criterion is the definition string, not a scalar bar."
+# The per-step trajectory -- validity, uniqueness, novelty and internal
+# diversity at every evaluation step -- is written to TensorBoard and nowhere
+# else now that logs/generation.log is gone. The diversity-collapse figure is
+# drawn from it, so this must stay true for any run that is reported.
+use_tensorboard: true
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "24:00:00"
+  gpus: 1

@@ -1,0 +1,16 @@
+job_type: generate
+sample_mode: generate
+dataset_dir: battp30k
+pretrained_model_path: experiments/battery_conditional/jobs/train/checkpoints/model_restart_40.pth
+n_samples: 10000
+batch_size: 1000
+device: cuda
+sample_conditions:
+  dipole: 1.0
+condition_tolerance:
+  dipole: 0.75
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "02:00:00"
+  gpus: 1

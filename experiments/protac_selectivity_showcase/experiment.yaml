@@ -1,0 +1,7 @@
+dataset_dir: tpddb_protac
+max_n_nodes: 108
+bifunctional: true
+seed: 1
+slurm:
+  account: naiss2024-5-630-gpu
+  partition: gpu

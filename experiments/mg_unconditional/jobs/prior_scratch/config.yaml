@@ -1,0 +1,13 @@
+job_type: unconditional
+# The control. Every key matches prior_transfer except resume_from.
+epochs: 20
+batch_size: 500
+accumulation_steps: 4
+sample_every: 5
+n_samples: 10000
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "06:00:00"
+  gpus: 1

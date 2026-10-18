@@ -1,0 +1,18 @@
+# REINVENT4 comparison. NOT YET INSTALLED (Prompt E 2.5 / 5.7). The six fairness
+# conditions are in instructions.md and none is met yet, so this must not be
+# run and reported as evidence.
+job_type: goal_directed
+pretrained_model_path: experiments/protac_unconditional/jobs/prior_transfer/checkpoints/model_restart_20.pth
+rl_steps: 200
+rl_eval_every: 5
+rl_batch_size: 256
+score_components: ["smarca2_pdc50_activity"]
+score_type: continuous
+success_threshold: 6.0
+success_definition: "predicted pDC50 >= 6.0 from the optimization surrogate, over unique valid molecules"
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "24:00:00"
+  gpus: 1

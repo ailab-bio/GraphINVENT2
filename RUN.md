@@ -475,3 +475,248 @@ to publish:
 ```bash
 uv lock
 ```
+
+---
+
+# ACTIONS THAT ARE MINE, NOT THE AGENT'S
+
+Two things only I can do, listed here because the agent does not run git and cannot reach some hosts.
+
+**1. Untrack the six tutorial sbatch files committed with laptop-absolute paths.**
+
+```bash
+git rm --cached experiments/tutorial_*/jobs/*/run.sbatch
+```
+
+They are gitignored now, so this removes them from the index without deleting them from disk. Until it is run, a
+fresh clone on the cluster gets six sbatch scripts pointing at a MacBook.
+
+**2. Place the two ACS Nano PDFs.** `manuscript/refs/acsnano-6c06255-main.pdf` and `-si.pdf`. Every battery number
+in this runbook and in the experiment directories is marked unverified because no agent has been able to read
+them.
+
+---
+
+# Part 2: data, surrogates, and the session plan
+
+Part 1 ends with one tutorial job proven on the cluster. Part 2 onward is the real program: ten experiments, 56
+jobs. Everything here was written on a MacBook with no cluster access. **Every walltime and memory figure is an
+unverified estimate** whose basis is stated in the job's own `run.sbatch`.
+
+## THE SESSION PLAN
+
+Each session is at most 45 minutes of your attention and ends with jobs running and the laptop closeable. Sessions
+with the same dependency depth can be done in any order.
+
+| # | Session | Your time | Must have finished first | You submit | You check on return |
+|---|---|---|---|---|---|
+| S1 | Environment: Part 1 steps 1 to 5 | 40 min | nothing | the self-test | `scripts/cluster_selftest` output reports CUDA true |
+| S2 | Re-render every sbatch with cluster paths | 15 min | S1 | nothing | 56 scripts rewritten, spot-check two |
+| S3 | Downloads: TPD-DB, ZINC250k, Batt-SLM | 30 min | S2 | nothing (foreground) | `MANIFEST.json` in each `data/raw/*` |
+| S4 | Dataset builds: glue, then PROTAC | 40 min | S3 | the two build scripts | row counts match the numbers in this part |
+| S5 | **KILL POINT**: the PROTAC surrogate | 45 min | S4 | `surrogates/protac_pdc50_smarca2` | held-out R² against the mean baseline |
+| S6 | Glue program: ZINC preprocess and base prior | 30 min | S4 | `mg_unconditional` jobs 1 to 2 | `prior_zinc` convergence log, ~36 h job |
+| S7 | PROTAC program: preprocess and base prior | 30 min | S4 | `protac_unconditional` jobs 1 to 3 | `preprocessing.yaml` split counts |
+| S8 | Battery program: preprocess and scratch prior | 40 min | S3 | `battery_unconditional` jobs 3 and 5 | validity near 0.93 at step 0 |
+| S9 | Glue transfer and control priors | 25 min | S6 | `prior_transfer`, `prior_scratch` | epoch-1 validation loss, transfer below scratch |
+| S10 | PROTAC transfer and control priors | 25 min | S7 | `prior_transfer`, `prior_scratch` | same comparison |
+| S11 | Conditional datasets and training, all three | 45 min | S9, S10, S8 | three `preprocess_conditional` then three `train` | `condition_vector` present and non-constant |
+| S12 | All paired generate jobs | 30 min | S9, S10, S8, S11 | 14 generate jobs | `metrics.json` in each `results/` |
+| S13 | **GATED**: goal-directed runs | 40 min | S5 passed, S11, and L1+L2+L3 closed | three `rl_*` jobs | score trajectory rising, top-100 scaffold count not collapsing |
+| S14 | Baselines: screening and REINVENT4 | 40 min | S13 | the `vs_baseline_*` jobs | `vs_delta_top10_at_10k` positive |
+| S15 | Aggregation across seeds, and the report | 30 min | S12, S13, S14 | nothing | `aggregate.json` per experiment |
+
+Dependency graph as a list: S1 then S2 then S3 then S4. S5, S6, S7 all depend on S4 and are independent of each
+other. S8 depends only on S3. S9 depends on S6; S10 on S7. S11 depends on S8, S9 and S10. S12 depends on S11.
+S13 depends on S5 and S11 and on the three code fixes. S14 depends on S13. S15 depends on S12, S13 and S14.
+
+Total of your attention: about eight hours spread over fifteen sittings. The wall clock is dominated by
+`prior_zinc` and `prior_enumerated`, which are day-scale.
+
+## Step 2.1: re-render every sbatch with cluster paths
+
+```bash
+python scripts/render-sbatch.py --all
+```
+
+- **MY TIME:** 15 minutes, mostly reading two of the scripts
+- **WALL CLOCK:** seconds
+- **DEPENDS ON:** Part 1 step 5, because the account must be set
+- **CHECK BEFORE CONTINUING:** `grep -c /nobackup experiments/protac_goal_directed/jobs/rl_smarca2/run.sbatch`
+  returns a non-zero count, and no sbatch file contains `/Users/`. The versions committed to the repository were
+  rendered on a MacBook and point at it, which is why this step exists and why it comes before any submission.
+- **IF IT FAILED:** `slurm.account is unset` means Part 1 step 5 did not take. Every experiment sets a
+  `naiss2024-5-630-gpu` account in its `experiment.yaml`; change it there if your project id differs.
+
+## Step 2.2: the downloads
+
+```bash
+python scripts/download_data.py --source tpddb --source zinc
+```
+
+- **MY TIME:** 30 minutes
+- **WALL CLOCK:** a few minutes
+- **DEPENDS ON:** 2.1
+- **CHECK BEFORE CONTINUING:** `data/raw/tpddb/MANIFEST.json` and `data/raw/zinc/MANIFEST.json` exist and record a
+  sha256 per file. The TPD-DB tables should be `PROTAC_main_table.txt` 6.9 MB and `MG_main_table.txt` 1.7 MB.
+- **IF IT FAILED:** the script stops rather than substituting a source. TPD-DB publishes no version in its files,
+  so the manifest date is the only provenance you will ever have for these numbers. Keep it.
+
+*Not yet wired into this script, and therefore blockers for the experiments that need them: the PROTAC-Splitter
+enumerated library, Batt-SLM.smi, Batt-P30K, PubChem-120K, KBS-409 and the F/P-holdout. `download_data.py` covers
+TPD-DB and ZINC250k only.*
+
+*PROTAC-DB is unreachable from the development machine over both https and http: both time out at the connection
+level with zero bytes received, so this is not the `http://` error a previous pass was suspected of making. Try it
+from the cluster, which sits on a different network.*
+
+## Step 2.3: build the degrader datasets
+
+```bash
+python scripts/tpddb-create-dataset.py --modality glue   --output data/datasets/tpddb_glue/
+python scripts/tpddb-create-dataset.py --modality protac --output data/datasets/tpddb_protac/
+```
+
+- **MY TIME:** 40 minutes
+- **WALL CLOCK:** a few minutes each
+- **DEPENDS ON:** 2.2
+- **CHECK BEFORE CONTINUING:** the measured numbers, which the build should reproduce. PROTAC: 21,429
+  RDKit-parsable rows, 21,429 unique by isomeric canonical SMILES, **19,851 unique once flattened**, median 63
+  heavy atoms, p99 108. Glue: 5,998 rows, 5,998 isomeric unique, **5,703 flattened unique**, median 34, p99 54.
+- **IF IT FAILED:** a count far from these means the table schema moved.
+
+**Read the flattening numbers before trusting the deduplication.** The build deduplicates on isomeric canonical
+SMILES, and on that basis there are zero duplicates in 21,429 rows, which looks implausible for patent-sourced
+data and has been questioned as a silently failed deduplication. It has not failed: fed three spellings of
+ethanol it returns one molecule. But `use_chirality` is false, so the model trains on flat graphs, and flattening
+collapses 1,578 PROTACs and 295 glues. **The real training-set size is 19,851, not 21,429.** Report that number.
+Tautomers are not normalized by either path, which is a separate and unaddressed gap.
+
+## Step 2.4: fit the PROTAC surrogate, which is a kill point
+
+```bash
+python submit.py experiments/surrogates/protac_pdc50_smarca2 --slurm
+```
+
+- **MY TIME:** 45 minutes, most of it reading the held-out scatter
+- **WALL CLOCK:** under an hour
+- **DEPENDS ON:** 2.3
+- **CHECK BEFORE CONTINUING:** the held-out R², Spearman and RMSE against a mean-prediction baseline, printed by
+  `scripts/train-surrogate.py` and saved beside the pickle.
+- **IF IT FAILED, OR IF R² DOES NOT BEAT THE MEAN BASELINE:** `protac_goal_directed` does not run, and that is
+  the finding rather than a setback. Publish the scatter and the baseline either way. SMARCA2 has 241 numeric
+  DC50 rows over 186 compounds, which is marginal under a warhead-scaffold split, so expect an R² near zero and
+  decide in advance that you will report it.
+
+*This directory does not exist yet. `experiments/surrogates/` is specified in the brief and unbuilt; the fitting
+script `scripts/train-surrogate.py` does exist and works, and has never been run on this data.*
+
+---
+
+# Part 3: the PROTAC program
+
+Three experiments plus the selectivity showcase, 21 jobs. Each has its own `instructions.md` carrying the
+prerequisites, the submit command, what to check, and the failure mode; this part gives the order and the gates.
+
+Order: `protac_unconditional` jobs `preprocess_tpddb` → `prior_scratch`, and in parallel `preprocess_enumerated`
+→ `prior_enumerated` → `prior_transfer`, then the two generate jobs. Then `protac_conditional`. Then, gated,
+`protac_goal_directed` and the showcase.
+
+**The enumerated library is a blocker for the base prior.** It is not in `download_data.py`. Until it is, the
+PROTAC program can run `preprocess_tpddb`, `prior_scratch` and `generate_scratch` only, which means no transfer
+result for degraders.
+
+**max_nodes is 108, not 120.** Measured as the 99th percentile on the curated set. The brief said 120; using it
+would pad every tensor by 11% in the node dimension and 23% in the edge dimension for nothing.
+
+**The conditioning panel is AR, BTK and EGFR, not AR, BRD4 and SMARCA2.** BRD4 has 140 molecules and SMARCA2 267,
+both under the 300 minimum. The substitution order in the brief gives this panel. AR is the easy class and
+BTK against EGFR is the hard kinase pair, so the panel can still fail, which was the design intent.
+
+## GATE before any goal-directed submission
+
+```bash
+grep -n "composite" src/graphinvent/ScoringFunction.py     # L2: must find the composite score logged
+grep -n "n_generated_raw" src/metrics/_core.py             # L3: must find the truncation field
+ls src/graphinvent/_metrics.py                             # L1: must NOT exist
+```
+
+All three must pass. Until then the budget curve integrates one oracle component rather than the composite
+reward, and validity can exceed 1.0 on a good model. Unconditional and conditional training are unaffected and
+can proceed.
+
+---
+
+# Part 4: the molecular glue program
+
+Three experiments, 17 jobs. The cheapest program: glues are drug-like, median 34 heavy atoms, `max_nodes` 54.
+**Run this program first.** It exercises every code path the PROTAC program uses at a fraction of the allocation,
+so a pipeline bug costs hours here rather than days there.
+
+Order: `preprocess_zinc` and `preprocess_glue` in parallel, then `prior_zinc`, then `prior_transfer` and
+`prior_scratch`, then the generate pair, then `mg_conditional`, then, gated, `mg_goal_directed`.
+
+**The conditioning panel measures out as specified**: IKZF1/3 merged 1,493 molecules, GSPT1 2,358, RBM39 526, all
+clearing 300. IKZF1/3 against GSPT1 is the hard pair, both cereblon neosubstrates reached by glutarimide
+chemistry; RBM39 is the positive control through DCAF15 and aryl sulfonamides. If RBM39 does not separate, the
+mechanism is broken rather than the task hard.
+
+**`mg_goal_directed` optimizes a chemotype-selectivity classifier, not potency**, because the glue activity data
+has 100 numeric DC50 rows in total and RBM39 has none. Whether to run it at all is an open question.
+
+---
+
+# Part 5: the battery program
+
+Three experiments, 18 jobs, and the most blocked of the three. In dependency order the blockers are: the oracle
+does not exist; PiNet2 is not installed and its aarch64 viability is unknown; PubChem-120K is not distributed and
+cannot be reconstructed without the supporting information; `Batt-P30K.h5` in the source repository is a 134 byte
+Git LFS pointer; KBS-409 and the F/P-holdout are not in the source repository either.
+
+What is available from `github.com/Teoroo-CMC/Batt-SLM`: `Batt-SLM/Batt-SLM.smi` at 1.88 MB,
+`Batt-SLM/filter_smiles.py`, the CPI implementation with `SolvFunc-87.csv`, and `Redox-Pot/redox_potential.py`.
+
+So `battery_unconditional` can run `preprocess_battslm`, `prior_scratch` and `generate_scratch` once the download
+is wired, and nothing else in the program can run yet.
+
+## KILL POINT: validate the oracle chain before it scores anything
+
+Run the chain over KBS-409 and confirm the known weakly solvating electrolytes come out with permittivity below
+10 and CPI below 0.5 while the conventional dilute electrolytes do not. Weakly solvating: MEK, 2Me-DOL, DIGDBE,
+HME, MTBE, OTA. Conventional: DMA, DMF, DEF, MPC, EPC, EB, GBL, MF, EF. **If the separation does not reproduce,
+nothing in the battery program runs.**
+
+## KILL POINT: time the oracle before designing around it
+
+The oracle has a conformer step inside it: three lowest-energy ETKDGv3 conformers, MMFF94-optimized, dipole
+averaged. Time the full chain on 100 molecules and report seconds per molecule by stage before submitting
+anything. 200 steps at batch 256 is 51,200 scorings, so at one second per molecule that is 14 hours of oracle
+alone. If it dominates by an order of magnitude, the design changes rather than the walltime.
+
+---
+
+# Part 6: the baselines
+
+**Virtual screening** over each task corpus train and validation split, same oracle, same budget. For the PROTAC
+program there is a second and harder screen, surrogate-ranked enumeration over the recombinant library, which is
+what a medicinal chemistry team would do and which a reviewer will ask for. Neither is implemented: there is no
+screening job type, and the eight `vs_*` metric keys are emitted as nulls with reasons.
+
+**REINVENT4** is not installed. Six fairness conditions must all be documented as met before the comparison is
+evidence: pinned version and commit; its prior trained on the same task corpus; matched tuning effort, stated for
+both sides; its diversity filter disabled or matched on our side, with both configurations reported; matched
+molecular size constraints, which matters most for PROTAC mass; and a shared oracle cache so the call counts mean
+the same thing. None is met today. A comparison failing any one of them does not go in the paper.
+
+---
+
+# Part 7: aggregation and the report
+
+Three seeds per reported number, **seeds 1, 2 and 3 rather than 0, 1 and 2**. `main.py` guards seeding on
+`seed > 0`, so seed 0 is never applied: two seed-0 generate runs produced different molecules. Until that is
+fixed, seed 0 is not a seed.
+
+Seeds 2 and 3 are run by copying the job directory and changing one key, because multi-seed submission does not
+exist. The aggregator that writes `experiments/<exp>/results/aggregate.json` does not exist either, so nothing
+can yet report a mean and a standard deviation over seeds. Both are open items and both gate every error bar in
+the paper.

@@ -1,0 +1,15 @@
+# Molecular glue design. Task corpus is the curated TPD-DB glue set; base corpus
+# is ZINC250k, because glues are drug-like and small.
+#
+# max_nodes 54 is the 99th-percentile heavy-atom count MEASURED on the curated
+# set (5,998 RDKit-parsable rows: median 34, p99 54, max 85). The brief said to
+# measure it rather than assume; this is the measurement.
+dataset_dir: tpddb_glue
+max_n_nodes: 54
+# Glues are drug-like: SA score at the whole-molecule level, no RetroTAC, no
+# component decomposition.
+bifunctional: false
+seed: 1
+slurm:
+  account: naiss2024-5-630-gpu
+  partition: gpu

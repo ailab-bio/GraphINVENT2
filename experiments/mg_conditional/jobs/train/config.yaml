@@ -1,0 +1,18 @@
+job_type: conditional
+dataset_dir: tpddb_glue_cond
+resume_from: experiments/mg_unconditional/jobs/prior_transfer/checkpoints/model_restart_20.pth
+epochs: 20
+batch_size: 500
+accumulation_steps: 4
+sample_every: 5
+n_samples: 2000
+device: cuda
+sample_conditions:
+  is_ikzf: 1.0
+  is_gspt1: 0.0
+  is_rbm39: 0.0
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "08:00:00"
+  gpus: 1

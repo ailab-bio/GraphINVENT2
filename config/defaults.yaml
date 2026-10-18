@@ -157,6 +157,18 @@ oracles: {}
 # "mode": none | score | loss | both; "components" maps a component to its method
 uncertainty_modulation: {}
 
+# --- RL schedule: separate keys, not the supervised ones -------------------
+# A learning step is not an epoch. Reusing `epochs` and `sample_every` for
+# reinforcement learning meant the two paths could not take different values,
+# and a change to the supervised defaults silently changed every optimization
+# run. A goal_directed job that sets `epochs` or `sample_every` is rejected.
+# Defaults from Atance et al. 2022, which CLAUDE.md already cites.
+rl_steps: 200
+rl_best_agent_every: 5
+rl_eval_every: 5
+# per experiment; null means fall back to `batch_size`
+rl_batch_size: null
+
 # contribution of the score to the augmented log-likelihood
 sigma: 20
 # contribution of the best agent so far (BASF) to the loss, in [0, 1]

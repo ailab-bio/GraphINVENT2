@@ -1,0 +1,15 @@
+# The harder screen: surrogate-ranked enumeration over the recombinant library,
+# which is what a medicinal chemistry team would do. Same oracle, same budget.
+# NOT YET IMPLEMENTED; see vs_baseline_tpddb.
+job_type: generate
+sample_mode: generate
+dataset_dir: protac_enumerated
+pretrained_model_path: experiments/protac_unconditional/jobs/prior_enumerated/checkpoints/model_restart_40.pth
+n_samples: 10000
+batch_size: 500
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "04:00:00"
+  gpus: 0

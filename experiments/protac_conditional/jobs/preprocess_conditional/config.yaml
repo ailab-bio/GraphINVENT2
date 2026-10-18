@@ -1,0 +1,13 @@
+job_type: preprocess
+smiles_file: data/datasets/tpddb_protac_cond/tpddb_protac_cond.smi
+dataset_dir: tpddb_protac_cond
+split_type: warhead_scaffold
+train_frac: 0.8
+valid_frac: 0.1
+batch_size: 1000
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "08:00:00"
+  gpus: 0
+  memory: "64G"

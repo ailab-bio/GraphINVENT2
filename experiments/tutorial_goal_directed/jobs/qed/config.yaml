@@ -3,10 +3,10 @@ pretrained_model_path: experiments/tutorial_unconditional/jobs/debug/checkpoints
 score_components: ["QED"]
 score_thresholds: [0.0]
 score_type: continuous
-epochs: 4
+rl_steps: 4
 # The analysis and its plots run on this schedule, so a 4-step tutorial has to
 # set it below the default of 10 or the run produces no molecules to look at.
-sample_every: 2
+rl_eval_every: 2
 batch_size: 20
 accumulation_steps: 1
 n_samples: 20

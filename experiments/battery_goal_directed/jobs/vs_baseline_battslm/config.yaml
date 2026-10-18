@@ -1,0 +1,13 @@
+# Virtual screening over the Batt-SLM train+validation split under the same
+# oracle and budget. NOT YET IMPLEMENTED (L27).
+job_type: generate
+sample_mode: generate
+pretrained_model_path: experiments/battery_unconditional/jobs/prior_scratch/checkpoints/model_restart_60.pth
+n_samples: 10000
+batch_size: 1000
+device: cpu
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "04:00:00"
+  gpus: 0

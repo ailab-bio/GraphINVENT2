@@ -1,0 +1,30 @@
+job_type: goal_directed
+pretrained_model_path: experiments/mg_unconditional/jobs/prior_transfer/checkpoints/model_restart_20.pth
+rl_steps: 200
+rl_best_agent_every: 5
+rl_eval_every: 5
+rl_batch_size: 256
+accumulation_steps: 1
+n_samples: 2000
+# sigma 20 for an activity-like objective, per CLAUDE.md.
+sigma: 20
+alpha: 0.5
+score_components: ["gspt1_selectivity_activity"]
+score_type: continuous
+oracles:
+  gspt1_selectivity_activity:
+    type: sklearn
+    path: data/surrogates/mg_gspt1_classifier_oracle.pickle
+success_threshold: 0.7
+success_definition: "one-versus-rest classifier probability >= 0.7 for degrades-GSPT1-rather-than-another-neosubstrate, over unique valid molecules. This is a chemotype-selectivity criterion and NOT a potency criterion."
+# The per-step trajectory -- validity, uniqueness, novelty and internal
+# diversity at every evaluation step -- is written to TensorBoard and nowhere
+# else now that logs/generation.log is gone. The diversity-collapse figure is
+# drawn from it, so this must stay true for any run that is reported.
+use_tensorboard: true
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "12:00:00"
+  gpus: 1

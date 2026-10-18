@@ -219,29 +219,27 @@ def get_restart_epoch() -> Union[int, str]:
     elif constants.restart or (
         constants.job_type == "generate" and constants.sample_mode == "evaluate"
     ):
-        # Supervised restart or test: find the last saved epoch from generation.log.
-        generation_path = constants.logs_dir + "generation.log"
-        if not Path(generation_path).exists():
+        # Supervised restart or test: the last epoch is the highest checkpoint
+        # on disk. This used to parse generation.log, which was the wrong
+        # source twice over: that file is written only on evaluation epochs, so
+        # its last row need not correspond to a checkpoint, and it recorded the
+        # first generation batch only. Asking the checkpoints guarantees that
+        # `model_restart_<epoch>.pth` exists, which is the thing the caller is
+        # about to load.
+        checkpoints = sorted(
+            (
+                int(match.group(1))
+                for path in Path(constants.checkpoints_dir).glob("model_restart_*.pth")
+                if (match := re.search(r"model_restart_(\d+)\.pth", path.name))
+            )
+        )
+        if not checkpoints:
             raise FileNotFoundError(
-                f"Restart requires '{generation_path}' but the file was not found. "
-                "Cannot determine the last completed epoch. "
+                f"Restart requires a checkpoint in '{constants.checkpoints_dir}' "
+                "and none matching model_restart_<epoch>.pth was found. "
                 "Set restart=false to start a fresh run."
             )
-        with open(generation_path, "r") as _f:
-            _rows = [r for r in csv.reader(_f) if r]
-        epoch = None
-        for _row in reversed(_rows[1:]):  # skip header row
-            try:
-                epoch = int(_row[0].strip()[6:])  # "Epoch 10" → 10
-                break
-            except (ValueError, IndexError):
-                continue
-        if epoch is None:
-            raise RuntimeError(
-                f"Could not determine the last epoch from '{generation_path}'. "
-                "The file may be empty or corrupted. "
-                "Set restart=false to start a fresh run."
-            )
+        epoch = checkpoints[-1]
     else:
         epoch = 0
 
@@ -333,130 +331,6 @@ def one_hot_encode(x: Union[str, int], allowable_set: list) -> Iterator[int]:
         )
     one_hot_generator = (int(x == s) for s in allowable_set)
     return one_hot_generator
-
-
-def properties_to_csv(
-    prop_dict: dict,
-    csv_filename: str,
-    epoch_key: str,
-    tb_writer: Union[SummaryWriter, None],
-    append: bool = True,
-    extra_cols: list = None,
-) -> None:
-    """
-    Writes a CSV summarizing how training is going by comparing the properties
-    of the generated structures during evaluation to the training set. Also
-    writes the properties to an active tensorboard.
-
-    Args:
-    ----
-        prop_dict (dict)   : Contains molecular properties.
-        csv_filename (str) : Full path/filename to CSV file.
-        epoch_key (str)    : For example, "Training set" or "Epoch {n}".
-        tb_writer (Union[SummaryWriter, None]) : Tensorboard SummaryWriter (if one
-                             has been created).
-        append (bool)      : Indicates whether to append to the output file (if
-                             the file exists) or start a new one. Default `True`.
-    """
-    # get all the relevant properties from the dictionary
-    frac_valid = prop_dict[(epoch_key, "fraction_valid")]
-    avg_n_nodes = prop_dict[(epoch_key, "avg_n_nodes")]
-    avg_n_edges = prop_dict[(epoch_key, "avg_n_edges")]
-    frac_unique = prop_dict[(epoch_key, "fraction_unique")]
-
-    # use the following properties if they exist
-    try:
-        run_time = prop_dict[(epoch_key, "run_time")]
-        frac_valid_pt = round(
-            float(prop_dict[(epoch_key, "fraction_valid_properly_terminated")]), 5
-        )
-        frac_pt = round(
-            float(prop_dict[(epoch_key, "fraction_properly_terminated")]), 5
-        )
-    except KeyError:
-        run_time = "NA"
-        frac_valid_pt = "NA"
-        frac_pt = "NA"
-
-    # helper: format "mean±std" when a std key is present in prop_dict
-    def _fmt(mean_val, std_key: str) -> str:
-        std = prop_dict.get((epoch_key, std_key))
-        if std is not None:
-            return f"{float(mean_val):.3f}\u00b1{float(std):.3f}"
-        return f"{float(mean_val):.3f}"
-
-    def _fmt_or_na(mean_val, std_key: str) -> str:
-        if mean_val == "NA":
-            return "NA"
-        return _fmt(mean_val, std_key)
-
-    (
-        norm_n_nodes_hist,
-        norm_atom_type_hist,
-        norm_formal_charge_hist,
-        norm_numh_hist,
-        norm_n_edges_hist,
-        norm_edge_feature_hist,
-        norm_chirality_hist,
-    ) = normalize_evaluation_metrics(prop_dict, epoch_key)
-
-    import os as _os
-
-    write_header = not append or not _os.path.exists(csv_filename)
-    _extra_header = (", " + ", ".join(extra_cols)) if extra_cols else ""
-    if write_header:
-        with open(csv_filename, "w") as output_file:
-            output_file.write(
-                "set, fraction_valid, fraction_valid_pt, fraction_pt, run_time, "
-                "avg_n_nodes, avg_n_edges, fraction_unique, atom_type_hist, "
-                "formal_charge_hist, numh_hist, chirality_hist, "
-                "n_nodes_hist, n_edges_hist, edge_feature_hist" + _extra_header + "\n"
-            )
-
-    _extra_values = ""
-    if extra_cols:
-        _parts = []
-        for _col in extra_cols:
-            _val = prop_dict.get((epoch_key, _col))
-            if _val is None or _val != _val:  # None or NaN check
-                _parts.append("NA")
-            elif isinstance(_val, float):
-                _parts.append(f"{_val:.5f}")
-            else:
-                _parts.append(str(_val))
-        _extra_values = ", " + ", ".join(_parts)
-
-    # append the properties of interest to the CSV file
-    with open(csv_filename, "a") as output_file:
-        output_file.write(
-            f"{epoch_key}, "
-            f"{_fmt(frac_valid, 'fraction_valid_std')}, "
-            f"{_fmt_or_na(frac_valid_pt, 'fraction_valid_pt_std')}, "
-            f"{_fmt_or_na(frac_pt, 'fraction_pt_std')}, "
-            f"{run_time}, "
-            f"{_fmt(avg_n_nodes, 'avg_n_nodes_std')}, "
-            f"{_fmt(avg_n_edges, 'avg_n_edges_std')}, "
-            f"{_fmt(frac_unique, 'fraction_unique_std')}, "
-            f"{norm_atom_type_hist}, {norm_formal_charge_hist}, "
-            f"{norm_numh_hist}, {norm_chirality_hist}, {norm_n_nodes_hist}, "
-            f"{norm_n_edges_hist}, {norm_edge_feature_hist}" + _extra_values + "\n"
-        )
-
-    try:
-        epoch = int(epoch_key.split()[1])
-    except (IndexError, ValueError):
-        pass
-    else:
-        if tb_writer is not None:
-            tb_writer.add_scalar("Evaluation/fraction_valid", frac_valid, epoch)
-            tb_writer.add_scalar(
-                "Evaluation/fraction_valid_and_properly_term", frac_valid_pt, epoch
-            )
-            tb_writer.add_scalar(
-                "Evaluation/fraction_properly_terminated", frac_pt, epoch
-            )
-            tb_writer.add_scalar("Evaluation/avg_n_nodes", avg_n_nodes, epoch)
-            tb_writer.add_scalar("Evaluation/fraction_unique", frac_unique, epoch)
 
 
 def read_last_molecule_idx(restart_file_path: str) -> Tuple[int, int]:

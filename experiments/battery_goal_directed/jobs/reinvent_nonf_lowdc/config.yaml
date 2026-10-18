@@ -1,0 +1,16 @@
+# REINVENT4. NOT INSTALLED; fairness conditions unmet.
+job_type: goal_directed
+pretrained_model_path: experiments/battery_unconditional/jobs/prior_scratch/checkpoints/model_restart_60.pth
+rl_steps: 200
+rl_eval_every: 5
+rl_batch_size: 256
+score_components: ["battery_s7"]
+score_type: continuous
+success_threshold: 0.0
+success_definition: "as in rl_nonf_lowdc"
+device: cuda
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+slurm:
+  time: "24:00:00"
+  gpus: 1

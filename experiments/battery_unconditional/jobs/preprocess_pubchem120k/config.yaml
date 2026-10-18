@@ -1,0 +1,16 @@
+job_type: preprocess
+# BLOCKER: PubChem-120K is not distributed and cannot be reconstructed without
+# the supporting information. See instructions.md.
+smiles_file: data/raw/pubchem120k/pubchem120k.smi
+dataset_dir: pubchem120k
+split_type: scaffold
+train_frac: 0.8
+valid_frac: 0.1
+batch_size: 1000
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+# Basis: 119,995 molecules at max_nodes 16, which is small per molecule.
+slurm:
+  time: "04:00:00"
+  gpus: 0
+  memory: "32G"

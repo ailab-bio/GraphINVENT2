@@ -6,9 +6,9 @@ score_type: continuous
 oracle_budget: 200
 checkpoint_oracle_counts: [100]
 eval_sample_size: 20
-epochs: 4
+rl_steps: 4
 batch_size: 20
 accumulation_steps: 1
 n_samples: 20
-sample_every: 1000
+rl_eval_every: 1000
 device: cpu

@@ -1,0 +1,30 @@
+# Battery electrolyte solvent design, reproducing the non-fluorinated
+# low-permittivity campaign of Zhang, Mercado, Le & Zhang, ACS Nano 2026, 20,
+# 20714-20729 (doi 10.1021/acsnano.6c06255).
+#
+# max_nodes 16 is NOT a measured 99th percentile: the Batt-SLM selection
+# criteria bound heavy atoms at 2 < n < 17, so 16 is the hard ceiling and
+# n_dropped_oversized must be zero. If it is not zero, the corpus is not the
+# one the criteria describe.
+dataset_dir: battp30k
+max_n_nodes: 16
+bifunctional: false
+seed: 1
+slurm:
+  account: naiss2024-5-630-gpu
+  partition: gpu
+
+# Continuous conditioning on the molecular dipole moment, a direct density
+# functional theory label in Batt-P30K and the quantity the permittivity chain
+# is built on. This is the only conditional experiment in the paper where the
+# conditioned property is computable on generated molecules by nearly the
+# method that labeled the training set.
+condition_dim: 1
+conditioning:
+  properties: ["dipole"]
+  source: smiles_file
+# Debye. The source work's reported dipole MAE for PiNet2-P3 is 0.59 D
+# (unverified), so a tolerance below that would measure the predictor's error
+# rather than the generator's control.
+condition_tolerance:
+  dipole: 0.75

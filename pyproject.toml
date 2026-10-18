@@ -51,7 +51,9 @@ components = [
 docking = ["vina", "meeko"]
 
 # pip install -e ".[dev]"  — linting / type checking during development
-dev = ["black", "ruff", "mypy", "pytest", "pre-commit"]
+# pytest-timeout with a default: a metric that stops terminating used to
+# hang the suite at 100% CPU with no error rather than failing.
+dev = ["black", "ruff", "mypy", "pytest", "pytest-timeout", "pre-commit"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -84,6 +86,8 @@ ignore = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+timeout = 600
+timeout_method = "thread"
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 
