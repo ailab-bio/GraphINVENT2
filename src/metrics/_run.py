@@ -156,11 +156,14 @@ def evaluate_generation(
     unavailable.update(core.pop("_filter_unavailable", {}))
     metrics.update(core)
 
+    # Whole-PROTAC synthesizability, for bifunctional datasets only.
+    _retrotac_metrics(constants, generated_smiles, metrics, unavailable)
+
     # fcd, against the test split.
     from ._unconditional import _compute_fcd
 
     if test_smiles:
-        value = _compute_fcd(
+        value, reason = _compute_fcd(
             [
                 s
                 for s in _core.canonical_smiles(
@@ -172,10 +175,7 @@ def evaluate_generation(
         )
         metrics["fcd"] = value
         if value is None:
-            unavailable["fcd"] = (
-                "the fcd package is not installed; it is needed for the "
-                "Frechet ChemNet Distance"
-            )
+            unavailable["fcd"] = reason
     else:
         metrics["fcd"] = None
         unavailable["fcd"] = f"no test split at {constants.test_set}"
@@ -413,8 +413,18 @@ def evaluate_goal_directed(
             best_by_smiles[smi] = float(score)
     scored = sorted(best_by_smiles.items())
 
+    retrotac_by_smiles = _retrotac_metrics(
+        constants, generated_smiles, metrics, unavailable
+    )
+
     threshold = _success_threshold(constants)
-    metrics.update(_budget.compute_set_level_metrics(scored, threshold))
+    metrics.update(
+        _budget.compute_set_level_metrics(
+            scored,
+            threshold,
+            retrotac_by_smiles=retrotac_by_smiles or None,
+        )
+    )
     metrics["success_threshold"] = threshold
 
     try:
@@ -582,9 +592,69 @@ def _efficiency_metrics(
         )
 
 
+def _retrotac_metrics(constants, generated_smiles, metrics, unavailable) -> dict:
+    """
+    `retrotac_mean`/`retrotac_median`, for bifunctional datasets only.
+
+    Gated on `bifunctional` because the score has no meaning off the
+    distribution it was fitted to: RetroTAC predicts a route-derived score for
+    PROTAC-sized molecules, and running it over drug-like output would produce
+    a number that looks comparable and is not. SA score is reported either way
+    and remains the measure for molecular glues and every drug-like dataset.
+
+    Returns the score per molecule so the goal-directed quality gate can reuse
+    it. An empty dict means RetroTAC did not run.
+    """
+    if not getattr(constants, "bifunctional", False):
+        return {}
+
+    unique_valid = sorted(
+        {
+            s
+            for s in _core.canonical_smiles(
+                generated_smiles, isomeric=_isomeric(constants)
+            )
+            if s
+        }
+    )
+    if not unique_valid:
+        for key in ("retrotac_mean", "retrotac_median"):
+            metrics[key] = None
+            unavailable[key] = "no unique valid molecule to score"
+        return {}
+
+    from ._retrotac import MissingInput as RetroTACMissing
+    from ._retrotac import compute_retrotac_metrics
+
+    try:
+        aggregate, per_molecule = compute_retrotac_metrics(unique_valid)
+    except RetroTACMissing as error:
+        reason = " ".join(str(error).split())
+        for key in ("retrotac_mean", "retrotac_median"):
+            metrics[key] = None
+            unavailable[key] = reason
+        return {}
+
+    metrics.update(aggregate)
+    for key, value in aggregate.items():
+        if value is None:
+            unavailable[key] = "RetroTAC scored none of the unique valid molecules"
+    return per_molecule
+
+
 def _success_threshold(constants) -> float:
-    thresholds = getattr(constants, "score_thresholds", None) or []
-    return float(thresholds[0]) if thresholds else DEFAULT_SUCCESS_THRESHOLD
+    """
+    The score at or above which a molecule counts as a success.
+
+    CLAUDE.md defines `success_rate` against `success_threshold`, so that is
+    the key read here. It used to read `score_thresholds[0]`, which is the RL
+    reward-shaping threshold and a different quantity that merely happens to
+    share the default value of 0.5.
+    """
+    configured = getattr(constants, "success_threshold", None)
+    if configured is not None:
+        return float(configured)
+    return DEFAULT_SUCCESS_THRESHOLD
 
 
 def _blocked(metrics: dict, unavailable: dict, *, goal_directed: bool = False) -> None:
@@ -597,13 +667,16 @@ def _blocked(metrics: dict, unavailable: dict, *, goal_directed: bool = False) -
     number is worse than an absent one.
     """
     # filter_pass_rate and Ro5_pass_rate are implemented; bRo5_pass_rate is
-    # not, because its thresholds could not be verified at the source, and
-    # quality_filtered_top10_mean needs only the structural filters, so it is
-    # computed by the goal-directed path rather than blocked here.
-    if goal_directed and "quality_filtered_top10_mean" not in metrics:
+    # not, because its definition could not be verified at the source.
+    # quality_filtered_top10_mean is computed in _budget.compute_set_level_metrics,
+    # which returns None when nothing survives the filters -- a real outcome for a
+    # reward-hacked run, so it gets a reason rather than being left bare.
+    if goal_directed and metrics.get("quality_filtered_top10_mean") is None:
         metrics["quality_filtered_top10_mean"] = None
-        unavailable["quality_filtered_top10_mean"] = (
-            "needs scored molecules with their SA scores"
+        unavailable.setdefault(
+            "quality_filtered_top10_mean",
+            "no unique valid molecule passed the structural filters with an SA "
+            "score below 4.5",
         )
 
 

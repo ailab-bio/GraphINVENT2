@@ -1,8 +1,11 @@
 # Contributing to GraphINVENT2
 
 Contributions are welcome as issues or pull requests. Bug reports are most useful when they
-include the `params.json` of the failing job and the `run_info` block from `params_all.json`,
-which records the library versions, device, and git commit the run used.
+include the failing job's `results/config.resolved.yaml`, which records the full merged
+configuration the run actually used, and its `results/metrics.json`, whose `run` block records
+the job type, dataset, seed, device and timestamp. For a `preprocess` failure, send the
+dataset's `preprocessing.yaml` instead: its `run_info` block carries the library versions,
+device and git commit.
 
 ## Code style
 

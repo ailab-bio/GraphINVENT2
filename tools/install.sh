@@ -14,6 +14,10 @@ REPO="$(dirname "$TOOLS")"
 # Pins. Change one here and in README.md together.
 PROTAC_SPLITTER_URL="https://github.com/ribesstefano/PROTAC-Splitter.git"
 PROTAC_SPLITTER_SHA="f1920122e1aa4f1d5f3643b8e92e72e99826e43a"
+RETROTAC_URL="https://github.com/ribesstefano/RetroTAC.git"
+RETROTAC_SHA="5ba851656753542d4a7f23438c033af280db9935"
+# sha256 of release/gnn_20260828_182305_final.ckpt.gz, from its MANIFEST.txt
+RETROTAC_CKPT_SHA256="83ccd2404cfffec230f7457926a95421731e56cc37268080e491b18d4da038af"
 MCF_URL="https://raw.githubusercontent.com/molecularsets/moses/master/moses/metrics/mcf.csv"
 MCF_SHA256="f4a2bfacb4cb8877"   # first 16 hex of sha256; see README.md
 
@@ -69,6 +73,81 @@ PROBE
 fi
 
 # ---------------------------------------------------------------------------
+# RetroTAC: whole-PROTAC synthesizability (retrotac_mean/_median, and the
+# bifunctional form of quality_filtered_top10_mean).
+#
+# Its OWN environment, like PROTAC-Splitter: RetroTAC pins python ==3.12.* and
+# xgboost>=2.0,<3.0 against this project's 3.13 and xgboost>=3.2.
+# ---------------------------------------------------------------------------
+if [ -x "$TOOLS/RetroTAC/.venv/bin/python" ]; then
+    present+=("RetroTAC (env exists)")
+else
+    echo "-- installing RetroTAC at ${RETROTAC_SHA:0:8}"
+    if [ ! -d "$TOOLS/RetroTAC/.git" ]; then
+        git clone "$RETROTAC_URL" "$TOOLS/RetroTAC"
+    fi
+    git -C "$TOOLS/RetroTAC" fetch --quiet origin
+    git -C "$TOOLS/RetroTAC" checkout --quiet "$RETROTAC_SHA"
+
+    # Python 3.12 exactly. Prefer a real python3.12; otherwise conda, which is
+    # what the dev machine has. uv's `uv venv --python 3.12` is equivalent on a
+    # cluster that has uv.
+    if command -v python3.12 >/dev/null 2>&1; then
+        python3.12 -m venv "$TOOLS/RetroTAC/.venv"
+    elif command -v conda >/dev/null 2>&1; then
+        conda create -y -q -p "$TOOLS/RetroTAC/.venv" python=3.12
+    else
+        echo "!! need python3.12 (or conda, or uv) to build RetroTAC's env; skipping"
+        echo "   retrotac_* will record null until this is resolved"
+    fi
+
+    if [ -x "$TOOLS/RetroTAC/.venv/bin/python" ]; then
+        "$TOOLS/RetroTAC/.venv/bin/python" -m pip install --quiet --upgrade pip
+        "$TOOLS/RetroTAC/.venv/bin/python" -m pip install --quiet "$TOOLS/RetroTAC"
+
+        # The pip xgboost wheel links @rpath/libomp.dylib and looks for
+        # Homebrew's copy. Without it EVERY import fails, the GNN path included,
+        # because it pulls xgboost transitively. conda puts libomp in the env
+        # prefix, which is on the dlopen search path. On Linux the wheels bundle
+        # their own libgomp and this is a no-op.
+        if ! "$TOOLS/RetroTAC/.venv/bin/python" -c "import xgboost" 2>/dev/null; then
+            if command -v conda >/dev/null 2>&1; then
+                echo "   adding llvm-openmp (xgboost cannot load without it)"
+                conda install -y -q -p "$TOOLS/RetroTAC/.venv" llvm-openmp
+            else
+                echo "!! xgboost cannot load: no OpenMP runtime. On macOS: brew install libomp"
+            fi
+        fi
+        installed+=("RetroTAC + its own python3.12 env")
+    fi
+fi
+
+# Its model weights ship in the clone, gzipped under release/. Verify against
+# the upstream MANIFEST before unpacking: these are 105.8 MiB of weights that
+# every reported retrotac_* number depends on.
+RETROTAC_CKPT="$TOOLS/RetroTAC/outputs/models/gnn_20260828_182305/gnn_20260828_182305_final.ckpt"
+if [ -s "$RETROTAC_CKPT" ]; then
+    present+=("RetroTAC GNN checkpoint (unpacked)")
+elif [ -s "$TOOLS/RetroTAC/release/gnn_20260828_182305_final.ckpt.gz" ]; then
+    echo "-- unpacking the RetroTAC GNN refit"
+    if command -v sha256sum >/dev/null 2>&1; then
+        got="$(sha256sum "$TOOLS/RetroTAC/release/gnn_20260828_182305_final.ckpt.gz" | cut -d' ' -f1)"
+    else
+        got="$(shasum -a 256 "$TOOLS/RetroTAC/release/gnn_20260828_182305_final.ckpt.gz" | cut -d' ' -f1)"
+    fi
+    if [ "$got" != "$RETROTAC_CKPT_SHA256" ]; then
+        echo "!! RetroTAC checkpoint checksum is $got"
+        echo "   expected $RETROTAC_CKPT_SHA256 -- refusing to unpack it"
+        exit 1
+    fi
+    mkdir -p "$(dirname "$RETROTAC_CKPT")"
+    gunzip -kc "$TOOLS/RetroTAC/release/gnn_20260828_182305_final.ckpt.gz" > "$RETROTAC_CKPT"
+    # The XGBoost and MLP refits, 3.4 MiB, for completeness.
+    tar xzf "$TOOLS/RetroTAC/release/retrotac_checkpoints.tar.gz" -C "$TOOLS/RetroTAC" || true
+    installed+=("RetroTAC GNN checkpoint (105.8 MiB, checksum verified)")
+fi
+
+# ---------------------------------------------------------------------------
 # MOSES MCF SMARTS: filter_pass_rate. Committed, because it is 739 bytes of
 # data rather than a package, and the upstream file has no release tag.
 # ---------------------------------------------------------------------------
@@ -79,7 +158,16 @@ else
     curl -fsSL "$MCF_URL" -o "$TOOLS/data/mcf.csv"
     installed+=("tools/data/mcf.csv")
 fi
-got="$(shasum -a 256 "$TOOLS/data/mcf.csv" | cut -c1-16)"
+# sha256sum is the GNU/Linux name, shasum the macOS one. This script has to
+# run on both, and under `set -e` a missing command aborts the whole install.
+if command -v sha256sum >/dev/null 2>&1; then
+    got="$(sha256sum "$TOOLS/data/mcf.csv" | cut -c1-16)"
+elif command -v shasum >/dev/null 2>&1; then
+    got="$(shasum -a 256 "$TOOLS/data/mcf.csv" | cut -c1-16)"
+else
+    echo "!! neither sha256sum nor shasum is on PATH; cannot verify mcf.csv"
+    exit 1
+fi
 if [ "$got" != "$MCF_SHA256" ]; then
     echo "!! tools/data/mcf.csv checksum is $got, expected $MCF_SHA256"
     echo "   The upstream file changed. Check it before trusting filter_pass_rate."

@@ -116,7 +116,7 @@ already prepared as PDBQT with a search box.
   "center": [12.0, 3.4, -8.1],
   "box_size": [20.0, 20.0, 20.0],
   "exhaustiveness": 8,
-  "n_workers": 8,
+  "n_workers": 0,
   "transform": {"type": "clipped_linear", "low": -4.0, "high": -11.0}
 }
 ```

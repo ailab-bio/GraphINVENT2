@@ -31,6 +31,13 @@ dependencies = [
 # 3.2.0 is the first aarch64 build with GPU support, so that is the floor.
 surrogates = ["xgboost>=3.2.0"]
 
+# uv sync --extra metrics  — Frechet ChemNet Distance, which CLAUDE.md calls
+# the headline number for unconditional generation. Pinned because the ChemNet
+# weights ship inside the wheel, so the version *is* the reference model.
+# Pure Python over torch/numpy/scipy, so it resolves on both macOS arm64 and
+# Linux aarch64.
+metrics = ["fcd==1.2.2"]
+
 # uv sync --extra components  — PROTAC-Splitter, for the component-level
 # metrics on bifunctional molecules (Ribes et al., J. Cheminform. 18:30, 2026).
 # Not on PyPI, so it installs from the repository.

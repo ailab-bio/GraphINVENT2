@@ -34,6 +34,10 @@ data/pre-training/*.csv
 experiments/*/jobs/*/results/
 experiments/*/jobs/*/checkpoints/
 experiments/*/jobs/*/logs/
+# Rendered per submission by `submit.py --slurm`, and it bakes in the absolute
+# repo root and interpreter of whichever machine rendered it. Committing one
+# ships a laptop's paths to the cluster, where `cd` and the venv both fail.
+experiments/*/jobs/*/run.sbatch
 slurm*.out
 
 # Ignore Python cache files and directories

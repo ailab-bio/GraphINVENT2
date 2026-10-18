@@ -38,7 +38,8 @@ Two environments, and the code must work in both without edits.
 
 What this requires in practice:
 
-- **Three devices supported: CPU, CUDA and MPS.** Device checks follow one pattern; `pin_memory` stays CUDA-only. A job must produce the same metrics on all three within floating-point tolerance, and the tests must pass on a laptop with no GPU.
+- **Three devices supported: CPU, CUDA and MPS.** Device checks follow one pattern; `pin_memory` stays CUDA-only. A job must produce the same metrics on all three within floating-point tolerance, and the tests must pass on a laptop with no GPU. An accelerator that is asked for but absent falls back when run interactively, so a laptop runs the job unchanged; **inside a SLURM allocation it is fatal instead**, because falling back there spends the whole walltime on the wrong device and still writes plausible metrics.
+- **`n_workers` must be 0.** The HDF5 dataset holds an open file handle, which cannot be pickled for a spawned worker and is not fork-safe for a forked one, where it corrupts the loaded graphs silently rather than failing. Control loading cost with `block_size`.
 - **The same job directory runs in both places unchanged.** The runner is a command-line choice, never a config key. See [Running jobs](#running-jobs).
 - **No architecture assumptions.** Arrhenius GPU nodes are aarch64 with CUDA 13, not x86, so every dependency must resolve on both macOS arm64 and Linux aarch64. A dependency that only ships x86 wheels is not usable here, whatever else it offers.
 - **Paths are configuration.** Cluster home directories have small quotas and data belongs on project filesystems, so `data/` and `experiments/` roots are configurable and never hard-coded.
@@ -60,19 +61,23 @@ Any other change to a hyperparameter needs a stated reason and my approval first
 
 ## Setup
 
-Python 3.11. Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; that pair is the single source of truth. Nothing else declares dependencies, on any machine.
+Python 3.13. Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; that pair is the single source of truth. Nothing else declares dependencies, on any machine.
 
 ```bash
 # PyTorch first, matched to your platform (see pytorch.org)
 uv pip install torch
 
 uv sync                     # core
-uv sync --extra oracles     # TDC, for RL and oracle-based evaluation
+uv sync --extra metrics     # fcd, for the headline unconditional metric
 uv sync --extra surrogates  # XGBoost, for activity surrogates
+uv sync --extra components  # PROTAC-Splitter, for component-level metrics
+uv sync --extra docking     # AutoDock Vina; no aarch64 wheel, see tools/README.md
 uv sync --extra dev         # ruff, pytest
 ```
 
-Keep the dependency list short. RDKit, PyTorch, h5py, numpy, PyYAML and matplotlib are core. TDC, XGBoost, FCD and AiZynthFinder are optional extras used by RL and evaluation only. Adding a core dependency needs a reason, and any dependency must resolve on both macOS arm64 and Linux aarch64.
+Keep the dependency list short. RDKit, PyTorch, h5py, numpy, PyYAML and matplotlib are core. fcd, XGBoost, PROTAC-Splitter and AutoDock Vina are optional extras used by evaluation and RL only. Adding a core dependency needs a reason, and any dependency must resolve on both macOS arm64 and Linux aarch64.
+
+External tools that are not a plain PyPI install are inventoried in `tools/README.md`; a dependency used but not recorded there is a bug.
 
 ---
 
@@ -248,7 +253,7 @@ All metrics live in `src/metrics/` and have exactly one implementation. Do not c
 | `near_duplicate_rate` | fraction of unique valid molecules whose maximum ECFP4 Tanimoto to any training molecule exceeds 0.9 |
 | `internal_diversity` | mean pairwise Tanimoto distance (1 − similarity) on ECFP4 (Morgan, radius 2, 2048 bits) over unique valid molecules, subsampled to 10,000 |
 | `scaffold_diversity` | unique Bemis-Murcko scaffolds / unique valid molecules |
-| `sa_score_mean`, `sa_score_median` | synthetic accessibility over unique valid molecules |
+| `sa_score_mean`, `sa_score_median` | synthetic accessibility over unique valid molecules. Whole-molecule for a drug-like dataset; for a bifunctional one it is reported over the decomposed warheads instead, because SA score reads a PROTAC's size as difficulty (see Component-level metrics) |
 | `filter_pass_rate` | fraction of unique valid molecules passing MCF and PAINS structural alerts |
 | `Ro5_pass_rate`, `bRo5_pass_rate` | fraction of unique valid molecules passing 'Rule of 5' or 'Beyond Rule of 5' rules |
 
@@ -287,10 +292,13 @@ Used when the condition is a class rather than a value, such as a target protein
 
 ### Component-level metrics, for bifunctional molecules
 
-Whole-molecule statistics for a PROTAC are dominated by the linker, which is the least informative part, so for bifunctional molecules the conditional and goal-directed metrics above are computed on the decomposed target-binding component rather than the whole molecule. The core metrics and any synthesizability score for the whole molecule stay whole-molecule.
+Whole-molecule statistics for a PROTAC are dominated by the linker, which is the least informative part, so for bifunctional molecules the conditional and goal-directed metrics above are computed on the decomposed target-binding component rather than the whole molecule. The core metrics stay whole-molecule.
+
+**Synthesizability splits by level.** SA score cannot be used at the whole-PROTAC level: it reads size as difficulty, and on 500 real TPD-DB degraders the median SA is 4.71 with 58.6% failing `sa_score < 4.5`, against 2.87 and 6.2% for drug-like ZINC. Those degraders were made and tested, so the measure rejects chemistry that demonstrably exists. So for a bifunctional dataset, **RetroTAC scores the whole PROTAC and SA score scores the warheads** after decomposition, where the fragments are drug-sized and SA behaves. Both are reported; neither replaces the other in `metrics.json`. A dataset declares itself bifunctional with `bifunctional: true`, which is also what gates every metric in this section. Molecular glues and any drug-like dataset keep SA score at the whole-molecule level and record no RetroTAC.
 
 | Key | Definition |
 |---|---|
+| `retrotac_mean`, `retrotac_median` | route-derived synthesizability of the **whole** PROTAC (Ribes et al., arXiv:2610.13639), over unique valid molecules. Not clipped to [0, 1]: a value outside it means the molecule is far from the model's training distribution |
 | `split_success_rate` | fraction of generated molecules successfully decomposed into components |
 | `warhead_*` | the core and conditional metrics recomputed over target-binding components |
 | `e3_recognizable_rate` | fraction of successfully split molecules whose predicted E3 ligand exceeds a stated ECFP4 Tanimoto to any known E3 ligand. A validity check, not a diversity analysis |
@@ -307,7 +315,7 @@ Every component-level metric is computed only over successfully split molecules,
 | `vs_delta_top10_at_<...>` | generative minus virtual screening, the headline comparison |
 | `success_rate` | fraction of unique valid molecules scoring at or above `success_threshold`; multiple property thresholds combine with AND |
 | `top100_scaffold_count`, `top100_internal_diversity` | diversity among the 100 highest-scoring molecules |
-| `quality_filtered_top10_mean` | top-10 mean among molecules passing structural filters and `sa_score < 4.5` |
+| `quality_filtered_top10_mean` | top-10 mean among molecules passing structural filters and a synthesizability gate: `sa_score < 4.5` normally, and `retrotac >= 0.30` for a bifunctional dataset. The two thresholds are matched on permissiveness rather than on value — each admits ~94% of the real molecules of the kind it applies to. The RetroTAC floor is 0.30 and not the paper's 0.7, which is a reporting convention rather than a calibrated boundary and which only 18.8% of real degraders reach; approved 2026-10-18 |
 | `eval_oracle_top10_mean` | the same top-10 molecules rescored by the evaluation oracle (see below) |
 | `top100_outside_domain_rate` | fraction of the top 100 whose maximum ECFP4 Tanimoto to the surrogate's training set falls below a stated floor |
 
@@ -378,18 +386,66 @@ matplotlib is the only plotting dependency. Do not add seaborn, plotly, or anyth
 
 ## Status
 
-Not yet implemented, as of the last update to this file:
+Verified against the code on 2026-10-18.
 
-- `results/metrics.json`: no job writes one. The metrics in `src/metrics/` are not called from `src/graphinvent/`, which still logs to `logs/generation.log`
-- Near-duplicate rate, scaffold diversity, structural-alert filters, Ro5 and bRo5
-- Categorical conditional metrics and all component-level metrics
-- Visualization and HTML reports after each job in the code
-- Virtual screening baseline, fixed-budget sample efficiency, AUC, top-100 diversity, quality-filtered top-k
-- The optimization and evaluation surrogate pair, and the applicability-domain check
-- Model efficiency metrics
-- SLURM support: `--slurm`, the template, `run.sbatch`, and the `slurm:` config block. Nothing has been run on Arrhenius, and the aarch64 plus CUDA 13 environment is unverified
-- Tutorials: `tutorials/` still describes the pre-restructure interface
+**Implemented since this section was last written** (listed because the entries
+below used to claim otherwise): `results/metrics.json` and `results/report.html`
+are written by `generate`, `goal_directed`, `unconditional` and `conditional`;
+`near_duplicate_rate`, `scaffold_diversity`, `filter_pass_rate` (MCF + PAINS)
+and `Ro5_pass_rate`; the model-efficiency keys; the fixed-budget goal-directed
+statistics (`best_at_*`, `top10_mean_at_*`, `top100_mean_at_*`, `auc_top10`,
+`success_rate`, `top100_scaffold_count`, `top100_internal_diversity`);
+`quality_filtered_top10_mean`; `retrotac_mean`/`retrotac_median` for
+bifunctional datasets; and SLURM support in full — `--slurm`,
+`config/slurm.sh.template`, `run.sbatch` and the `slurm:` config block all
+exist and render.
 
-Open defects are in `TODO.md`. For now just append to that file, do not execute or try to solve anything in that file.
+Not yet implemented:
 
-Experiments for the paper, meaning the specific datasets and optimization tasks, are not yet chosen. Do not assume any particular benchmark.
+- **`bRo5_pass_rate`** returns null by design. Doak et al., *Chem. Biol.*
+  21:1115 (2014) could not be obtained, and the literature defines bRo5 as the
+  space compounds fall *into* by exceeding Ro5 rather than a window to stay
+  within, so the sense of the rate is unsettled. The reason is recorded in the
+  `unavailable` block of every `metrics.json`.
+- **RetroTAC proper, the 27-member ensemble.** What is installed is the
+  released final **GNN refit** (held-out R² 0.615, RMSE 0.140). The ensemble
+  (R² 0.647, RMSE 0.132) is 1.4 GiB of per-fold cross-validation models that
+  the release archives omit, so using it would mean retraining the
+  cross-validation first. Upstream will publish it to the HuggingFace Hub after
+  peer review, at which point `from_pretrained` takes a Hub id.
+- **Categorical conditional metrics are implemented but unwired.** `delta_nll`,
+  `knn_purity_<k>`, `class_match_*` and `class_selectivity_margin` exist in
+  `src/metrics/_conditions.py` with no caller, so the keys never appear. The
+  per-class `condition_coverage` breakdown and the `_<class>` suffix convention
+  are unused.
+- **Component-level metrics are implemented but unwired.** `split_success_rate`,
+  `warhead_*` and `e3_recognizable_rate` exist in `src/metrics/_components.py`
+  with no caller. The conditional half of `warhead_*` is not implemented at all.
+- **The virtual screening baseline is implemented but unwired**, and so are
+  `eval_oracle_top10_mean` and `top100_outside_domain_rate`. All three emit an
+  explicit null with a reason rather than a number.
+- **The optimization and evaluation surrogate pair**, and the
+  applicability-domain check that depends on it.
+- **Multi-seed reporting.** Nothing writes `experiments/<exp>/results/aggregate.json`,
+  and `submit.py` runs exactly one job directory with one `seed`, so the three
+  seeds the reporting conventions require are produced by hand.
+- **Exactly one implementation of each metric.** `src/graphinvent/_metrics.py`
+  is a second implementation that `Analyzer` imports, and it reaches
+  `logs/generation.log`, TensorBoard and `results/oracle_eval.csv` with
+  definitions that differ from `src/metrics/` (`success_rate` uses `>` there and
+  `>=` here). `src/metrics/_unconditional.evaluate_unconditional` and its two
+  siblings are a third, exported but uncalled. `nll_*` and `uc_jsd` have their
+  only implementation in `Analyzer`, outside `src/metrics/`.
+- **The plot style guide, applied to the existing figures.**
+  `src/metrics/plot_style.py` carries the palette and rcParams; `Analyzer`'s
+  figures still hardcode their own colors, save PNG only, and write to `logs/`.
+- **Nothing has been run on Arrhenius.** The aarch64 plus CUDA 13 environment
+  is unverified, and so is whether the Lmod `module` function survives into the
+  batch script.
+- **Tutorials:** `tutorials/` still describes the pre-restructure interface.
+
+Open defects are in `TODO.md`. For now just append to that file, do not execute
+or try to solve anything in that file.
+
+Experiments for the paper, meaning the specific datasets and optimization
+tasks, are not yet chosen. Do not assume any particular benchmark.

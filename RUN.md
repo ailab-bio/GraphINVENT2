@@ -87,7 +87,14 @@ source .venv/bin/activate
 uv pip install "torch>=2.11"      # or: --index-url https://download.pytorch.org/whl/cu130
 uv pip install -e .
 uv pip install -e ".[surrogates]"
+uv pip install -e ".[metrics]"     # fcd: the headline unconditional metric
+bash tools/install.sh              # PROTAC-Splitter and the MCF data
 ```
+
+Without the `metrics` extra, `fcd` records null in every run and the headline
+unconditional number does not exist. It is a pure-Python wheel over
+torch/numpy/scipy and the ChemNet weights ship inside it, so there is nothing to
+download at run time and nothing to point at a cache.
 
 - **MY TIME:** 10 minutes
 - **WALL CLOCK:** 10 to 20 minutes, mostly downloading torch
@@ -392,3 +399,79 @@ To find it in one sitting:
    It does not transfer between datasets.
 
 Then bring the number to a decision about whether to change the hyperparameter.
+
+---
+
+## What this repository assumes about the node
+
+Recorded here because these are the settings a cluster run depends on and the
+laptop never exercises. Everything in this section was reasoned from the code
+and the Arrhenius documentation; **none of it has been run on the cluster.**
+
+### Thread counts are set from `slurm.cpus_per_task`
+
+`config/slurm.sh.template` exports `OMP_NUM_THREADS`, `MKL_NUM_THREADS` and
+`OPENBLAS_NUM_THREADS` from `slurm.cpus_per_task`, which defaults to 72 (one
+GH200 superchip). Left unset, the OpenMP runtimes behind torch, numpy and RDKit
+size their pools from the node's **256** cores rather than from the cpuset the
+job was allocated — oversubscription that is both antisocial on a shared node
+and slower than the correct count. PyTorch takes its intra-op thread count from
+`OMP_NUM_THREADS`, so no code change is involved.
+
+If you want a different number, change `slurm.cpus_per_task`; do not export the
+variables by hand, because then two places disagree. For a job whose bottleneck
+is single-threaded graph construction rather than linear algebra, a smaller
+number may be faster — measure before changing it.
+
+### A requested accelerator that is absent is now fatal under SLURM
+
+`device: cuda` with no CUDA available falls back to CPU when you run
+interactively, so a laptop runs any job directory unchanged. **Inside a SLURM
+allocation it raises instead.** This matters because the aarch64 failure mode is
+silent: a CPU-only torch wheel reports `torch.cuda.is_available() == False` with
+no error of its own, and the old behavior spent the full walltime on CPU and
+wrote metrics that looked right. The check keys off `SLURM_JOB_ID`.
+
+To run on CPU inside an allocation deliberately, set `device: cpu` in the job
+config. That is the only way, and it is explicit on purpose.
+
+### `n_workers` must be 0
+
+The HDF5 dataset keeps an open file handle. It cannot be pickled for a spawned
+worker, and it is not fork-safe for a forked one — where it corrupts the loaded
+graphs rather than failing. macOS uses spawn, so the laptop has only ever seen
+the loud half of that; Linux uses fork, which is the silent half. Any
+`n_workers` above 0 is now refused with a message. Control loading cost with
+`block_size`.
+
+### Do not trust `run.sbatch` from a clone
+
+`submit.py --slurm` renders the template with the absolute repo root and
+interpreter of the machine that rendered it, then writes it both to
+`logs/submit.sh` and to `run.sbatch` for hand submission. A `run.sbatch`
+committed from somewhere else therefore points at that machine's paths. It is
+gitignored now; if `git status` still shows one, it is tracked from before and
+needs `git rm --cached`.
+
+### Two things that are known to be wrong on the cluster and are not fixed
+
+- **`cleanup.py` ignores `data_root`.** It looks in `data/datasets` and
+  `experiments` relative to the working directory, so with a `data_root` under
+  `/nobackup` it will find nothing, delete nothing, and report success. Clean
+  the project filesystem by hand until this is fixed.
+- **`src/oracles/_vina.py` sizes its process pool from `os.cpu_count()`**,
+  which reports 256 on these nodes rather than the 72 the job was given, and
+  forks a parent that may already hold a CUDA context. Do not use the docking
+  oracle on the cluster until that is changed.
+
+### There is no lock file
+
+`CLAUDE.md` describes `pyproject.toml` plus `uv.lock` as the single source of
+truth, but **no `uv.lock` is committed**, so `uv sync` on the cluster resolves
+whatever is current rather than what the laptop ran. Generate one from the
+machine that will run the experiments and commit it before any result you intend
+to publish:
+
+```bash
+uv lock
+```

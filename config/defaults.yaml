@@ -175,6 +175,20 @@ success_threshold: 0.5
 # "generate" writes molecules and metrics; "evaluate" computes NLL and UC-JSD
 sample_mode: generate
 
+# Is this dataset bifunctional (PROTACs, degraders)? It changes which
+# synthesizability measure is reported and gated on, because whole-molecule SA
+# score reads a PROTAC's size as difficulty: on 500 real TPD-DB degraders the
+# median SA is 4.71 and 58.6% fail `sa_score < 4.5`, against 2.87 and 6.2% for
+# drug-like ZINC. Those degraders were made, so the gate rejects chemistry that
+# exists.
+#   true  -> retrotac_mean/_median are reported, and quality_filtered_top10_mean
+#            gates on RetroTAC instead of SA score. Needs tools/RetroTAC.
+#   false -> SA score only, which is correct for drug-like molecules and for
+#            molecular glues.
+# SA score is reported either way, and for a bifunctional dataset it is also
+# the right measure for the decomposed warheads, where molecules are drug-sized.
+bifunctional: false
+
 # --- SLURM -----------------------------------------------------------------
 
 # Everything that differs between clusters lives here. Another cluster is a

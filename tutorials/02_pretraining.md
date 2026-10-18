@@ -300,7 +300,7 @@ behavior but differs from a fresh run.
   constant. Remember that this also halves the number of optimizer steps per epoch, which
   changes the LR schedule.
 - Data loading dominating runtime: increase `block_size` so fewer HDF5 reads are needed, or
-  raise `n_workers` above 0.
+  raise `block_size` (`n_workers` must stay 0: the HDF5 handle is not fork-safe).
 
 ---
 

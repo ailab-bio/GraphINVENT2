@@ -44,9 +44,10 @@ class BlockDataLoader(torch.utils.data.DataLoader):
         batch_size: Number of samples per training mini-batch.
         block_size: Number of HDF5 rows loaded into RAM at once.
         shuffle:    Whether to shuffle blocks and samples within each block.
-        n_workers:  Number of worker processes for the outer block loader.
-        pin_memory: If True, pin loaded tensors in page-locked memory for
-                    faster CPU→GPU transfers (recommended when using CUDA).
+        n_workers:  Must be 0. The HDF5 handle is neither picklable nor
+                    fork-safe; see __init__ for why anything else is refused.
+        pin_memory: Pin loaded tensors in page-locked memory for faster
+                    CPU→GPU transfers. CUDA only.
     """
 
     def __init__(
@@ -56,8 +57,33 @@ class BlockDataLoader(torch.utils.data.DataLoader):
         block_size: int = 10000,
         shuffle: bool = True,
         n_workers: int = 0,
-        pin_memory: bool = True,
+        pin_memory: bool = False,
     ) -> None:
+
+        # `HDFDataset` holds live h5py objects, which neither of the two
+        # process-start methods handles safely, in opposite ways:
+        #
+        #   spawn (macOS default): the dataset is pickled to reach the worker,
+        #       and h5py objects cannot be pickled, so this fails immediately.
+        #   fork (Linux default):  nothing is pickled, so every worker inherits
+        #       the same open HDF5 file descriptor. libhdf5 is not fork-safe and
+        #       concurrent reads through an inherited handle are undefined; the
+        #       likely result is garbled node and edge tensors rather than a
+        #       crash, which trains a model on corrupt graphs and reports a
+        #       plausible loss.
+        #
+        # The second is the dangerous one and it is invisible on this laptop.
+        # Refuse up front rather than leave it armed. Closing this properly
+        # means opening the file lazily inside each worker.
+        if n_workers:
+            raise ValueError(
+                f"n_workers: {n_workers} is not supported. The HDF5 dataset "
+                "keeps an open file handle, which cannot be pickled for a "
+                "spawned worker and is not fork-safe for a forked one, where "
+                "it corrupts the loaded graphs silently.\n"
+                "Set n_workers: 0. Use block_size to control loading cost "
+                "instead."
+            )
 
         # define variables to be used throughout dataloading
         self.dataset = dataset  # `HDFDataset` object

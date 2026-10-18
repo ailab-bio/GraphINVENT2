@@ -313,10 +313,13 @@ def _resolve_device(params: dict) -> None:
     """
     Resolve `device` against what this machine actually has.
 
-    One pattern for all three supported devices: an accelerator that is asked
-    for but absent falls back, so the same job directory runs on a laptop and
-    on a GPU node unchanged. A device name that is not one of the three is a
-    typo, and that fails rather than silently running somewhere unintended.
+    One pattern for all three supported devices. A device name that is not one
+    of the three is a typo, and that fails rather than silently running
+    somewhere unintended.
+
+    An accelerator that is asked for but absent falls back when run
+    interactively, so the same job directory runs on a laptop and on a GPU node
+    unchanged. Inside a SLURM allocation it does not fall back: see below.
     """
     requested = params["device"]
     if requested not in ("cpu", "cuda", "mps"):
@@ -331,6 +334,25 @@ def _resolve_device(params: dict) -> None:
     }
     if available[requested]:
         return
+
+    # Inside a batch allocation the fallback is fatal. Interactively it is a
+    # convenience -- a laptop with no CUDA still runs the job. Under SLURM it
+    # is the opposite: the walltime was requested for a GPU, nothing is
+    # watching stdout, and on aarch64 a CPU-only torch wheel reports
+    # `cuda.is_available() == False` with no error of its own. Falling back
+    # there spends the whole allocation on CPU and produces metrics that look
+    # right, stamped with a device nobody reads. So crash instead.
+    if os.environ.get("SLURM_JOB_ID"):
+        raise RuntimeError(
+            f"device: {requested} was requested but is not available on this "
+            f"node (SLURM_JOB_ID={os.environ['SLURM_JOB_ID']}).\n"
+            "Refusing to fall back, because that would spend the allocation on "
+            "the wrong device and still write plausible metrics.\n"
+            "Check that the CUDA module is loaded and that torch was built for "
+            'this architecture: `python -c "import torch; '
+            'print(torch.__version__, torch.cuda.is_available())"`.\n'
+            "To run on CPU deliberately, set device: cpu in the job config."
+        )
 
     fallback = "mps" if available["mps"] else "cpu"
     params["device"] = fallback

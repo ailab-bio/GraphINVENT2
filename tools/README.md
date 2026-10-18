@@ -102,24 +102,112 @@ The path is an RDKit implementation detail and has moved before; if
 
 ---
 
-## fcd — optional, downloads weights
+## fcd — required for the headline unconditional metric
 
 | | |
 |---|---|
 | What | Fréchet ChemNet Distance |
 | Needed by | `fcd` |
 | Source | PyPI: `fcd` |
-| Pinned to | not pinned; not currently installed |
+| Pinned to | 1.2.2 |
 | Citation | Preuer et al., *J. Chem. Inf. Model.* 58:1736 (2018) |
 | License | LGPL |
-| Install | `uv pip install fcd` |
-| Required? | Optional. Absent, `fcd` records null |
+| Install | `uv pip install fcd==1.2.2` |
+| Required? | Required in practice. CLAUDE.md calls `fcd` the headline number for unconditional generation, so a run without it has no headline result |
 
-Plain PyPI, but it **downloads ChemNet weights on first use**, which is why it
-is here rather than only in `pyproject.toml`. Point its cache under `tools/`
-before the first cluster run.
+**It downloads nothing.** The ChemNet weights ship inside the wheel as
+`fcd/ChemNet_v0.13_pretrained.pt` (5.6 MB), so there is no cache to redirect
+and no first-use network call. An earlier note here claimed otherwise; it was
+wrong.
 
-Not installed on the development machine, so `fcd` has never produced a number.
+Two things about how it is called, both load-bearing:
+
+- `src/metrics/_unconditional.py` composes `get_predictions` and
+  `calculate_frechet_distance` instead of calling `fcd.get_fcd`, because
+  `get_fcd` does not expose `n_jobs` and so inherits `DataLoader(num_workers=1)`
+  — a worker process for no gain. `n_jobs=0` is roughly forty times faster on a
+  small sample.
+- **Both sides need at least two molecules.** `np.cov` of a single row divides
+  by `n - 1 == 0` and returns a 512x512 matrix of NaN, and
+  `calculate_frechet_distance` hands that to `scipy.linalg.sqrtm` *before* its
+  own finiteness check. `sqrtm` of a NaN matrix that size never finishes: the
+  process sits at 100% CPU with no error. That was a real hang in the generate
+  smoke test, whose briefly-trained model produced one valid molecule. The
+  floor is enforced on our side and records a reason instead.
+
+FCD compares two 512-dimensional Gaussians, so it is only meaningful once each
+side has enough molecules to estimate a covariance. At CLAUDE.md's N = 10,000
+that is fine. Below a few hundred the number is dominated by the rank
+deficiency of the covariance rather than by any property of the model, so treat
+a small-sample `fcd` as a smoke signal and not a result.
+
+---
+
+## RetroTAC — required for whole-PROTAC synthesizability
+
+| | |
+|---|---|
+| What | Route-derived synthesizability of a whole PROTAC, from SMILES, with no retrosynthesis planner at inference |
+| Needed by | `retrotac_mean`, `retrotac_median`, and `quality_filtered_top10_mean` on a bifunctional dataset |
+| Source | https://github.com/ribesstefano/RetroTAC |
+| Pinned to | commit `5ba851656753542d4a7f23438c033af280db9935` |
+| Citation | Ribes, Zhu, Zhu, Mo, Hudec, Papadopoulos, Patronov & Mercado, arXiv:2610.13639 |
+| License | MIT |
+| Install | `bash tools/install.sh` |
+| Required? | Required when `bifunctional: true`; absent, `retrotac_*` record null and the quality gate has no substitute for SA score |
+
+**Why it exists at all.** SA score reads a PROTAC's size as difficulty.
+Measured here on 500 real TPD-DB degraders, median SA is 4.71 and **58.6% fail
+`sa_score < 4.5`**, against 2.87 and 6.2% for drug-like ZINC. Those degraders
+were synthesized and assayed, so at the whole-PROTAC level SA score rejects the
+majority of chemistry that demonstrably exists. SA score remains correct for the
+**decomposed warheads**, which are drug-sized, and for molecular glues.
+
+**It runs in its own environment at `tools/RetroTAC/.venv`**, like
+PROTAC-Splitter and for the same class of reason: RetroTAC pins
+`python ==3.12.*` and `xgboost>=2.0,<3.0`, against this project's 3.13 and
+`xgboost>=3.2`. `src/metrics/_retrotac.py` calls into that interpreter.
+
+Two install notes, both found the hard way on macOS arm64:
+
+- There is **no Python 3.12 on the dev machine**, so `install.sh` builds the
+  env with conda when `python3.12` is absent. On a cluster with `uv`, `uv venv
+  --python 3.12` is equivalent.
+- The pip `xgboost` wheel links `@rpath/libomp.dylib` and looks for Homebrew's
+  copy, which is not present. Without it **every** import fails, including the
+  GNN-only path, which pulls xgboost transitively. `install.sh` installs
+  `llvm-openmp` into the env prefix, where the dlopen search path finds it.
+
+**Which model is installed.** The released final **GNN refit** (held-out R²
+0.615, RMSE 0.140), which ships in the clone under `release/` as a 90.7 MiB
+gzipped checkpoint, SHA-256 verified by `install.sh` against
+`release/MANIFEST.txt` and unpacked to 105.8 MiB. The XGBoost and MLP refits are
+unpacked too. **RetroTAC proper — the 27-member Caruana ensemble, R² 0.647 —
+is not installed**: its members are the per-fold cross-validation models, 1.4
+GiB, which the release archives deliberately omit, so running it would mean
+retraining the cross-validation. Upstream will publish it to the HuggingFace Hub
+after peer review. The gap to the single GNN is 0.03 in R².
+
+Two properties of the score worth knowing before reading one:
+
+- **It is not clipped to [0, 1].** The authors treat an out-of-range value as a
+  signal that the molecule is far from the training distribution, so nothing
+  clips it. 11 of the 500 real degraders scored outside [0, 1].
+- **The 0.7 threshold in the paper is a reporting convention, not a calibrated
+  decision boundary**, and only 18.8% of real degraders reach it. The
+  continuous score and its ranking are the primary output. The gate constant
+  `QUALITY_RETROTAC_MIN` in `src/metrics/_budget.py` is therefore 0.30, chosen
+  to admit ~94% of real degraders and so match what `sa_score < 4.5` admits of
+  drug-like molecules. **Approved 2026-10-18.**
+
+Measured cost: 12.2 s for 500 molecules, of which ~6 s is the one-off model
+load, so ~12.5 ms per molecule after that. Everything goes over in one
+subprocess call for that reason. Projected 2.2 min for 10,000 molecules and
+6.3 min for three seeds. Taken on a machine with other load, so treat as an
+upper bound.
+
+When absent, these record null: `retrotac_mean`, `retrotac_median`, and the
+bifunctional form of `quality_filtered_top10_mean`.
 
 ---
 
@@ -149,7 +237,6 @@ somewhere to put the pin.
 
 | Tool | For | Status |
 |---|---|---|
-| **RetroTAC** | goal-directed oracle | Not installed. Reserved for the next task |
 | **REINVENT4** | baseline comparison | Not installed. Reserved for the next task |
 | **AiZynthFinder** | retrosynthetic accessibility; needs downloaded model files | Not installed, and **no code reaches for it**. Reserved |
 

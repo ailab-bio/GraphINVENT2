@@ -168,7 +168,7 @@ def evaluate_unconditional(
     fcd_value: float | None = None
     if include_fcd:
         ref_smiles_list = [s for s in to_smiles(reference_mols) if s is not None]
-        fcd_value = _compute_fcd(list(valid_smiles), ref_smiles_list)
+        fcd_value, _ = _compute_fcd(list(valid_smiles), ref_smiles_list)
 
     return {
         "validity": validity,
@@ -188,60 +188,85 @@ def evaluate_unconditional(
 # ---------------------------------------------------------------------------
 
 
-_fcd_warned = False
-
-
 def _compute_fcd(
     generated_smiles: list[str],
     reference_smiles: list[str],
-) -> float | None:
+) -> tuple[float | None, str | None]:
     """
-    Frechet ChemNet Distance, or None when it cannot be computed.
+    Frechet ChemNet Distance, as (value, reason it is missing).
 
     Composed from `get_predictions` and `calculate_frechet_distance` rather
     than calling `fcd.get_fcd`, for one reason: `get_fcd` does not expose
     `n_jobs`, so it inherits the default of 1, and `get_predictions` turns that
-    into `DataLoader(..., num_workers=1)` -- one worker process. Called from a
-    job that is itself a subprocess, that worker deadlocks: the generate smoke
-    test hung indefinitely at 0% CPU, with and without pytest's output capture,
-    and an orphaned process kept a core busy afterwards. `n_jobs=0` loads in
-    this process, which removes the deadlock and is also about forty times
-    faster on a small sample.
+    into `DataLoader(..., num_workers=1)` -- a worker process to manage for no
+    gain. `n_jobs=0` loads in this process and is about forty times faster on a
+    small sample.
 
-    None is returned when the `fcd` package is absent or either set is empty;
-    the caller records the reason.
+    Both sides need at least two molecules, and that floor is load-bearing
+    rather than defensive. `np.cov` of a single row divides by `n - 1 == 0` and
+    returns a 512x512 matrix of NaN. `calculate_frechet_distance` then calls
+    `scipy.linalg.sqrtm` on the product *before* its own finiteness check, and
+    `sqrtm` of a NaN matrix that size does not terminate in any useful time:
+    the process sits at 100% CPU with no error and no end. That is what the
+    generate smoke test hit whenever the model produced fewer than two valid
+    molecules, which a briefly-trained model routinely does.
     """
-    global _fcd_warned
-
     gen = [s for s in generated_smiles if s]
     ref = [s for s in reference_smiles if s]
-    if not gen or not ref:
-        return None
+
+    if len(gen) < 2:
+        return None, (
+            f"only {len(gen)} valid generated molecule(s); the Frechet ChemNet "
+            "Distance needs at least two on each side to form a covariance"
+        )
+    if len(ref) < 2:
+        return None, (
+            f"only {len(ref)} molecule(s) in the reference split; the Frechet "
+            "ChemNet Distance needs at least two on each side to form a "
+            "covariance"
+        )
 
     try:
         import fcd as fcd_lib
     except ImportError:
-        if not _fcd_warned:
-            print(
-                "-- Warning: the fcd package is not installed; the fcd metric "
-                "will be skipped. Install with: uv pip install fcd",
-                flush=True,
-            )
-            _fcd_warned = True
-        return None
-
-    try:
-        model = fcd_lib.load_ref_model()
-        act_gen = fcd_lib.get_predictions(model, gen, n_jobs=0)
-        act_ref = fcd_lib.get_predictions(model, ref, n_jobs=0)
-        return float(
-            fcd_lib.calculate_frechet_distance(
-                mu1=np.mean(act_gen, axis=0),
-                sigma1=np.cov(act_gen.T),
-                mu2=np.mean(act_ref, axis=0),
-                sigma2=np.cov(act_ref.T),
-            )
+        return None, (
+            "the fcd package is not installed; install it with " "`uv pip install fcd`"
         )
-    except Exception as error:
-        print(f"-- Warning: FCD computation failed: {error}", flush=True)
-        return None
+
+    model = fcd_lib.load_ref_model()
+    act_gen = fcd_lib.get_predictions(model, gen, n_jobs=0)
+    act_ref = fcd_lib.get_predictions(model, ref, n_jobs=0)
+
+    # get_predictions drops what ChemNet cannot embed, so the floor has to be
+    # rechecked on the activations rather than only on the input lists.
+    for label, act in (("generated", act_gen), ("reference", act_ref)):
+        if act.shape[0] < 2:
+            return None, (
+                f"ChemNet embedded only {act.shape[0]} of the {label} "
+                "molecules; at least two are needed to form a covariance"
+            )
+
+    mu_gen, sigma_gen = np.mean(act_gen, axis=0), np.cov(act_gen.T)
+    mu_ref, sigma_ref = np.mean(act_ref, axis=0), np.cov(act_ref.T)
+
+    # With two or more rows this cannot happen, so it means something upstream
+    # is wrong. Raise rather than hand sqrtm a matrix it will never finish.
+    for label, sigma in (("generated", sigma_gen), ("reference", sigma_ref)):
+        if not np.isfinite(sigma).all():
+            raise ValueError(
+                f"the {label} ChemNet covariance contains non-finite values "
+                f"from {act_gen.shape[0] if label == 'generated' else act_ref.shape[0]} "
+                "molecules. Refusing to call sqrtm, which would not terminate."
+            )
+
+    return (
+        float(
+            fcd_lib.calculate_frechet_distance(
+                mu1=mu_gen,
+                sigma1=sigma_gen,
+                mu2=mu_ref,
+                sigma2=sigma_ref,
+            )
+        ),
+        None,
+    )

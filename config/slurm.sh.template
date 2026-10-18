@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 #SBATCH -A {account}
 #SBATCH -p {partition}
 #SBATCH -J {job_name}
@@ -13,6 +13,16 @@ set -euo pipefail
 {modules}
 export MPLBACKEND=Agg
 export QT_QPA_PLATFORM=offscreen
+
+# Thread counts, from slurm.cpus_per_task rather than hard-coded. Left unset,
+# the OpenMP runtimes behind torch, numpy and RDKit size their pools from the
+# node's core count, not from the cpuset this job was given: on a 256-core node
+# that is ~256 threads fighting over the cores actually allocated, which is
+# both antisocial on a shared node and slower than the correct count. PyTorch
+# takes its intra-op thread count from OMP_NUM_THREADS, so this needs no code.
+export OMP_NUM_THREADS={cpus_per_task}
+export MKL_NUM_THREADS={cpus_per_task}
+export OPENBLAS_NUM_THREADS={cpus_per_task}
 
 cd {repo_root}
 srun {python} submit.py {job_dir}

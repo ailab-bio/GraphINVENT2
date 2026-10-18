@@ -558,13 +558,21 @@ def write_last_molecule_idx(
         txt_file.write(str(last_molecule_idx) + ", " + str(dataset_size))
 
 
-def _build_run_info() -> dict:
-    """Collect timestamp, library versions, git commit and device details."""
-    device_name = "cpu"
+def _build_run_info(device: str | None = None) -> dict:
+    """
+    Collect timestamp, library versions, git commit and device details.
+
+    `device` is the device the job was *configured* to use. It is recorded
+    separately from the hardware description because the two differ: a job
+    pinned to `device: cpu` on a GPU node would otherwise be recorded against
+    the GPU's name, and CLAUDE.md requires the device attribution beside
+    `train_wall_clock_s` to be trustworthy.
+    """
+    hardware = "cpu"
     if torch.cuda.is_available():
-        device_name = torch.cuda.get_device_name(0)
+        hardware = torch.cuda.get_device_name(0)
     elif torch.backends.mps.is_available():
-        device_name = "mps"
+        hardware = "mps"
 
     try:
         git_hash = (
@@ -578,13 +586,16 @@ def _build_run_info() -> dict:
         git_hash = "unknown"
 
     return {
-        "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
+        # Offset-aware: a cluster-local and a laptop-local naive timestamp are
+        # indistinguishable afterwards, and these records are compared.
+        "timestamp": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         "python_version": sys.version.split()[0],
         "torch_version": str(torch.__version__),
         "numpy_version": np.__version__,
         "rdkit_version": rdkit.__version__,
         "cuda_version": str(torch.version.cuda or "n/a"),
-        "device_name": device_name,
+        "device": device if device is not None else "unrecorded",
+        "device_name": hardware,
         "git_hash": git_hash,
     }
 
@@ -637,7 +648,7 @@ def write_preprocessing_parameters(params: namedtuple, n_oversized: int = 0) -> 
             for split in ("train", "valid", "test")
         },
     }
-    recorded["run_info"] = _build_run_info()
+    recorded["run_info"] = _build_run_info(device=params.device)
 
     with open(dataset_dir / "preprocessing.yaml", "w") as f:
         yaml.safe_dump(recorded, f, sort_keys=True, default_flow_style=False)
