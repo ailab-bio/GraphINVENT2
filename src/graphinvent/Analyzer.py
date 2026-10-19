@@ -104,61 +104,8 @@ class Analyzer:
               batch of generated graphs.
         """
 
-        def _uc_jsd(
-            likelihood_valid: torch.Tensor,
-            likelihood_train: torch.Tensor,
-            likelihood_sampled: torch.Tensor,
-        ) -> float:
-            """
-            Computes the UC-JSD (metric used for the benchmark of generative
-            models in Arús-Pous, J. et al., J. Chem. Inf., 2019, 1-13).
-
-            Args:
-            ----
-                likelihood_valid (torch.Tensor)   : NLLs for correct actions in
-                                                    validation set.
-                likelihood_train (torch.Tensor)   : NLLs for correct actions in
-                                                    training set.
-                likelihood_sampled (torch.Tensor) : NLLs for sampled actions in
-                                                    the generated set.
-
-            Returns:
-            -------
-                uc_jsd (float) : UC-JSD.
-            """
-            min_len = min(
-                len(likelihood_valid), len(likelihood_sampled), len(likelihood_train)
-            )
-
-            # make all the distributions the same length (dim=0)
-            likelihood_valid_norm = likelihood_valid[:min_len] / torch.sum(
-                likelihood_valid[:min_len]
-            )
-            likelihood_train_norm = likelihood_train[:min_len] / torch.sum(
-                likelihood_train[:min_len]
-            )
-            likelihood_sampled_norm = likelihood_sampled[:min_len] / torch.sum(
-                likelihood_sampled[:min_len]
-            )
-
-            likelihood_sum = (
-                likelihood_valid_norm + likelihood_train_norm + likelihood_sampled_norm
-            ) / 3
-
-            log_likelihood_sum = torch.log(likelihood_sum + 1e-8)
-            uc_jsd = (
-                torch.nn.functional.kl_div(
-                    log_likelihood_sum, likelihood_valid_norm, reduction="sum"
-                )
-                + torch.nn.functional.kl_div(
-                    log_likelihood_sum, likelihood_train_norm, reduction="sum"
-                )
-                + torch.nn.functional.kl_div(
-                    log_likelihood_sum, likelihood_sampled_norm, reduction="sum"
-                )
-            ) / 3
-
-            return float(uc_jsd)
+        from metrics import nll_summary
+        from metrics import uc_jsd as _uc_jsd
 
         epoch_key = util.get_last_epoch()
 
@@ -222,9 +169,7 @@ class Analyzer:
             print("-- Calculating NLL statistics for test set.", flush=True)
             _, nll_test = self.get_validation_likelihood(dataset="test")
         return {
-            "nll_train": float(avg_train_likelihood),
-            "nll_validation": float(avg_valid_likelihood),
-            "nll_test": None if nll_test is None else float(nll_test),
+            **nll_summary(avg_train_likelihood, avg_valid_likelihood, nll_test),
             "uc_jsd": float(model_scores["UC-JSD"]),
         }
 

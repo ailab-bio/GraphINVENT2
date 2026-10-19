@@ -245,6 +245,14 @@ def _assign_groups(
     return train_idx, valid_idx, test_idx
 
 
+# Set by _warhead_scaffold_split_indices and read by util._record_preprocessing,
+# so the split record carries the size of the guarantee rather than only the
+# strategy name. The no-shared-warhead guarantee covers the molecules that
+# yielded a warhead scaffold, and that count belongs beside the seed and the
+# fractions.
+LAST_SPLIT_NOTES: dict = {}
+
+
 def _warhead_scaffold_split_indices(
     smiles: List[str],
     train_frac: float,
@@ -275,7 +283,7 @@ def _warhead_scaffold_split_indices(
     from rdkit.Chem.Scaffolds import MurckoScaffold
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from metrics._components import cap_attachment_points, decompose
+    from metrics._components import decompose, warhead_of
 
     print(
         f"* Decomposing {len(smiles)} molecules for a warhead_scaffold split. "
@@ -288,7 +296,7 @@ def _warhead_scaffold_split_indices(
     groups: dict = {}
     n_ungrouped = 0
     for i, (smi, frag) in enumerate(zip(smiles, fragments)):
-        warhead = cap_attachment_points(frag["poi"]) if frag else None
+        warhead = warhead_of(frag["poi"])[0] if frag else None
         mol = Chem.MolFromSmiles(warhead) if warhead else None
         scaffold = (
             MurckoScaffold.MurckoScaffoldSmiles(mol=mol, includeChirality=False)
@@ -303,6 +311,8 @@ def _warhead_scaffold_split_indices(
         else:
             groups.setdefault(scaffold, []).append(i)
 
+    global LAST_SPLIT_NOTES
+    LAST_SPLIT_NOTES = {"n_without_warhead_scaffold": n_ungrouped}
     n_grouped = len(smiles) - n_ungrouped
     print(
         f"  {len(groups) - n_ungrouped} distinct warhead scaffolds over "

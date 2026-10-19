@@ -1,0 +1,56 @@
+# Recognized E3-ligase-binder cores, as SMARTS, one per line.
+#
+# `e3_recognizable_rate` in src/metrics/_components.py is an exact substructure
+# test against this list: the fraction of successfully split molecules whose
+# predicted E3 fragment contains one of these cores. It is a validity check on
+# the decomposition, not a diversity analysis. Each core is the pharmacophore
+# that the ligase recognizes, so it is present or absent rather than present to
+# a degree, which is why this is a substructure test and not a similarity
+# threshold.
+#
+# Every entry was verified to match its family's reference ligand and no other
+# family's, and to match neither a kinase inhibitor nor aspirin:
+#   glutarimide            thalidomide, lenalidomide, pomalidomide
+#   hydroxyprolinamide     VH032
+#   diaryl-imidazoline     nutlin-3a
+#   N-Me-Ala-prolinamide   LCL161
+#
+# COVERAGE. CRBN and VHL account for the large majority of published
+# degraders, and MDM2 and IAP for most of the rest. A degrader recruiting any
+# other ligase -- DCAF15, DCAF16, KEAP1, cIAP1 via a non-AVPI ligand, or a
+# ligase whose first ligand postdates this file -- is counted as
+# unrecognizable. The rate is therefore a lower bound on the fraction of
+# fragments that are real E3 ligands, and a generated set that scores low on it
+# should be read against `e3_max_similarities` before concluding the
+# decomposition failed.
+#
+# MEASURED CEILING. On 500 real TPD-DB degraders, tested whole-molecule, 421
+# contain a listed core: 0.842. The split is 319 glutarimide and 102
+# hydroxyprolinamide, with no nutlin or AVPI match in that sample. So 0.84 is
+# roughly what a perfectly decomposed set of real degraders would score here,
+# and a generated set near it is doing as well as the list allows rather than
+# well in absolute terms.
+#
+# FORMAT. One SMARTS per line. A line beginning with # is a comment and the
+# comment immediately above each entry is its citation.
+
+# Glutarimide (piperidine-2,6-dione): the cereblon-binding pharmacophore of the
+# immunomodulatory drugs. Ito et al., Science 327:1345 (2010); Fischer et al.,
+# Nature 512:49 (2014).
+O=C1CCCC(=O)N1
+
+# (4-hydroxypyrrolidin-2-yl)carboxamide: the VHL-binding hydroxyproline core of
+# VH032 and its descendants, written without stereochemistry so a model trained
+# with chirality off is not scored as having missed it. Buckley et al.,
+# J. Am. Chem. Soc. 134:4465 (2012); Galdeano et al., J. Med. Chem. 57:8657
+# (2014).
+OC1CC(NC1)C(=O)N
+
+# 4,5-diaryl-2-imidazoline: the MDM2-binding core of the nutlins. Vassilev
+# et al., Science 303:844 (2004).
+c1ccccc1C1N=C(N(C1c1ccccc1))
+
+# N-methylalanyl-prolinamide: the AVPI tetrapeptide mimetic that binds the IAP
+# BIR3 domain, as in LCL161 and the SNIPER E3 ligands. Ohoka et al.,
+# J. Biol. Chem. 292:4556 (2017).
+[CH3][NH][CH]([CH3])C(=O)N1CCC[CH]1C(=O)[NX3]

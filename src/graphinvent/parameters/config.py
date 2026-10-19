@@ -275,6 +275,40 @@ def _validate(params: dict, config_path: Path) -> None:
                 "one slot per property."
             )
 
+    # A categorical panel declares its classes, because nothing else can tell
+    # a one-hot class column from a property that happens to be 0 or 1, and the
+    # two have disjoint metric sets. Wrong here means the job reports
+    # condition_success_rate on a one-hot, which measures whether the model
+    # echoed its own input.
+    classes = params.get("condition_classes")
+    if classes is not None:
+        if not isinstance(classes, list) or not all(
+            isinstance(name, str) for name in classes
+        ):
+            raise ValueError(
+                f"condition_classes must be a list of column names, got "
+                f"{classes!r}.\nSet it to the one-hot panel, e.g. "
+                '["is_ar", "is_btk", "is_egfr"], or leave it null for a '
+                "continuous condition."
+            )
+        if len(set(classes)) != len(classes):
+            raise ValueError(f"condition_classes repeats a class: {classes}.")
+        properties = list((params.get("conditioning") or {}).get("properties") or [])
+        if properties and list(classes) != properties:
+            raise ValueError(
+                f"condition_classes {list(classes)} is not "
+                f"conditioning.properties {properties}.\nThe panel is the "
+                "condition vector, in the same order: a different order means "
+                "every per-class metric is attributed to the wrong class while "
+                "still producing plausible numbers."
+            )
+        if params.get("condition_dim", 0) != len(classes):
+            raise ValueError(
+                f"condition_classes names {len(classes)} classes but "
+                f"condition_dim is {params.get('condition_dim', 0)}. A one-hot "
+                "panel has one slot per class."
+            )
+
     if job_type == "preprocess":
         if params["split_type"] not in SPLIT_TYPES:
             raise ValueError(
@@ -353,6 +387,48 @@ def _validate(params: dict, config_path: Path) -> None:
                 f"score_components has {len(params['score_components'])} entries "
                 f"but score_thresholds has {len(params['score_thresholds'])}."
             )
+
+
+def novelty_reference_sets(params: dict) -> list:
+    """
+    Every training split the model has seen, newest corpus first.
+
+    `novelty` and `near_duplicate_rate` ask whether a generated molecule is new
+    to the model, so the reference set has to be every corpus in the
+    checkpoint's lineage rather than only the task corpus. A transfer-learned
+    model that reproduced a base-corpus molecule verbatim scored novelty 1.0,
+    which flattered the transfer arm of exactly the comparison the
+    transfer-learning claim rests on.
+
+    The walk follows `resume_from` and `pretrained_model_path` through each
+    producing job's resolved config. A checkpoint whose config cannot be read
+    stops the walk, because guessing at a lineage is worse than a short one;
+    the sets that were found are returned and the caller reports how many.
+    """
+    sets, seen_ckpts = [], set()
+
+    def add(dataset_dir) -> None:
+        if not dataset_dir:
+            return
+        train = str(Path(dataset_dir) / "train.smi")
+        if train not in sets:
+            sets.append(train)
+
+    add(params.get("dataset_dir"))
+    checkpoint = params.get("resume_from") or params.get("pretrained_model_path")
+    while checkpoint and checkpoint not in seen_ckpts:
+        seen_ckpts.add(checkpoint)
+        try:
+            produced_by = _read_yaml(checkpoint_config_path(checkpoint))
+        except Exception:
+            break
+        if not produced_by:
+            break
+        add(produced_by.get("dataset_dir"))
+        checkpoint = produced_by.get("resume_from") or produced_by.get(
+            "pretrained_model_path"
+        )
+    return sets
 
 
 def checkpoint_config_path(checkpoint: str) -> Path:
@@ -736,6 +812,8 @@ def derive(params: dict) -> namedtuple:
         "logs_dir": str(job_dir / "logs") + "/",
         "tensorboard_dir": str(job_dir / "logs" / "tensorboard") + "/",
         "training_set": str(Path(params["dataset_dir"]) / "train.smi"),
+        # Every corpus the model has seen, for novelty and near_duplicate_rate.
+        "novelty_reference_sets": novelty_reference_sets(params),
         "validation_set": str(Path(params["dataset_dir"]) / "valid.smi"),
         "test_set": str(Path(params["dataset_dir"]) / "test.smi"),
     }

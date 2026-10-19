@@ -1,0 +1,30 @@
+{
+  "activity_type_kept": "DC50 (exact match only)",
+  "censored_rows": "dropped, which truncates the label distribution at the inactive end; the retained range is the model's applicability window",
+  "counts": {
+    "DC50 rows": 614,
+    "distinct cell lines": 1,
+    "distinct compounds": 179,
+    "dropped: censored": 88,
+    "dropped: conflicting grades": 0,
+    "dropped: no parseable parent SMILES": 0,
+    "dropped: non-positive": 0,
+    "dropped: unparseable or no unit": 192,
+    "exact DC50 rows": 0,
+    "graded rows written": 0,
+    "letter grades": 155,
+    "numeric with a unit": 179,
+    "rows for this target": 1567,
+    "rows written": 179
+  },
+  "endpoint": "pDC50 = -log10(DC50 in molar)",
+  "grade_edges": "not derivable from this release: no row carries both a grade and a number, and no (compound, cell line) pair appears as both. Grades are an ordering only, for an interval-censored fit.",
+  "grade_order_most_to_least_potent": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "replicate_aggregation": "geometric mean of DC50 per (compound, cell line)",
+  "target": "AR"
+}

@@ -1,0 +1,1022 @@
+{
+  "experiment": "tutorial_goal_directed",
+  "jobs": {
+    "budget": {
+      "jobs": [
+        "budget"
+      ],
+      "metrics": {
+        "Ro5_pass_rate": {
+          "mean": 1.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 1.0
+          },
+          "std": 0.0
+        },
+        "auc_top10": {
+          "mean": 0.6689873591707055,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.6689873591707055
+          },
+          "std": 0.0
+        },
+        "best_at_10k": {
+          "mean": 0.8817691802978516,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.8817691802978516
+          },
+          "std": 0.0
+        },
+        "best_at_1k": {
+          "mean": 0.8817691802978516,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.8817691802978516
+          },
+          "std": 0.0
+        },
+        "best_at_5k": {
+          "mean": 0.8817691802978516,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.8817691802978516
+          },
+          "std": 0.0
+        },
+        "eval_oracle_top10_mean": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "filter_pass_rate": {
+          "mean": 0.9411764705882353,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.9411764705882353
+          },
+          "std": 0.0
+        },
+        "inference_s_per_10k": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "internal_diversity": {
+          "mean": 0.9762889463454485,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.9762889463454485
+          },
+          "std": 0.0
+        },
+        "n_parameters": {
+          "mean": 7684609.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 7684609
+          },
+          "std": 0.0
+        },
+        "n_sampled": {
+          "mean": 100.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 100
+          },
+          "std": 0.0
+        },
+        "n_scaffolds": {
+          "mean": 7.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 7
+          },
+          "std": 0.0
+        },
+        "n_unique_valid": {
+          "mean": 17.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 17
+          },
+          "std": 0.0
+        },
+        "n_unique_valid_novel": {
+          "mean": 17.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 17
+          },
+          "std": 0.0
+        },
+        "n_valid": {
+          "mean": 17.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 17
+          },
+          "std": 0.0
+        },
+        "near_duplicate_rate": {
+          "mean": 0.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.0
+          },
+          "std": 0.0
+        },
+        "novelty": {
+          "mean": 1.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 1.0
+          },
+          "std": 0.0
+        },
+        "peak_memory_mb": {
+          "mean": 1750.375,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 1750.375
+          },
+          "std": 0.0
+        },
+        "property_window_rate": {
+          "mean": 1.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 1.0
+          },
+          "std": 0.0
+        },
+        "property_window_rate_bounds": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": {
+              "hba": [
+                null,
+                10.0
+              ],
+              "hbd": [
+                null,
+                5.0
+              ],
+              "logp": [
+                null,
+                5.0
+              ],
+              "mol_weight": [
+                null,
+                500.0
+              ]
+            }
+          }
+        },
+        "quality_filtered_top10_mean": {
+          "mean": 0.5011869817972183,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.5011869817972183
+          },
+          "std": 0.0
+        },
+        "sa_score_mean": {
+          "mean": 6.026537038367543,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 6.026537038367543
+          },
+          "std": 0.0
+        },
+        "sa_score_median": {
+          "mean": 6.34189099587247,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 6.34189099587247
+          },
+          "std": 0.0
+        },
+        "scaffold_diversity": {
+          "mean": 0.4117647058823529,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.4117647058823529
+          },
+          "std": 0.0
+        },
+        "success_definition": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "success_rate": {
+          "mean": 0.11764705882352941,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.11764705882352941
+          },
+          "std": 0.0
+        },
+        "success_threshold": {
+          "mean": 0.5,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.5
+          },
+          "std": 0.0
+        },
+        "top100_internal_diversity": {
+          "mean": 0.9762889463454485,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.9762889463454485
+          },
+          "std": 0.0
+        },
+        "top100_mean_at_10k": {
+          "mean": 0.08078134983778,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.08078134983778
+          },
+          "std": 0.0
+        },
+        "top100_mean_at_1k": {
+          "mean": 0.08078134983778,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.08078134983778
+          },
+          "std": 0.0
+        },
+        "top100_mean_at_5k": {
+          "mean": 0.08078134983778,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.08078134983778
+          },
+          "std": 0.0
+        },
+        "top100_outside_domain_rate": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "top100_scaffold_count": {
+          "mean": 6.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 6
+          },
+          "std": 0.0
+        },
+        "top10_mean_at_10k": {
+          "mean": 0.6717890501022339,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.6717890501022339
+          },
+          "std": 0.0
+        },
+        "top10_mean_at_1k": {
+          "mean": 0.6717890501022339,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.6717890501022339
+          },
+          "std": 0.0
+        },
+        "top10_mean_at_5k": {
+          "mean": 0.6717890501022339,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.6717890501022339
+          },
+          "std": 0.0
+        },
+        "train_wall_clock_s": {
+          "mean": 16.993190050125122,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 16.993190050125122
+          },
+          "std": 0.0
+        },
+        "uniqueness": {
+          "mean": 1.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 1.0
+          },
+          "std": 0.0
+        },
+        "validity": {
+          "mean": 0.17,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.17
+          },
+          "std": 0.0
+        },
+        "validity_n_generated_raw": {
+          "mean": 100.0,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 100
+          },
+          "std": 0.0
+        },
+        "vs_baseline_top10_at_10k": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "vs_baseline_top10_at_1k": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "vs_baseline_top10_at_5k": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "vs_delta_top10_at_10k": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "vs_delta_top10_at_1k": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "vs_delta_top10_at_5k": {
+          "n_null": 1,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null
+          }
+        },
+        "vun": {
+          "mean": 0.17,
+          "n_null": 0,
+          "n_with_value": 1,
+          "per_seed": {
+            "1": 0.17
+          },
+          "std": 0.0
+        }
+      },
+      "n_runs": 1,
+      "seeds": [
+        1
+      ]
+    },
+    "qed": {
+      "jobs": [
+        "qed",
+        "qed_seed2",
+        "qed_seed3"
+      ],
+      "metrics": {
+        "Ro5_pass_rate": {
+          "mean": 1.0,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 1.0,
+            "2": 1.0,
+            "3": 1.0
+          },
+          "std": 0.0
+        },
+        "auc_top10": {
+          "mean": 0.6945573686100976,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.6987659172132611,
+            "2": 0.5986234852084518,
+            "3": 0.78628270340858
+          },
+          "std": 0.07666933091695238
+        },
+        "best_at_10k": {
+          "mean": 0.8569536010424296,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.8190548419952393,
+            "2": 0.8240134119987488,
+            "3": 0.9277925491333008
+          },
+          "std": 0.05013158870469983
+        },
+        "best_at_1k": {
+          "mean": 0.8569536010424296,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.8190548419952393,
+            "2": 0.8240134119987488,
+            "3": 0.9277925491333008
+          },
+          "std": 0.05013158870469983
+        },
+        "best_at_5k": {
+          "mean": 0.8569536010424296,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.8190548419952393,
+            "2": 0.8240134119987488,
+            "3": 0.9277925491333008
+          },
+          "std": 0.05013158870469983
+        },
+        "eval_oracle_top10_mean": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "filter_pass_rate": {
+          "mean": 0.9726867335562988,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 1.0,
+            "2": 0.9615384615384616,
+            "3": 0.9565217391304348
+          },
+          "std": 0.019421684938890005
+        },
+        "inference_s_per_10k": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "internal_diversity": {
+          "mean": 0.9252204944690069,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.9322662651538849,
+            "2": 0.9084682315587997,
+            "3": 0.9349269866943359
+          },
+          "std": 0.011895337860929122
+        },
+        "n_parameters": {
+          "mean": 7684609.0,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 7684609,
+            "2": 7684609,
+            "3": 7684609
+          },
+          "std": 0.0
+        },
+        "n_sampled": {
+          "mean": 80.0,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 80,
+            "2": 80,
+            "3": 80
+          },
+          "std": 0.0
+        },
+        "n_scaffolds": {
+          "mean": 16.333333333333332,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 20,
+            "2": 10,
+            "3": 19
+          },
+          "std": 4.4969125210773475
+        },
+        "n_unique_valid": {
+          "mean": 25.666666666666668,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 28,
+            "2": 26,
+            "3": 23
+          },
+          "std": 2.0548046676563256
+        },
+        "n_unique_valid_novel": {
+          "mean": 25.666666666666668,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 28,
+            "2": 26,
+            "3": 23
+          },
+          "std": 2.0548046676563256
+        },
+        "n_valid": {
+          "mean": 28.333333333333332,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 28,
+            "2": 33,
+            "3": 24
+          },
+          "std": 3.681787005729087
+        },
+        "near_duplicate_rate": {
+          "mean": 0.0,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.0,
+            "2": 0.0,
+            "3": 0.0
+          },
+          "std": 0.0
+        },
+        "novelty": {
+          "mean": 1.0,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 1.0,
+            "2": 1.0,
+            "3": 1.0
+          },
+          "std": 0.0
+        },
+        "novelty_n_reference_molecules": {
+          "mean": 796.0,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 796,
+            "2": 796,
+            "3": 796
+          },
+          "std": 0.0
+        },
+        "novelty_reference_corpora": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": [
+              "zinc1k"
+            ],
+            "2": [
+              "zinc1k"
+            ],
+            "3": [
+              "zinc1k"
+            ]
+          }
+        },
+        "peak_memory_mb": {
+          "mean": 2061.453125,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 1879.265625,
+            "2": 2000.875,
+            "3": 2304.21875
+          },
+          "std": 178.6963374614472
+        },
+        "property_window_rate": {
+          "mean": 0.9880952380952381,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.9642857142857143,
+            "2": 1.0,
+            "3": 1.0
+          },
+          "std": 0.016835875742536838
+        },
+        "property_window_rate_bounds": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": {
+              "hba": [
+                null,
+                10.0
+              ],
+              "hbd": [
+                null,
+                5.0
+              ],
+              "logp": [
+                null,
+                5.0
+              ],
+              "mol_weight": [
+                null,
+                500.0
+              ]
+            },
+            "2": {
+              "hba": [
+                null,
+                10.0
+              ],
+              "hbd": [
+                null,
+                5.0
+              ],
+              "logp": [
+                null,
+                5.0
+              ],
+              "mol_weight": [
+                null,
+                500.0
+              ]
+            },
+            "3": {
+              "hba": [
+                null,
+                10.0
+              ],
+              "hbd": [
+                null,
+                5.0
+              ],
+              "logp": [
+                null,
+                5.0
+              ],
+              "mol_weight": [
+                null,
+                500.0
+              ]
+            }
+          }
+        },
+        "quality_filtered_top10_mean": {
+          "mean": 0.4842485934495926,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.563706436753273,
+            "2": 0.46061950325965884,
+            "3": 0.42841984033584596
+          },
+          "std": 0.057702491107149305
+        },
+        "sa_score_mean": {
+          "mean": 4.428623396642753,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 4.397450779685904,
+            "2": 4.5466588961260035,
+            "3": 4.341760514116354
+          },
+          "std": 0.08650485833561386
+        },
+        "sa_score_median": {
+          "mean": 4.457849914286148,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 4.1340417064469035,
+            "2": 4.960630600098741,
+            "3": 4.2788774363128
+          },
+          "std": 0.3604031637680987
+        },
+        "scaffold_diversity": {
+          "mean": 0.641662685140946,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.7142857142857143,
+            "2": 0.38461538461538464,
+            "3": 0.8260869565217391
+          },
+          "std": 0.187403069117501
+        },
+        "success_definition": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "success_rate": {
+          "mean": 0.31115623506927853,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.32142857142857145,
+            "2": 0.3076923076923077,
+            "3": 0.30434782608695654
+          },
+          "std": 0.007390852905719386
+        },
+        "success_threshold": {
+          "mean": 0.5,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.5,
+            "2": 0.5,
+            "3": 0.5
+          },
+          "std": 0.0
+        },
+        "top100_internal_diversity": {
+          "mean": 0.9252204944690069,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.9322662651538849,
+            "2": 0.9084682315587997,
+            "3": 0.9349269866943359
+          },
+          "std": 0.011895337860929122
+        },
+        "top100_mean_at_10k": {
+          "mean": 0.13787207146485647,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.16133468568325043,
+            "2": 0.0948653182387352,
+            "3": 0.15741621047258378
+          },
+          "std": 0.030452413470676086
+        },
+        "top100_mean_at_1k": {
+          "mean": 0.13787207146485647,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.16133468568325043,
+            "2": 0.0948653182387352,
+            "3": 0.15741621047258378
+          },
+          "std": 0.030452413470676086
+        },
+        "top100_mean_at_5k": {
+          "mean": 0.13787207146485647,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.16133468568325043,
+            "2": 0.0948653182387352,
+            "3": 0.15741621047258378
+          },
+          "std": 0.030452413470676086
+        },
+        "top100_outside_domain_rate": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "top100_scaffold_count": {
+          "mean": 15.333333333333334,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 19,
+            "2": 9,
+            "3": 18
+          },
+          "std": 4.4969125210773475
+        },
+        "top10_mean_at_10k": {
+          "mean": 0.6981929163138072,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.7011797726154327,
+            "2": 0.6039169192314148,
+            "3": 0.789482057094574
+          },
+          "std": 0.07578608526841957
+        },
+        "top10_mean_at_1k": {
+          "mean": 0.6981929163138072,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.7011797726154327,
+            "2": 0.6039169192314148,
+            "3": 0.789482057094574
+          },
+          "std": 0.07578608526841957
+        },
+        "top10_mean_at_5k": {
+          "mean": 0.6981929163138072,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.7011797726154327,
+            "2": 0.6039169192314148,
+            "3": 0.789482057094574
+          },
+          "std": 0.07578608526841957
+        },
+        "train_wall_clock_s": {
+          "mean": 25.908371051152546,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 22.21765398979187,
+            "2": 23.695209980010986,
+            "3": 31.812249183654785
+          },
+          "std": 4.218026843492637
+        },
+        "uniqueness": {
+          "mean": 0.9154040404040403,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 1.0,
+            "2": 0.7878787878787878,
+            "3": 0.9583333333333334
+          },
+          "std": 0.09176435510407387
+        },
+        "validity": {
+          "mean": 0.3541666666666667,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.35,
+            "2": 0.4125,
+            "3": 0.3
+          },
+          "std": 0.04602233757161358
+        },
+        "validity_n_generated_raw": {
+          "mean": 80.0,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 80,
+            "2": 80,
+            "3": 80
+          },
+          "std": 0.0
+        },
+        "vs_baseline_top10_at_10k": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "vs_baseline_top10_at_1k": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "vs_baseline_top10_at_5k": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "vs_delta_top10_at_10k": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "vs_delta_top10_at_1k": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "vs_delta_top10_at_5k": {
+          "n_null": 3,
+          "n_with_value": 0,
+          "per_seed": {
+            "1": null,
+            "2": null,
+            "3": null
+          }
+        },
+        "vun": {
+          "mean": 0.3208333333333333,
+          "n_null": 0,
+          "n_with_value": 3,
+          "per_seed": {
+            "1": 0.35,
+            "2": 0.325,
+            "3": 0.2875
+          },
+          "std": 0.02568505834570407
+        }
+      },
+      "n_runs": 3,
+      "seeds": [
+        1,
+        2,
+        3
+      ]
+    }
+  },
+  "schema_version": 1
+}

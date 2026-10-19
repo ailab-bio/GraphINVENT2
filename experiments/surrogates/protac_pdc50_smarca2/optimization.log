@@ -1,0 +1,21 @@
+* Read 241 rows from data/surrogates/smarca2_pdc50.tsv
+  one-hot columns: ['cell_line', 'ligase']
+  feature width 2061: 2048 fingerprint (count) + 9 descriptors + 4 indicators
+* Decomposing for a warhead_scaffold split (cached under tools/)
+* warhead_scaffold split: 194 train / 47 test
+* Held-out performance
+  RMSE    : 0.488   (mean-prediction baseline 0.639)
+  Spearman: 0.567
+  beats the mean-prediction baseline: YES
+  R^2     : 0.342
+  MAE     : 0.386
+* Wrote experiments/surrogates/protac_pdc50_smarca2/optimization.pickle
+
+Use it by adding this to the 'oracles' block of a goal_directed config:
+  "optimization": {
+      "type": "sklearn",
+      "path": "experiments/surrogates/protac_pdc50_smarca2/optimization.pickle",
+      "output": "predict",
+      "direction": "maximize"
+  }
+and naming it in 'score_components'. The featurization is stored in the pickle and the oracle reads it, so there is nothing to keep in sync by hand.

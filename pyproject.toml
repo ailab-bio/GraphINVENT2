@@ -15,6 +15,14 @@ requires-python = ">=3.13"
 # a build where torch.cuda.is_available() is False with no error anywhere.
 # See RUN.md for the cu130 index, which is the alternative route.
 dependencies = [
+    # Locked at the PyPI resolution, which is correct on macOS arm64 and is
+    # the CPU-only build on Linux aarch64. The CUDA wheel is NOT declared under
+    # [tool.uv.sources]: pinning an index here would force the CUDA index on
+    # the laptop too, and the aarch64 CUDA 13 wheel has never been resolved on
+    # this machine, so declaring it would be an untested pin in the one file
+    # that is meant to be authoritative. The cluster installs it over the
+    # locked version with the exact line in RUN.md Step 3, whose CHECK asserts
+    # torch.version.cuda is not None. Decided 2026-10-19.
     "torch>=2.11",
     "rdkit>=2023.3",
     "numpy<2.5",
@@ -38,12 +46,11 @@ surrogates = ["xgboost>=3.2.0"]
 # Linux aarch64.
 metrics = ["fcd==1.2.2"]
 
-# uv sync --extra components  — PROTAC-Splitter, for the component-level
-# metrics on bifunctional molecules (Ribes et al., J. Cheminform. 18:30, 2026).
-# Not on PyPI, so it installs from the repository.
-components = [
-    "protac-splitter @ git+https://github.com/ribesstefano/PROTAC-Splitter",
-]
+# There is deliberately no `components` extra. PROTAC-Splitter pins
+# xgboost<3 while this project needs xgboost>=3.2 for aarch64 GPU support, so
+# the two cannot share an environment and declaring it here made the dependency
+# set unsatisfiable. `src/metrics/_components.py` calls into its own
+# interpreter, which `tools/install.sh` builds; nothing imports it in-process.
 
 # uv sync --extra docking  — AutoDock Vina oracle (structure-based scoring).
 # vina publishes no aarch64 wheel at any version, so on an ARM cluster this

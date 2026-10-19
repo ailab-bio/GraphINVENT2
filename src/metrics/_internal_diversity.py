@@ -81,7 +81,8 @@ def compute_internal_diversity(
           fewer than two molecules are available.
     """
     from rdkit import Chem, DataStructs
-    from rdkit.Chem import AllChem
+
+    from ._core import morgan
 
     _empty: dict = {
         "internal_diversity": 0.0,
@@ -116,9 +117,7 @@ def compute_internal_diversity(
         canonical = Chem.MolToSmiles(mol)
         if canonical not in seen_canonical:
             try:
-                fp = AllChem.GetMorganFingerprintAsBitVect(
-                    mol, fp_radius, nBits=fp_bits
-                )
+                fp = morgan(mol, fp_radius, fp_bits)
                 seen_canonical[canonical] = fp
             except Exception:
                 n_invalid += 1

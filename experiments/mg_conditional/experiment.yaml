@@ -17,13 +17,11 @@ slurm:
   # with gpus: 0 does not occupy a GPU node. Hard-coding gpu here sent 13
   # CPU-only jobs to the GPU partition, one of them for 24 hours.
 # Categorical conditioning on the degraded neosubstrate, as three numeric 0/1
-# columns: there is no categorical code path, and a one-hot label IS three
-# numeric columns.
+# columns: a one-hot label IS three numeric columns.
 condition_dim: 3
 conditioning:
   properties: ["is_ikzf", "is_gspt1", "is_rbm39"]
   source: smiles_file
-condition_tolerance:
-  is_ikzf: 0.5
-  is_gspt1: 0.5
-  is_rbm39: 0.5
+# The same three columns named as a panel, which is what selects the
+# categorical metric set over the continuous one.
+condition_classes: ["is_ikzf", "is_gspt1", "is_rbm39"]

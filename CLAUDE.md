@@ -315,8 +315,9 @@ while `conditioning` is unset are an error, not a silent drop to an unconditiona
 ## Evaluation metrics
 
 Every metric has exactly one implementation and it lives in `src/metrics/`. Do not compute a metric
-inline anywhere else. The one metric family that does not yet obey this is named in
-[Status](#status).
+inline anywhere else. `Analyzer` owns the model forward pass that produces the likelihood tensors,
+because only it holds the model and the loaders, but the arithmetic that turns them into `nll_*` and
+`uc_jsd` is in `src/metrics/_likelihood.py` with every other metric.
 
 ### The metrics.json envelope
 
@@ -346,18 +347,23 @@ by the HTML report, the cross-seed aggregator and any plotting.
   is aggregated by hand in a notebook.
 - **Key names are exactly as tabulated below.** No reference-set suffixes: the reference set for each
   metric is fixed by its definition here, and the definition is the documentation. Four additions are
-  allowed: a `baseline_` prefix for the unconditional baseline of a conditional metric; a `_<class>`
-  suffix for the per-class breakdown of a categorical conditional metric; the funnel counts
+  allowed: a `baseline_lookup_` or `baseline_posthoc_` prefix for a conditional metric's baseline; a
+  `_<class>` suffix for the per-class breakdown of a categorical conditional metric; the funnel counts
   `n_sampled`, `n_valid`, `n_unique_valid` and `n_unique_valid_novel`; and a **supporting field**
   named `<metric>_<field>` recording a denominator, a threshold or a parameter its metric was
   computed with. A number whose meaning depends on how many molecules reached it, or on a threshold,
   is not interpretable without them, and a reader who has to open the code to find the denominator
   will not. The supporting fields are `fcd_n_generated` and `fcd_n_reference`,
   `validity_n_generated_raw`, `property_window_rate_bounds`, `success_threshold`,
-  `success_definition`, `n_scaffolds`, `n_split_successfully`, `top100_n_split`,
-  `top100_split_success_rate`, `e3_similarity_floor`, `e3_max_similarities`, `ecfp4_radius`,
-  `knn_reference_pool_size`, the splitter model and version beside every component metric, and the
-  subsample size and seed wherever a metric is subsampled. A supporting field is not a metric and
+  `novelty_reference_corpora` and `novelty_n_reference_molecules`,
+  `success_definition`, `n_scaffolds`, `n_split_successfully`, `n_warheads_usable`,
+  `split_status_counts`, `top100_n_split`, `top100_split_success_rate`, `e3_similarity_floor`,
+  `e3_max_similarities`, `e3_n_tested`, `e3_n_cores`, `ecfp4_radius`, `warhead_representation`,
+  `warhead_fingerprint_radius`, `warhead_fingerprint_bits`, `knn_reference_pool_size`,
+  `class_match_threshold`, `class_panel`, `n_unique_valid_<class>`, `delta_nll_n_molecules`,
+  `delta_nll_n_alternatives_excluded`, the splitter model and version beside every component metric,
+  and the subsample size and seed wherever a metric is subsampled (`component_sample_size` and
+  `component_sample_seed` for the component metrics). A supporting field is not a metric and
   nothing is ranked on one.
 - **Metrics come from the sample that matches their meaning.** For a goal-directed job, budget and
   top-100 metrics are computed over the optimization trajectory, because that is what spending oracle
@@ -384,7 +390,7 @@ by the HTML report, the cross-seed aggregator and any plotting.
 |---|---|
 | `validity` | valid / N |
 | `uniqueness` | unique canonical SMILES among valid / valid |
-| `novelty` | unique valid molecules absent from the training split / unique valid |
+| `novelty` | unique valid molecules absent from **every** training split in the checkpoint's lineage / unique valid. A transfer-learned model that reproduces a base-corpus molecule has not produced a novel one, so the reference is every corpus the model has seen and `novelty_reference_corpora` records which |
 | `vun` | unique, valid, novel / N (the funnel composite) |
 | `near_duplicate_rate` | fraction of unique valid molecules whose maximum ECFP4 Tanimoto to any training molecule exceeds 0.9 |
 | `internal_diversity` | mean pairwise Tanimoto distance (1 − similarity) on ECFP4 (Morgan, radius 2, 2048 bits) over unique valid molecules, subsampled to 10,000 |
@@ -444,21 +450,44 @@ training deciles rather than held at one value, since a single value populates o
 Used when the condition is a class rather than a value, such as a target protein. The continuous
 metrics above have no definition in this case.
 
+The panel is declared with `condition_classes`, a list of the one-hot column names. Nothing else can
+tell a class column from a property that happens to take the values 0 and 1, and the two metric sets
+are disjoint: `condition_success_rate` within a tolerance of 0.5 of a requested 1.0 measures whether
+the model echoed its own input.
+
 | Key | Definition |
 |---|---|
-| `delta_nll` | for a held-out molecule of class *p*, the mean over competing classes *q* of NLL(x\|q) − NLL(x\|p), excluding legitimate alternative classes of a multi-label molecule. Positive means the molecule is more likely under its own condition |
-| `knn_purity_<5\|10\|20>` | fraction of each generated molecule's *k* nearest neighbors in the held-out reference pool, by Morgan-Tanimoto, carrying the requested label |
-| `class_match_median`, `class_match_rate` | median, and fraction above a stated threshold, of the maximum ECFP4 Tanimoto from each generated molecule to the training molecules carrying the requested label |
+| `delta_nll` | for a held-out molecule of class *p*, the mean over competing classes *q* of NLL(x\|q) − NLL(x\|p), excluding legitimate alternative classes of a multi-label molecule. Positive means the molecule is more likely under its own condition. Supporting: `delta_nll_n_molecules`, `delta_nll_n_alternatives_excluded` |
+| `knn_purity_<5\|10\|20>` | fraction of each generated molecule's *k* nearest neighbors in the held-out reference pool, by Morgan-Tanimoto, carrying the requested label. Supporting: `knn_reference_pool_size` |
+| `class_match_median`, `class_match_rate` | median, and fraction above `class_match_threshold`, of the maximum ECFP4 Tanimoto from each generated molecule to the training molecules carrying the requested label |
 | `class_selectivity_margin` | the same maximum Tanimoto computed against the other classes in the panel, subtracted from the on-class value |
-| `condition_coverage` | the per-class breakdown of all of the above |
+| `novelty` | the core metric, reported here too and per class, because it is what separates conditioning from retrieval |
+
+**Every key above is the macro-average across the panel**, with the per-class value under the same
+name plus a `_<class>` suffix and `n_unique_valid_<class>` as its denominator. Macro rather than
+micro, because a panel is never balanced: the classes differ by an order of magnitude in how many
+training molecules they have, and a micro-average reports the largest class's number under a name
+that reads as the panel's. The full per-class table, for all three blocks below, is written to
+`results/condition_per_class.json`. One `generate` job covers the whole panel with
+`sample_conditions: all_classes`, which cycles the one-hot across generation batches.
 
 `class_selectivity_margin` is the cleanest single number here because it is self-normalizing: an
 unconditional model scores approximately zero by construction, and the metric cannot be satisfied by
-generating generic chemistry. Report `novelty` next to `class_match_*`: a high match with low novelty
-means the model is retrieving training molecules, not conditioning. A **nearest-neighbor retrieval
-baseline**, which retrieves the training molecules closest to the requested class and scores them
-with the same metric, is what makes the conditional claim falsifiable, and it runs for every
-categorical conditional experiment.
+generating generic chemistry.
+
+**Two baselines, and the metrics are not evidence without them.** Both are computed by the same
+function as the conditional sample, so all three have identical shape, and both are prefixed:
+
+| Prefix | Baseline |
+|---|---|
+| `baseline_lookup_` | the training molecules carrying the requested label, sampled to the same N per class with the job's seed. The retrieval ceiling. A conditional model cannot beat it on `class_match_*` by construction, since the lookup set *is* training chemistry, so the comparison that matters is novelty: it scores `class_match_median` 1.0 at `novelty` 0.0, and a conditional model that matches it on both is retrieving rather than conditioning |
+| `baseline_posthoc_` | the unconditional model sampled the same way, then reranked per class by maximum similarity to that class's training molecules and cut to the same N. **This is the one that can falsify the claim.** If an unconditional model plus a one-line reranking reaches the same `class_selectivity_margin`, the conditioning bought nothing |
+
+The post-hoc baseline needs `baseline_results_dir` pointing at the unconditional model's
+`molecules.smi`; without it those keys are an explicit null carrying that reason, and the conditional
+numbers can be reported but not falsified. A molecule may be selected for more than one class in the
+post-hoc baseline, which is correct: it is not a partition of the unconditional sample but what the
+best post-hoc filter per class would return.
 
 ### Component-level metrics, for bifunctional molecules
 
@@ -477,16 +506,70 @@ score at the whole-molecule level and record no RetroTAC.
 
 | Key | Definition |
 |---|---|
-| `retrotac_mean`, `retrotac_median` | route-derived synthesizability of the **whole** PROTAC (Ribes et al., arXiv:2610.13639), over unique valid molecules. Not clipped to [0, 1]: a value outside it means the molecule is far from the model's training distribution |
-| `split_success_rate` | fraction of generated molecules successfully decomposed into components |
-| `warhead_*` | the core and conditional metrics recomputed over target-binding components |
-| `e3_recognizable_rate` | fraction of successfully split molecules whose predicted E3 ligand contains a known E3 ligand as an exact substructure. A validity check, not a diversity analysis |
+| `retrotac_mean`, `retrotac_median` | route-derived synthesizability of the **whole** PROTAC, over unique valid molecules, from the released RetroTAC GNN refit `gnn_20260828_182305_final` (Ribes et al., arXiv:2610.13639; held-out R² 0.615, RMSE 0.140), which is the synthesizability model this work uses. Not clipped to [0, 1]: a value outside it means the molecule is far from the model's training distribution |
+| `split_success_rate` | **stage one only**: fraction of the sample PROTAC-Splitter decomposed into three fragments. Supporting: `n_split_successfully` |
+| `warhead_usable_rate` | **stage two**: of those, the fraction whose target-binding fragment survived capping and canonicalization into a molecule that can be fingerprinted. Supporting: `n_warheads_usable`, `split_status_counts` |
+| `warhead_*` | the core and conditional metrics recomputed over target-binding components, denominated over the usable warheads |
+| `warhead_novelty_in_class` | of the warheads generated for one requested class, the fraction absent from *that class's* training warheads; macro-averaged over the panel, with `_<class>` per class |
+| `e3_recognizable_rate` | fraction of usable splits whose predicted E3 fragment contains a recognized E3-binder core as an exact substructure. A validity check, not a diversity analysis. Supporting: `e3_n_tested`, `e3_n_cores`, `e3_max_similarities`, `e3_similarity_floor` |
 | `top100_warhead_scaffold_count` | distinct Bemis-Murcko scaffolds among the target-binding components of the 100 highest-scoring molecules of a `goal_directed` job |
 
-Every component-level metric is computed only over successfully split molecules, so a split rate is
-always reported beside it: `split_success_rate` over the whole sample, and
-`top100_split_success_rate` beside `top100_warhead_scaffold_count`, over the same hundred. A falling
-split rate otherwise masquerades as improving component quality.
+**Two denominators, not one.** `split_success_rate` and `warhead_usable_rate` are separate stages
+whose product is the end-to-end rate, and the two counts make it reconstructable. One combined rate
+hid which stage was failing, and the stages fail for unrelated reasons: a molecule the splitter would
+not decompose is a decomposition problem, and a fragment that will not survive capping is a problem
+with the cut it chose. `split_status_counts` breaks the second down by reason, drawn from a fixed
+vocabulary: `ok`, `no_prediction`, `malformed_prediction`, `parse_failed`, `capping_failed`,
+`canonicalization_failed`. The per-molecule record — requested class, canonical molecule, raw
+fragment, processed warhead, status and splitter model — is written to
+`results/component_records.json`, so both denominators and every failure are recoverable without
+re-running a decomposition that costs hours.
+
+Every component-level metric is computed only over molecules that reached it, so a rate is always
+reported beside it: the two stage rates over the whole sample, and `top100_split_success_rate` beside
+`top100_warhead_scaffold_count`, over the same hundred. A falling split rate otherwise masquerades as
+improving component quality.
+
+**The attachment point is capped before anything is computed.** A fragment comes back carrying the
+`[*:n]` dummy atoms that mark where it was cut, and fingerprinting those compares a molecule with
+extra atoms against reference ligands without them: on a real predicted E3 fragment, ECFP4 Tanimoto
+to thalidomide was 0.711 with the dummy and 1.000 once capped, and its SA score 3.558 against 2.597.
+`warhead_representation` records which reading was used — `parent_warhead`, the default, caps with
+hydrogen and gives the ligand as it exists off the degrader; `attachment_aware` keeps the dummy, so
+the same ligand cut at two positions counts as two warheads — alongside
+`warhead_fingerprint_radius` and `warhead_fingerprint_bits` (Morgan, radius 2, 2048 bits). Every
+`warhead_*` number depends on all three, so all three are in `metrics.json`.
+
+**`e3_recognizable_rate` is a substructure test, not a similarity threshold.** An E3 family is
+defined by a pharmacophore that is present or absent, and a Tanimoto floor answers "how close is this
+to some known ligand" instead; the two disagree in both directions, since a glutarimide carrying a
+large unfamiliar substituent scores low while being a perfectly good CRBN binder. The cores are in
+`tools/data/e3_binder_cores.smarts`, one per line with its citation: glutarimide for CRBN, the
+hydroxyprolinamide of VH032 for VHL, the nutlin diaryl-imidazoline for MDM2, and the AVPI mimetic for
+IAP. Each was verified to match its family's reference ligand and no other family's. **On 500 real
+TPD-DB degraders, 84.2% contain a listed core**, so that is roughly the ceiling a perfectly
+decomposed set of real degraders would score and a generated set near it is doing as well as the list
+allows rather than well in absolute terms. The maximum ECFP4 Tanimoto to a reference ligand is still
+reported as a supporting field so the verdict can be read against it.
+
+**For a categorical conditional job the component table is also computed per class**, as
+`split_success_rate_<class>`, `warhead_usable_rate_<class>`, `warhead_uniqueness_<class>`,
+`warhead_diversity_<class>`, `n_unique_warheads_<class>` and `warhead_novelty_in_class_<class>`, with
+`n_unique_valid_<class>` as the denominator. Only `warhead_novelty_in_class` is macro-averaged under
+its bare name: the other four already have that name at the whole-sample level, computed over the
+whole sample rather than as a mean over classes, and one key cannot carry two definitions. A class
+with fewer than two unique warheads reports `warhead_diversity_<class>` as a categorized null rather
+than 0.0, which would read as total collapse.
+
+Measured on a twenty-target panel in earlier work, macro-averaged: split coverage around 0.95,
+warhead uniqueness around 0.27, warhead diversity around 0.77 and in-class novelty around 0.89. Those
+are the magnitudes to expect; a panel far from them is worth explaining before it is reported.
+
+**The sample is subsampled.** Decomposition costs seconds per molecule, so component metrics are
+computed over at most 2,000 unique valid molecules drawn with the job's own seed, recorded as
+`component_sample_size` and `component_sample_seed`. A rate over a subsample is a different number
+from a rate over the sample, and at 2,000 the sampling error on a rate is well under a percentage
+point.
 
 `top100_warhead_scaffold_count` is the primary reward-hacking detector for a bifunctional dataset,
 because `top100_scaffold_count` cannot be one: a whole-molecule PROTAC scaffold is nearly unique per
@@ -497,8 +580,12 @@ beside it and is expected to be uninformative, which is the evidence that the wa
 one to read.
 
 **The splitter policy.** PROTAC-Splitter's `adaptive` model is primary for every cluster and final
-run; `xgboost` is selectable for development iteration, because adaptive costs 1.982 s per molecule
-against 0.143 and a 10,000-molecule sample is 5.5 hours serially. The model and version are recorded
+run; `xgboost` is selectable for development iteration, because adaptive costs 2.045 s per molecule
+serially against 0.143. Decomposition runs a pool of interpreters sized from `SLURM_CPUS_PER_TASK`
+and capped at eight, measured at 0.483 s per molecule — a 4.2x speedup — over a seeded 2,000-molecule
+subsample, so a 10,000-molecule sample that was 5.7 hours serially is about nine minutes. The fixed
+cost of an interpreter is about 21 s and inference dominates it a hundred to one, which is why this
+is a pool and not a larger batch; `tools/README.md` carries the measurement. The model and version are recorded
 in `metrics.json` either way, results are cached on disk by model, and the `xgboost` sensitivity pass
 runs on every final generated set. On 500 real degraders adaptive decomposed 492 and xgboost 472, the
 second a strict subset of the first, and the two return identical fragments for 329 of the 472 both
@@ -580,6 +667,25 @@ survives greyscale. Save every figure as both `.png` at 300 dpi and `.pdf` into 
 directory. Any inline SVG in `results/report.html` uses these same hex values, so the report and the
 paper figures match.
 
+Every figure in `src/metrics/_figures.py` passes through one grid builder, which installs the style
+and allocates one axes per panel that has data. The style goes in there and nowhere else, so no
+figure can be drawn without it: one drawn without it still draws, in default matplotlib blue, and
+nothing raises. A panel whose input is missing is not drawn at all and the job prints a line naming
+what was missing, because an empty axes with default 0-1 ticks reads as a measurement that came out
+empty rather than one that was not made.
+
+**What each job type draws.** `preprocess`: the heavy-atom distribution with `max_nodes` marked, and
+the molecule count per split with the strategy and seed in the axis label. `unconditional` and
+`conditional`: training and validation loss on one axes, with the from-scratch control overlaid when
+`control_job_dir` names one, because reaching the same final loss in fewer epochs is the transfer
+claim and one curve cannot show it. `generate`: the funnel with counts annotated, the distribution of
+maximum Tanimoto to the training split, and generated against test distributions of MW, logP and SA
+as z-scores against the test split. A conditional job adds the requested-against-achieved scatter
+with the identity line and the decile coverage, or for a categorical panel the per-class bars with
+both baselines. `goal_directed`: the score trajectory, the budget curve with the virtual screening
+baseline on the same axes, and `top100_warhead_scaffold_count` against learning step where the run
+recorded it.
+
 matplotlib is the only plotting dependency. Do not add seaborn, plotly, or anything else.
 
 ---
@@ -657,74 +763,72 @@ changes the reported sample efficiency.
 
 ## Status
 
-Verified by running the code on 2026-10-19. Everything here is either unbuilt, unverifiable on a
-laptop, or waiting on an asset. Nothing in this list is a defect in what exists.
+Verified by running the code on 2026-10-19.
 
-**Unbuilt.** Each is a feature with no implementation, not a broken one.
+**The three features this section used to list as unbuilt are built.** The
+categorical conditional metrics with their two baselines, the whole-sample
+component metrics in their two-denominator form, and per-job figures for all
+five job types now have callers, tests and output.
 
-- **Categorical conditional metrics have no caller.** `delta_nll`, `knn_purity_<k>`,
-  `class_match_*`, `class_selectivity_margin` and `knn_reference_pool_size` exist in
-  `src/metrics/_conditions.py` and no job emits them, so a categorical conditional experiment reports
-  its core metrics and nothing about conditioning. The continuous keys are emitted as categorized
-  nulls for a one-hot label, which is correct: they have no definition for a class.
-- **Whole-sample component metrics have no caller.** `split_success_rate`, `warhead_*`,
-  `e3_recognizable_rate`, `n_split_successfully`, `e3_similarity_floor`, `e3_max_similarities` and
-  `ecfp4_radius` exist in `src/metrics/_components.py` and are not called.
-  `top100_warhead_scaffold_count` and `top100_split_success_rate` are the wired pair. Wiring the rest
-  means paying decomposition over the whole sample rather than over a hundred molecules, and
-  `e3_recognizable_rate` is a similarity threshold rather than the exact-substructure check specified
-  above.
-- **The virtual screening baseline, the evaluation surrogate and the applicability-domain check.**
-  `vs_baseline_top10_at_*`, `vs_delta_top10_at_*`, `eval_oracle_top10_mean` and
-  `top100_outside_domain_rate` emit categorized nulls. No experiment declares a screening library,
-  and the `vs_baseline_*` job directories are `generate` jobs, which score nothing, so they cannot
-  report any `top100_*` or at-budget metric whatever else is wired.
-- **The nearest-neighbor retrieval baseline** has no job directory in any conditional experiment.
-- **Multi-seed aggregation.** Nothing writes `experiments/<exp>/results/aggregate.json`, and
-  `submit.py` runs one job directory with one seed, so the three seeds the reporting conventions
-  require are produced by hand.
-- **`experiments/surrogates/`** does not exist, so no surrogate is fitted and nothing reports
-  held-out performance against a mean-prediction baseline.
-- **`nll_*` and `uc_jsd` are computed in `Analyzer`**, outside `src/metrics/`, which is the one
-  exception to the single-implementation rule above. `src/metrics/` records the values it is handed.
-- **No job writes a figure**, so the plot style guide is specified and unapplied.
-  `results/report.html` carries the structure grid.
-- **Decomposition is cached but neither parallelized nor subsampled.** The spawn-context pool and the
-  seeded 2,000-molecule subsample for component metrics are not built; a full sample costs about 2 s
-  per molecule on one core.
-- **There is no `uv.lock`**, so the single-source-of-truth claim above is aspirational.
-- **REINVENT4 is not installed** and `tools/install.sh` does not fetch it, while six `reinvent_*`
-  jobs exist. None of the six fairness conditions in the experiment plan is met, so no REINVENT
-  comparison may be reported as evidence.
-- **`scripts/cluster_selftest.sbatch` is hand-written**, which is the one exception to "no
-  hand-written sbatch files": it runs before a job directory exists.
+**Two specified keys remain unwired**, and they are the only ones:
 
-**Unverifiable without the cluster.** These end as unverified rather than as done.
+- **`eval_oracle_top10_mean`** and **`top100_outside_domain_rate`**. Both record
+  an explicit `not_implemented` null. The inputs they were waiting on now exist
+  — `experiments/surrogates/protac_pdc50_smarca2/` carries the optimization and
+  evaluation pickles and its `PERFORMANCE.md` — so what is missing is the
+  wiring and a config key naming the evaluation pickle and the applicability
+  floor, not the surrogates. Neither is blocked.
 
-- The aarch64 and CUDA 13 environment. Locally `torch` resolves to 2.14.1 with `torch.version.cuda`
-  of `None`, which is correct on macOS and tells us nothing about a GH200 node.
-- Whether the Lmod `module` function survives into the batch script. The template now fails loudly
-  in its first seconds if it does not.
-- Every walltime and memory request. Nineteen jobs still carry the two-hour default, including the
-  `generate` jobs that sample ten thousand molecules. Measure with the walltime procedure in
-  `RUN.md`; these are measurements rather than guesses.
-- RetroTAC and PROTAC-Splitter on Linux aarch64.
+What follows is what has not been *verified*, which is a different claim from
+what has not been written.
 
-**Blocked on an asset the maintainer must supply.** These are the reason several parts of the system
-are unbuilt, and the next pass should not rediscover them.
+**Blocked on something I cannot obtain.**
 
-- **The two ACS Nano PDFs** (`acsnano-6c06255-main.pdf` and `-si.pdf`). Absent. Every battery number
-  in the configs, in `RUN.md` and in the manuscript came from a specification pasted into a prompt
-  rather than from the source, so none is verified in the strict sense.
-- **KBS-409.** Not located. It is the reference set for one of the six multiplied terms of the
-  battery objective, so without it that objective cannot be computed at all. The battery scoring
-  function has no implementation in `src/` either.
-- **The enumerated recombinant PROTAC library.** Not downloadable, which blocks the PROTAC base prior
-  and therefore the PROTAC transfer arm.
-- **The letter-grade bin edges for TPD-DB activity.** Half of the PROTAC `DC50` rows hold letter
-  grades rather than numbers, and a fifth are a number with a unit, so the activity surrogate has no
-  label to fit until the edges are known or those rows are dropped.
+- **The two ACS Nano PDFs.** Not in `manuscript/refs/`, which does not exist,
+  and not reachable from here. Every number that would have come from them is
+  either absent from the manuscript or carries its own measured source; none is
+  guessed. Nothing else in the repository waits on them.
 
-Open defects are in `TODO.md`. Append to it; do not work from it without being asked. The specific
-datasets and optimization tasks are in `manuscript/experiment-plan.md`, and the operational steps are
-in `RUN.md`.
+**Unverifiable without the cluster — the arrival checklist.** Run these in this
+order on Arrhenius before submitting anything. They are ordered by how early a
+failure would waste the most time, and each says what the failure looks like,
+because several of them fail as something other than themselves.
+
+1. **The aarch64 CUDA torch wheel, which is out of the lock.** `uv.lock`
+   resolves torch to the PyPI build; on Linux aarch64 that is the **CPU-only**
+   build, and the CUDA wheel goes on top of it with the line in `RUN.md` Step 3.
+   *The failure looks like:* a job that runs, produces correct metrics, and
+   takes the CPU walltime — not a crash. `RUN.md`'s check asserts
+   `torch.version.cuda` is not `None`; run it before anything else, because
+   every walltime below assumes it passed. Inside a SLURM allocation an absent
+   accelerator is fatal rather than a fallback, which is the second guard on
+   the same failure.
+2. **Whether the Lmod `module` function survives into the batch script.** It is
+   a shell function, and a non-login shell does not have it. *The failure looks
+   like:* a missing shared library three steps later, which reads as a build
+   problem rather than a login-shell problem. The template asserts it in its
+   first seconds, so this one fails loudly and early by design.
+3. **RetroTAC and PROTAC-Splitter on Linux aarch64.** Both are Python with
+   compiled dependencies and neither has been run on that architecture. *The
+   failure looks like:* an import error in a subprocess whose stderr the metric
+   layer reports as `MissingInput`, so `retrotac_*` and every `warhead_*` key
+   record an explicit null with the reason and the job still completes. A
+   sparse component table is the symptom to look for.
+4. **REINVENT4's platform gating.** It pins `torch==2.12.0`, which publishes
+   wheels for `manylinux_2_28_aarch64` and `x86_64` and none for macOS arm64, so
+   `tools/install.sh` installs it on the cluster and skips it here with a
+   message. *The failure looks like:* a baseline arm that silently never ran.
+   Its six fairness conditions, in each goal-directed experiment's
+   `instructions.md`, must all be met before any REINVENT number is reported.
+5. **Every walltime and memory request.** They are now derived rather than
+   guessed: `scripts/estimate-walltime.py` applies `RUN.md`'s procedure to the
+   measured CPU per-unit costs and writes the number and its derivation into
+   each job's config. **They are CPU extrapolations.** Training will finish well
+   inside them on a GPU and generation will gain much less, because generation
+   is a sequential autoregressive loop with a Python-level decode. *The failure
+   looks like:* a job killed at 99%, which produces nothing but its last
+   checkpoint. Twenty-one jobs could not be sized at all because their dataset
+   is not built yet; re-run the script once it is.
+
+Open defects are in `TODO.md`. Append to it; do not work from it without being
+asked.

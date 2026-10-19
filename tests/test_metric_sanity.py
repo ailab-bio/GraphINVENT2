@@ -20,6 +20,13 @@ whose failure mode is a plausible wrong number rather than a crash:
     reported the same number for models whose error differed eightfold
   - top100_scaffold_count counted an acyclic molecule's empty scaffold as a
     scaffold, and is blind by construction to a collapsing warhead
+  - the categorical baselines are what make the conditional claim falsifiable,
+    and a baseline built from the wrong set still emits every key with a
+    plausible number
+  - a figure drawn without the group style still draws, in default matplotlib
+    blue, and nothing raises
+  - the splitter cache stores a failure as its reason, which made the cached
+    and uncached return paths disagree on the shape they hand back
   - conditioning.properties was never checked against the file's columns, so a
     config listing the same properties in the other order trained on one
     property and reported it as another, with a byte-identical HDF5
@@ -506,3 +513,180 @@ class TestOpenShellIsNotAMolecule:
                 a.GetNumRadicalElectrons() for a in mol.GetAtoms()
             ), f"{token} in the training split is an open shell"
         assert n > 0
+
+
+class TestCategoricalBaselinesAreNotTheSample:
+    """
+    The two categorical baselines must be computed over what their names say.
+
+    The failure this catches is silent: if the lookup baseline were built from
+    the generated sample rather than from the training molecules carrying the
+    label, every key would still be present and every number still plausible,
+    and the comparison that makes the conditional claim falsifiable would be a
+    comparison of the sample against itself. The signature is arithmetic rather
+    than approximate, which is what makes it a usable assertion: the lookup set
+    *is* training chemistry, so it scores class_match_median 1.0 at novelty 0.0
+    by construction, and nothing else does.
+    """
+
+    PANEL = ["a", "b"]
+    TRAINING = {
+        "a": [
+            "CC(=O)Nc1ccc(C(=O)Nc2ccccc2)cc1",
+            "CC(=O)Nc1ccc(C(=O)Nc2ccc(C)cc2)cc1",
+        ],
+        "b": ["c1ccc2[nH]ccc2c1", "Cc1ccc2[nH]ccc2c1"],
+    }
+
+    def _block(self, smiles, labels):
+        from metrics._conditions import categorical_block
+
+        training = [s for pool in self.TRAINING.values() for s in pool]
+        metrics, _, per_class = categorical_block(
+            smiles,
+            labels,
+            self.PANEL,
+            self.TRAINING,
+            [(self.TRAINING["a"][0], "a"), (self.TRAINING["b"][0], "b")],
+            threshold=0.4,
+            training_smiles=training,
+            isomeric=False,
+        )
+        return metrics, per_class
+
+    def test_the_lookup_baseline_matches_perfectly_and_is_never_novel(self):
+        smiles = self.TRAINING["a"] + self.TRAINING["b"]
+        labels = ["a", "a", "b", "b"]
+        metrics, _ = self._block(smiles, labels)
+        assert metrics["class_match_median"] == 1.0
+        assert metrics["novelty"] == 0.0
+
+    def test_a_novel_on_class_sample_is_novel_and_still_matches(self):
+        # Chlorinated analogs: the same series, absent from the training set.
+        smiles = [
+            "CC(=O)Nc1ccc(C(=O)Nc2ccc(Cl)cc2)cc1",
+            "CCCc1ccc2[nH]ccc2c1",
+        ]
+        metrics, _ = self._block(smiles, ["a", "b"])
+        assert metrics["novelty"] == 1.0
+        assert 0.0 < metrics["class_match_median"] < 1.0
+
+    def test_the_posthoc_baseline_reranks_and_never_invents(self):
+        from metrics._conditions import posthoc_filter_baseline
+
+        unconditional = self.TRAINING["a"] + self.TRAINING["b"] + ["CCO", "c1ccccc1"]
+        smiles, labels = posthoc_filter_baseline(
+            unconditional, self.PANEL, self.TRAINING, {"a": 1, "b": 1}
+        )
+        # One per class, drawn from the unconditional sample and from nowhere
+        # else, and each the closest to its own class rather than to the panel.
+        assert labels == ["a", "b"]
+        assert set(smiles) <= set(unconditional)
+        assert smiles[0] in self.TRAINING["a"]
+        assert smiles[1] in self.TRAINING["b"]
+
+    def test_the_macro_average_is_not_the_largest_class(self):
+        # Class a is given three molecules and class b one, with class b's
+        # on-class match deliberately poor. A micro-average would report
+        # something close to class a's number under a name that reads as the
+        # panel's.
+        smiles = self.TRAINING["a"] + ["CC(=O)Nc1ccc(C(=O)Nc2ccc(F)cc2)cc1", "CCO"]
+        labels = ["a", "a", "a", "b"]
+        metrics, per_class = self._block(smiles, labels)
+        a_value = per_class["a"]["class_match_median"]
+        b_value = per_class["b"]["class_match_median"]
+        assert b_value < a_value
+        assert metrics["class_match_median"] == pytest.approx((a_value + b_value) / 2)
+
+
+class TestFiguresCarryTheGroupStyle:
+    """
+    Every figure must be drawn with the AIME style installed.
+
+    The failure is silent in the way that matters: a figure drawn without it
+    still draws, in default matplotlib blue with two visible spines, and
+    nothing raises. It shipped exactly that way once, when a refactor moved
+    the `apply()` call out of one entry point, and the only symptom was a
+    picture that looked wrong to someone who knew what it should look like.
+    The style is now installed inside `_grid`, which every figure in the module
+    passes through, and this asserts that it still is.
+    """
+
+    def test_making_a_grid_installs_the_palette(self):
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        from metrics import _figures
+        from metrics.plot_style import AIME_PALETTE, DARK_SLATE
+
+        plt.rcParams.update(plt.rcParamsDefault)
+        assert plt.rcParams["axes.edgecolor"] != DARK_SLATE
+
+        fig, axes = _figures._grid(2)
+        try:
+            assert plt.rcParams["axes.edgecolor"] == DARK_SLATE
+            assert plt.rcParams["axes.spines.top"] is True
+            assert plt.rcParams["axes.spines.right"] is True
+            assert plt.rcParams["axes.grid"] is False
+            assert plt.rcParams["legend.frameon"] is False
+            assert (
+                list(plt.rcParams["axes.prop_cycle"].by_key()["color"]) == AIME_PALETTE
+            )
+            assert len(axes) == 2
+        finally:
+            plt.close(fig)
+
+    def test_no_panel_is_allocated_for_a_figure_with_nothing_to_draw(self):
+        from metrics import _figures
+
+        fig, axes = _figures._grid(0)
+        assert fig is None and axes == []
+
+
+class TestTheSplitterCacheReturnsTheSameShapeEitherWay:
+    """
+    A fully-cached decomposition must return what an uncached one returns.
+
+    The cache stores a failed split as its reason rather than as None, so that
+    a sparse component table can be explained without a re-run that costs
+    hours. That made the two return paths diverge: the uncached one mapped the
+    reason to None and the cached one handed the caller `{"failed": ...}`,
+    which is truthy and then raises on the missing fragment keys several frames
+    away. Nothing about it is visible until a job runs twice.
+    """
+
+    def test_a_failed_entry_is_none_on_both_paths(self):
+        from metrics import _components
+
+        cache = {
+            "CCO": {"failed": "linker_too_short"},
+            "c1ccccc1": {
+                "poi": "c1ccccc1[*:1]",
+                "linker": "C[*:1][*:2]",
+                "e3": "N[*:2]",
+            },
+        }
+        original = _components._load_cache
+        _components._load_cache = lambda model: dict(cache)
+        try:
+            out = _components.decompose(["CCO", "c1ccccc1", "CCO"])
+        finally:
+            _components._load_cache = original
+        assert out[0] is None
+        assert out[2] is None
+        assert out[1] is not None and set(out[1]) == {"poi", "linker", "e3"}
+
+    def test_the_reason_survives_for_the_record(self):
+        from metrics import _components
+
+        cache = {"CCO": {"failed": "linker_too_short"}}
+        original = _components._load_cache
+        _components._load_cache = lambda model: dict(cache)
+        try:
+            records = _components.warhead_records(["CCO"])
+        finally:
+            _components._load_cache = original
+        assert records[0]["split_status"] == "linker_too_short"
+        assert records[0]["warhead"] is None

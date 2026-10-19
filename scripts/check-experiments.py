@@ -16,6 +16,7 @@ Three things are checked that nothing else checks:
 from __future__ import annotations
 
 import argparse
+import pathlib
 import sys
 from pathlib import Path
 
@@ -86,11 +87,14 @@ def main() -> int:
             if value and not (REPO / str(value)).exists():
                 missing_inputs.append((name, key, str(value)))
         if job_type != "preprocess":
-            ddir = REPO / "data" / "datasets" / str(params.get("dataset_dir", ""))
+            # config.resolve already joins data_root to a relative dataset_dir,
+            # so joining it a second time produced data/datasets/data/datasets/x
+            # and reported seventeen datasets missing that are present.
+            ddir = pathlib.Path(str(params.get("dataset_dir", "")))
+            if not ddir.is_absolute():
+                ddir = REPO / ddir
             if not ddir.is_dir():
-                missing_inputs.append(
-                    (name, "dataset_dir", str(ddir.relative_to(REPO)))
-                )
+                missing_inputs.append((name, "dataset_dir", str(ddir)))
 
     print(f"{'JOB':48} {'TYPE':14} RESULT")
     print("-" * 84)

@@ -1,0 +1,16 @@
+* Read 241 rows from data/surrogates/smarca2_pdc50.tsv
+  one-hot columns: ['cell_line', 'ligase']
+  feature width 2061: 2048 fingerprint (count) + 9 descriptors + 4 indicators
+* random split: 241 train / 0 test
+* Held-out performance
+  no test set; performance unknown
+* Wrote experiments/surrogates/protac_pdc50_smarca2/evaluation.pickle
+
+Use it by adding this to the 'oracles' block of a goal_directed config:
+  "evaluation": {
+      "type": "sklearn",
+      "path": "experiments/surrogates/protac_pdc50_smarca2/evaluation.pickle",
+      "output": "predict",
+      "direction": "maximize"
+  }
+and naming it in 'score_components'. The featurization is stored in the pickle and the oracle reads it, so there is nothing to keep in sync by hand.

@@ -1,0 +1,19 @@
+# Seed 2 of the qed optimization job. In a goal_directed job the
+# seed controls the optimization run itself, so each seed is its own job.
+job_type: goal_directed
+pretrained_model_path: experiments/tutorial_unconditional/jobs/debug/checkpoints/model_restart_4.pth
+score_components:
+- QED
+score_thresholds:
+- 0.0
+score_type: continuous
+rl_steps: 4
+rl_eval_every: 2
+batch_size: 20
+accumulation_steps: 1
+n_samples: 20
+device: cpu
+slurm:
+  time: 01:00:00
+  gpus: 1
+seed: 2

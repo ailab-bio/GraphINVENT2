@@ -27,8 +27,18 @@ than a hard task. Report the two contrasts separately.
 ## What to check
 
 Each `jobs/generate_*/results/metrics.json`. The RBM39 contrast should be clean; the IKZF1/3 against GSPT1
-contrast is the real test. The seven categorical metrics are implemented and have **no caller** (L25), so they do
-not appear yet, and the retrieval baseline does not exist. Both block the headline result.
+contrast is the real test.
+
+Read `class_selectivity_margin` first, then `novelty` beside `class_match_*`, then the two baselines. The
+headline is not the conditional number: it is the gap between `class_selectivity_margin` and
+`baseline_posthoc_class_selectivity_margin`. If an unconditional model plus a one-line reranking reaches the
+same margin, the conditioning bought nothing and that is the result. `baseline_lookup_*` scores
+`class_match_median` 1.0 at `novelty` 0.0 by construction; a conditional model matching it on both is
+retrieving, not conditioning. The per-class table is in `results/condition_per_class.json` and the bars are in
+`results/conditioning.png`.
+
+`delta_nll` is the one number that does not depend on the generated sample, so it is present even for a run that
+generated nothing valid. Positive means a held-out molecule is more likely under its own condition.
 
 ## Core metrics come from
 

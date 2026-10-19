@@ -87,7 +87,8 @@ def compute_test_set_similarity(
           analysis.
     """
     from rdkit import Chem, DataStructs
-    from rdkit.Chem import AllChem
+
+    from ._core import morgan
 
     _empty = {
         "mean_similarity": 0.0,
@@ -119,7 +120,7 @@ def compute_test_set_similarity(
             n_invalid_gen += 1
             continue
         try:
-            fp = AllChem.GetMorganFingerprintAsBitVect(mol, fp_radius, nBits=fp_bits)
+            fp = morgan(mol, fp_radius, fp_bits)
             gen_fps.append(fp)
             gen_canonical.append(Chem.MolToSmiles(mol))
         except Exception:
@@ -147,7 +148,7 @@ def compute_test_set_similarity(
             n_invalid_test += 1
             continue
         try:
-            fp = AllChem.GetMorganFingerprintAsBitVect(mol, fp_radius, nBits=fp_bits)
+            fp = morgan(mol, fp_radius, fp_bits)
         except Exception:
             n_invalid_test += 1
             continue

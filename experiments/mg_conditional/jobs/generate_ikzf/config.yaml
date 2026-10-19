@@ -9,8 +9,16 @@ sample_conditions:
   is_ikzf: 1.0
   is_gspt1: 0.0
   is_rbm39: 0.0
-# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
-# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   10,000 molecules, scaled to max_nodes 54
+#   = 0.06 h x 1.5 -> 1 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
 slurm:
-  time: "02:00:00"
+  time: "01:00:00"
+  memory: 19G
   gpus: 1

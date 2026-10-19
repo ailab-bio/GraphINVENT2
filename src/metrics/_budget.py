@@ -107,6 +107,35 @@ def compute_at_budget_metrics(optimization_log: list) -> dict:
     return results
 
 
+def top10_curve(optimization_log: list, *, n_points: int = 60) -> list:
+    """
+    `(oracle_calls, top-10 mean)` sampled along the whole trajectory.
+
+    The budget figure's input. It lives here, beside
+    `compute_at_budget_metrics`, and uses the same `_top_mean`, so the curve
+    and the three tabulated `top10_mean_at_*` values cannot disagree: a figure
+    computing its own version of a reported metric is a second implementation
+    of it, and the two drift.
+
+    Sampled at `n_points` evenly spaced budgets rather than at every call,
+    because a 10,000-call log makes 10,000 prefix scans and the curve is smooth.
+    """
+    if not optimization_log:
+        return []
+    calls = [c for c, _ in optimization_log]
+    highest = max(calls)
+    if highest <= 0:
+        return []
+    step = max(1, highest // max(1, n_points))
+    points: list = []
+    for budget in range(step, highest + step, step):
+        within = [score for c, score in optimization_log if c <= budget]
+        value = _top_mean(within, 10)
+        if value is not None:
+            points.append((min(budget, highest), value))
+    return points
+
+
 def compute_auc_top10(optimization_log: list, *, finish: bool = True) -> float:
     """
     `auc_top10`: area under the top-10 mean against oracle calls, to 10,000.

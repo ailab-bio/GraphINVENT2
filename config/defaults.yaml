@@ -87,6 +87,13 @@ n_samples: 2000
 
 use_tensorboard: false
 
+# the from-scratch control job directory for a transfer job, e.g.
+# experiments/mg_unconditional/jobs/scratch. Its convergence log is overlaid on
+# this job's training curves, which is the only way the transfer claim is
+# legible: reaching the same final loss in fewer epochs is the claim, and one
+# curve cannot show it. Null for a job that is not a transfer arm.
+control_job_dir: null
+
 # checkpoint to continue training from; setting it makes an unconditional job
 # a transfer-learning job
 resume_from: null
@@ -126,8 +133,19 @@ condition_dim: 0
 condition_embedding_dim: 0
 # injection mechanism; only "virtual_node" is implemented
 condition_type: virtual_node
-# property values to generate with, e.g. {"pLogS": -1.5}
+# property values to generate with, e.g. {"pLogS": -1.5}. For a categorical
+# panel this is the one-hot of the class to request, or the string
+# "all_classes", which cycles the panel across generation batches so one job
+# covers every class and the macro-average has something to average.
 sample_conditions: null
+
+# null = the condition is a property value; a list of column names = the
+# condition is a class label over that one-hot panel, e.g.
+# ["is_ar", "is_btk", "is_egfr"]. CLAUDE.md gives the continuous conditional
+# metrics no definition for a class label and the categorical ones no
+# definition for a value, so this is what selects between the two sets. The
+# names must be the same columns, in the same order, as conditioning.properties.
+condition_classes: null
 
 # a generated molecule counts as hitting its requested condition value when the
 # achieved property is within this much of it, per property name. CLAUDE.md's
@@ -187,6 +205,11 @@ success_threshold: 0.5
 # and for a composite objective the threshold alone does not carry it. Echoed
 # verbatim into metrics.json.
 success_definition: null
+
+# Output of scripts/screen-library.py for this experiment's declared screening
+# library. Set it on a goal_directed job to get vs_baseline_top10_at_* and the
+# vs_delta_top10_at_* comparison; left unset, both report as unavailable.
+screening_baseline_results: null
 
 # --- generation and evaluation ---------------------------------------------
 

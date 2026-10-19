@@ -58,8 +58,11 @@ train.smi valid.smi test.smi       the split molecule lists
 preprocessing.yaml                 how the splits were made
 ```
 
-Into the job directory, only `results/config.resolved.yaml`. A preprocess job computes no metrics, so it writes no
-`metrics.json`.
+Into the job directory, `results/config.resolved.yaml` and two figures: `results/preprocessing.png` and the
+matching `.pdf`. Panel (a) is the heavy-atom distribution with `max_nodes` marked, which is the figure that
+justifies the value, since a tail past the line is molecules the representation cannot hold. Panel (b) is the
+molecule count per split, with the strategy and seed in the axis label. A preprocess job computes no metrics,
+so it writes no `metrics.json`.
 
 Each HDF5 holds one row per construction action rather than one per molecule: `nodes`, `edges` and
 `action_probs`, plus `condition_vector` when the input carried property columns. A molecule with *n* heavy atoms

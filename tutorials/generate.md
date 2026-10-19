@@ -157,6 +157,15 @@ server and no network. It carries the metric table with the `unavailable` reason
 and for a `generate` job a grid of structures chosen with a MaxMin diversity picker at a fixed seed so the same
 run always shows the same molecules.
 
+It also embeds the figures the job wrote. `results/generation.png` has up to three panels: the funnel with its
+counts annotated, the distribution of each molecule's maximum Tanimoto to the training split, and the generated
+against test distributions of MW, logP and SA as z-scores against the test split. The second is where
+memorization shows — a mass piled against 1.0 is a model reproducing its training set while scoring well on
+binary novelty. A conditional job writes `results/conditioning.png` beside it. Every figure is saved as `.png`
+at 300 dpi and as `.pdf`; the PDF is the one that goes into the paper. A panel whose input is missing is not
+drawn and the job prints a line saying what was missing, so a two-panel figure is a statement rather than a
+truncation.
+
 ## When it goes wrong
 
 A checkpoint that will not load is almost always a vocabulary mismatch between the dataset the job points at and

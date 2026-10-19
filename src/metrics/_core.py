@@ -24,14 +24,36 @@ ECFP4_BITS = 2048
 NEAR_DUPLICATE_THRESHOLD = 0.9
 
 
-def ecfp4(mol):
-    """ECFP4 fingerprint as a packed RDKit bit vector."""
+# One generator per (radius, bits), built on demand. Rebuilding it per molecule
+# is pure waste on a 10,000-molecule sample, and `GetMorganGenerator` is not
+# cheap.
+_GENERATORS: dict = {}
+
+
+def morgan(mol, radius: int = ECFP4_RADIUS, bits: int = ECFP4_BITS):
+    """
+    A Morgan fingerprint as a packed RDKit bit vector.
+
+    The single implementation. Four call sites used
+    `AllChem.GetMorganFingerprintAsBitVect`, which RDKit now deprecates with a
+    warning per molecule -- a 10,000-molecule sample printed ten thousand
+    lines -- and which is a second implementation of the fingerprint every
+    similarity number in this repository depends on.
+    """
     from rdkit.Chem import rdFingerprintGenerator
 
-    generator = rdFingerprintGenerator.GetMorganGenerator(
-        radius=ECFP4_RADIUS, fpSize=ECFP4_BITS
-    )
-    return generator.GetFingerprint(mol)
+    key = (radius, bits)
+    if key not in _GENERATORS:
+        _GENERATORS[key] = rdFingerprintGenerator.GetMorganGenerator(
+            radius=radius, fpSize=bits
+        )
+    return _GENERATORS[key].GetFingerprint(mol)
+
+
+def ecfp4(mol):
+    """ECFP4 fingerprint: Morgan at radius 2 over 2048 bits, which is the
+    fingerprint CLAUDE.md names for every similarity metric."""
+    return morgan(mol)
 
 
 def canonical_smiles(smiles_or_mols: list, *, isomeric: bool = True) -> list:

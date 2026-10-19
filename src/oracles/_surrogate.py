@@ -37,6 +37,9 @@ def _featurize(
     radius: int,
     n_bits: int,
     use_counts: bool = False,
+    descriptors: Optional[Sequence[str]] = None,
+    categorical_vocab: Optional[dict] = None,
+    categorical_values: Optional[dict] = None,
 ) -> Tuple[np.ndarray, List[int]]:
     """
     Morgan-fingerprint feature matrix for the parseable inputs.
@@ -44,6 +47,14 @@ def _featurize(
     Returns the matrix together with the indices it corresponds to, so the
     caller can place predictions back into the right positions without
     featurising unparseable molecules or silently shifting the output.
+
+    `descriptors` names RDKit descriptors to append after the fingerprint, and
+    `categorical_vocab` is {column: [observed values]} giving one indicator per
+    value. A generated molecule has no assay context, so `categorical_values`
+    supplies the value to assume per column; the trainer records the modal
+    training value for exactly this. These three must match what the model was
+    fitted on, which is why the model's pickle carries them rather than the
+    config repeating them.
     """
     from rdkit import Chem
     from rdkit.Chem import rdFingerprintGenerator
@@ -62,11 +73,30 @@ def _featurize(
             fp = generator.GetCountFingerprintAsNumPy(mol)
         else:
             fp = generator.GetFingerprintAsNumPy(mol)
-        rows.append(np.asarray(fp, dtype=np.float64))
+        parts = [np.asarray(fp, dtype=np.float64)]
+        if descriptors:
+            from rdkit.Chem import Descriptors
+
+            parts.append(
+                np.asarray(
+                    [getattr(Descriptors, d)(mol) for d in descriptors],
+                    dtype=np.float64,
+                )
+            )
+        for column, vocabulary in (categorical_vocab or {}).items():
+            assumed = str((categorical_values or {}).get(column, "")).strip().lower()
+            parts.append(
+                np.asarray(
+                    [1.0 if assumed == v else 0.0 for v in vocabulary], dtype=np.float64
+                )
+            )
+        rows.append(np.concatenate(parts))
         valid_idx.append(i)
 
     if not rows:
-        return np.zeros((0, n_bits), dtype=np.float64), []
+        width = n_bits + len(descriptors or ())
+        width += sum(len(v) for v in (categorical_vocab or {}).values())
+        return np.zeros((0, width), dtype=np.float64), []
     return np.vstack(rows), valid_idx
 
 
@@ -138,7 +168,19 @@ class SklearnOracle(BaseOracle):
         with open(model_path, "rb") as f:
             loaded = pickle.load(f)
 
-        if isinstance(loaded, dict):
+        if isinstance(loaded, dict) and "featurization" in loaded:
+            # Written by scripts/train-surrogate.py, which stores the estimator
+            # under "model" together with the featurization that produced it.
+            # model_key is for a third-party pickle whose layout we do not own.
+            self.model = loaded["model"]
+            spec = loaded["featurization"]
+            self.radius = spec.get("radius", self.radius)
+            self.n_bits = spec.get("n_bits", self.n_bits)
+            self.use_counts = spec.get("use_counts", self.use_counts)
+            self._descriptors = spec.get("descriptors") or None
+            self._categorical_vocab = spec.get("categorical_vocab") or None
+            self._categorical_values = spec.get("categorical_defaults") or None
+        elif isinstance(loaded, dict):
             if model_key not in loaded:
                 raise KeyError(
                     f"Pickle at '{path}' is a dict without key '{model_key}'; "
@@ -165,7 +207,13 @@ class SklearnOracle(BaseOracle):
     def predict(self, smiles: Sequence[Optional[str]]) -> List[float]:
         values = [self.invalid_value] * len(smiles)
         features, valid_idx = _featurize(
-            smiles, self.radius, self.n_bits, self.use_counts
+            smiles,
+            self.radius,
+            self.n_bits,
+            self.use_counts,
+            descriptors=getattr(self, "_descriptors", None),
+            categorical_vocab=getattr(self, "_categorical_vocab", None),
+            categorical_values=getattr(self, "_categorical_values", None),
         )
         if len(valid_idx) == 0:
             return values

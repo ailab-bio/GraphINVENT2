@@ -9,18 +9,18 @@ slurm:
   # with gpus: 0 does not occupy a GPU node. Hard-coding gpu here sent 13
   # CPU-only jobs to the GPU partition, one of them for 24 hours.
 # Categorical conditioning on the degraded protein, encoded as three numeric
-# 0/1 columns rather than as a label. There is no categorical code path:
-# _read_smiles_with_conditions reads numeric property columns only. A one-hot
-# label IS three numeric columns, so this needs no new code and the float32
-# condition_vector carries it unchanged.
+# 0/1 columns rather than as a label. _read_smiles_with_conditions reads
+# numeric property columns only, and a one-hot label IS three numeric columns,
+# so the float32 condition_vector carries it unchanged.
 condition_dim: 3
 conditioning:
   properties: ["is_ar", "is_btk", "is_egfr"]
   source: smiles_file
-condition_tolerance:
-  is_ar: 0.5
-  is_btk: 0.5
-  is_egfr: 0.5
+# The same three columns named as a panel, which is what selects the
+# categorical metric set. CLAUDE.md gives the continuous conditional metrics no
+# definition for a class label: condition_success_rate within a tolerance of
+# 0.5 of a requested 1.0 would measure whether the model echoed its own input.
+condition_classes: ["is_ar", "is_btk", "is_egfr"]
 
 # property_window_rate for a bifunctional program. The Rule of 5 default is not
 # merely wrong here, it is inverted: measured on 2,000 real TPD-DB degraders

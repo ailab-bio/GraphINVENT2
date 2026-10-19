@@ -12,7 +12,11 @@ pretrained_model_path: experiments/protac_conditional/jobs/smoke_train/checkpoin
 n_samples: 200
 batch_size: 100
 device: cpu
-sample_conditions:
-  is_ar: 1.0
-  is_btk: 0.0
-  is_egfr: 0.0
+# Cycle the panel across generation batches, so one job produces molecules for
+# every class and the macro-average has three numbers to average rather than
+# one. A single one-hot here would leave two thirds of the per-class table
+# null.
+sample_conditions: all_classes
+# The unconditional arm's sample, which the post-hoc filter baseline reranks.
+# Without it the conditional numbers can be reported but not falsified.
+baseline_results_dir: experiments/protac_unconditional/jobs/smoke_generate/results/molecules.smi

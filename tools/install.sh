@@ -15,6 +15,11 @@ REPO="$(dirname "$TOOLS")"
 PROTAC_SPLITTER_URL="https://github.com/ribesstefano/PROTAC-Splitter.git"
 PROTAC_SPLITTER_SHA="f1920122e1aa4f1d5f3643b8e92e72e99826e43a"
 RETROTAC_URL="https://github.com/ribesstefano/RetroTAC.git"
+REINVENT_URL="https://github.com/MolecularAI/REINVENT4.git"
+# v4.8.24. It pins torch==2.12.0, whose wheels cover manylinux_2_28_aarch64 and
+# x86_64 but not macOS arm64, so this installs on the cluster and is skipped on
+# the dev machine rather than failing the whole script.
+REINVENT_SHA="v4.8.24"
 RETROTAC_SHA="5ba851656753542d4a7f23438c033af280db9935"
 # sha256 of release/gnn_20260828_182305_final.ckpt.gz, from its MANIFEST.txt
 RETROTAC_CKPT_SHA256="83ccd2404cfffec230f7457926a95421731e56cc37268080e491b18d4da038af"
@@ -181,6 +186,21 @@ if [ "$got" != "$MCF_SHA256" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# E3-binder cores: committed, not fetched. e3_recognizable_rate is an exact
+# substructure test, so an absent or empty file would match nothing and report
+# 0.0 -- a number rather than an absence. Assert it is there and that every
+# pattern still compiles, since a SMARTS that silently fails to parse would
+# never match either.
+# ---------------------------------------------------------------------------
+if [ -s "$TOOLS/data/e3_binder_cores.smarts" ]; then
+    present+=("tools/data/e3_binder_cores.smarts")
+else
+    echo "!! tools/data/e3_binder_cores.smarts is missing; it is committed to"
+    echo "   this repository and e3_recognizable_rate has no fallback."
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
 # fcd: the fcd metric. Plain PyPI, but it downloads ChemNet weights on first
 # use, so the cache goes under tools/ for the same quota reason as above.
 # ---------------------------------------------------------------------------
@@ -192,7 +212,42 @@ else
 fi
 
 echo
-echo "installed:"; for x in "${installed[@]:-}"; do [ -n "$x" ] && echo "  + $x"; done
+# ---------------------------------------------------------------------------
+# REINVENT4: the goal-directed baseline comparison.
+#
+# Its own virtual environment, like the other two: it pins torch==2.12.0 while
+# this project needs torch>=2.11 resolved against a different CUDA build, and
+# the two cannot share an environment. Platform-gated because torch 2.12.0
+# publishes no macOS arm64 wheel, so on the dev machine this is a skip with a
+# message rather than a failure.
+# ---------------------------------------------------------------------------
+if [ -x "$TOOLS/REINVENT4/.venv/bin/python" ]; then
+    echo "-- REINVENT4 already present"
+    REINVENT_STATE="already present"
+elif [ "$(uname -s)" = "Darwin" ]; then
+    echo "-- skipping REINVENT4: torch 2.12.0 has no macOS arm64 wheel."
+    echo "   It installs on Linux aarch64 and x86_64. The reinvent_* jobs"
+    echo "   cannot run on this machine; they can on the cluster."
+    REINVENT_STATE="skipped (macOS: no torch 2.12.0 wheel)"
+else
+    echo "-- installing REINVENT4 at $REINVENT_SHA"
+    if [ ! -d "$TOOLS/REINVENT4/.git" ]; then
+        git clone "$REINVENT_URL" "$TOOLS/REINVENT4"
+    fi
+    git -C "$TOOLS/REINVENT4" fetch --quiet --tags origin
+    git -C "$TOOLS/REINVENT4" checkout --quiet "$REINVENT_SHA"
+    if command -v uv >/dev/null 2>&1; then
+        uv venv --python 3.11 "$TOOLS/REINVENT4/.venv"
+    else
+        python3 -m venv "$TOOLS/REINVENT4/.venv"
+    fi
+    "$TOOLS/REINVENT4/.venv/bin/python" -m pip install --quiet --upgrade pip
+    "$TOOLS/REINVENT4/.venv/bin/python" -m pip install --quiet "$TOOLS/REINVENT4"
+    REINVENT_STATE="installed at $REINVENT_SHA"
+fi
+
+echo "installed:"
+echo "  REINVENT4: $REINVENT_STATE"; for x in "${installed[@]:-}"; do [ -n "$x" ] && echo "  + $x"; done
 echo "already present:"; for x in "${present[@]:-}"; do [ -n "$x" ] && echo "  = $x"; done
 echo
 echo "Done. See tools/README.md for what records null when a tool is absent."

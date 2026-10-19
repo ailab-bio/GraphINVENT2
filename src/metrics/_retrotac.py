@@ -30,12 +30,11 @@ Two things about the score, both from the authors' own notes:
   hard gate built on a threshold inherits that caveat; see
   `QUALITY_RETROTAC_MIN` in `_budget.py`.
 
-The model used is the released final **GNN refit** (held-out R² 0.615, RMSE
-0.140), which ships in the repository. RetroTAC proper is a 27-member Caruana
-ensemble (R² 0.647, RMSE 0.132) whose members are the per-fold
-cross-validation models; those are 1.4 GiB and the release archives omit them,
-so running the ensemble would mean retraining the cross-validation first. The
-single GNN is what is available without that, and the gap is 0.03 in R².
+**The synthesizability model this work uses is the released RetroTAC GNN
+refit**, checkpoint `gnn_20260828_182305_final`, held-out R² 0.615 and RMSE
+0.140. That is the model, not a stand-in for one: every `retrotac_*` number and
+the bifunctional form of `quality_filtered_top10_mean` come from it, and the
+paper reports it by name with those two figures.
 """
 
 from __future__ import annotations

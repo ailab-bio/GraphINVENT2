@@ -26,11 +26,14 @@ SuccessCriterion
 from ._core import compute_core_metrics
 from ._criteria import SuccessCriterion
 from ._internal_diversity import compute_internal_diversity
+from ._likelihood import nll_summary, uc_jsd
 from ._similarity import compute_test_set_similarity
 
 __all__ = [
     "compute_core_metrics",
     "compute_internal_diversity",
+    "nll_summary",
+    "uc_jsd",
     "compute_test_set_similarity",
     "SuccessCriterion",
 ]

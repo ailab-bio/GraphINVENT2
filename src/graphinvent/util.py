@@ -474,6 +474,16 @@ def _build_run_info(device: str | None = None) -> dict:
     }
 
 
+def _split_notes() -> dict:
+    """Extra split facts the splitter measured, if it measured any."""
+    try:
+        from DataProcessor import LAST_SPLIT_NOTES
+
+        return dict(LAST_SPLIT_NOTES)
+    except Exception:
+        return {}
+
+
 def write_preprocessing_parameters(params: namedtuple, n_oversized: int = 0) -> None:
     """
     Record how a dataset was preprocessed, in ``preprocessing.yaml``.
@@ -513,6 +523,9 @@ def write_preprocessing_parameters(params: namedtuple, n_oversized: int = 0) -> 
         # Molecules above max_n_nodes, dropped before splitting. Part of the
         # split record because the dataset is not the input file without it.
         "n_dropped_oversized": n_oversized,
+        # For warhead_scaffold: how many molecules yielded no warhead scaffold
+        # and so sit outside the no-shared-warhead guarantee.
+        **_split_notes(),
         **{
             f"n_{split}": (
                 sum(1 for _ in open(dataset_dir / f"{split}.smi"))

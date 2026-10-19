@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Build a GraphINVENT dataset from the ZINC-250k release that download_data.py
-fetches.
+Build a GraphINVENT dataset from a raw small-molecule release that
+download_data.py fetches: ZINC-250k, or any plain .smi such as Batt-SLM.
 
     python scripts/zinc-create-dataset.py --output data/datasets/zinc250k
 
@@ -52,15 +52,24 @@ def main() -> int:
 
     RDLogger.DisableLog("rdApp.*")
 
-    with args.source.open(newline="") as handle:
-        rows = list(csv.DictReader(handle))
-    if not rows or "smiles" not in rows[0]:
-        print(
-            f"No 'smiles' column in {args.source}; header was "
-            f"{list(rows[0]) if rows else 'empty'}",
-            file=sys.stderr,
-        )
-        return 1
+    # A .smi is one SMILES per line; the ZINC release is a CSV whose SMILES
+    # field is quoted and spans two physical lines, so it needs a real parser.
+    if args.source.suffix == ".smi":
+        rows = [
+            {"smiles": line.split()[0]}
+            for i, line in enumerate(args.source.read_text().splitlines())
+            if line.strip() and not (i == 0 and line.split()[0].upper() == "SMILES")
+        ]
+    else:
+        with args.source.open(newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        if not rows or "smiles" not in rows[0]:
+            print(
+                f"No 'smiles' column in {args.source}; header was "
+                f"{list(rows[0]) if rows else 'empty'}",
+                file=sys.stderr,
+            )
+            return 1
     print(f"* {len(rows)} records in {args.source}", flush=True)
 
     kept: dict = {}

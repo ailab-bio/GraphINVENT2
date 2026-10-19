@@ -28,17 +28,18 @@ run_info:
   cuda_version: n/a
   device: mps
   device_name: mps
-  git_hash: fde9942
+  git_hash: 4d2f248
   numpy_version: 2.4.4
   python_version: 3.13.5
   rdkit_version: 2025.09.6
-  timestamp: '2026-10-19T08:29:08+02:00'
+  timestamp: '2026-10-19T10:49:49+02:00'
   torch_version: 2.11.0
 split:
   n_dropped_oversized: 0
   n_test: 29
   n_train: 234
   n_valid: 29
+  n_without_warhead_scaffold: 37
   seed: 1
   smiles_file: data/datasets/toy_protac/toy_protac.smi
   strategy: warhead_scaffold

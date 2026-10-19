@@ -162,26 +162,66 @@ the effect of conditioning from the base rate of the corpus: if 30% of the train
 30% hit rate is what a model that ignores the condition entirely would score. The gap between conditional and
 baseline is the result; the conditional number alone is not.
 
-For a categorical condition, a second baseline matters as much. A nearest-neighbor retrieval baseline, which
-retrieves the training molecules closest to the requested class and scores them with the same metric, is what
-makes the claim falsifiable: if retrieval matches the conditional model, the model learned retrieval.
-
 ## Categorical conditions
 
-There is no separate categorical code path and none is needed. A one-hot label is numeric columns, one per
-class, holding 0 or 1:
+A one-hot label is numeric columns, one per class, holding 0 or 1. Declaring the same columns a second time as
+`condition_classes` is what selects the categorical metric set:
 
 ```yaml
 condition_dim: 3
 conditioning:
   properties: ["is_class_a", "is_class_b", "is_class_c"]
   source: smiles_file
+condition_classes: ["is_class_a", "is_class_b", "is_class_c"]
 ```
 
-Then `sample_conditions` sets one column to 1.0 and the rest to 0.0. The metrics CLAUDE.md defines for
-categorical conditions, `delta_nll`, `knn_purity_<k>`, `class_match_*` and `class_selectivity_margin`, are
-implemented in `src/metrics/_conditions.py` but have no caller yet, so they are not emitted. Until they are, a
-categorical experiment can be trained and sampled but its headline metrics do not appear.
+Two declarations rather than one, because nothing else can tell a class column from a property that happens to
+take the values 0 and 1, and the two metric sets are disjoint. Get it wrong and the job reports
+`condition_success_rate` on a one-hot, which measures whether the model echoed its own input. The names and
+their order must match `conditioning.properties` exactly; a different order attributes every per-class number to
+the wrong class while still producing plausible numbers, so it is an error rather than a silent reorder.
+
+Then ask for the whole panel in one job:
+
+```yaml
+sample_conditions: all_classes
+```
+
+which cycles the one-hot across generation batches. A single one-hot would leave every class but one with a null
+row, and the headline here is the macro-average across the panel.
+
+### What it reports
+
+`delta_nll`, `knn_purity_<5|10|20>`, `class_match_median`, `class_match_rate`, `class_selectivity_margin` and
+`novelty`, each as the macro-average over the panel, with the per-class value under the same name plus a
+`_<class>` suffix. The full table for all three blocks goes to `results/condition_per_class.json`.
+
+`class_selectivity_margin` is the one to read first, because it is self-normalizing: an unconditional model
+scores about zero by construction, and the metric cannot be satisfied by generating generic chemistry.
+
+`delta_nll` is the only one that is a property of the model rather than of a sample. It scores each held-out
+molecule under every class in the panel, which is k forward passes per molecule, and needs a preprocessed test
+split carrying the class columns. A multi-label molecule's other legitimate classes are excluded from the
+competing set and the number excluded is reported as `delta_nll_n_alternatives_excluded`, because a panel where
+every molecule belongs to three classes has very little left to compete against.
+
+### Two baselines, and the metrics are not evidence without them
+
+| Prefix | What it is | What it tells you |
+|---|---|---|
+| `baseline_lookup_` | the training molecules of the requested class, sampled to the same N per class | the retrieval ceiling. It scores `class_match_median` 1.0 at `novelty` 0.0 by construction, so a conditional model that matches it on *both* is retrieving, not conditioning |
+| `baseline_posthoc_` | the unconditional model sampled the same way, reranked per class by similarity to that class's training molecules, cut to the same N | **the one that can falsify the claim.** If an unconditional model plus a one-line reranking reaches the same `class_selectivity_margin`, the conditioning bought nothing |
+
+The post-hoc baseline needs `baseline_results_dir` pointing at the unconditional model's `molecules.smi`.
+Without it those keys record an explicit null carrying that reason, and the conditional numbers can be reported
+but not falsified.
+
+For a bifunctional dataset the per-class table is computed over warheads rather than whole molecules, and adds
+`warhead_novelty_in_class_<class>` beside the global `warhead_novelty`. The two ask different questions and are
+expected to disagree: global novelty asks whether the warhead appears anywhere in the corpus, and a model that
+has learned the conditioning will score low on it, because the right answer for a requested class is a warhead
+resembling that class's known ligands. In-class novelty asks whether it is absent from *that class's* warheads,
+which is the question that separates conditioning from retrieval.
 
 ## When it goes wrong
 

@@ -832,6 +832,41 @@ class Workflow:
                     f"{dataset_dir}. Set 'restart': false to start from scratch."
                 )
 
+        self._preprocess_figure(dataset_dir)
+
+    def _preprocess_figure(self, dataset_dir: str) -> None:
+        """
+        The heavy-atom distribution with `max_nodes` marked, and the molecule
+        count per split.
+
+        `max_nodes` is the one preprocessing parameter taken from the data
+        rather than chosen, so the figure that shows where it falls in the
+        distribution is the one that justifies it -- a tail past the line is
+        molecules the representation cannot hold.
+
+        A `preprocess` job writes no metrics.json, so this is the only output it
+        produces beyond the HDF5 and the splits.
+        """
+        from metrics import _figures
+        from metrics._run import read_smiles
+
+        splits = {}
+        for name, path in (
+            ("train", self.train_smi_path),
+            ("validation", self.valid_smi_path),
+            ("test", self.test_smi_path),
+        ):
+            splits[name] = read_smiles(path) if os.path.exists(path) else []
+
+        for figure in _figures.preprocess_figures(
+            self.constants.results_dir,
+            splits,
+            self.constants.max_n_nodes,
+            self.constants.split_type,
+            self.constants.seed,
+        ):
+            print(f"* Figure written to {figure}", flush=True)
+
     def training_phase(self) -> None:
         """
         Trains model and generates graphs.
@@ -934,6 +969,16 @@ class Workflow:
 
         # Everything already written is safe at this point: the molecules are
         # on disk and this is the last step of the job.
+        # delta_nll scores held-out molecules under each condition, which is a
+        # model property and needs the model still loaded. Outside the
+        # inference timing on purpose: it is not part of generating a sample
+        # and would inflate inference_s_per_10k by the cost of k passes over
+        # the test split.
+        per_class_nll: dict = {}
+        if getattr(self.constants, "condition_classes", None):
+            with torch.no_grad():
+                per_class_nll = self.per_class_nll()
+
         from metrics import _run as metrics_run
 
         metrics_run.evaluate_generation(
@@ -944,6 +989,7 @@ class Workflow:
             model=self.model,
             inference_seconds=generation_seconds,
             n_generated_raw=getattr(self, "n_generated_raw", None),
+            per_class_nll=per_class_nll,
         )
 
         self.print_time_elapsed()
@@ -1542,6 +1588,33 @@ class Workflow:
 
         from metrics._run import read_smiles_with_property
 
+        # A categorical panel asked for as "all_classes" cycles the one-hot
+        # across batches. CLAUDE.md reports the categorical metrics as a
+        # macro-average over the panel, which needs molecules for every class,
+        # and one class per job would mean one job per class and no way to
+        # average them in a single metrics.json.
+        if isinstance(sample_conds, str):
+            if sample_conds.strip().lower() != "all_classes":
+                raise ValueError(
+                    f"sample_conditions: {sample_conds!r} is not a condition "
+                    "request. Give a value per property, or 'all_classes' for "
+                    "a categorical panel."
+                )
+            classes = list(getattr(self.constants, "condition_classes", None) or [])
+            if not classes:
+                raise ValueError(
+                    "sample_conditions: all_classes needs condition_classes "
+                    "set to the one-hot panel; without it there is no panel to "
+                    "cycle."
+                )
+            requests = [
+                {name: float(name == classes[idx % len(classes)]) for name in classes}
+                for idx in range(max(1, n_batches))
+            ]
+            path = Path(self.constants.results_dir) / "condition_requests.json"
+            path.write_text(_json.dumps(requests, indent=2) + "\n")
+            return requests
+
         spread: dict = {}
         for name in prop_names:
             if str(sample_conds[name]).strip().lower() != "from_train":
@@ -1573,6 +1646,134 @@ class Workflow:
         path = Path(self.constants.results_dir) / "condition_requests.json"
         path.write_text(_json.dumps(requests, indent=2) + "\n")
         return requests
+
+    def per_class_nll(self) -> dict:
+        """
+        The model's NLL for each held-out molecule under each class in the panel.
+
+        This is what `delta_nll` aggregates, and it is the one categorical
+        metric that is a property of the model rather than of a sample: it asks
+        whether a molecule of class p is more likely under condition p than
+        under the competing conditions, which needs k forward passes over the
+        same molecule with k different condition vectors.
+
+        Returns the shape `metrics._run` expects, or an empty dict when the
+        inputs are absent: a preprocessed test HDF5 carrying `condition_vector`
+        and a declared `condition_classes`.
+
+        The loader is built unshuffled on purpose. A molecule's NLL is the sum
+        over its construction actions, the subgraphs of one molecule are
+        contiguous in the HDF5, and the terminate column marks the last of
+        them -- so the segmentation only works in file order, and the shuffled
+        training loader would silently sum fragments of different molecules.
+        """
+        classes = list(getattr(self.constants, "condition_classes", None) or [])
+        if not classes:
+            return {}
+        if not os.path.exists(self.test_h5_path):
+            print(
+                f"-- delta_nll needs a preprocessed test split at "
+                f"{self.test_h5_path}, which does not exist; skipping.",
+                flush=True,
+            )
+            return {}
+
+        loader = BlockDataLoader(
+            dataset=HDFDataset(self.test_h5_path),
+            batch_size=self.constants.batch_size,
+            block_size=self.constants.block_size,
+            shuffle=False,
+            n_workers=0,
+            pin_memory=False,
+        )
+        softmax = torch.nn.Softmax(dim=1)
+        one_hots = {
+            name: torch.tensor(
+                [[float(name == other) for other in classes]],
+                dtype=torch.float32,
+                device=self.constants.device,
+            )
+            for name in classes
+        }
+
+        per_molecule: dict = {}
+        true_labels: list = []
+        alternatives: dict = {}
+        running = {name: 0.0 for name in classes}
+        running_hot: list = []
+        index = 0
+
+        print(
+            f"* Scoring the test split under each of {len(classes)} conditions "
+            "for delta_nll.",
+            flush=True,
+        )
+        with torch.no_grad():
+            for batch in loader:
+                if self.constants.device != "cpu":
+                    batch = [b.to(self.constants.device) for b in batch]
+                if len(batch) != 4:
+                    print(
+                        "-- delta_nll needs a test HDF5 carrying "
+                        "condition_vector, and this one yields 3-tuples; "
+                        "skipping.",
+                        flush=True,
+                    )
+                    return {}
+                nodes, edges, target_output, condition_vector = batch
+                renormalized = target_output / torch.sum(
+                    target_output, dim=1, keepdim=True
+                ).clamp(min=1e-12)
+                terminates = target_output[:, -1] > 0
+
+                # One forward pass per class, over the whole batch. The stored
+                # condition is replaced rather than ignored: the question is
+                # what this molecule's NLL would be had the model been asked
+                # for class q.
+                nll_by_class = {}
+                for name, one_hot in one_hots.items():
+                    output = softmax(
+                        self.model(
+                            nodes,
+                            edges,
+                            condition_vector=one_hot.expand(nodes.size(0), -1),
+                        )
+                    )
+                    correct = torch.sum(torch.mul(renormalized, output), dim=1)
+                    nll_by_class[name] = (
+                        -1 * torch.log(correct.clamp(min=1e-12))
+                    ).cpu()
+
+                hot = (condition_vector > 0.5).cpu()
+                for row in range(nodes.size(0)):
+                    for name in classes:
+                        value = float(nll_by_class[name][row])
+                        if value == value:  # not NaN
+                            running[name] += value
+                    running_hot.append(hot[row])
+                    if not bool(terminates[row]):
+                        continue
+                    # The molecule ends here: its label is the class its stored
+                    # condition vector marks, shared by all of its subgraphs.
+                    marks = running_hot[0]
+                    labels = [name for i, name in enumerate(classes) if bool(marks[i])]
+                    if labels:
+                        per_molecule[index] = dict(running)
+                        true_labels.append(labels[0])
+                        if len(labels) > 1:
+                            alternatives[index] = labels[1:]
+                        index += 1
+                    running = {name: 0.0 for name in classes}
+                    running_hot = []
+
+        if not per_molecule:
+            return {}
+        return {
+            "per_molecule": per_molecule,
+            "true_labels": true_labels,
+            "alternatives": alternatives,
+            "n_alternatives_excluded": sum(len(v) for v in alternatives.values()),
+        }
 
     def sample_molecules(self, n_samples: int, evaluation: bool = False) -> None:
         """
@@ -1611,8 +1812,16 @@ class Workflow:
             # the JSON key order instead would silently permute the condition
             # vector if the user wrote the keys in a different order.
             conditioning = getattr(self.constants, "conditioning", None) or {}
-            prop_names = conditioning.get("properties") or list(sample_conds)
-            missing = [k for k in prop_names if k not in sample_conds]
+            prop_names = conditioning.get("properties") or (
+                list(getattr(self.constants, "condition_classes", None) or [])
+                if isinstance(sample_conds, str)
+                else list(sample_conds)
+            )
+            missing = (
+                []
+                if isinstance(sample_conds, str)
+                else [k for k in prop_names if k not in sample_conds]
+            )
             if missing:
                 raise ValueError(
                     f"'sample_conditions' is missing value(s) for {missing}; "

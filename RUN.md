@@ -84,11 +84,13 @@ uv python install 3.13
 uv venv --python 3.13 .venv
 source .venv/bin/activate
 
-uv pip install "torch>=2.11"      # or: --index-url https://download.pytorch.org/whl/cu130
-uv pip install -e .
-uv pip install -e ".[surrogates]"
-uv pip install -e ".[metrics]"     # fcd: the headline unconditional metric
-bash tools/install.sh              # PROTAC-Splitter and the MCF data
+uv sync --frozen --extra metrics --extra surrogates   # everything from uv.lock
+# Then the CUDA wheel, which is deliberately NOT in the lock: see the comment
+# on torch in pyproject.toml. On aarch64 the locked PyPI build is CPU-only.
+uv pip install --index-url https://download.pytorch.org/whl/cu130 "torch>=2.11"
+uv pip install -e .                # the project itself, editable
+uv pip install -e ".[dev]"         # ruff, pytest, pytest-timeout: needed to run the suite
+bash tools/install.sh              # PROTAC-Splitter, RetroTAC and the MCF data
 ```
 
 Without the `metrics` extra, `fcd` records null in every run and the headline
@@ -341,6 +343,27 @@ job, so guess high.
 5. **Multiply by 1.5 and round up to the hour.** A job killed at 99% has
    produced nothing but its last checkpoint.
 
+`scripts/estimate-walltime.py` applies all five steps to every job and writes
+the number, the memory request and the derivation into each `config.yaml`,
+which the SLURM template then renders into `run.sbatch`:
+
+```bash
+python scripts/estimate-walltime.py            # print the table
+python scripts/estimate-walltime.py --write    # write it into each config
+```
+
+**Every number it prints is a CPU extrapolation**, from the measured per-unit
+costs below and in `manuscript/experiment-plan.md`. Nothing has been measured
+on a GPU. Training will finish well inside the request there; generation will
+gain much less, because it is a sequential autoregressive loop with a
+Python-level graph-to-molecule decode. That asymmetry is why a CPU
+extrapolation is the right thing to request rather than a correction of it.
+
+A job whose dataset is not built yet cannot be sized, and the script says so
+per job instead of printing a number derived from a molecule count nobody
+measured. Re-run it after the datasets are built, then again on Arrhenius with
+measured numbers in place of the anchors.
+
 **CPU numbers measured here, as a starting point.** 400 drug-like molecules,
 `max_nodes` 70 (9,413 training subgraphs), batch size 250, on a 10-core Apple
 M-series laptop:
@@ -511,8 +534,11 @@ them.
 # Part 2: data, surrogates, and the session plan
 
 Part 1 ends with one tutorial job proven on the cluster. Part 2 onward is the real program: ten experiments, 56
-jobs. Everything here was written on a MacBook with no cluster access. **Every walltime and memory figure is an
-unverified estimate** whose basis is stated in the job's own `run.sbatch`.
+jobs. Everything here was written on a MacBook with no cluster access. **Every walltime and memory figure is a
+CPU extrapolation, not a measurement**, derived by `scripts/estimate-walltime.py` from the per-unit costs above;
+the derivation is in each job's `config.yaml` and is carried into its `run.sbatch`. Twenty-one jobs could not be
+sized at all, because their dataset is not built yet and the molecule count the extrapolation needs is unknown;
+re-run the script after the datasets exist.
 
 ## THE SESSION PLAN
 
@@ -619,8 +645,8 @@ python submit.py experiments/surrogates/protac_pdc50_smarca2 --slurm
   DC50 rows over 186 compounds, which is marginal under a warhead-scaffold split, so expect an R² near zero and
   decide in advance that you will report it.
 
-*This directory does not exist yet. `experiments/surrogates/` is specified in the brief and unbuilt; the fitting
-script `scripts/train-surrogate.py` does exist and works, and has never been run on this data.*
+*`experiments/surrogates/` exists and carries `protac_pdc50_smarca2`. The fitting script
+`scripts/train-surrogate.py` works and has been run on the parsed labels; it has not been run on the cluster.*
 
 ---
 

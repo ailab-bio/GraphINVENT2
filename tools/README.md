@@ -45,8 +45,62 @@ right. That is why the isolated environment is worth its cost.
 Its ~17 MB model downloads from the HuggingFace Hub into `tools/hf-cache` on
 first use; `install.sh` warms it so the first metrics run does not.
 
-When absent, these record null: `split_success_rate`, `n_split_successfully`,
-`warhead_*`, `e3_recognizable_rate`, `e3_max_similarities`.
+When absent, these record null: `split_success_rate`, `warhead_usable_rate`,
+`n_split_successfully`, `n_warheads_usable`, `warhead_*`,
+`e3_recognizable_rate`, `e3_max_similarities`.
+
+**Cost, measured 2026-10-19** on 1,011 uncached PROTAC-sized molecules (median
+68 heavy atoms) on an otherwise idle 10-core Apple M-series laptop:
+
+| | |
+|---|---|
+| Interpreter to ready | 32.6 s — 19.5 s library import, ~1.8 s model load, the rest the first molecule |
+| Per molecule, marginal at n = 1,000 | **2.045 s**, with an order of magnitude of variance between molecules (0.46 s to 11 s) |
+| Eight interpreters in parallel, 120 molecules | **0.483 s per molecule**, a 4.2x speedup |
+
+So the fixed cost is about 21 s and inference dominates it a hundred to one.
+Batching one invocation per call amortizes that 21 s to 1% at n = 1,000 and
+there is nothing further to win there, which is why `decompose` runs a pool of
+interpreters rather than a larger batch. The pool is sized from
+`SLURM_CPUS_PER_TASK` and capped at 8; it uses `subprocess.Popen` with one
+thread per worker to wait on the pipes, because `communicate` in a loop starts
+every worker and then runs them one at a time — measured at 2.27 s per
+molecule, slower than no pool at all.
+
+**Its pickles were made with scikit-learn 1.7.2 and the environment resolves
+1.9.1**, so every call prints `InconsistentVersionWarning` for `OneHotEncoder`,
+`TruncatedSVD` and `FunctionTransformer`. The decompositions are sane — 0.98
+split rate on real degraders, and `e3_recognizable_rate` 0.84 against a
+whole-molecule ceiling of 0.84 — so the warning has no observed effect, but it
+is unverified across the version gap and is the first thing to suspect if
+component numbers move without a code change.
+
+---
+
+## E3-binder cores — required for `e3_recognizable_rate`
+
+| | |
+|---|---|
+| What | four SMARTS, one per recognized E3-ligase-binder pharmacophore |
+| Needed by | `e3_recognizable_rate` |
+| Source | written here from the primary literature; each entry carries its citation in the file |
+| Pinned to | `tools/data/e3_binder_cores.smarts`, committed; sha256 begins `0683aa17a4c7cd02` |
+| Citation | Ito et al., *Science* 327:1345 (2010) and Fischer et al., *Nature* 512:49 (2014) for glutarimide; Buckley et al., *J. Am. Chem. Soc.* 134:4465 (2012) and Galdeano et al., *J. Med. Chem.* 57:8657 (2014) for hydroxyprolinamide; Vassilev et al., *Science* 303:844 (2004) for the nutlin imidazoline; Ohoka et al., *J. Biol. Chem.* 292:4556 (2017) for the AVPI mimetic |
+| License | not applicable; four SMARTS strings written from published structures |
+| Install | committed |
+| Required? | Required for `e3_recognizable_rate`; it is an exact substructure test and has no fallback |
+
+Each core was verified to match its family's reference ligand and no other
+family's, and to match neither a kinase inhibitor nor aspirin. **On 500 real
+TPD-DB degraders, 84.2% contain a listed core** — 319 glutarimide, 102
+hydroxyprolinamide, no nutlin or AVPI match — so that is roughly the ceiling a
+perfectly decomposed set of real degraders would score here. A degrader
+recruiting DCAF15, DCAF16, KEAP1 or a ligase whose first ligand postdates the
+file is counted as unrecognizable, which makes the rate a lower bound.
+
+When absent: `e3_recognizable_rate` raises rather than recording null, because
+a substructure test with no patterns would match nothing and report 0.0, which
+is a number rather than an absence.
 
 ---
 
@@ -150,7 +204,7 @@ a small-sample `fcd` as a smoke signal and not a result.
 | What | Route-derived synthesizability of a whole PROTAC, from SMILES, with no retrosynthesis planner at inference |
 | Needed by | `retrotac_mean`, `retrotac_median`, and `quality_filtered_top10_mean` on a bifunctional dataset |
 | Source | https://github.com/ribesstefano/RetroTAC |
-| Pinned to | commit `5ba851656753542d4a7f23438c033af280db9935` |
+| Pinned to | commit `5ba851656753542d4a7f23438c033af280db9935`, checkpoint `gnn_20260828_182305_final` (held-out R² 0.615, RMSE 0.140) |
 | Citation | Ribes, Zhu, Zhu, Mo, Hudec, Papadopoulos, Patronov & Mercado, arXiv:2610.13639 |
 | License | MIT |
 | Install | `bash tools/install.sh` |
@@ -182,11 +236,14 @@ Two install notes, both found the hard way on macOS arm64:
 0.615, RMSE 0.140), which ships in the clone under `release/` as a 90.7 MiB
 gzipped checkpoint, SHA-256 verified by `install.sh` against
 `release/MANIFEST.txt` and unpacked to 105.8 MiB. The XGBoost and MLP refits are
-unpacked too. **RetroTAC proper — the 27-member Caruana ensemble, R² 0.647 —
-is not installed**: its members are the per-fold cross-validation models, 1.4
-GiB, which the release archives deliberately omit, so running it would mean
-retraining the cross-validation. Upstream will publish it to the HuggingFace Hub
-after peer review. The gap to the single GNN is 0.03 in R².
+unpacked too.
+
+**The model this work uses is the released GNN refit**, checkpoint
+`gnn_20260828_182305_final`, **held-out R² 0.615, RMSE 0.140**. Approved
+2026-10-19 as the synthesizability model, not as a placeholder: it is what
+`retrotac_mean`, `retrotac_median` and the bifunctional quality gate are
+computed from, and the manuscript names it with those two figures. No code path
+looks for anything else.
 
 Two properties of the score worth knowing before reading one:
 
@@ -237,10 +294,39 @@ somewhere to put the pin.
 
 | Tool | For | Status |
 |---|---|---|
-| **REINVENT4** | baseline comparison | Not installed. Reserved for the next task |
 | **AiZynthFinder** | retrosynthetic accessibility; needs downloaded model files | Not installed, and **no code reaches for it**. Reserved |
 
 ---
+
+---
+
+## REINVENT4 — required for the goal-directed baseline comparison
+
+| | |
+|---|---|
+| What | The reference generative optimizer this work compares against |
+| Needed by | the six `reinvent_*` jobs under `experiments/*_goal_directed/` |
+| Source | https://github.com/MolecularAI/REINVENT4 |
+| Pinned to | tag `v4.8.24` |
+| Citation | Loeffler et al., *J. Cheminform.* 16:20 (2024) |
+| License | Apache-2.0 |
+| Install | `bash tools/install.sh` |
+| Required? | Required for the baseline comparison; absent, the `reinvent_*` jobs cannot run and no REINVENT number may be reported |
+
+**Platform-gated, and this is not a defect in the installer.** REINVENT4 pins
+`torch==2.12.0`, which publishes wheels for `manylinux_2_28_aarch64` and
+`manylinux_2_28_x86_64` but none for macOS arm64. So it installs on the cluster
+and `tools/install.sh` skips it with a message on the dev machine. It gets its
+own virtual environment for the same reason PROTAC-Splitter and RetroTAC do:
+its torch pin and ours cannot share an environment.
+
+**The comparison is not evidence until all six fairness conditions are met**,
+which are listed in `experiments/*_goal_directed/instructions.md`: the pinned
+version, a prior trained on the same corpus, matched tuning effort, the
+diversity filter either matched or disabled with both configurations reported,
+matched size constraints, and a shared oracle cache so the budget means the
+same thing on both sides. A comparison failing any of these is not a result,
+and the instructions say so.
 
 ## Reference, not a dependency
 

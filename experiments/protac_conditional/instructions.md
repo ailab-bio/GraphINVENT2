@@ -46,11 +46,21 @@ metric is reported against.
 ## What to check
 
 - `jobs/train/logs/convergence.log`: `avg_valid_loss` decreasing.
-- Each `jobs/generate_*/results/metrics.json`: `condition_success_rate_is_ar` and the sibling keys.
-- **The categorical metrics are NOT yet emitted.** `delta_nll`, `knn_purity_5/10/20`, `class_match_median`,
-  `class_match_rate` and `class_selectivity_margin` are implemented in `src/metrics/_conditions.py` and have no
-  caller, so they never appear. That is ledger item L25 and it blocks the headline result of this experiment.
-- The retrieval baseline does not exist yet either. Without it this result is not falsifiable.
+- Each `jobs/generate_*/results/metrics.json`: `class_selectivity_margin` first, then `novelty` beside
+  `class_match_*`. The continuous `condition_success_rate_*` keys are **not** emitted here and should not be:
+  this panel is categorical, declared with `condition_classes`, and a success rate within a tolerance of 0.5 of
+  a requested 1.0 measures whether the model echoed its own input.
+- **The headline is the gap, not the conditional number.** Compare `class_selectivity_margin` against
+  `baseline_posthoc_class_selectivity_margin`: if the unconditional model reranked per class reaches the same
+  margin, the conditioning bought nothing and that is the finding. `baseline_lookup_*` is the retrieval ceiling
+  and scores `class_match_median` 1.0 at `novelty` 0.0 by construction.
+- Every metric here is the macro-average over the three targets, with the per-class value under the same name
+  plus a `_is_ar` / `_is_btk` / `_is_egfr` suffix. The full table is `results/condition_per_class.json`.
+- This dataset is bifunctional, so the per-class table is computed over warheads and adds
+  `warhead_novelty_in_class`. Read it beside the global `warhead_novelty`: the two are expected to disagree, and
+  the in-class one is what separates conditioning from retrieval.
+- `delta_nll` does not depend on the generated sample and is present even for a run that generated nothing
+  valid. Positive means a held-out molecule is more likely under its own condition.
 
 ## Core metrics come from
 

@@ -94,6 +94,10 @@ GROUPS: list = [
 
 CSS = f"""
 :root {{ color-scheme: light; }}
+.figures {{ display: flex; flex-direction: column; gap: 1.5rem; margin: 1rem 0; }}
+.figures figure {{ margin: 0; }}
+.figures img {{ width: 100%; height: auto; border: 1px solid #d8d8dd; background: white; }}
+.figures figcaption {{ font-size: .85rem; color: {DARK_SLATE}; margin-top: .35rem; }}
 body {{
   margin: 0; padding: 2rem 1.5rem; background: #fbfbfa; color: {DARK_SLATE};
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
@@ -163,7 +167,17 @@ def _format(value) -> str:
     if isinstance(value, float):
         return f"{value:.4f}"
     if isinstance(value, list):
-        return ", ".join("--" if v is None else f"{v:.3f}" for v in value)
+        # A list can hold strings as well as numbers: the novelty reference
+        # corpora are names, and formatting a name as a float raised and took
+        # the whole report down with it after the metrics had been written.
+        return ", ".join(
+            (
+                "--"
+                if v is None
+                else (f"{v:.3f}" if isinstance(v, (int, float)) else str(v))
+            )
+            for v in value
+        )
     return html.escape(str(value))
 
 
@@ -351,8 +365,22 @@ def render(
     conditional = [
         k for k in leftover if k.startswith(("condition_", "baseline_condition_"))
     ]
-    categorical = [k for k in leftover if k.startswith(("class_", "knn_", "delta_nll"))]
-    components = [k for k in leftover if k.startswith(("warhead_", "split_", "e3_"))]
+    # The two categorical baselines sit with the numbers they qualify, not in
+    # Other: a conditional metric read without its baseline is the thing the
+    # baselines exist to prevent, and a report that puts them in separate
+    # tables invites exactly that.
+    categorical = [
+        k
+        for k in leftover
+        if k.startswith(
+            ("class_", "knn_", "delta_nll", "baseline_lookup_", "baseline_posthoc_")
+        )
+    ]
+    components = [
+        k
+        for k in leftover
+        if k.startswith(("warhead_", "split_", "e3_", "component_sample_"))
+    ]
     other = [k for k in leftover if k not in conditional + categorical + components]
     for title, keys in (
         ("Conditional, continuous", conditional),
@@ -401,6 +429,22 @@ def render(
             "top set collapses onto one scaffold.</div>"
             + _cells([(smi, f"score {score:.4f}") for smi, score in top])
         )
+
+    # The figures this job wrote, each embedded by relative path: report.html
+    # sits in the same directory, so the page opens offline from a copied
+    # results/ directory. The PDF beside each PNG is the one that goes into the
+    # paper; the report shows the PNG.
+    figures = sorted(Path(results_dir).glob("*.png"))
+    if figures:
+        cells = "".join(
+            f'<figure><img src="{html.escape(path.name)}" alt="'
+            f'{html.escape(path.stem.replace("_", " "))}">'
+            f"<figcaption>{html.escape(path.stem.replace('_', ' '))} &middot; "
+            f'<a href="{html.escape(path.with_suffix(".pdf").name)}">pdf</a>'
+            "</figcaption></figure>"
+            for path in figures
+        )
+        parts.append(f'<h2>Figures</h2><div class="figures">{cells}</div>')
 
     config_path = Path(results_dir) / "config.resolved.yaml"
     if config_path.exists():

@@ -22,11 +22,11 @@ run_info:
   cuda_version: n/a
   device: mps
   device_name: mps
-  git_hash: fde9942
+  git_hash: 4d2f248
   numpy_version: 2.4.4
   python_version: 3.13.5
   rdkit_version: 2025.09.6
-  timestamp: '2026-10-19T09:40:21+02:00'
+  timestamp: '2026-10-19T13:41:25+02:00'
   torch_version: 2.11.0
 split:
   n_dropped_oversized: 0

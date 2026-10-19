@@ -9,8 +9,16 @@ score_type: continuous
 success_threshold: 0.0
 success_definition: "as in rl_nonf_lowdc"
 device: cuda
-# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
-# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   200 steps x 256 molecules x 2 (agent and best-agent); +41 evaluation rounds
+#   = 7.84 h x 1.5 -> 12 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
 slurm:
-  time: "24:00:00"
+  time: "12:00:00"
+  memory: 8G
   gpus: 1

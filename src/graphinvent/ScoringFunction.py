@@ -35,7 +35,9 @@ import numpy as np
 import sklearn
 import torch
 from rdkit import DataStructs
-from rdkit.Chem import QED, AllChem, Crippen
+from rdkit.Chem import QED, Crippen
+
+from metrics._core import morgan
 
 
 def _load_qsar_model(name: str, path: str) -> sklearn.base.BaseEstimator:
@@ -652,7 +654,7 @@ class ScoringFunction:
 
         for idx, mol in enumerate(mols):
             try:
-                fingerprint = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048)
+                fingerprint = morgan(mol)
                 ecfp4 = np.zeros((2048,))
                 DataStructs.ConvertToNumpyArray(fingerprint, ecfp4)
                 activity[idx] = activity_model.predict_proba([ecfp4])[0][1]

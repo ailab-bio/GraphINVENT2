@@ -129,8 +129,21 @@ many did. The whole-molecule count stays reported beside it and is expected to b
 real degraders: 12 distinct whole-molecule scaffolds, against 10 distinct warhead scaffolds over the 11 that
 decomposed.
 
-Decomposition runs in PROTAC-Splitter's own interpreter at roughly 2 s per molecule, so this costs a few minutes
-per `goal_directed` job and nothing on a drug-like dataset, where the key is absent rather than null.
+Decomposition runs in PROTAC-Splitter's own interpreters at 2.045 s per molecule serially, or 0.483 s across a
+pool of eight, so this costs a few minutes per `goal_directed` job and nothing on a drug-like dataset, where the
+key is absent rather than null.
+
+The whole-sample component metrics run beside it on a bifunctional dataset: `split_success_rate` and
+`warhead_usable_rate` are two stages with two denominators, not one combined rate, and the counts
+`n_split_successfully` and `n_warheads_usable` make the end-to-end rate reconstructable. They are computed over
+at most 2,000 unique valid molecules drawn with the job's seed, recorded as `component_sample_size` and
+`component_sample_seed`, because the full 10,000 would be hours of wall clock for a rate a subsample pins to
+well under a percentage point. `results/component_records.json` carries the per-molecule record, so a sparse
+component table can be read without re-running the splitter.
+
+The job also writes `results/optimization.png`: the score trajectory, the budget curve with the virtual
+screening baseline on the same axes, and — where the run recorded it — the warhead scaffold count against
+learning step, which is the trajectory the collapse is only visible in.
 
 ## The budget-capped variant
 

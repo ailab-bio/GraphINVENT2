@@ -368,3 +368,198 @@ def delta_nll(
             continue
         deltas.append(float(np.mean(competing)) - by_label[true_label])
     return float(np.mean(deltas)) if deltas else None
+
+
+# ---------------------------------------------------------------------------
+# Categorical labels: the whole block, with its baselines
+# ---------------------------------------------------------------------------
+#
+# CLAUDE.md reports the headline as a macro-average across the classes in the
+# panel, with the per-class breakdown kept flat under a `_<class>` suffix and
+# written in full to `results/condition_per_class.json`. Macro rather than
+# micro, because a panel is almost never balanced: the classes differ by an
+# order of magnitude in how many training molecules they have, and a
+# micro-average reports the largest class's number under a name that reads as
+# the panel's.
+#
+# Two baselines, because the metrics alone are not evidence:
+#
+#   LOOKUP      the training molecules carrying the requested label, sampled to
+#               the same N. This is the retrieval ceiling. A conditional model
+#               cannot beat it on `class_match_*` by construction -- the lookup
+#               set *is* training chemistry -- so the comparison that matters is
+#               novelty: matching as well as retrieval while being novel is the
+#               claim, and matching as well while not being novel is retrieval.
+#
+#   POST-HOC    the unconditional model sampled the same way, then reranked per
+#               class by similarity to that class's training warheads and cut to
+#               the same N. This is the one that can falsify the claim. If an
+#               unconditional model plus a similarity filter reaches the same
+#               `class_selectivity_margin`, the conditioning bought nothing:
+#               the same molecules were in the unconditional sample and a
+#               one-line reranking found them.
+
+
+def requested_label(one_hot: dict, class_names: list) -> str | None:
+    """
+    The class a one-hot request asks for, or None when it asks for no class.
+
+    A categorical condition is a one-hot over numeric columns, which is what
+    the HDF5 carries and what the model was trained on; the class is the column
+    set to one. More than one nonzero is a multi-label request, which the
+    categorical metrics have no definition for, so it is None rather than a
+    guess at which was meant.
+    """
+    hot = [name for name in class_names if float(one_hot.get(name, 0.0) or 0.0) > 0.5]
+    return hot[0] if len(hot) == 1 else None
+
+
+def _macro(per_class: dict, key: str) -> float | None:
+    """The mean over the classes that produced a number for `key`."""
+    values = [row[key] for row in per_class.values() if row.get(key) is not None]
+    return float(np.mean(values)) if values else None
+
+
+def categorical_block(
+    generated_smiles: list,
+    requested_labels: list,
+    class_names: list,
+    training_by_label: dict,
+    reference_pool: list,
+    *,
+    threshold: float,
+    training_smiles: list | None = None,
+    isomeric: bool = False,
+) -> tuple:
+    """
+    One macro-averaged categorical metric block, with its per-class rows.
+
+    Returns `(metrics, unavailable, per_class)`. The same function computes the
+    conditional sample and both baselines, so the three have identical shape by
+    construction rather than by a reviewer checking.
+    """
+    from ._core import canonical_smiles
+
+    per_class: dict = {}
+    metrics: dict = {}
+    unavailable: dict = {}
+
+    by_label: dict = {name: [] for name in class_names}
+    for smi, label in zip(generated_smiles, requested_labels):
+        if label in by_label and smi:
+            by_label[label].append(smi)
+
+    reference = (
+        {s for s in canonical_smiles(training_smiles, isomeric=isomeric) if s}
+        if training_smiles
+        else set()
+    )
+
+    for name in class_names:
+        molecules = by_label[name]
+        row: dict = {
+            "n_unique_valid": len(set(molecules)),
+            "class_match_median": None,
+            "class_match_rate": None,
+            "class_selectivity_margin": None,
+            "novelty": None,
+        }
+        if molecules:
+            row.update(
+                class_match_metrics(
+                    molecules,
+                    [name] * len(molecules),
+                    training_by_label,
+                    threshold=threshold,
+                )
+            )
+            unique = sorted(set(molecules))
+            if reference:
+                row["novelty"] = sum(1 for s in unique if s not in reference) / len(
+                    unique
+                )
+            purity = knn_purity(molecules, [name] * len(molecules), reference_pool)
+            row.update({k: v for k, v in purity.items() if k.startswith("knn_purity")})
+        per_class[name] = row
+
+    k_keys = sorted(
+        {k for row in per_class.values() for k in row if k.startswith("knn_purity_")}
+    )
+    for key in (
+        "class_match_median",
+        "class_match_rate",
+        "class_selectivity_margin",
+        "novelty",
+        *k_keys,
+    ):
+        metrics[key] = _macro(per_class, key)
+        if metrics[key] is None:
+            unavailable[key] = (
+                "insufficient_sample: no class in the panel produced a value "
+                f"for {key}; every class needs at least one valid molecule and "
+                "training molecules carrying its label"
+            )
+        for name, row in per_class.items():
+            metrics[f"{key}_{name}"] = row.get(key)
+
+    metrics["knn_reference_pool_size"] = len(reference_pool)
+    metrics["class_match_threshold"] = threshold
+    metrics["class_panel"] = list(class_names)
+    for name, row in per_class.items():
+        metrics[f"n_unique_valid_{name}"] = row["n_unique_valid"]
+    return metrics, unavailable, per_class
+
+
+def posthoc_filter_baseline(
+    unconditional_smiles: list,
+    class_names: list,
+    training_by_label: dict,
+    counts: dict,
+) -> tuple:
+    """
+    The unconditional sample reranked per class, cut to the same N per class.
+
+    Returns `(smiles, labels)` in the shape `categorical_block` takes. Each
+    class takes the `counts[class]` unconditional molecules most similar to
+    that class's training molecules, so the baseline spends the same sample the
+    conditional model did and answers the question the conditional claim has to
+    beat: could a filter have found these without conditioning.
+
+    A molecule may be selected for more than one class, which is correct. The
+    baseline is not a partition of the unconditional sample; it is what the
+    best post-hoc filter for each class would return.
+    """
+    from rdkit import Chem, DataStructs
+
+    fps: list = []
+    kept: list = []
+    for smi in unconditional_smiles:
+        mol = Chem.MolFromSmiles(smi) if smi else None
+        if mol is not None:
+            fps.append(ecfp4(mol))
+            kept.append(smi)
+    if not kept:
+        raise MissingInput(
+            "the post-hoc filter baseline needs an unconditional sample to "
+            "rerank, and the declared baseline .smi parsed to nothing."
+        )
+
+    out_smiles: list = []
+    out_labels: list = []
+    for name in class_names:
+        want = int(counts.get(name, 0))
+        if want <= 0:
+            continue
+        reference = []
+        for smi in training_by_label.get(name, []):
+            mol = Chem.MolFromSmiles(smi)
+            if mol is not None:
+                reference.append(ecfp4(mol))
+        if not reference:
+            continue
+        scores = [max(DataStructs.BulkTanimotoSimilarity(fp, reference)) for fp in fps]
+        order = np.argsort(scores)[::-1][:want]
+        for index in order:
+            out_smiles.append(kept[index])
+            out_labels.append(name)
+    return out_smiles, out_labels
