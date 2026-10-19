@@ -116,6 +116,7 @@ def compute_core_metrics(
     *,
     subsample: int = 10000,
     isomeric: bool = True,
+    property_window: dict | None = None,
 ) -> dict:
     """
     The core metric table from CLAUDE.md, for one sample of generated molecules.
@@ -235,10 +236,15 @@ def compute_core_metrics(
         results["scaffold_diversity"] = None
         results["n_scaffolds"] = 0
 
-    # filter_pass_rate, Ro5_pass_rate, bRo5_pass_rate -- same denominator.
-    from ._filters import compute_filter_metrics
+    # filter_pass_rate, Ro5_pass_rate, property_window_rate -- same denominator.
+    from ._filters import compute_filter_metrics, compute_property_window_rate
 
     filter_metrics, filter_unavailable = compute_filter_metrics(unique_valid_smiles)
+    window_metrics, window_unavailable = compute_property_window_rate(
+        unique_valid_smiles, property_window or {}
+    )
+    filter_metrics.update(window_metrics)
+    filter_unavailable.update(window_unavailable)
     results.update(filter_metrics)
     results["_filter_unavailable"] = filter_unavailable
 

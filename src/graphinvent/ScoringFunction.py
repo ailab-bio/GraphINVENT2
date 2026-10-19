@@ -423,7 +423,11 @@ class ScoringFunction:
                 final_score = final_score.float()
 
         else:
-            raise NotImplementedError
+            raise ValueError(
+                f"score_type: {self.score_type} is not a combination rule.\n"
+                "Valid values: continuous (components multiply), binary "
+                "(components are thresholded and ANDed)."
+            )
 
         # Score modulation: fold predictive reliability into the objective, so
         # a molecule the surrogate cannot vouch for is worth less as a molecule

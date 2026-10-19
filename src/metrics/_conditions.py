@@ -50,6 +50,34 @@ def condition_success_rate(
     return sum(1 for r, a in pairs if abs(a - r) <= tolerance) / len(pairs)
 
 
+def condition_mae(requested: list, achieved: list) -> float | None:
+    """
+    `condition_mae_<property>`: the mean absolute difference between the value
+    requested of a molecule and the value it achieved, in the property's own
+    units.
+
+    This is reported beside `condition_success_rate_<property>` because that
+    rate is a step function of `condition_tolerance`. Two models whose typical
+    error differs threefold score the same rate when both errors sit inside the
+    tolerance, and a model that halves its error moves the rate not at all
+    until it crosses the threshold. The rate answers whether the target was
+    hit; this answers by how much it was missed, and no choice of tolerance
+    after the fact can flatter it.
+
+    The denominator is the same as the rate's: molecules with both a request and
+    a finite achieved value. Comparable across models conditioned on the same
+    property, not across properties, since the units are the property's own.
+    """
+    errors = [
+        abs(a - r)
+        for r, a in zip(requested, achieved)
+        if r is not None and a is not None and np.isfinite(a)
+    ]
+    if not errors:
+        return None
+    return float(np.mean(errors))
+
+
 def condition_coverage(
     requested: list,
     achieved: list,
@@ -124,6 +152,7 @@ def compute_continuous_condition_metrics(
         f"condition_success_rate_{property_name}": condition_success_rate(
             requested, achieved, tolerance
         ),
+        f"condition_mae_{property_name}": condition_mae(requested, achieved),
     }
     coverage_error: str | None = None
     try:
@@ -137,6 +166,9 @@ def compute_continuous_condition_metrics(
     if baseline_requested is not None and baseline_achieved is not None:
         results[f"baseline_condition_success_rate_{property_name}"] = (
             condition_success_rate(baseline_requested, baseline_achieved, tolerance)
+        )
+        results[f"baseline_condition_mae_{property_name}"] = condition_mae(
+            baseline_requested, baseline_achieved
         )
         if coverage_error is None:
             results[f"baseline_condition_coverage_{property_name}"] = (

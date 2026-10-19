@@ -1,0 +1,33 @@
+{
+  "database": "TPDdb",
+  "homepage": "https://tpddb.idrblab.net",
+  "citation": "Qin X, Zhang Y, Wang Y, et al. TPDdb: the comprehensive database of targeted protein degrader. Nucleic Acids Research 54(D1):D1683-D1691 (2026). doi:10.1093/nar/gkaf996",
+  "retrieved_utc": "2026-10-18T20:47:19.814998+00:00",
+  "sources": [
+    {
+      "modality": "protac",
+      "url": "https://tpddb.idrblab.net/sites/files/tpd_download/PROTAC_main_table.txt",
+      "filename": "PROTAC_main_table.txt",
+      "bytes": 6906520,
+      "sha256": "04d81f038ae976125cfae443f8f81f27e915d98d69446c4b2f70e3d5ce446f09",
+      "records_with_smiles": 21430
+    }
+  ],
+  "selection": {
+    "rule": "sorted by (heavy atom count, canonical SMILES); first N kept",
+    "n_molecules": 300,
+    "modality": "protac",
+    "max_heavy_atoms": 108,
+    "n_candidates_after_curation": 6727
+  },
+  "summary": {
+    "heavy_atoms_min": 40,
+    "heavy_atoms_max": 51,
+    "logp_min": 1.054,
+    "logp_max": 7.321,
+    "modalities": [
+      "protac"
+    ]
+  },
+  "regenerate_with": "python scripts/tpddb-create-dataset.py --modality protac --n-molecules 300 --output data/datasets/toy_protac_cond/"
+}

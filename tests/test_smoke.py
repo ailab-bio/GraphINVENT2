@@ -103,6 +103,62 @@ def test_transfer_learning_resumes_from_a_checkpoint(dataset, checkpoint):
     assert (job_dir / "checkpoints" / "model_restart_2.pth").exists()
 
 
+def test_a_killed_job_resumes_from_its_last_checkpoint(dataset):
+    """
+    The bug: `restart: true` resumed, started the next epoch, and raised
+    "Tried to step N times. The specified number of total steps is M" from
+    OneCycleLR, so no job could be resumed after a walltime kill and a
+    48-hour prior was an all-or-nothing submission.
+
+    The cause was reading `epochs` as a count of ADDITIONAL epochs on a
+    restart, against a one-cycle schedule sized for the whole run. The
+    learning rate on the resumed epochs is the assertion that matters: if the
+    cycle had restarted rather than continued, it would come back to its
+    opening value.
+    """
+    job_dir = dataset.parent / "exp" / "jobs" / "killable"
+    config = {"job_type": "unconditional", "dataset_dir": str(dataset), **TRAINING}
+    config["epochs"] = 4
+    run_job(job_dir, config)
+
+    log = (job_dir / "logs" / "convergence.log").read_text().splitlines()
+    full = {
+        int(r.split(",")[0].split()[1]): r.split(",")[1].strip()
+        for r in log
+        if r.startswith("Epoch")
+    }
+    assert set(full) == {1, 2, 3, 4}
+
+    # Simulate the kill: keep only the epoch-2 checkpoint.
+    for epoch in (3, 4):
+        stale = job_dir / "checkpoints" / f"model_restart_{epoch}.pth"
+        if stale.exists():
+            stale.unlink()
+    (job_dir / "logs" / "convergence.log").unlink()
+
+    config["restart"] = True
+    run_job(job_dir, config)
+
+    assert (
+        job_dir / "checkpoints" / "model_restart_4.pth"
+    ).exists(), "the resumed run must reach the configured total of 4 epochs"
+    resumed = {
+        int(r.split(",")[0].split()[1]): r.split(",")[1].strip()
+        for r in (job_dir / "logs" / "convergence.log").read_text().splitlines()
+        if r.startswith("Epoch")
+    }
+    assert set(resumed) == {3, 4}, (
+        f"epochs is the total for the run, so a restart at 2 of 4 runs 3 and 4; "
+        f"got {sorted(resumed)}"
+    )
+    for epoch in (3, 4):
+        assert resumed[epoch] == full[epoch], (
+            f"epoch {epoch} learning rate is {resumed[epoch]} on the resumed run "
+            f"against {full[epoch]} on the uninterrupted one, so the one-cycle "
+            "schedule restarted instead of continuing"
+        )
+
+
 def test_conditional_trains_on_a_dataset_with_properties(tmp_path):
     dataset_dir = tmp_path / "logp"
     dataset_dir.mkdir()
@@ -205,6 +261,21 @@ def test_generate_writes_molecules(dataset, checkpoint):
         "hidden rather than visible"
     )
     assert reported["validity_n_generated_raw"] >= reported["n_sampled"]
+
+    # An open shell is not a molecule. RDKit sanitizes a radical without
+    # complaint, so before the writer gated on it every molecule counted valid
+    # in every run was a polyradical: 253 of 253 in the first toy runs,
+    # methylidyne `[CH]` among them, and validity, novelty, diversity and the
+    # synthesizability scores were all computed over them.
+    from rdkit import Chem
+
+    written = (job_dir / "results" / "molecules.smi").read_text().split()
+    for smiles in written:
+        mol = Chem.MolFromSmiles(smiles)
+        assert mol is not None, f"{smiles} was written but does not parse"
+        assert not any(
+            a.GetNumRadicalElectrons() for a in mol.GetAtoms()
+        ), f"{smiles} was written to molecules.smi and is an open shell"
 
 
 def test_generate_in_evaluate_mode_scores_the_model(dataset, checkpoint):

@@ -41,7 +41,7 @@ GROUPS: list = [
             "sa_score_median",
             "filter_pass_rate",
             "Ro5_pass_rate",
-            "bRo5_pass_rate",
+            "property_window_rate",
         ],
     ),
     (
@@ -174,7 +174,10 @@ def _metric_rows(metrics: dict, unavailable: dict, keys: list) -> str:
             continue
         value = metrics[key]
         if value is None:
-            reason = html.escape(unavailable.get(key, "undefined for this run"))
+            entry = unavailable.get(key, "undefined for this run")
+            if isinstance(entry, dict):
+                entry = f"{entry.get('category', '?')}: {entry.get('reason', '')}"
+            reason = html.escape(entry)
             rows.append(
                 f"<tr><td>{html.escape(key)}</td>"
                 f'<td class="unavailable">null</td>'

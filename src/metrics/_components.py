@@ -25,13 +25,20 @@ linker and calling only the acetyl-tert-leucine cap the E3 ligand.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
-from ._core import ECFP4_RADIUS, compute_core_metrics, ecfp4
+from ._core import ECFP4_RADIUS, bemis_murcko, compute_core_metrics, ecfp4
 
 TOOLS = Path(__file__).resolve().parents[2] / "tools"
 SPLITTER_PYTHON = TOOLS / "PROTAC-Splitter" / ".venv" / "bin" / "python"
+# Decomposition costs about 2 s per molecule, so a 21,429-molecule corpus is
+# roughly 12 hours and a warhead_scaffold split needs every molecule
+# decomposed once. The cache is keyed by splitter model and by isomeric
+# canonical SMILES, and lives under tools/ rather than in a home directory.
+SPLITTER_MODEL = "adaptive"
+SPLITTER_CACHE = TOOLS / "splitter-cache"
 # Weights land here, never in the library's default cache: a cluster home
 # directory has a small quota and a surprise download into one is a failure
 # waiting to happen.
@@ -52,12 +59,14 @@ RDLogger.DisableLog("rdApp.*")
 from protac_splitter import split_protac
 from protac_splitter.evaluation import count_flags, score_split, split_prediction
 
-smiles = json.load(sys.stdin)
+payload_in = json.load(sys.stdin)
+MODEL = payload_in["model"]
+smiles = payload_in["smiles"]
 out = []
 for smi in smiles:
     fragments, reasons = None, "split_raised"
     try:
-        prediction = split_protac(smi, model="adaptive", verbose=0)
+        prediction = split_protac(smi, model=MODEL, verbose=0)
         key = next((k for k in prediction if k.startswith("default_pred")), None)
         packed = prediction[key] if key else None
         candidate = split_prediction(packed) if packed else None
@@ -129,12 +138,37 @@ class MissingInput(Exception):
     """A metric's input is absent. The message says which and where from."""
 
 
-def decompose(smiles_list: list) -> list:
+def _cache_path(model: str) -> Path:
+    return SPLITTER_CACHE / f"{model}.json"
+
+
+def _load_cache(model: str) -> dict:
+    path = _cache_path(model)
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError:
+        # A truncated cache is a cache, not a crash: rebuild it.
+        return {}
+
+
+def _save_cache(model: str, cache: dict) -> None:
+    SPLITTER_CACHE.mkdir(parents=True, exist_ok=True)
+    _cache_path(model).write_text(json.dumps(cache, sort_keys=True))
+
+
+def decompose(smiles_list: list, *, model: str = SPLITTER_MODEL) -> list:
     """
     Decompose each molecule into its POI warhead, linker and E3 ligand.
 
     Returns one dict per input with keys `poi`, `linker` and `e3`, or None where
     the decomposition failed or did not yield exactly three fragments.
+
+    Only distinct molecules reach the splitter, and results are cached on disk
+    under `tools/splitter-cache/<model>.json`, because the call costs seconds
+    per molecule and the same corpus is decomposed by both the split and the
+    component metrics.
 
     `poi` is the target-binding component, which is what CLAUDE.md's
     `warhead_*` metrics are computed over. PROTAC-Splitter labels the fragments
@@ -152,12 +186,30 @@ def decompose(smiles_list: list) -> list:
     if not smiles_list:
         return []
 
+    cache = _load_cache(model)
+    pending = [s for s in dict.fromkeys(smiles_list) if s and s not in cache]
+    if not pending:
+        return [cache.get(s) for s in smiles_list]
+    print(
+        f"* PROTAC-Splitter ({model}): {len(pending)} molecules to decompose, "
+        f"{len(smiles_list) - len(pending)} served from cache.",
+        flush=True,
+    )
+
+    # Extend the environment rather than replace it, as _retrotac.py does.
+    # Replacing it drops LD_LIBRARY_PATH, which on Linux is how Lmod-provided
+    # shared objects are found, and HOME, which breaks `~` resolution inside
+    # RDKit and HuggingFace. Only HF_HOME is overridden, to pin any download
+    # under tools/ instead of into a quota-limited cluster home directory.
+    env = dict(os.environ)
+    env["HF_HOME"] = str(SPLITTER_HF_HOME)
+
     probe = subprocess.run(
         [str(SPLITTER_PYTHON), "-c", _SPLIT_SCRIPT],
-        input=json.dumps(list(smiles_list)),
+        input=json.dumps({"model": model, "smiles": pending}),
         capture_output=True,
         text=True,
-        env={"HF_HOME": str(SPLITTER_HF_HOME), "PATH": "/usr/bin:/bin"},
+        env=env,
     )
     if probe.returncode != 0:
         tail = (probe.stderr or probe.stdout).strip().splitlines()[-5:]
@@ -170,7 +222,10 @@ def decompose(smiles_list: list) -> list:
             continue
         # A failed split carries its reason rather than a bare None, so a
         # falling split rate can be explained without re-running anything.
-        return [None if "failed" in entry else entry for entry in payload]
+        for smi, entry in zip(pending, payload):
+            cache[smi] = None if "failed" in entry else entry
+        _save_cache(model, cache)
+        return [cache.get(s) for s in smiles_list]
     raise MissingInput("PROTAC-Splitter produced no parseable output.")
 
 
@@ -181,6 +236,7 @@ def compute_component_metrics(
     known_e3_ligands: list,
     *,
     e3_similarity_floor: float = E3_SIMILARITY_FLOOR,
+    isomeric: bool = False,
 ) -> dict:
     """
     `split_success_rate`, the `warhead_*` recomputation, and
@@ -211,10 +267,16 @@ def compute_component_metrics(
     # the warhead. The denominator stays the number that split, so a fragment
     # that will not parse once capped still counts against it.
     warheads = [cap_attachment_points(d["poi"]) for d in split_ok]
+    # isomeric must match the generated side. Generated warheads are flat when
+    # the model runs without chirality, and the reference warheads come from
+    # real degraders that carry it, so the default of True would compare a
+    # flattened set against a stereo-bearing one and pin warhead_novelty at
+    # 1.0 -- the same asymmetry that was fixed at whole-molecule level.
     warhead_core = compute_core_metrics(
         [w for w in warheads if w],
         n_sampled=len(warheads),
         training_smiles=training_warheads,
+        isomeric=isomeric,
     )
     warhead_core.pop("_filter_unavailable", None)
     for key, value in warhead_core.items():
@@ -247,4 +309,53 @@ def compute_component_metrics(
         if similarities
         else None
     )
+    return results
+
+
+def compute_top100_warhead_scaffolds(top100_smiles: list) -> dict:
+    """
+    `top100_warhead_scaffold_count`: distinct Bemis-Murcko scaffolds among the
+    target-binding components of the 100 highest-scoring molecules.
+
+    This is the reward-hacking detector for a bifunctional dataset, and it
+    exists because the whole-molecule `top100_scaffold_count` cannot be one. A
+    Bemis-Murcko scaffold of a PROTAC contains every ring system in the
+    molecule, so it is nearly unique per compound: a top 100 that has collapsed
+    onto a single warhead still reports close to 100 distinct scaffolds as long
+    as the linkers differ, which is the failure the metric was supposed to
+    catch. Decomposing first and counting scaffolds of the target-binding
+    component measures the part the optimization is actually exploiting.
+
+    `top100_split_success_rate` comes back with it and is not optional. The
+    count is computed only over the molecules that decomposed, so a falling
+    split rate otherwise reads as a collapsing scaffold count: both numbers go
+    down together and only one of them means reward hacking.
+    """
+    results: dict = {
+        "top100_warhead_scaffold_count": None,
+        "top100_n_split": 0,
+        "top100_split_success_rate": None,
+    }
+    if not top100_smiles:
+        return results
+
+    decomposed = decompose(top100_smiles)
+    split_ok = [d for d in decomposed if d is not None]
+    results["top100_n_split"] = len(split_ok)
+    results["top100_split_success_rate"] = len(split_ok) / len(top100_smiles)
+    if not split_ok:
+        return results
+
+    # Capped before the scaffold is taken: the attachment point is a dummy atom
+    # that is not part of the warhead, and a scaffold derived with it in place
+    # is the scaffold of a different molecule.
+    scaffolds = set()
+    for fragments in split_ok:
+        capped = cap_attachment_points(fragments["poi"])
+        scaffold = bemis_murcko(capped) if capped else None
+        # Falsy, not just None: a warhead with no ring system has an empty
+        # scaffold, and counting that as one inflates the tally.
+        if scaffold:
+            scaffolds.add(scaffold)
+    results["top100_warhead_scaffold_count"] = len(scaffolds)
     return results

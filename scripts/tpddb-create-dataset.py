@@ -107,6 +107,7 @@ def parse_table(raw: bytes, modality: str) -> List[Dict[str, str]]:
         ) from exc
     id_col = header.index("TPD ID") if "TPD ID" in header else 0
     subtype_col = header.index("Subtype") if "Subtype" in header else None
+    target_col = header.index("Target Symbol") if "Target Symbol" in header else None
 
     records = []
     for line in lines[1:]:
@@ -124,6 +125,11 @@ def parse_table(raw: bytes, modality: str) -> List[Dict[str, str]]:
                 "smiles": smiles,
                 "tpd_id": parts[id_col].strip() if len(parts) > id_col else "",
                 "modality": modality,
+                "target": (
+                    parts[target_col].strip()
+                    if target_col is not None and len(parts) > target_col
+                    else ""
+                ),
             }
         )
     return records
@@ -166,6 +172,7 @@ def curate(
             "smiles": canonical,
             "tpd_id": record["tpd_id"],
             "modality": record["modality"],
+            "target": record.get("target", ""),
             "n_heavy_atoms": n_heavy,
             "mol_weight": round(Descriptors.MolWt(mol), 2),
             "logp": round(Crippen.MolLogP(mol), 3),
@@ -201,6 +208,20 @@ def main() -> int:
         type=int,
         default=None,
         help="Discard molecules above this heavy-atom count before selecting.",
+    )
+    parser.add_argument(
+        "--conditioning-classes",
+        default=None,
+        help=(
+            "comma-separated target symbols, e.g. AR,BTK,EGFR. Writes the .smi "
+            "as a tab-separated file whose first column is SMILES and whose "
+            "remaining columns are one-hot indicators named is_<class>, in the "
+            "order given, and keeps only molecules annotated against exactly "
+            "one of them. Without this flag the .smi is a plain SMILES list. "
+            "The column names and their ORDER have to match "
+            "conditioning.properties in the experiment config, because the "
+            "condition vector is built positionally from these columns."
+        ),
     )
     parser.add_argument(
         "--output",
@@ -249,15 +270,77 @@ def main() -> int:
 
     # Sorting by canonical SMILES after heavy-atom count makes ties break
     # identically on every run, so the selection is reproducible.
+    # "IKZF=IKZF1|IKZF3" merges two target symbols into one class, which the
+    # glue panel needs: IKZF1 and IKZF3 are reached by overlapping glutarimide
+    # chemistry and are one class for conditioning purposes.
+    classes, aliases = [], {}
+    for spec in (args.conditioning_classes or "").split(","):
+        spec = spec.strip()
+        if not spec:
+            continue
+        if "=" in spec:
+            label, members = spec.split("=", 1)
+            label = label.strip()
+            aliases[label.lower()] = {m.strip().lower() for m in members.split("|")}
+        else:
+            label = spec
+            aliases[label.lower()] = {label.lower()}
+        classes.append(label)
+    if classes:
+        # One class per molecule: a multi-label molecule has no single label to
+        # condition on, and quietly picking its first annotation would make the
+        # condition vector a record of table order.
+        kept = []
+        n_multi = 0
+        for record in curated:
+            symbols = {
+                t.strip().lower()
+                for t in record.get("target", "").replace(",", ";").split(";")
+                if t.strip()
+            }
+            labels = {c.lower() for c in classes if symbols & aliases[c.lower()]}
+            if len(labels) == 1:
+                record["label"] = labels.pop()
+                kept.append(record)
+            elif len(labels) > 1:
+                n_multi += 1
+        print(
+            f"  {len(kept)} molecules in exactly one of {classes}; "
+            f"{n_multi} dropped for carrying more than one.",
+            flush=True,
+        )
+        if not kept:
+            print(
+                f"No molecules annotated against any of {classes}.",
+                file=sys.stderr,
+            )
+            return 1
+        curated = kept
+
     curated.sort(key=lambda r: (r["n_heavy_atoms"], r["smiles"]))
     selected = curated[: args.n_molecules]
+
+    if classes:
+        from collections import Counter
+
+        counts = Counter(r["label"] for r in selected)
+        print(f"  class sizes in the selection: {dict(counts)}", flush=True)
 
     args.output.mkdir(parents=True, exist_ok=True)
     name = args.output.name or "tpddb"
     smi_path = args.output / f"{name}.smi"
     with open(smi_path, "w") as f:
-        for record in selected:
-            f.write(f"{record['smiles']}\n")
+        if classes:
+            columns = [f"is_{c.lower()}" for c in classes]
+            f.write("SMILES\t" + "\t".join(columns) + "\n")
+            for record in selected:
+                onehot = [
+                    "1.0" if record["label"] == c.lower() else "0.0" for c in classes
+                ]
+                f.write(record["smiles"] + "\t" + "\t".join(onehot) + "\n")
+        else:
+            for record in selected:
+                f.write(f"{record['smiles']}\n")
 
     # A parallel TSV carries the identifiers and properties; the .smi stays
     # plain because that is what the preprocessing job reads.

@@ -99,8 +99,8 @@ def passes_ro5(mol) -> bool:
 
 def compute_filter_metrics(unique_valid_smiles: list) -> tuple:
     """
-    `filter_pass_rate`, `Ro5_pass_rate` and `bRo5_pass_rate` over the unique
-    valid molecules, which is the denominator CLAUDE.md gives all three.
+    `filter_pass_rate` and `Ro5_pass_rate` over the unique valid molecules,
+    which is the denominator CLAUDE.md gives both.
 
     Returns (metrics, unavailable) so the caller can record why a metric is
     null rather than guessing.
@@ -123,16 +123,65 @@ def compute_filter_metrics(unique_valid_smiles: list) -> tuple:
         ) / len(mols)
         metrics["Ro5_pass_rate"] = sum(1 for mol in mols if passes_ro5(mol)) / len(mols)
 
-    # bRo5 has no implementable definition yet. The property limits circulating
-    # informally could not be confirmed against Doak et al., Chem. Biol.
-    # 21:1115 (2014): the paper is paywalled, and its abstract and the reviews
-    # citing it describe bRo5 as the region compounds fall *into* by exceeding
-    # Ro5, not an envelope they stay *within* -- so "passing bRo5" needs a
-    # definition before it needs thresholds.
-    metrics["bRo5_pass_rate"] = None
-    unavailable["bRo5_pass_rate"] = (
-        "no verified definition: Doak et al., Chem. Biol. 21:1115 (2014) could "
-        "not be obtained, and the literature defines bRo5 as the space beyond "
-        "Ro5 rather than a window to pass, so the sense of the rate is unsettled"
-    )
+    return metrics, unavailable
+
+
+def compute_property_window_rate(unique_valid_smiles: list, bounds: dict) -> tuple:
+    """
+    `property_window_rate`: the fraction of unique valid molecules whose every
+    named property falls inside its stated numeric window.
+
+    This replaces `bRo5_pass_rate`, which was ill-posed. "Beyond Rule of 5"
+    names the region compounds fall *into* by exceeding Ro5, not an envelope
+    they stay *within*, so a pass rate against it has no definition. One
+    parameterized window generalizes instead: Ro5 bounds for drug-like
+    datasets, a degrader window for bifunctionals, the property set of the
+    objective for the battery program. The bounds are echoed into metrics.json
+    beside the value as `property_window_rate_bounds`, because the rate means
+    nothing without them and a table that omits them cannot be compared with
+    another.
+
+    `bounds` is {property_name: [low, high]}, where either end may be null for
+    an open interval.
+    """
+    from rdkit import Chem
+
+    from ._properties import PROPERTY_REGISTRY
+
+    metrics: dict = {"property_window_rate_bounds": bounds or None}
+    unavailable: dict = {}
+
+    if not bounds:
+        metrics["property_window_rate"] = None
+        unavailable["property_window_rate"] = (
+            "not_applicable_to_job_type: no property_window is set for this "
+            "experiment, and the rate is undefined without explicit bounds"
+        )
+        return metrics, unavailable
+
+    unknown = sorted(set(bounds) - set(PROPERTY_REGISTRY))
+    if unknown:
+        raise ValueError(
+            f"property_window names {unknown}, which are not property "
+            f"functions. Known: {', '.join(sorted(PROPERTY_REGISTRY))}."
+        )
+
+    mols = [Chem.MolFromSmiles(smi) for smi in unique_valid_smiles]
+    mols = [mol for mol in mols if mol is not None]
+    if not mols:
+        metrics["property_window_rate"] = None
+        unavailable["property_window_rate"] = (
+            "insufficient_sample: no unique valid molecules to measure"
+        )
+        return metrics, unavailable
+
+    inside = 0
+    for mol in mols:
+        if all(
+            (low is None or PROPERTY_REGISTRY[name](mol) >= low)
+            and (high is None or PROPERTY_REGISTRY[name](mol) <= high)
+            for name, (low, high) in bounds.items()
+        ):
+            inside += 1
+    metrics["property_window_rate"] = inside / len(mols)
     return metrics, unavailable

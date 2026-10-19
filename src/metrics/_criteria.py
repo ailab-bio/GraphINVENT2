@@ -5,7 +5,7 @@ Success criteria system for goal-directed and conditional generation evaluation.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Callable
 
 from rdkit.Chem import Mol
 
@@ -125,39 +125,6 @@ class SuccessCriterion:
                 f"Unknown criterion type '{self.type}'. "
                 "Must be 'threshold', 'range', or 'target'."
             )
-
-
-def load_criteria_from_config(config: dict) -> list[SuccessCriterion]:
-    """
-    Parse a list of SuccessCriterion objects from a job config dict.
-
-    Expects ``config["job"]["success_criteria"]`` to be a list of dicts, each
-    containing at minimum ``property`` and ``type`` keys.
-
-    Parameters
-    ----------
-    config : dict
-        Top-level job config (as loaded from params.json).
-
-    Returns
-    -------
-    list of SuccessCriterion
-    """
-    raw_list: list[dict[str, Any]] = config.get("job", {}).get("success_criteria", [])
-    criteria: list[SuccessCriterion] = []
-    for entry in raw_list:
-        criteria.append(
-            SuccessCriterion(
-                property=entry["property"],
-                type=entry["type"],
-                value=entry.get("value"),
-                direction=entry.get("direction"),
-                min=entry.get("min"),
-                max=entry.get("max"),
-                tolerance=entry.get("tolerance"),
-            )
-        )
-    return criteria
 
 
 def molecule_passes(

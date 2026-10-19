@@ -94,10 +94,16 @@ else
     # cluster that has uv.
     if command -v python3.12 >/dev/null 2>&1; then
         python3.12 -m venv "$TOOLS/RetroTAC/.venv"
+    elif command -v uv >/dev/null 2>&1; then
+        # The cluster route: RUN.md Step 3 installs uv, and an Lmod module tree
+        # is unlikely to carry a 3.12 interpreter alongside the 3.13 this
+        # project uses.
+        uv python install 3.12
+        uv venv --python 3.12 "$TOOLS/RetroTAC/.venv"
     elif command -v conda >/dev/null 2>&1; then
         conda create -y -q -p "$TOOLS/RetroTAC/.venv" python=3.12
     else
-        echo "!! need python3.12 (or conda, or uv) to build RetroTAC's env; skipping"
+        echo "!! need python3.12 (or uv, or conda) to build RetroTAC's env; skipping"
         echo "   retrotac_* will record null until this is resolved"
     fi
 

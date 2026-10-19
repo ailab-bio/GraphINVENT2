@@ -153,6 +153,7 @@ def evaluate_generation(
         n_sampled=constants.n_samples,
         training_smiles=training_smiles,
         isomeric=_isomeric(constants),
+        property_window=getattr(constants, "property_window", None),
     )
     unavailable.update(core.pop("_filter_unavailable", {}))
     metrics.update(core)
@@ -317,22 +318,45 @@ def _condition_metrics(
         achieved_smiles.append(smi)
     from rdkit import Chem
 
+    def unavailable_group(name: str, category: str, reason: str) -> None:
+        """
+        Record the whole continuous group for one property as a categorized
+        null.
+
+        Every bail-out used to set only `condition_success_rate_<property>`, so
+        a property that could not be measured left `condition_mae_` and
+        `condition_coverage_` absent from metrics.json rather than present and
+        null. A key that is missing cannot be told from a key nobody defined,
+        which is what the envelope exists to prevent.
+        """
+        for metric in (
+            f"condition_success_rate_{name}",
+            f"condition_mae_{name}",
+            f"condition_coverage_{name}",
+        ):
+            results[metric] = None
+            unavailable[metric] = f"{category}: {reason}"
+
     for name, requested_value in requested_conditions.items():
-        key = f"condition_success_rate_{name}"
         fn = PROPERTY_REGISTRY.get(name.lower())
         if fn is None:
-            results[key] = None
-            unavailable[key] = (
-                f"no property function named {name}; known: "
-                f"{', '.join(sorted(PROPERTY_REGISTRY))}"
+            unavailable_group(
+                name,
+                "not_applicable_to_job_type",
+                f"no property function named {name}, so the achieved value "
+                f"cannot be computed; known: {', '.join(sorted(PROPERTY_REGISTRY))}. "
+                "A one-hot class label is a categorical condition, and the "
+                "continuous metrics have no definition for it.",
             )
             continue
         tolerance = tolerances.get(name) if isinstance(tolerances, dict) else tolerances
         if tolerance is None:
-            results[key] = None
-            unavailable[key] = (
-                f"condition_tolerance is unset for {name}; the metric is defined "
-                "as the fraction within a tolerance of the requested value"
+            unavailable_group(
+                name,
+                "not_applicable_to_job_type",
+                f"condition_tolerance is unset for {name}; the metric is "
+                "defined as the fraction within a tolerance of the requested "
+                "value",
             )
             continue
 
@@ -344,9 +368,26 @@ def _condition_metrics(
         per_molecule = requested_per_molecule(constants, name, len(ordered))
         if per_molecule:
             requested = [per_molecule[i] for i in keep_positions]
-        else:
+        elif isinstance(requested_value, (int, float)):
             # The job asked one value of everything, so every molecule shares it.
             requested = [float(requested_value)] * len(achieved)
+        else:
+            # A sentinel such as `from_train` means the value differs per batch
+            # and is recoverable only from results/condition_requests.json
+            # together with molecules.valid. When those do not line up, there
+            # is no requested value to compare against, and coercing the
+            # sentinel to a float raised instead of saying so.
+            unavailable_group(
+                name,
+                "not_applicable_to_job_type",
+                f"sample_conditions.{name} is '{requested_value}', so the "
+                "value asked of each molecule comes from "
+                "results/condition_requests.json, and that could not be "
+                "matched to the generated molecules. It needs one request per "
+                "batch and a molecules.valid whose length equals the number "
+                "of valid molecules.",
+            )
+            continue
         for smi, want, got in zip(achieved_smiles, requested, achieved):
             if got is not None and want is not None:
                 out_conditions.append((smi, float(want), float(got)))
@@ -367,7 +408,7 @@ def _condition_metrics(
                     training_values,
                     baseline_requested=(
                         [float(requested_value)] * len(baseline_smiles)
-                        if baseline_smiles
+                        if baseline_smiles and isinstance(requested_value, (int, float))
                         else None
                     ),
                     baseline_achieved=(
@@ -385,18 +426,22 @@ def _condition_metrics(
                 )
             )
         except MissingInput as error:
-            results[key] = None
-            unavailable[key] = " ".join(str(error).split())
+            unavailable_group(name, "insufficient_sample", " ".join(str(error).split()))
         reason = results.pop("_coverage_unavailable_reason", None)
         if reason:
             unavailable[f"condition_coverage_{name}"] = reason
         if not baseline_smiles:
-            unavailable[f"baseline_condition_success_rate_{name}"] = (
+            baseline_reason = (
                 "no unconditional baseline sample is declared; set "
                 "baseline_results_dir to the .smi of the same model trained "
                 "without conditioning and sampled the same way"
             )
-            results[f"baseline_condition_success_rate_{name}"] = None
+            for baseline_key in (
+                f"baseline_condition_success_rate_{name}",
+                f"baseline_condition_mae_{name}",
+            ):
+                results[baseline_key] = None
+                unavailable[baseline_key] = baseline_reason
     return results
 
 
@@ -420,9 +465,15 @@ def evaluate_goal_directed(
         n_sampled=n_generated,
         training_smiles=training_smiles,
         isomeric=_isomeric(constants),
+        property_window=getattr(constants, "property_window", None),
     )
     unavailable.update(core.pop("_filter_unavailable", {}))
     metrics.update(core)
+
+    # The same supporting field the generate path records. Without it the RL
+    # funnel's denominator cannot be reconstructed from metrics.json, and the
+    # trajectory over-produces for exactly the reason the generate path does.
+    metrics["validity_n_generated_raw"] = int(n_generated)
 
     # Unique valid molecules with their best score, which is the denominator
     # CLAUDE.md gives success_rate.
@@ -449,6 +500,48 @@ def evaluate_goal_directed(
         )
     )
     metrics["success_threshold"] = threshold
+    # The words behind the threshold. CLAUDE.md requires it as a supporting
+    # field, five job configs set it, and nothing carried it into metrics.json,
+    # so a table showed a success rate with no statement of what was counted.
+    definition = getattr(constants, "success_definition", None)
+    metrics["success_definition"] = definition or None
+    if not definition:
+        unavailable["success_definition"] = (
+            "not_implemented: this experiment's config does not set "
+            "success_definition, so nothing records in words what success_rate "
+            "counted"
+        )
+
+    # top100_warhead_scaffold_count, for a bifunctional dataset only. Emitted
+    # nowhere else, as with the retrotac_* keys: off a bifunctional dataset
+    # there is nothing to decompose, and a key reporting null for every
+    # drug-like run would say nothing. The whole-molecule
+    # top100_scaffold_count stays beside it and is expected to be
+    # uninformative there, which is the reason this key exists.
+    if getattr(constants, "bifunctional", False):
+        from ._components import MissingInput as ComponentMissing
+        from ._components import compute_top100_warhead_scaffolds
+
+        try:
+            warhead_scaffolds = compute_top100_warhead_scaffolds(
+                [smi for smi, _ in _budget.top100(scored)]
+            )
+            metrics.update(warhead_scaffolds)
+            if warhead_scaffolds["top100_warhead_scaffold_count"] is None:
+                unavailable["top100_warhead_scaffold_count"] = (
+                    "PROTAC-Splitter decomposed none of the "
+                    f"{min(len(scored), 100)} highest-scoring molecules, so "
+                    "there "
+                    "are no target-binding components to count scaffolds over"
+                )
+        except ComponentMissing as error:
+            split_reason = " ".join(str(error).split())
+            for key in (
+                "top100_warhead_scaffold_count",
+                "top100_split_success_rate",
+            ):
+                metrics[key] = None
+                unavailable[key] = split_reason
 
     try:
         metrics.update(_budget.compute_at_budget_metrics(optimization_log))
@@ -601,7 +694,9 @@ def _efficiency_metrics(
         None if train_wall_clock_s is None else float(train_wall_clock_s)
     )
     if train_wall_clock_s is None:
-        unavailable["train_wall_clock_s"] = "this job type does not train a model"
+        unavailable["train_wall_clock_s"] = (
+            "not_applicable_to_job_type: this job type does not train a model"
+        )
 
     metrics["inference_s_per_10k"] = (
         _efficiency.inference_s_per_10k(inference_seconds, n_sampled)
@@ -610,8 +705,8 @@ def _efficiency_metrics(
     )
     if metrics["inference_s_per_10k"] is None:
         unavailable["inference_s_per_10k"] = (
-            "this job type does not sample molecules, so there is no generation "
-            "time to rescale"
+            "not_applicable_to_job_type: this job type does not sample "
+            "molecules, so there is no generation time to rescale"
         )
 
 

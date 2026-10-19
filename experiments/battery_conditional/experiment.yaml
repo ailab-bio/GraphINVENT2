@@ -12,8 +12,10 @@ bifunctional: false
 seed: 1
 slurm:
   account: naiss2024-5-630-gpu
-  partition: gpu
-
+  # partition left unset on purpose: submit.py uses partition_gpu when
+  # gpus > 0 and partition_cpu otherwise, so a preprocess or screening job
+  # with gpus: 0 does not occupy a GPU node. Hard-coding gpu here sent 13
+  # CPU-only jobs to the GPU partition, one of them for 24 hours.
 # Continuous conditioning on the molecular dipole moment, a direct density
 # functional theory label in Batt-P30K and the quantity the permittivity chain
 # is built on. This is the only conditional experiment in the paper where the

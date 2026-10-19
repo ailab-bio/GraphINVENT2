@@ -586,6 +586,18 @@ def write_graphs_to_smi(
             try:
                 mol.UpdatePropertyCache(strict=False)
                 rdkit.Chem.SanitizeMol(mol)
+                # An open shell is not a molecule anyone can order, and RDKit
+                # sanitizes a radical without complaint: an atom whose bonds
+                # and predicted hydrogens fall short of its valence becomes a
+                # radical centre and passes. Measured on the first toy runs,
+                # 253 of 253 "valid" generated molecules carried unpaired
+                # electrons, methylidyne `[CH]` among them, and every validity,
+                # uniqueness, novelty, diversity and synthesizability number
+                # was computed over them. The training corpora are entirely
+                # closed-shell, so this is a model artifact that the validity
+                # definition could not see.
+                if any(atom.GetNumRadicalElectrons() for atom in mol.GetAtoms()):
+                    raise ValueError("open shell")
                 current_smiles = MolToSmiles(mol)
                 if len(current_smiles) == 0:
                     raise ValueError
@@ -596,8 +608,9 @@ def write_graphs_to_smi(
                     uniqueness_tensor[idx] = 0
                 seen_smiles.add(current_smiles)
             except (ValueError, RuntimeError, AttributeError):
-                # Unphysical valence or aromatic bonds: not a molecule, so
-                # nothing is written and `validity_tensor` stays 0.
+                # Unphysical valence, non-kekulizable rings or an open shell:
+                # not a molecule, so nothing is written and `validity_tensor`
+                # stays 0.
                 pass
     finally:
         if smi_file is not None:

@@ -31,12 +31,13 @@ imp_H:
 max_n_nodes: 34
 run_info:
   cuda_version: n/a
+  device: mps
   device_name: mps
-  git_hash: fba3ed8
+  git_hash: fde9942
   numpy_version: 2.4.4
   python_version: 3.13.5
   rdkit_version: 2025.09.6
-  timestamp: '2026-10-18T13:04:51'
+  timestamp: '2026-10-18T22:01:01+02:00'
   torch_version: 2.11.0
 split:
   n_dropped_oversized: 5

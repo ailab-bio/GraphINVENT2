@@ -204,6 +204,30 @@ def _delete(targets: list[Path]) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _resolved_data_root() -> Path:
+    """
+    The data root the jobs actually use, from config/defaults.yaml.
+
+    Hard-coding `data/datasets` meant that with the documented cluster root on
+    a project filesystem this script discovered nothing, deleted nothing and
+    reported success, which on a quota-limited filesystem is the worst of the
+    three possible outcomes.
+    """
+    defaults = Path(__file__).resolve().parent / "config" / "defaults.yaml"
+    if defaults.exists():
+        try:
+            import yaml
+
+            root = (yaml.safe_load(defaults.read_text()) or {}).get("data_root")
+            if root:
+                return Path(root)
+        except Exception:
+            # A malformed config is the config loader's problem to report, not
+            # this script's; fall back rather than refuse to clean.
+            pass
+    return Path("data/datasets")
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Clean up stale GraphINVENT2 outputs and preprocessed data.",
@@ -255,7 +279,8 @@ def _parse_args() -> argparse.Namespace:
         metavar="PATH",
         help=(
             "One or more dataset directories to check for preprocessed files "
-            "and backups.  If omitted, all subdirectories of data/datasets/ "
+            "and backups.  If omitted, all subdirectories of the resolved "
+            "data_root from config/defaults.yaml "
             "are used automatically."
         ),
     )
@@ -289,7 +314,7 @@ def main() -> None:
     if args.dataset_dir is not None:
         dataset_dirs = args.dataset_dir
     else:
-        dataset_dirs = _auto_discover_dataset_dirs(Path("data/datasets"))
+        dataset_dirs = _auto_discover_dataset_dirs(_resolved_data_root())
 
     # Build the combined target list (deduplicated, stable order)
     seen: set[Path] = set()

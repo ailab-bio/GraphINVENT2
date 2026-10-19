@@ -233,7 +233,7 @@ class Workflow:
                 # Restart: resume the agent from the RL job checkpoint.
                 print("-- Resuming RL agent from checkpoint.", flush=True)
                 _ckpt_path = f"{self.constants.checkpoints_dir}model_restart_{self.restart_epoch}.pth"
-                _ckpt = torch.load(_ckpt_path, map_location="cpu")
+                _ckpt = torch.load(_ckpt_path, map_location="cpu", weights_only=False)
                 if isinstance(_ckpt, dict) and "model" in _ckpt:
                     # New-format checkpoint with optimizer/scheduler states
                     self.agent_model.load_state_dict(_ckpt["model"])
@@ -345,10 +345,31 @@ class Workflow:
                 params=self.model.parameters(), lr=self.constants.init_lr
             )
 
+            # On a restart `epochs` is the TOTAL for the run, not a count of
+            # additional epochs. Treating it as additional ran
+            # restart_epoch + epochs epochs against a one-cycle schedule sized
+            # for epochs, and OneCycleLR raised "Tried to step N times. The
+            # specified number of total steps is M" part-way through the first
+            # resumed epoch. A one-cycle schedule spans the whole run; there is
+            # no second cycle to extend it with.
             start_epoch = self.restart_epoch + 1
-            end_epoch = start_epoch + self.constants.epochs
+            end_epoch = self.constants.epochs + 1
+            if start_epoch >= end_epoch:
+                raise ValueError(
+                    f"restart: true, and the last checkpoint is at epoch "
+                    f"{self.restart_epoch} of the configured epochs: "
+                    f"{self.constants.epochs}, so there is nothing left to "
+                    "run.\n`epochs` is the total for the run rather than a "
+                    "number of additional epochs, because the learning-rate "
+                    "schedule is one cycle over the whole run. To train "
+                    "longer, raise `epochs` above "
+                    f"{self.restart_epoch} or start a new job directory."
+                )
 
             print("-- Defining scheduler.", flush=True)
+            # Sized from the same total as the original run. The restored state
+            # below carries total_steps too and wins, which is correct: the
+            # cycle belongs to the run, not to this invocation.
             self.scheduler = self._make_supervised_scheduler()
 
             if _opt_state is not None:
@@ -357,6 +378,18 @@ class Workflow:
             if _sched_state is not None:
                 print("-- Restoring scheduler state from checkpoint.", flush=True)
                 self.scheduler.load_state_dict(_sched_state)
+                consumed = _sched_state.get("_step_count", 0)
+                total = _sched_state.get("total_steps")
+                if total is not None and consumed > total:
+                    raise ValueError(
+                        f"The checkpoint's learning-rate schedule is already "
+                        f"complete: {consumed - 1} of {total} steps were taken "
+                        "before it was saved.\nThat checkpoint came from a run "
+                        "that finished its schedule, so there is no cycle left "
+                        "to resume. Start a new job directory, or use "
+                        "resume_from to fine-tune from this checkpoint with a "
+                        "fresh schedule."
+                    )
             else:
                 print(
                     "-- Warning: checkpoint has no optimizer/scheduler state "
@@ -383,7 +416,9 @@ class Workflow:
 
         return start_epoch, end_epoch
 
-    def _make_supervised_scheduler(self) -> torch.optim.lr_scheduler.OneCycleLR:
+    def _make_supervised_scheduler(
+        self, total_epochs: int | None = None
+    ) -> torch.optim.lr_scheduler.OneCycleLR:
         """
         Builds the OneCycle learning-rate schedule for supervised training.
 
@@ -398,6 +433,14 @@ class Workflow:
         `init_lr`, peaks at `max_rel_lr * init_lr`, and ends at
         `min_rel_lr * init_lr`, matching the documented meaning of those
         parameters (and the RL branch above).
+
+        `total_epochs` is the length of the WHOLE cycle, which on a restart is
+        not the number of epochs still to run. One cycle spans the entire
+        training run, so a resumed job restores a scheduler that has already
+        consumed the steps of the epochs it completed; sizing the cycle for
+        only the remaining epochs then overruns it and raises "Tried to step N
+        times. The specified number of total steps is M" part-way through the
+        first resumed epoch.
         """
         n_batches = len(self.train_dataloader)
         steps_per_epoch = max(1, math.ceil(n_batches / self.accumulation_steps))
@@ -407,7 +450,7 @@ class Workflow:
             div_factor=self.constants.max_rel_lr,
             final_div_factor=1.0 / self.constants.min_rel_lr,
             steps_per_epoch=steps_per_epoch,
-            epochs=self.constants.epochs,
+            epochs=total_epochs or self.constants.epochs,
         )
 
     @staticmethod
@@ -483,12 +526,11 @@ class Workflow:
     def _backup_stale_generation_files(self) -> None:
         """
         Before a fresh generation run, move any existing output (generation/
-        directory, *_samples.* files, generation.log) to a timestamped backup
+        directory, *_samples.* files) to a timestamped backup
         subdirectory, matching the pattern used by preprocessing and training.
         """
         job_dir = self.constants.job_dir
         results_dir = self.constants.results_dir
-        logs_dir = self.constants.logs_dir
 
         candidates = []
         gen_dir = results_dir + "generation"
@@ -498,8 +540,6 @@ class Workflow:
             f = results_dir + "molecules" + ext
             if os.path.exists(f):
                 candidates.append(f)
-        if os.path.exists(logs_dir + "generation.log"):
-            candidates.append(logs_dir + "generation.log")
 
         if not candidates:
             return
@@ -565,7 +605,7 @@ class Workflow:
         job exist in the job directory, move them to a timestamped backup
         subdirectory so the new run starts cleanly.
 
-        Backs up: convergence.log, generation.log, validation.log,
+        Backs up: convergence.log, validation.log,
         score.log (RL only), all model_restart_*.pth checkpoints, and
         the generation/ subdirectory.
         """
@@ -575,7 +615,10 @@ class Workflow:
         checkpoints_dir = self.constants.checkpoints_dir
         job_type = self.constants.job_type
 
-        log_names = ["convergence.log", "generation.log", "validation.log"]
+        # generation.log is not here: nothing writes it any more, metrics.json
+        # superseded it, and a backup list naming a file that cannot exist
+        # drifts from the set of files a job actually produces.
+        log_names = ["convergence.log", "validation.log"]
         if job_type == "goal_directed":
             log_names.append("score.log")
 
@@ -720,6 +763,9 @@ class Workflow:
                     valid_frac=self.constants.valid_frac,
                     seed=self.constants.seed,
                     max_n_nodes=self.constants.max_n_nodes,
+                    condition_dim=self.constants.condition_dim,
+                    conditioning=getattr(self.constants, "conditioning", None),
+                    use_chirality=self.constants.use_chirality,
                 )
             else:
                 # --- Mode B: verify all three .smi files are present ---
@@ -1353,7 +1399,7 @@ class Workflow:
                 f"* Evaluating checkpoint at {oracle_count} oracle calls.",
                 flush=True,
             )
-            ckpt = torch.load(ckpt_path, map_location="cpu")
+            ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
             if isinstance(ckpt, dict) and "model" in ckpt:
                 eval_model.load_state_dict(ckpt["model"])
             else:

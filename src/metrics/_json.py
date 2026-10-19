@@ -34,6 +34,38 @@ def _clean(value):
     return value
 
 
+# The schema the metrics.json envelope is written against. A reader that finds
+# a version it does not know should refuse rather than guess.
+SCHEMA_VERSION = 1
+
+# Why a metric is null. Three of these were specified; `not_implemented` was
+# added because the specified three do not cover a metric that is defined and
+# has no caller, and recording such a key as "not applicable to this job type"
+# would be false. Flagged for approval.
+CATEGORIES = (
+    "optional_tool_missing",
+    "insufficient_sample",
+    "not_applicable_to_job_type",
+    "not_implemented",
+)
+
+
+def _categorize(reason: str) -> dict:
+    """
+    Split a reason string into its category and its text.
+
+    The category is carried as a `"<category>: "` prefix at the point the
+    reason is written, so the metric code states it where the knowledge is.
+    A reason with no prefix is recorded as `not_implemented`, which is what an
+    uncalled metric family is.
+    """
+    text = " ".join(str(reason).split())
+    for category in CATEGORIES:
+        if text.startswith(category + ":"):
+            return {"category": category, "reason": text[len(category) + 1 :].strip()}
+    return {"category": "not_implemented", "reason": text}
+
+
 def collect(
     *,
     job_name: str,
@@ -61,6 +93,7 @@ def collect(
             unavailable[key] = "computed as undefined for this run"
 
     return {
+        "schema_version": SCHEMA_VERSION,
         "run": {
             "job_name": job_name,
             "job_type": job_type,
@@ -72,7 +105,9 @@ def collect(
             .isoformat(timespec="seconds"),
         },
         "metrics": cleaned,
-        "unavailable": dict(sorted(unavailable.items())),
+        "unavailable": {
+            key: _categorize(reason) for key, reason in sorted(unavailable.items())
+        },
     }
 
 

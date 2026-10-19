@@ -36,6 +36,7 @@ import shutil
 import subprocess
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import get_context
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence, Tuple
 
@@ -103,6 +104,21 @@ def _prepare_ligand_pdbqt(smiles: str, out_path: Path, seed: int = 42) -> bool:
     )
     sdf_path.unlink(missing_ok=True)
     return result.returncode == 0 and out_path.exists()
+
+
+def _default_workers() -> int:
+    """
+    Worker count for the docking pool.
+
+    Sized from the cpuset this job was actually given, not from the node. A
+    GH200 node reports 256 cores, so `os.cpu_count() - 1` asked for 255
+    workers inside an allocation that owns 72, which oversubscribes the cores
+    and multiplies the per-worker memory by three and a half.
+    """
+    allocated = os.environ.get("SLURM_CPUS_PER_TASK")
+    if allocated and allocated.isdigit() and int(allocated) > 0:
+        return max(1, int(allocated) - 1)
+    return max(1, (os.cpu_count() or 2) - 1)
 
 
 def _dock_one(args: tuple) -> float:
@@ -274,9 +290,7 @@ class VinaOracle(BaseOracle):
         self.n_poses = int(n_poses)
         self.seed = int(seed)
         self.cpu_per_dock = int(cpu_per_dock)
-        self.n_workers = (
-            int(n_workers) if n_workers else max(1, (os.cpu_count() or 2) - 1)
-        )
+        self.n_workers = int(n_workers) if n_workers else _default_workers()
         self._dock_fn = dock_fn or _dock_one
 
     def _job(self, smiles: Optional[str]) -> tuple:
@@ -299,7 +313,13 @@ class VinaOracle(BaseOracle):
         if self.n_workers == 1 or len(jobs) == 1:
             return [float(self._dock_fn(job)) for job in jobs]
 
-        with ProcessPoolExecutor(max_workers=self.n_workers) as pool:
+        # A spawn context, never fork. The parent may hold a CUDA context from
+        # the generative model, and forking a CUDA-initialized process gives
+        # children a broken handle that fails at the first allocation rather
+        # than at fork.
+        with ProcessPoolExecutor(
+            max_workers=self.n_workers, mp_context=get_context("spawn")
+        ) as pool:
             return [float(v) for v in pool.map(self._dock_fn, jobs)]
 
     def predict_with_uncertainty(

@@ -86,6 +86,17 @@ def render_slurm_script(params: dict) -> str:
         slurm["partition_gpu"] if slurm["gpus"] else slurm["partition_cpu"]
     )
 
+    # The account follows the partition. On Arrhenius a GPU job is charged to
+    # `<project>-gpu` and a CPU job to the bare `<project>`, and submitting a
+    # CPU job under the -gpu account is rejected. Honoring the suffix only in a
+    # comment left every preprocess and screening job charged to the GPU
+    # account, so this derives it instead of asking for it twice.
+    account = slurm["account"]
+    if slurm.get("account_cpu") and not slurm["gpus"]:
+        account = slurm["account_cpu"]
+    elif not slurm["gpus"] and account.endswith("-gpu"):
+        account = account[: -len("-gpu")]
+
     extra = []
     if slurm["gpus"]:
         extra.append(f"#SBATCH --gpus={slurm['gpus']}")
@@ -93,7 +104,7 @@ def render_slurm_script(params: dict) -> str:
         extra.append(f"#SBATCH --mem={slurm['memory']}")
 
     return TEMPLATE.read_text().format(
-        account=slurm["account"],
+        account=account,
         partition=partition,
         job_name=job_dir.name,
         time=slurm["time"],

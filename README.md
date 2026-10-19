@@ -208,14 +208,11 @@ preprocess (TSV with properties) → conditional → generate with sample_condit
 
 | Document | Topic |
 |----------|-------|
-| [01 Preprocessing](./tutorials/01_preprocessing.md) | SMILES to HDF5, vocabularies, splits |
-| [02 Pretraining](./tutorials/02_pretraining.md) | Supervised training from scratch |
-| [03 Transfer learning](./tutorials/03_transfer_learning.md) | Continuing from a checkpoint |
-| [04 Reinforcement learning](./tutorials/04_reinforcement_learning.md) | Goal-directed optimisation, policy-gradient fine-tuning |
-| [05 Sampling](./tutorials/05_sampling.md) | Generating and cleaning molecules |
-| [05 Conditional generation](./tutorials/05_conditional_generation.md) | Property-conditioned models |
-| [06 Custom oracles](./tutorials/06_custom_oracles.md) | Defining your own scoring objectives, transforms, uncertainty modulation |
-| [Evaluation](./tutorials/evaluation.md) | Every metric and which job types compute it |
+| [Preprocessing](./tutorials/preprocess.md) | SMILES to HDF5, feature vocabularies, the data splits |
+| [Unconditional training](./tutorials/unconditional.md) | Training from scratch, and transfer learning with `resume_from` |
+| [Generating and evaluating](./tutorials/generate.md) | Sampling a checkpoint, the metric table, and `sample_mode: evaluate` |
+| [Conditional generation](./tutorials/conditional.md) | Property-conditioned training and sampling |
+| [Goal-directed optimization](./tutorials/goal_directed.md) | Policy-gradient fine-tuning, the reward-hacking detectors, custom oracles |
 
 `experiments/` holds end-to-end configs and scripts for the paper's four experiments, each with
 its own README.
@@ -391,14 +388,14 @@ Python 3.6/3.8 → **3.9 or newer**.
 | Automatic feature detection | `atom_types`, `formal_charge`, `imp_H`, and `max_n_nodes` are scanned from the SMILES rather than specified by hand |
 | Built-in splitting | A single `smiles_file` is deduplicated and split into train/valid/test by a random, Butina-cluster, or user-defined strategy |
 | Multi-dataset preprocessing | Several datasets in one run, sharing a union feature vocabulary so their encodings stay compatible |
-| Conditional generation | Continuous property conditioning via a virtual seed node; see [the tutorial](./tutorials/05_conditional_generation.md) |
-| User-defined oracles | Scoring objectives declared in the job config: a pickled scikit-learn surrogate, any importable Python callable, or AutoDock Vina docking; each with its own transform onto [0, 1] and a direction, so an anti-target is the same machinery as a target. See [the tutorial](./tutorials/06_custom_oracles.md) |
+| Conditional generation | Continuous property conditioning via a virtual seed node; see [the tutorial](./tutorials/conditional.md) |
+| User-defined oracles | Scoring objectives declared in the job config: a pickled scikit-learn surrogate, any importable Python callable, or AutoDock Vina docking; each with its own transform onto [0, 1] and a direction, so an anti-target is the same machinery as a target. See [the tutorial](./tutorials/goal_directed.md) |
 | Uncertainty-aware RL | An oracle that reports predictive spread can damp the reward or the gradient it contributes, keeping the agent inside the surrogate's applicability domain (Medina and Janet, [arXiv:2606.24990](https://arxiv.org/abs/2606.24990)) |
 | Apple Silicon (MPS) support | Device selection covers MPS as well as CUDA and CPU |
 | Reproducibility logging | `params_all.json` records the seed, Python/PyTorch/RDKit/NumPy versions, CUDA version, device, and git commit for every run |
 | Seed control | `"seed": <int>` fixes Python, NumPy, and PyTorch RNGs; 0 leaves them unseeded |
 | Backup on re-run | Re-running into an existing output directory moves the previous results to `_previous_run_<timestamp>/` |
-| Extended metrics | Novelty, SA score, internal diversity, and test-set nearest-neighbour similarity are logged during training; see [the evaluation reference](./tutorials/evaluation.md) |
+| Metrics | Every metric is defined once, in CLAUDE.md's "Evaluation metrics" section, implemented once in `src/metrics/`, and written to `results/metrics.json` by every job type that produces metrics |
 | `visualize.py`, `cleanup.py` | Molecule grid rendering and output housekeeping |
 | Test suite | `tests/` covers preprocessing round-trips, model shapes and gradients, scoring, oracles, conditioning, and both metrics packages |
 

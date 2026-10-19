@@ -1,0 +1,22 @@
+# SMOKE TEST. The experiment's real config with only the size parameters
+# overridden: a few hundred molecules from the real dataset, one or two epochs,
+# a few hundred samples. The features, conditioning, scoring function and split
+# strategy are the experiment's own, because the point is to catch the defects
+# that have nothing to do with scale.
+#
+#   python submit.py experiments/mg_conditional/jobs/smoke_train
+# resume_from dropped: the experiment's prior is unconditional and the
+# architecture-key rule forbids changing condition_dim across a checkpoint.
+job_type: conditional
+dataset_dir: toy_glue_cond
+epochs: 2
+batch_size: 16
+accumulation_steps: 4
+sample_every: 2
+n_samples: 100
+device: cpu
+sample_conditions:
+  is_ikzf: 1.0
+  is_gspt1: 0.0
+  is_rbm39: 0.0
+block_size: 1000

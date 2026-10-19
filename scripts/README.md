@@ -91,7 +91,7 @@ well and mean nothing.
 
 A random forest is the default partly because its per-tree spread is a free
 uncertainty estimate, which is what the uncertainty modulation described in
-`tutorials/06_custom_oracles.md` consumes. The default scaffold split is
+`tutorials/goal_directed.md` consumes. The default scaffold split is
 pessimistic relative to a random split; that is the point, since a random split
 of congeneric series measures memorisation.
 

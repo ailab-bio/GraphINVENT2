@@ -63,6 +63,39 @@ def logp(mol: Mol) -> float:
     return float(Descriptors.MolLogP(mol))
 
 
+def hbd(mol: Mol) -> float:
+    """Hydrogen-bond donor count."""
+    from rdkit.Chem import Descriptors
+
+    return float(Descriptors.NumHDonors(mol))
+
+
+def hba(mol: Mol) -> float:
+    """Hydrogen-bond acceptor count."""
+    from rdkit.Chem import Descriptors
+
+    return float(Descriptors.NumHAcceptors(mol))
+
+
+def tpsa(mol: Mol) -> float:
+    """Topological polar surface area (A^2)."""
+    from rdkit.Chem import Descriptors
+
+    return float(Descriptors.TPSA(mol))
+
+
+def rotatable_bonds(mol: Mol) -> float:
+    """Rotatable bond count."""
+    from rdkit.Chem import Descriptors
+
+    return float(Descriptors.NumRotatableBonds(mol))
+
+
+def heavy_atoms(mol: Mol) -> float:
+    """Heavy-atom count."""
+    return float(mol.GetNumHeavyAtoms())
+
+
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
@@ -72,4 +105,9 @@ PROPERTY_REGISTRY: dict[str, Callable[[Mol], float]] = {
     "sa_score": sa_score,
     "mol_weight": mol_weight,
     "logp": logp,
+    "hbd": hbd,
+    "hba": hba,
+    "tpsa": tpsa,
+    "rotatable_bonds": rotatable_bonds,
+    "heavy_atoms": heavy_atoms,
 }

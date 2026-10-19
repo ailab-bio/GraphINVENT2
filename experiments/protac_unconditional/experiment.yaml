@@ -21,4 +21,21 @@ seed: 1
 
 slurm:
   account: naiss2024-5-630-gpu
-  partition: gpu
+  # partition left unset on purpose: submit.py uses partition_gpu when
+  # gpus > 0 and partition_cpu otherwise, so a preprocess or screening job
+  # with gpus: 0 does not occupy a GPU node. Hard-coding gpu here sent 13
+  # CPU-only jobs to the GPU partition, one of them for 24 hours.
+
+# property_window_rate for a bifunctional program. The Rule of 5 default is not
+# merely wrong here, it is inverted: measured on 2,000 real TPD-DB degraders
+# only 10.2% fall inside the Ro5 window, while a toy run that generated
+# single-atom fragments scored 1.0. The metric exists to catch a model drifting
+# toward smaller non-degrader-like molecules, and with only upper bounds it
+# scores that exact failure as perfect. These are the TACFormer PROTAC-like
+# bounds from manuscript/experiment-plan.md, lower bounds included.
+property_window:
+  mol_weight: [650.0, 1200.0]
+  tpsa: [120.0, 320.0]
+  rotatable_bonds: [12.0, 45.0]
+  hba: [8.0, 24.0]
+  hbd: [0.0, 8.0]

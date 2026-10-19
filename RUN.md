@@ -223,6 +223,17 @@ python submit.py experiments/tutorial_unconditional/jobs/debug --slurm
 To submit by hand instead, `sbatch experiments/<exp>/jobs/<job>/run.sbatch`
 does the same thing.
 
+To watch a run, point TensorBoard at the job's log directory:
+
+```bash
+tensorboard --logdir experiments/<exp>/jobs/<job>/logs/tensorboard/
+```
+
+This needs `use_tensorboard: true`, and without it an optimization run keeps no
+per-step record at all. Any run you intend to report should set it, because the
+collapse of diversity over steps is the thing the metric suite exists to make
+visible and it is only observable as a trajectory.
+
 *Unverified: all of it. The rendering was tested; the submission was not.*
 
 ---

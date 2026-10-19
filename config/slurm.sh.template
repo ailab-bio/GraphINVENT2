@@ -10,6 +10,20 @@
 
 set -euo pipefail
 
+# Lmod defines `module` as a shell function, and a non-interactive shell that
+# never sourced the profile does not have it. Without this check a missing
+# Lmod surfaces three steps later as a missing shared library, which reads
+# like a build problem rather than a login-shell problem. `#!/bin/bash -l`
+# above is the mitigation; this is the assertion that it worked.
+if [ -n "{modules}" ] && ! command -v module >/dev/null 2>&1 \
+        && ! declare -F module >/dev/null 2>&1; then
+    echo "FATAL: this job asks for module loads and \`module\` is not defined." >&2
+    echo "Lmod provides it as a shell function, so a non-login shell does not" >&2
+    echo "have it. Check that the script runs under 'bash -l' and that the" >&2
+    echo "cluster's profile is readable from a compute node." >&2
+    exit 1
+fi
+
 {modules}
 export MPLBACKEND=Agg
 export QT_QPA_PLATFORM=offscreen

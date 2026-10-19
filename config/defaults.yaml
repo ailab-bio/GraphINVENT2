@@ -182,6 +182,12 @@ eval_sample_size: 30000
 # a molecule is a success at or above this score
 success_threshold: 0.5
 
+# What success_rate counted, in words. Set per experiment beside
+# success_threshold: a rate with no statement of the criterion is not readable,
+# and for a composite objective the threshold alone does not carry it. Echoed
+# verbatim into metrics.json.
+success_definition: null
+
 # --- generation and evaluation ---------------------------------------------
 
 # "generate" writes molecules and metrics; "evaluate" computes NLL and UC-JSD
@@ -201,6 +207,17 @@ sample_mode: generate
 # the right measure for the decomposed warheads, where molecules are drug-sized.
 bifunctional: false
 
+# property_window_rate: the fraction of unique valid molecules whose every
+# named property falls inside its window. Each experiment sets its own bounds
+# and they are echoed into metrics.json beside the value, because the rate is
+# meaningless without them. The default is the Rule of 5, which suits the
+# drug-like development sets; a degrader or electrolyte program overrides it.
+property_window:
+  mol_weight: [null, 500.0]
+  logp: [null, 5.0]
+  hbd: [null, 5.0]
+  hba: [null, 10.0]
+
 # --- SLURM -----------------------------------------------------------------
 
 # Everything that differs between clusters lives here. Another cluster is a
@@ -212,6 +229,11 @@ slurm:
   # the bare name; on Arrhenius it does, e.g. naiss2024-5-630-gpu for a GPU job
   # and naiss2024-5-630 for a CPU one.
   account: null
+
+  # A CPU job is charged to the bare project name on Arrhenius while a GPU job
+  # needs the -gpu suffix, so submit.py strips the suffix when gpus is 0. Set
+  # this only if your cluster names the CPU account some other way.
+  account_cpu: null
 
   # Left unset, partition_gpu is used when gpus > 0 and partition_cpu otherwise.
   partition: null

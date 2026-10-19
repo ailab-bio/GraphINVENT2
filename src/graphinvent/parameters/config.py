@@ -34,7 +34,16 @@ JOB_TYPES = (
     "generate",
 )
 
-SPLIT_TYPES = ("scaffold", "random", "custom")
+SPLIT_TYPES = ("scaffold", "warhead_scaffold", "random", "custom")
+
+# The only injection mechanism the GGNN implements. The key existed with no
+# dispatch and no validation, so any value behaved as "virtual_node" and a
+# config naming something else was accepted in silence.
+CONDITION_TYPES = ("virtual_node",)
+
+# Where a condition vector comes from. Only the property columns of the SMILES
+# file are implemented.
+CONDITION_SOURCES = ("smiles_file",)
 
 # Keys that describe the model's shape. When a checkpoint is loaded they come
 # from the job that produced it; a conflicting value in the config is an error.
@@ -225,6 +234,47 @@ def _validate(params: dict, config_path: Path) -> None:
             "either represented explicitly or not represented at all."
         )
 
+    # The HDF5 dataset holds an open file handle, which cannot be pickled for a
+    # spawned worker and is not fork-safe for a forked one, where it corrupts
+    # the loaded graphs rather than failing. A default of 0 is not enforcement.
+    if params.get("n_workers", 0) != 0:
+        raise ValueError(
+            f"n_workers: {params.get('n_workers')} is not supported; it must be "
+            "0.\nThe HDF5 dataset holds an open file handle that is neither "
+            "picklable nor fork-safe, and a worker process corrupts the loaded "
+            "graphs silently rather than failing.\nControl loading cost with "
+            "block_size instead."
+        )
+
+    if params.get("condition_type") not in CONDITION_TYPES:
+        raise ValueError(
+            f"condition_type: {params.get('condition_type')} is not an "
+            "injection mechanism.\n"
+            f"Valid values: {', '.join(CONDITION_TYPES)}"
+        )
+
+    conditioning = params.get("conditioning") or {}
+    if conditioning:
+        if not isinstance(conditioning, dict):
+            raise ValueError(
+                f"conditioning must be a block with 'properties' and 'source', "
+                f"got {type(conditioning).__name__}."
+            )
+        source = conditioning.get("source")
+        if source is not None and source not in CONDITION_SOURCES:
+            raise ValueError(
+                f"conditioning.source: {source} is not a condition source.\n"
+                f"Valid values: {', '.join(CONDITION_SOURCES)}"
+            )
+        properties = conditioning.get("properties") or []
+        if properties and params.get("condition_dim", 0) != len(properties):
+            raise ValueError(
+                f"conditioning.properties names {len(properties)} properties "
+                f"{list(properties)} but condition_dim is "
+                f"{params.get('condition_dim', 0)}. The condition vector has "
+                "one slot per property."
+            )
+
     if job_type == "preprocess":
         if params["split_type"] not in SPLIT_TYPES:
             raise ValueError(
@@ -277,6 +327,19 @@ def _validate(params: dict, config_path: Path) -> None:
                     f"    {rl_key}: {params.get(supervised)}"
                 )
 
+    # A baseline that was declared and does not resolve is worse than none:
+    # the metrics then report every baseline_ key as null with the reason "no
+    # unconditional baseline sample is declared", which is false, and the
+    # conditional numbers beside them look readable when they are not.
+    baseline = params.get("baseline_results_dir")
+    if baseline and not Path(baseline).exists():
+        raise ValueError(
+            f"baseline_results_dir {baseline} does not exist.\n"
+            "It is the .smi of the same model sampled with no condition set, "
+            "and every conditional metric is reported against it. Remove the "
+            "key to run without a baseline, or point it at a file that exists."
+        )
+
     if job_type in ("goal_directed", "generate"):
         checkpoint = params.get("pretrained_model_path")
         if not checkpoint:
@@ -322,6 +385,26 @@ def _apply_checkpoint_architecture(params: dict, explicit: dict) -> None:
         if key not in produced_by:
             continue
         if key in explicit and explicit[key] != produced_by[key]:
+            # condition_dim and conditioning are properties of the DATASET,
+            # recorded in its preprocessing.yaml, so "remove the key from
+            # config.yaml" is not advice anyone can follow: the value is not in
+            # config.yaml. A conditional dataset resumed from an unconditional
+            # checkpoint is the case that reaches this, and it needs a
+            # different answer, not a shorter config.
+            if key in ("condition_dim", "conditioning"):
+                raise ValueError(
+                    f"This job's dataset was preprocessed with {key}: "
+                    f"{explicit[key]}, but the checkpoint {checkpoint} was "
+                    f"trained with {key}: {produced_by[key]}.\n"
+                    "A conditional model cannot be initialized from an "
+                    "unconditional checkpoint: the condition encoder and the "
+                    "virtual-edge message network do not exist in it, and "
+                    "condition_dim is fixed by the dataset rather than by "
+                    "this config.\n"
+                    "Either drop resume_from and train this model from "
+                    "scratch, or point resume_from at a checkpoint trained on "
+                    "a dataset with the same conditioning."
+                )
             raise ValueError(
                 f"config.yaml sets {key}: {explicit[key]}, but the checkpoint "
                 f"{checkpoint} was trained with {key}: {produced_by[key]}.\n"

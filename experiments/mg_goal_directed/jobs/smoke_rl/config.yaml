@@ -1,0 +1,31 @@
+# SMOKE TEST. The experiment's real config with only the size parameters
+# overridden: a few hundred molecules from the real dataset, one or two epochs,
+# a few hundred samples. The features, conditioning, scoring function and split
+# strategy are the experiment's own, because the point is to catch the defects
+# that have nothing to do with scale.
+#
+#   python submit.py experiments/mg_goal_directed/jobs/smoke_rl
+job_type: goal_directed
+pretrained_model_path: experiments/mg_unconditional/jobs/smoke_train/checkpoints/model_restart_2.pth
+rl_steps: 2
+rl_best_agent_every: 5
+rl_eval_every: 2
+rl_batch_size: 256
+accumulation_steps: 1
+n_samples: 50
+sigma: 20
+alpha: 0.5
+score_components:
+- QED
+score_type: continuous
+success_threshold: 0.3
+success_definition: one-versus-rest classifier probability >= 0.7 for degrades-GSPT1-rather-than-another-neosubstrate,
+  over unique valid molecules. This is a chemotype-selectivity criterion and NOT a
+  potency criterion.
+use_tensorboard: true
+device: cpu
+dataset_dir: toy_glue
+batch_size: 16
+block_size: 1000
+score_thresholds:
+- 0.0

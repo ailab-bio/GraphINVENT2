@@ -1,0 +1,18 @@
+# SMOKE TEST. The experiment's real config with only the size parameters
+# overridden: a few hundred molecules from the real dataset, one or two epochs,
+# a few hundred samples. The features, conditioning, scoring function and split
+# strategy are the experiment's own, because the point is to catch the defects
+# that have nothing to do with scale.
+#
+#   python submit.py experiments/protac_conditional/jobs/smoke_generate
+job_type: generate
+sample_mode: generate
+dataset_dir: toy_protac_cond
+pretrained_model_path: experiments/protac_conditional/jobs/smoke_train/checkpoints/model_restart_2.pth
+n_samples: 200
+batch_size: 100
+device: cpu
+sample_conditions:
+  is_ar: 1.0
+  is_btk: 0.0
+  is_egfr: 0.0

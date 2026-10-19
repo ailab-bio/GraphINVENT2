@@ -6,6 +6,7 @@ including dataset splitting (random, Butina, or custom) and HDF5 conversion.
 # load general packages and functions
 import os
 import random
+import sys
 from pathlib import Path
 from typing import List, Tuple
 
@@ -191,7 +192,6 @@ def _scaffold_split_indices(
     99.4% CRBN. That made `fcd` and `nll_test` a measurement against one E3
     chemistry, and checkpoint selection likewise.
     """
-    import random as _random
 
     from rdkit import Chem
     from rdkit.Chem.Scaffolds import MurckoScaffold
@@ -204,15 +204,30 @@ def _scaffold_split_indices(
         scaffold = MurckoScaffold.MurckoScaffoldSmiles(mol=mol, includeChirality=False)
         groups.setdefault(scaffold, []).append(i)
 
-    # Shuffle first, then sort by descending group size. Python's sort is
-    # stable, so equal-sized groups keep the shuffled order and the tail is a
-    # random sample of singletons rather than an alphabetical sweep.
+    print(f"  {len(groups)} distinct Bemis-Murcko scaffolds.", flush=True)
+    return _assign_groups(groups, len(smiles), train_frac, valid_frac, seed)
+
+
+def _assign_groups(
+    groups: dict,
+    n: int,
+    train_frac: float,
+    valid_frac: float,
+    seed: int,
+) -> Tuple[List[int], List[int], List[int]]:
+    """
+    Assign whole groups to train, validation and test, largest group first.
+
+    Shuffle first, then sort by descending group size. Python's sort is stable,
+    so equal-sized groups keep the shuffled order and the tail is a random
+    sample of singletons rather than an alphabetical sweep.
+    """
+    import random as _random
+
     ordered = sorted(groups.items(), key=lambda kv: kv[0])
     _random.Random(seed).shuffle(ordered)
     ordered.sort(key=lambda kv: -len(kv[1]))
-    print(f"  {len(ordered)} distinct Bemis-Murcko scaffolds.", flush=True)
 
-    n = len(smiles)
     n_train_target = int(round(n * train_frac))
     n_valid_target = int(round(n * valid_frac))
 
@@ -230,6 +245,154 @@ def _scaffold_split_indices(
     return train_idx, valid_idx, test_idx
 
 
+def _warhead_scaffold_split_indices(
+    smiles: List[str],
+    train_frac: float,
+    valid_frac: float,
+    seed: int,
+) -> Tuple[List[int], List[int], List[int]]:
+    """
+    Group bifunctional molecules by the Bemis-Murcko scaffold of their
+    target-binding component, and assign whole groups to splits.
+
+    A whole-molecule scaffold of a PROTAC contains every ring system in the
+    molecule and so is nearly unique per compound: measured on 476 decomposed
+    TPD-DB degraders, 95.4% of them have a scaffold of their own. Grouping by
+    it therefore cannot hold analogues together, and the split degenerates into
+    a random one. On that same sample, a whole-molecule scaffold split left
+    44.7% of test molecules sharing a warhead scaffold with training, against
+    0% under this strategy.
+
+    Decomposition comes from PROTAC-Splitter and costs about 2 s per molecule,
+    cached on disk by `metrics._components.decompose`. A molecule with no
+    usable warhead scaffold, because the decomposition failed or because the
+    warhead has no ring system, has nothing to group by, so it forms its own
+    group and is counted. The no-shared-warhead guarantee therefore holds over
+    the molecules that yielded a warhead scaffold, and the count of those that
+    did not is printed.
+    """
+    from rdkit import Chem
+    from rdkit.Chem.Scaffolds import MurckoScaffold
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from metrics._components import cap_attachment_points, decompose
+
+    print(
+        f"* Decomposing {len(smiles)} molecules for a warhead_scaffold split. "
+        "This is the expensive step; results are cached under "
+        "tools/splitter-cache/.",
+        flush=True,
+    )
+    fragments = decompose(list(smiles))
+
+    groups: dict = {}
+    n_ungrouped = 0
+    for i, (smi, frag) in enumerate(zip(smiles, fragments)):
+        warhead = cap_attachment_points(frag["poi"]) if frag else None
+        mol = Chem.MolFromSmiles(warhead) if warhead else None
+        scaffold = (
+            MurckoScaffold.MurckoScaffoldSmiles(mol=mol, includeChirality=False)
+            if mol is not None
+            else None
+        )
+        if not scaffold:
+            # Its own group, keyed on the molecule, so it cannot silently join
+            # another warhead's group.
+            n_ungrouped += 1
+            groups.setdefault(f"__no_warhead_scaffold__{smi}", []).append(i)
+        else:
+            groups.setdefault(scaffold, []).append(i)
+
+    n_grouped = len(smiles) - n_ungrouped
+    print(
+        f"  {len(groups) - n_ungrouped} distinct warhead scaffolds over "
+        f"{n_grouped} molecules; {n_ungrouped} yielded no warhead scaffold and "
+        "were grouped alone, so the no-shared-warhead guarantee covers "
+        f"{n_grouped} of {len(smiles)}.",
+        flush=True,
+    )
+    if n_grouped == 0:
+        raise ValueError(
+            "split_type: warhead_scaffold, but PROTAC-Splitter decomposed none "
+            "of the molecules, so there are no warheads to group by. Check that "
+            "this dataset is bifunctional."
+        )
+    return _assign_groups(groups, len(smiles), train_frac, valid_frac, seed)
+
+
+def _check_conditioning(
+    file_columns: List[str],
+    declared: List[str],
+    condition_dim: int,
+    smiles_file: Path,
+) -> None:
+    """
+    Require the property columns in the file to be exactly what the config
+    declares, in the same order.
+
+    The condition vector is built positionally from the file's columns, while
+    `conditioning.properties` is what generation later uses to label each slot
+    and to look up the property function that scores it. Nothing connected the
+    two. A config that listed the same properties in the other order trained on
+    one property and reported it under the name of another, and every
+    `condition_success_rate_<property>` and `condition_mae_<property>` it
+    produced described the wrong column. There was no error and no warning:
+    both orderings wrote a byte-identical HDF5.
+
+    The same silence dropped property columns entirely when `conditioning` was
+    left unset, which is how a conditional dataset came to be preprocessed as
+    an unconditional one with `condition_dim: 0` as the only evidence.
+    """
+    declared = list(declared or [])
+
+    if file_columns and condition_dim == 0:
+        raise ValueError(
+            f"{smiles_file} carries property columns {file_columns}, but "
+            "condition_dim is 0, so they would be dropped and the dataset "
+            "preprocessed as unconditional.\n"
+            f"Set condition_dim: {len(file_columns)} and conditioning: "
+            f"{{properties: {file_columns}, source: smiles_file}}, or remove "
+            "the columns from the file."
+        )
+
+    if condition_dim == 0:
+        return
+
+    if not file_columns:
+        raise ValueError(
+            f"condition_dim is {condition_dim}, but {smiles_file} has no "
+            "property columns. Provide a tab-separated file whose first column "
+            "header is 'SMILES' followed by one column per property."
+        )
+
+    if len(file_columns) != condition_dim:
+        raise ValueError(
+            f"condition_dim is {condition_dim}, but {smiles_file} has "
+            f"{len(file_columns)} property columns: {file_columns}."
+        )
+
+    if not declared:
+        raise ValueError(
+            f"{smiles_file} has property columns {file_columns} and "
+            f"condition_dim is {condition_dim}, but conditioning.properties is "
+            "unset, so nothing names the slots of the condition vector.\n"
+            f"Set conditioning: {{properties: {file_columns}, source: "
+            "smiles_file}}."
+        )
+
+    if declared != file_columns:
+        raise ValueError(
+            "conditioning.properties does not match the property columns of "
+            f"{smiles_file}, and the two have to agree in order.\n"
+            f"    config declares: {declared}\n"
+            f"    file provides:   {file_columns}\n"
+            "The condition vector is built from the file's columns in file "
+            "order, while generation labels each slot from "
+            "conditioning.properties, so a mismatch conditions on one property "
+            "and reports it as another."
+        )
+
+
 def split_smiles_file(
     smiles_file: str,
     dataset_dir: str,
@@ -238,6 +401,9 @@ def split_smiles_file(
     valid_frac: float,
     seed: int,
     max_n_nodes: int,
+    condition_dim: int = 0,
+    conditioning: dict | None = None,
+    use_chirality: bool = False,
 ) -> int:
     """
     Read `smiles_file`, split it, and write train.smi / valid.smi / test.smi
@@ -249,12 +415,20 @@ def split_smiles_file(
     Args:
         smiles_file : Path to the input SMILES file (plain or TSV).
         dataset_dir : Directory where the split .smi files will be written.
-        split_type  : One of "scaffold", "random", or "custom".
+        split_type  : One of "scaffold", "warhead_scaffold" or "random"; "custom"
+                      is a hook with no implementation.
         train_frac  : Fraction of molecules for the training set.
         valid_frac  : Fraction for the validation set.
         seed        : Seed for the random split.
         max_n_nodes : Heavy-atom cap. Larger molecules cannot be represented at
                       this padding width and are dropped before splitting.
+        condition_dim : Width of the condition vector, 0 for unconditional.
+        conditioning  : The job's `conditioning` block, whose `properties` must
+                      name the file's property columns in the file's order.
+        use_chirality : Whether the graph representation carries a chiral tag.
+                      Deduplication is keyed on the representation the model
+                      sees, so that two stereoisomers the model cannot tell
+                      apart cannot land in two different splits.
 
     Returns:
         The number of molecules dropped for exceeding `max_n_nodes`.
@@ -275,6 +449,15 @@ def split_smiles_file(
     has_conditions = bool(condition_vectors)
     print(f"  {len(smiles)} molecules read.", flush=True)
 
+    # Before anything is written: the file's columns and the config's
+    # declaration have to be the same list in the same order.
+    _check_conditioning(
+        list(condition_names),
+        (conditioning or {}).get("properties") or [],
+        int(condition_dim),
+        smiles_file,
+    )
+
     # Deduplicate on canonical SMILES before splitting.  A molecule present
     # twice in the input would otherwise land in two different splits, leaking
     # test molecules into training and inflating every novelty number.
@@ -292,7 +475,20 @@ def split_smiles_file(
         if mol is not None and mol.GetNumAtoms() > max_n_nodes:
             n_oversized += 1
             continue
-        key = Chem.MolToSmiles(mol) if mol is not None else smi
+        # Keyed on the representation the MODEL sees, not on the isomeric
+        # string. With use_chirality false the graph carries no chiral tag, so
+        # two epimers are one molecule to the model; keying on the isomeric
+        # SMILES let them survive as two records and land in different splits,
+        # which trains on a molecule and then selects the checkpoint on the
+        # same molecule. Measured on the TPD-DB degrader corpus, flattening
+        # collapses 1,578 of 21,429 entries, and the shipped toy split had one
+        # such pair straddling train and validation: the two alpha-methyl
+        # epimers of one VH032-type VHL ligand.
+        key = (
+            Chem.MolToSmiles(mol, isomericSmiles=use_chirality)
+            if mol is not None
+            else smi
+        )
         if key in seen:
             continue
         seen[key] = i
@@ -323,6 +519,10 @@ def split_smiles_file(
 
     if split_type == "scaffold":
         train_idx, valid_idx, test_idx = _scaffold_split_indices(
+            smiles, train_frac, valid_frac, seed
+        )
+    elif split_type == "warhead_scaffold":
+        train_idx, valid_idx, test_idx = _warhead_scaffold_split_indices(
             smiles, train_frac, valid_frac, seed
         )
     elif split_type == "random":

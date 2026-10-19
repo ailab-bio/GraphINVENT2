@@ -59,6 +59,19 @@ def _top_mean(scores: list, k: int) -> float | None:
     return float(np.mean(sorted(scores, reverse=True)[:k]))
 
 
+def top100(scored: list) -> list:
+    """
+    The 100 highest-scoring (smiles, score) pairs, ties broken by SMILES.
+
+    One definition of "the top 100", because several metrics are computed over
+    it and they have to be computed over the *same* hundred molecules:
+    `top100_scaffold_count` and `top100_internal_diversity` here, and
+    `top100_warhead_scaffold_count` in `_components`, which needs the molecules
+    themselves in order to decompose them.
+    """
+    return sorted(scored, key=lambda pair: (-pair[1], pair[0]))[:100]
+
+
 def compute_at_budget_metrics(optimization_log: list) -> dict:
     """
     Oracle score statistics at the budgets CLAUDE.md tabulates.
@@ -152,11 +165,11 @@ def compute_set_level_metrics(
     # The top 100 by score. This is where reward hacking shows: overall
     # diversity stays high while the winning set collapses onto one scaffold,
     # so these two are reported over the top 100 and not over everything.
-    top100 = sorted(scored, key=lambda pair: (-pair[1], pair[0]))[:100]
-    top100_smiles = [smi for smi, _ in top100]
-    scaffolds = {
-        s for s in (bemis_murcko(smi) for smi in top100_smiles) if s is not None
-    }
+    top100_smiles = [smi for smi, _ in top100(scored)]
+    # Falsy, not just None: RDKit returns an empty SMILES for a molecule with no
+    # ring system, and counting that as a scaffold adds a phantom one to the
+    # tally whenever an acyclic molecule reaches the top 100.
+    scaffolds = {s for s in (bemis_murcko(smi) for smi in top100_smiles) if s}
     results["top100_scaffold_count"] = len(scaffolds)
     results["top100_internal_diversity"] = (
         compute_internal_diversity(sorted(top100_smiles), max_mols=subsample)[
