@@ -35,6 +35,8 @@ JOB_TYPES = (
 )
 
 SPLIT_TYPES = ("scaffold", "warhead_scaffold", "random", "custom")
+SAMPLE_MODES = ("generate", "evaluate")
+OPTIMIZERS = ("graphinvent", "reinvent4")
 
 # The only injection mechanism the GGNN implements. The key existed with no
 # dispatch and no validation, so any value behaved as "virtual_node" and a
@@ -257,6 +259,37 @@ def _validate(params: dict, config_path: Path) -> None:
             "block_size instead."
         )
 
+    # Checked for every job type, not just generate: the default is inherited
+    # everywhere, so a typo in an experiment.yaml would otherwise sit unnoticed
+    # until a generate job in that experiment ran.
+    if params.get("sample_mode") not in SAMPLE_MODES:
+        raise ValueError(
+            f"{config_path} sets sample_mode: {params.get('sample_mode')!r}, "
+            "which is not a sampling mode.\n"
+            f"Valid values: {', '.join(SAMPLE_MODES)}.\n"
+            "generate writes molecules and computes the metric tables; "
+            "evaluate computes NLL and UC-JSD."
+        )
+
+    optimizer = params.get("optimizer", "graphinvent")
+    if optimizer not in OPTIMIZERS:
+        raise ValueError(
+            f"optimizer: {optimizer!r} is not an optimizer.\n"
+            f"Valid values: {', '.join(OPTIMIZERS)}"
+        )
+    if optimizer != "graphinvent":
+        raise NotImplementedError(
+            f"This job declares optimizer: {optimizer}, which this repository "
+            "does not run.\n"
+            "It is a baseline arm for an external program, and submitting it "
+            "here would optimize a GraphINVENT checkpoint and write a "
+            "metrics.json that reads as that baseline's result.\n"
+            "What it needs before it can run is in the experiment's "
+            "instructions.md: the pinned REINVENT4 install, its prior from "
+            "Zenodo specialized onto this task corpus, and a wrapper that "
+            "exposes our scoring function as its ExternalProcess component."
+        )
+
     if params.get("condition_type") not in CONDITION_TYPES:
         raise ValueError(
             f"condition_type: {params.get('condition_type')} is not an "
@@ -336,6 +369,15 @@ def _validate(params: dict, config_path: Path) -> None:
             raise ValueError(
                 f"split_type: {params['split_type']} is not a split strategy.\n"
                 f"Valid values: {', '.join(SPLIT_TYPES)}"
+            )
+        if params["split_type"] == "custom":
+            raise NotImplementedError(
+                "split_type: custom is a hook with no implementation, and "
+                "selecting it raises by specification.\n"
+                "Add your splitting logic to split_smiles_file() in "
+                "src/graphinvent/DataProcessor.py, or choose one of: "
+                + ", ".join(t for t in SPLIT_TYPES if t != "custom")
+                + "."
             )
         if params["train_frac"] + params["valid_frac"] >= 1.0:
             raise ValueError(
@@ -442,8 +484,19 @@ def novelty_reference_sets(params: dict) -> list:
         seen_ckpts.add(checkpoint)
         try:
             produced_by = _read_yaml(checkpoint_config_path(checkpoint))
-        except Exception:
-            break
+        except Exception as error:
+            # CLAUDE.md defines novelty as absent from EVERY training split in
+            # the checkpoint's lineage. Breaking here measured it against a
+            # shorter lineage than the model actually saw, which can only move
+            # novelty upward, and nothing recorded that it had happened.
+            raise ValueError(
+                f"Cannot read the lineage of {checkpoint}: "
+                f"{checkpoint_config_path(checkpoint)} could not be read "
+                f"({type(error).__name__}: {error}).\n"
+                "novelty is measured against every training split in the "
+                "checkpoint's lineage, so a lineage that cannot be read would "
+                "silently report novelty against a shorter one."
+            ) from error
         if not produced_by:
             break
         add(produced_by.get("dataset_dir"))
@@ -753,6 +806,83 @@ def _detect_features(params: dict) -> None:
             print(f"  {key:<14}: {params[key]}", flush=True)
 
 
+# The dataset properties that set the model's tensor widths. A checkpoint
+# trained with a different value for any of them cannot be loaded into a model
+# built from this dataset.
+SHAPE_KEYS = (
+    "atom_types",
+    "formal_charge",
+    "imp_H",
+    "chirality",
+    "use_chirality",
+    "use_aromatic_bonds",
+    "use_explicit_H",
+    "ignore_H",
+    "max_n_nodes",
+)
+
+
+def _check_dataset_features_match_checkpoint(params: dict) -> None:
+    """
+    The dataset's feature vocabulary must be the checkpoint's.
+
+    These come from the dataset's `preprocessing.yaml` rather than from any
+    config layer, so `_apply_checkpoint_architecture` never sees them: it
+    compares only keys a config layer set explicitly, and nobody sets
+    `atom_types` by hand. The result was a check that reads correctly and is
+    dead on the path every real job takes.
+
+    Both failure modes are bad and one of them is silent. Different widths
+    crash inside `load_state_dict` with a shape mismatch several frames from
+    the cause, which the tutorials describe as something to debug after the
+    fact. Equal widths with a different ORDER do not crash at all: the model
+    loads, every atom is read as a different element than it is, and the job
+    produces molecules and metrics that look entirely normal.
+
+    `max_n_nodes` is included because every stored tensor is padded to it, so
+    a checkpoint trained at 108 fed graphs padded to 54 is reading a different
+    tensor layout.
+    """
+    checkpoint = params.get("pretrained_model_path") or params.get("resume_from")
+    if not checkpoint:
+        return
+    source = checkpoint_config_path(checkpoint)
+    if not source.exists():
+        return
+    trained_with = _read_yaml(source)
+
+    differences = []
+    for key in SHAPE_KEYS:
+        if key not in trained_with or key not in params:
+            continue
+        theirs, ours = trained_with[key], params[key]
+        if theirs == ours:
+            continue
+        same_size = (
+            isinstance(theirs, list)
+            and isinstance(ours, list)
+            and sorted(map(str, theirs)) == sorted(map(str, ours))
+        )
+        note = " (SAME VALUES, DIFFERENT ORDER)" if same_size else ""
+        differences.append(f"  {key}: dataset {ours!r} vs checkpoint {theirs!r}{note}")
+    if not differences:
+        return
+
+    raise ValueError(
+        f"The dataset at {params['dataset_dir']} was preprocessed with a "
+        f"different feature vocabulary than the checkpoint {checkpoint} was "
+        "trained with:\n"
+        + "\n".join(differences)
+        + "\n\nThese set the model's tensor widths, so loading proceeds only "
+        "by accident. Where the widths differ it crashes inside "
+        "load_state_dict; where they match but the order differs it does not "
+        "crash at all and every atom is read as a different element.\n"
+        "Preprocess this dataset with `extra_dataset` pointing at the "
+        "checkpoint's dataset, which gives the pair one shared vocabulary, or "
+        "load a checkpoint trained on this dataset."
+    )
+
+
 def _check_dataset_mapping_matches_checkpoint(params: dict) -> None:
     """
     The dataset's class-to-index mapping must be the checkpoint's.
@@ -782,20 +912,25 @@ def _check_dataset_mapping_matches_checkpoint(params: dict) -> None:
     )
     if not checkpoint_mapping or dataset_mapping == checkpoint_mapping:
         return
+    # The same list is the class panel for a categorical condition and the
+    # property order for a continuous one, so the message says which.
+    kind = "class" if params.get("condition_classes") else "property"
     reordering = (
-        " They are the same classes in a different order, which is the "
-        "dangerous case: every per-class number would be attributed to the "
-        "wrong class and nothing would look wrong."
+        f" They are the same {kind}es in a different order, which is the "
+        f"dangerous case: every per-{kind} number would be attributed to the "
+        f"wrong {kind} and nothing would look wrong."
         if sorted(dataset_mapping) == sorted(checkpoint_mapping)
         else ""
     )
     raise ValueError(
         f"The dataset at {params['dataset_dir']} was preprocessed with the "
-        f"class mapping {dataset_mapping}, and the checkpoint {checkpoint} was "
+        f"{kind} order {dataset_mapping}, and the checkpoint {checkpoint} was "
         f"trained with {checkpoint_mapping}.{reordering}\n"
-        "The mapping is positional: slot i of the condition vector is class i "
-        "of this list, in both places. Preprocess the dataset with the "
-        "checkpoint's mapping, or load a checkpoint trained on this one."
+        f"The mapping is positional: slot i of the condition vector is {kind} "
+        "i of this list, in both places, so a transposed declaration "
+        "conditions on one and reports it as another while writing a "
+        "byte-identical HDF5. Preprocess the dataset with the checkpoint's "
+        "order, or load a checkpoint trained on this one."
     )
 
 
@@ -858,6 +993,7 @@ def derive(params: dict) -> namedtuple:
                 f"preprocessed with condition_dim: {params['condition_dim']}. "
                 "Use job_type: conditional, or an unconditional dataset."
             )
+        _check_dataset_features_match_checkpoint(params)
         _check_dataset_mapping_matches_checkpoint(params)
         _check_requested_classes_exist(params)
 

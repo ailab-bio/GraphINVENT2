@@ -200,8 +200,16 @@ def main() -> int:
     parser.add_argument(
         "--n-molecules",
         type=int,
-        default=10,
-        help="How many molecules to keep (the smallest by heavy-atom count).",
+        default=None,
+        help=(
+            "Keep only this many molecules, the smallest by heavy-atom count. "
+            "The default keeps ALL of them. This used to default to 10, which "
+            "meant the documented build command for a 21,429-molecule corpus "
+            "wrote ten molecules and said so only in a line above the success "
+            "message. The subset is also the least representative one "
+            "available, since it takes the smallest, so it is for building a "
+            "deliberate toy and nothing else."
+        ),
     )
     parser.add_argument(
         "--max-heavy-atoms",
@@ -318,7 +326,16 @@ def main() -> int:
         curated = kept
 
     curated.sort(key=lambda r: (r["n_heavy_atoms"], r["smiles"]))
-    selected = curated[: args.n_molecules]
+    if args.n_molecules is None:
+        selected = curated
+    else:
+        selected = curated[: args.n_molecules]
+        print(
+            f"  NOTE: --n-molecules {args.n_molecules} keeps the "
+            f"{args.n_molecules} SMALLEST of {len(curated)} curated molecules. "
+            "This is a toy subset, not a sample.",
+            flush=True,
+        )
 
     if classes:
         from collections import Counter

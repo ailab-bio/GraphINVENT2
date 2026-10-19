@@ -10,16 +10,19 @@ split_type: warhead_scaffold
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 1000
-# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing in this experiment has
-# run on Arrhenius. The basis of each estimate is stated beside it; re-measure
-# by the RUN.md Part 1 walltime procedure after the first successful run.
-# Basis: 21,429 molecules at max_nodes 108, against 1,000 ZINC molecules at
-# max_nodes 27 taking 15 s. Scaled by molecule count and by the square of
-# max_nodes, with margin.
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   21,429 molecules (corpus) x 157 ms
+#   = 0.93 h x 1.5 -> 2 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
 slurm:
-  time: "08:00:00"
+  time: "02:00:00"
+  memory: 38G
   gpus: 0
-  memory: "64G"
 
 # The transfer pair shares one feature vocabulary. Without this the base and
 # task corpora are scanned separately, their atom-type and formal-charge sets

@@ -95,8 +95,17 @@ class SuccessCriterion:
         fn = self._get_property_fn(property_fns)
         try:
             prop_value = fn(mol)
-        except Exception:
-            return False
+        except Exception as error:
+            # "Could not be measured" is not "did not meet the criterion", and
+            # returning False conflated them: a property function raising on
+            # exotic chemistry pushed the rate down and looked like a model
+            # producing molecules outside the window.
+            raise ValueError(
+                f"The property function {getattr(fn, '__name__', fn)!r} raised "
+                f"on a molecule ({type(error).__name__}: {error}). A criterion "
+                "cannot be evaluated against a value that does not exist, and "
+                "treating it as a failure understates the rate."
+            ) from error
 
         if self.type == "threshold":
             if self.direction == "greater":

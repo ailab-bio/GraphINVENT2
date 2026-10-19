@@ -10,9 +10,16 @@ accumulation_steps: 4
 sample_every: 5
 n_samples: 10000
 device: cuda
-# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing in this experiment has
-# run on Arrhenius. The basis of each estimate is stated beside it; re-measure
-# by the RUN.md Part 1 walltime procedure after the first successful run.
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   20 epochs x 1,042,294 subgraphs (corpus x train_frac) x 5.16 ms; +5 evaluation rounds; +0.3 h decomposition (2000 molecules x 0.483 s)
+#   = 30.91 h x 1.5 -> 47 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
 slurm:
-  time: "12:00:00"
+  time: "47:00:00"
+  memory: 38G
   gpus: 1

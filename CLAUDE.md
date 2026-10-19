@@ -395,7 +395,8 @@ by the HTML report, the cross-seed aggregator and any plotting.
   `triage_n_entered`, `triage_sa_max`, `triage_retrotac_min`, `<stage>_pass_rate` and
   `<stage>_n_reached` for each triage stage,
   `n_scaffolds`, `n_split_successfully`, `n_warheads_usable`,
-  `split_status_counts`, `top100_n_split`, `top100_split_success_rate`, `e3_similarity_floor`,
+  `split_status_counts`, `top100_n_split`, `top100_split_success_rate`, `screening_library`, `screening_library_size`,
+  `sa_score_n_unscored`, `e3_similarity_floor`,
   `e3_max_similarities`, `e3_n_tested`, `e3_n_cores`, `ecfp4_radius`, `warhead_representation`,
   `warhead_fingerprint_radius`, `warhead_fingerprint_bits`, `knn_reference_pool_size`,
   `class_match_threshold`, `class_panel`, `n_unique_valid_<class>`, `delta_nll_n_molecules`,
@@ -864,14 +865,12 @@ categorical conditional metrics with their two baselines, the whole-sample
 component metrics in their two-denominator form, and per-job figures for all
 five job types now have callers, tests and output.
 
-**Two specified keys remain unwired**, and they are the only ones:
-
-- **`eval_oracle_top10_mean`** and **`top100_outside_domain_rate`**. Both record
-  an explicit `not_implemented` null. The inputs they were waiting on now exist
-  — `experiments/surrogate_protac_optimization/smarca2/` carries the optimization and
-  evaluation pickles and its `PERFORMANCE.md` — so what is missing is the
-  wiring and a config key naming the evaluation pickle and the applicability
-  floor, not the surrogates. Neither is blocked.
+**Every key this document specifies is now emitted by a code path.** The two
+that remained unwired, `eval_oracle_top10_mean` and `top100_outside_domain_rate`,
+are wired: a `goal_directed` job reads `evaluation_oracle` and
+`surrogate_training_set`, and records a categorized null naming the key to set
+when an experiment declares neither. `protac_goal_directed` and
+`protac_selectivity` declare both.
 
 What follows is what has not been *verified*, which is a different claim from
 what has not been written.

@@ -9,13 +9,19 @@ split_type: scaffold
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 1000
-# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
-# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
-# Basis: 249,455 molecules at max_nodes 54.
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   249,455 molecules (corpus) x 45 ms
+#   = 3.12 h x 1.5 -> 5 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
 slurm:
-  time: "12:00:00"
+  time: "05:00:00"
+  memory: 19G
   gpus: 0
-  memory: "96G"
 
 # The transfer pair shares one feature vocabulary. Without this the base and
 # task corpora are scanned separately, their atom-type and formal-charge sets

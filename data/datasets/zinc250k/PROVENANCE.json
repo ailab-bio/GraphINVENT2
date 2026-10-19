@@ -1,0 +1,15 @@
+{
+  "source_file": "data/raw/zinc/250k_rndm_zinc_drugs_clean_3.csv",
+  "source_sha256": "35e3f1a52b1badc0697e373d73a18ad773f415936ff992f4c6baa2e067b3e6ae",
+  "built_utc": "2026-10-19T15:49:34.132317+00:00",
+  "selection": {
+    "rule": "canonicalized, deduplicated, single-fragment, sorted by (heavy atoms, canonical SMILES)",
+    "n_molecules": 249455,
+    "max_heavy_atoms": 54,
+    "n_candidates_after_curation": 249455
+  },
+  "summary": {
+    "heavy_atoms_min": 6,
+    "heavy_atoms_max": 38
+  }
+}

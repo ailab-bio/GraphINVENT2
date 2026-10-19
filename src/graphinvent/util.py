@@ -20,7 +20,6 @@ import numpy as np
 import rdkit
 import torch
 import yaml
-from matplotlib import pyplot as plt
 from parameters.config import constants
 from rdkit import RDLogger
 from rdkit.Chem import MolToSmiles
@@ -92,93 +91,6 @@ def get_last_epoch() -> str:
             epoch_key = f"Epoch {mode}{_checkpoint_epoch()}"
 
     return epoch_key
-
-
-def normalize_evaluation_metrics(
-    property_histograms: dict, epoch_key: str
-) -> Tuple[list, ...]:
-    """
-    Normalizes histograms in `props_dict`, converts them to `list`s (from
-    `torch.Tensor`s) and rounds the elements. This is done for clarity when
-    saving the histograms to CSV.
-
-    Args:
-    ----
-        property_histograms (dict) : Contains histograms of evaluation metrics
-          of interest.
-        epoch_key (str) : Indicates the training epoch.
-
-    Returns:
-    -------
-        norm_n_nodes_hist (torch.Tensor) : Normalized histogram of the number of
-          nodes per molecule.
-        norm_atom_type_hist (torch.Tensor) : Normalized histogram of the atom
-          types present in the molecules.
-        norm_charge_hist (torch.Tensor) : Normalized histogram of the formal
-          charges present in the molecules.
-        norm_numh_hist (torch.Tensor) : Normalized histogram of the number of
-          implicit hydrogens present in the molecules.
-        norm_n_edges_hist (torch.Tensor) : Normalized histogram of the number of
-          edges per node in the molecules.
-        norm_edge_feature_hist (torch.Tensor) : Normalized histogram of the
-          edge features (types of bonds) present in the molecules.
-        norm_chirality_hist (torch.Tensor) : Normalized histogram of the chiral
-          centers present in the molecules.
-    """
-    # compute histograms for non-optional features
-    norm_n_nodes_hist = [
-        round(i, 2)
-        for i in normalize(property_histograms[(epoch_key, "n_nodes_hist")]).tolist()
-    ]
-    norm_atom_type_hist = [
-        round(i, 2)
-        for i in normalize(property_histograms[(epoch_key, "atom_type_hist")]).tolist()
-    ]
-    norm_charge_hist = [
-        round(i, 2)
-        for i in normalize(
-            property_histograms[(epoch_key, "formal_charge_hist")]
-        ).tolist()
-    ]
-    norm_n_edges_hist = [
-        round(i, 2)
-        for i in normalize(property_histograms[(epoch_key, "n_edges_hist")]).tolist()
-    ]
-    norm_edge_feature_hist = [
-        round(i, 2)
-        for i in normalize(
-            property_histograms[(epoch_key, "edge_feature_hist")]
-        ).tolist()
-    ]
-
-    # compute histograms for optional features
-    if not constants.use_explicit_H and not constants.ignore_H:
-        norm_numh_hist = [
-            round(i, 2)
-            for i in normalize(property_histograms[(epoch_key, "numh_hist")]).tolist()
-        ]
-    else:
-        norm_numh_hist = [0] * len(constants.imp_H)
-
-    if constants.use_chirality:
-        norm_chirality_hist = [
-            round(i, 2)
-            for i in normalize(
-                property_histograms[(epoch_key, "chirality_hist")]
-            ).tolist()
-        ]
-    else:
-        norm_chirality_hist = [1, 0, 0]
-
-    return (
-        norm_n_nodes_hist,
-        norm_atom_type_hist,
-        norm_charge_hist,
-        norm_numh_hist,
-        norm_n_edges_hist,
-        norm_edge_feature_hist,
-        norm_chirality_hist,
-    )
 
 
 def get_restart_epoch() -> Union[int, str]:
@@ -389,29 +301,6 @@ def suppress_warnings() -> None:
     # could instead suppress ALL warnings with:
     # `filterwarnings(action="ignore")`
     # but choosing not to do this
-
-
-def turn_off_empty_axes(n_plots_y: int, n_plots_x: int, ax: plt.axes) -> plt.axes:
-    """
-    Turns off empty axes in a `n_plots_y` by `n_plots_x` grid of plots.
-
-    Args:
-    ----
-        n_plots_y (int) : Number of plots along the y-axis.
-        n_plots_x (int) : Number of plots along the x-axis.
-        ax (plt.axes)   : Matplotlib object containing grid of plots.
-
-    Returns:
-    -------
-        plt.axes : The updated Matplotlib object.
-    """
-    for vi in range(n_plots_y):
-        for vj in range(n_plots_x):
-            # if nothing plotted on ax, it will contain `inf`
-            # in axes lims, so clean up (turn off)
-            if "inf" in str(ax[vi, vj].dataLim):
-                ax[vi, vj].axis("off")
-    return ax
 
 
 def write_last_molecule_idx(

@@ -6,12 +6,15 @@ making both easier to use and more efficient.
 
 This is a research codebase with one maintainer. It is not a library, a product or a framework.
 
-Four documents, four jobs. Read the one that matches what you want:
+**To run the experiments, follow [RUN.md](RUN.md). It opens with a checklist that is the whole sequence in
+order; nothing else is a runbook.**
+
+The other three documents answer different questions, and you need none of them to run jobs:
 
 | | |
 |---|---|
+| **[RUN.md](RUN.md)** | **the operations.** Start here. The checklist at the top is what to run and in what order; everything below it is reference |
 | **[CLAUDE.md](CLAUDE.md)** | the specification. What the system is, what it guarantees, what every job type and every metric means |
-| **[RUN.md](RUN.md)** | the operations. How to set up, submit, check and recover, step by step, including on the cluster |
 | **[manuscript/experiment-plan.md](manuscript/experiment-plan.md)** | the science. What we are running and why |
 | **[TODO.md](TODO.md)** | the parking lot, currently empty. It points at [CLAUDE.md § Status](CLAUDE.md#status) |
 

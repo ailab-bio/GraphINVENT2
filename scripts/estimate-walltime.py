@@ -39,6 +39,13 @@ ROOT = Path(__file__).resolve().parents[1]
 # manuscript/experiment-plan.md's PROTAC set at max_nodes 108.
 ANCHORS = {
     # max_nodes: (subgraphs per molecule, preprocess s/molecule, epoch s/subgraph)
+    #
+    # 54 measured 2026-10-19 on a seeded 3,000-molecule ZINC250k subset at
+    # batch 1000: 57,033 training subgraphs from 2,400 molecules (23.8 per
+    # molecule) and 91.93 s for one epoch on CPU. It validates the other two
+    # rather than replacing them: edges scale as max_nodes squared, so the 70
+    # anchor should be 70^2/54^2 = 1.68x this one and is 1.65x.
+    54: (23.8, 0.045, 0.00161),
     70: (23.5, 0.045, 0.00266),
     108: (60.8, 0.157, 0.00516),
 }
@@ -57,6 +64,13 @@ COMPONENT_SAMPLE_SIZE = 2000
 
 SAFETY = 1.5
 
+# Above this, a request is very likely to be rejected by the scheduler rather
+# than queued: most partitions cap walltime well below a week. A derived number
+# this large is a signal to measure on the GPU before requesting anything, not
+# a number to submit. Training resumes from its last checkpoint, so the
+# fallback is several shorter submissions rather than one long one.
+IMPLAUSIBLE_HOURS = 72
+
 # Bytes of resident memory per loaded subgraph, from the loader's block: the
 # 10,000-row block measured at ~1.9 GB on the PROTAC set.
 BYTES_PER_SUBGRAPH = 190_000
@@ -70,7 +84,13 @@ def anchor_for(max_nodes: int) -> tuple:
         return ANCHORS[sizes[0]]
     if max_nodes >= sizes[-1]:
         return ANCHORS[sizes[-1]]
-    low, high = sizes[0], sizes[1]
+    # The bracketing pair, not the first two: with three anchors, hard-coding
+    # sizes[0] and sizes[1] extrapolated a max_nodes-108 job from the 54-to-70
+    # segment.
+    high = next(size for size in sizes if size >= max_nodes)
+    low = max(size for size in sizes if size <= max_nodes)
+    if low == high:
+        return ANCHORS[low]
     weight = (max_nodes - low) / (high - low)
     return tuple(
         ANCHORS[low][i] + weight * (ANCHORS[high][i] - ANCHORS[low][i])
@@ -78,12 +98,33 @@ def anchor_for(max_nodes: int) -> tuple:
     )
 
 
-def molecules_in(dataset_dir: Path) -> int | None:
-    """Training-split molecules, or None when the dataset is not built."""
-    path = dataset_dir / "train.smi"
-    if not path.exists():
-        return None
-    return max(0, sum(1 for line in path.read_text().splitlines() if line.strip()) - 1)
+def _count(path: Path) -> int:
+    """Molecules in a .smi, discounting a header line if there is one."""
+    lines = [line for line in path.read_text().splitlines() if line.strip()]
+    if lines and lines[0].split("\t")[0].strip().upper() == "SMILES":
+        lines = lines[1:]
+    return len(lines)
+
+
+def molecules_in(dataset_dir: Path, train_frac: float = 0.8) -> int | None:
+    """
+    Molecules to extrapolate from, or None when nothing can be counted.
+
+    `train.smi` is written by the `preprocess` job, so sizing a preprocess job
+    from it is circular: the file is produced by the job being estimated, so
+    every preprocess job and everything downstream of it reported as unsizable
+    until the corpus had already been preprocessed. When the splits do not
+    exist, fall back to the corpus the builder wrote and scale by `train_frac`
+    for a training job. The derivation written into each config says which of
+    the two sources the number came from.
+    """
+    split = dataset_dir / "train.smi"
+    if split.exists():
+        return _count(split)
+    corpus = dataset_dir / f"{dataset_dir.name}.smi"
+    if corpus.exists():
+        return int(_count(corpus) * train_frac)
+    return None
 
 
 def resolve(job: Path) -> dict:
@@ -113,14 +154,22 @@ def estimate(job: Path) -> dict:
     if not data_root.is_absolute():
         data_root = ROOT / data_root
     dataset = data_root / str(params.get("dataset_dir") or "")
-    n_molecules = molecules_in(dataset)
+    # A preprocess job reads the whole corpus; a training job reads its split.
+    train_frac = (
+        1.0
+        if params.get("job_type") == "preprocess"
+        else float(params.get("train_frac", 0.8) or 0.8)
+    )
+    n_molecules = molecules_in(dataset, train_frac)
+    from_corpus = not (dataset / "train.smi").exists()
 
     needs_dataset = job_type in ("preprocess", "unconditional", "conditional")
     if needs_dataset and n_molecules is None:
         return {
-            "missing": f"{dataset.relative_to(ROOT) if ROOT in dataset.parents else dataset}"
-            "/train.smi does not exist, so the molecule count the extrapolation "
-            "needs is unknown. Build the dataset first."
+            "missing": f"neither train.smi nor {dataset.name}.smi exists under "
+            f"{dataset.relative_to(ROOT) if ROOT in dataset.parents else dataset}, "
+            "so the molecule count the extrapolation needs is unknown. Build "
+            "the dataset first."
         }
 
     n_samples = int(params.get("n_samples") or 0)
@@ -130,13 +179,18 @@ def estimate(job: Path) -> dict:
 
     if job_type == "preprocess":
         seconds = n_molecules * preprocess_s
-        note.append(f"{n_molecules:,} molecules x {preprocess_s * 1000:.0f} ms")
+        source = "corpus" if from_corpus else "train split"
+        note.append(
+            f"{n_molecules:,} molecules ({source}) x {preprocess_s * 1000:.0f} ms"
+        )
     elif job_type in ("unconditional", "conditional"):
         subgraphs = n_molecules * per_molecule_subgraphs
         epochs = int(params.get("epochs") or 0)
         seconds = epochs * subgraphs * epoch_s
         note.append(
-            f"{epochs} epochs x {subgraphs:,.0f} subgraphs x {epoch_s * 1000:.2f} ms"
+            f"{epochs} epochs x {subgraphs:,.0f} subgraphs "
+            f"({'corpus x train_frac' if from_corpus else 'train split'}) x "
+            f"{epoch_s * 1000:.2f} ms"
         )
         sample_every = int(params.get("sample_every") or 0)
         evaluations = (epochs // sample_every if sample_every else 0) + 1
@@ -233,10 +287,23 @@ def main() -> int:
             unresolved.append((name, result["missing"]))
             print(f"UNSIZED  {name}\n         {result['missing']}")
             continue
+        flag = (
+            "  <-- EXCEEDS A TYPICAL PARTITION LIMIT"
+            if (result["hours"] > IMPLAUSIBLE_HOURS)
+            else ""
+        )
         print(
-            f"{result['hours']:>3d} h  {result['memory_gb']:>3d} GB  {name}\n"
+            f"{result['hours']:>3d} h  {result['memory_gb']:>3d} GB  {name}{flag}\n"
             f"         {result['note']}"
         )
+        if flag:
+            print(
+                "         This is a CPU extrapolation for a job that will run "
+                "on a GPU. Measure one epoch on the GPU and re-run this script "
+                "before requesting it; if the real number is still above the "
+                "cap, split it across submissions, which works because "
+                "training resumes from its last checkpoint."
+            )
         if args.write:
             written += write_into(config_path, result)
 

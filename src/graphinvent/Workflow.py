@@ -1202,22 +1202,18 @@ class Workflow:
                 score=torch.mean(score_a).item(),
             )
 
-            # evaluate model every `sample_every` steps (not every step)
-            if step % self.constants.sample_every == 0:
+            # Evaluate when either cadence is due: the logged trajectory
+            # follows `rl_eval_every` and the best agent follows
+            # `rl_best_agent_every`, and the two are independent settings.
+            due_eval = step % self.constants.sample_every == 0
+            due_best = step % int(self.constants.rl_best_agent_every) == 0
+            if due_eval or due_best:
                 score = self.evaluate_model(
                     model_to_evaluate=self.agent_model, label="eval"
                 )
-
-                # save the score to the analyzer
-                self.analyzer.save_metrics(step=step, score=score)
-
-                # check if agent's score is better than best score so far
-                if score > self.best_avg_score:
-                    self.best_avg_score = score
-
-                    # update the best agent so far ("basf")
-                    self.best_agent_model = self._freeze(deepcopy(self.agent_model))
-                    print("-- Updated best model.", flush=True)
+                if due_eval:
+                    self.analyzer.save_metrics(step=step, score=score)
+                self._maybe_update_best_agent(step, score)
 
         # flush any remaining accumulated gradients at end of training
         if accum_counter > 0:
@@ -1337,17 +1333,17 @@ class Workflow:
                 score=torch.mean(score_a).item(),
             )
 
-            # Periodic evaluation
-            if step % self.constants.sample_every == 0:
+            # Periodic evaluation, on either cadence. See the supervised RL
+            # loop above: the best agent has its own interval.
+            due_eval = step % self.constants.sample_every == 0
+            due_best = step % int(self.constants.rl_best_agent_every) == 0
+            if due_eval or due_best:
                 score = self.evaluate_model(
                     model_to_evaluate=self.agent_model, label="eval"
                 )
-                self.analyzer.save_metrics(step=step, score=score)
-
-                if score > self.best_avg_score:
-                    self.best_avg_score = score
-                    self.best_agent_model = self._freeze(deepcopy(self.agent_model))
-                    print("-- Updated best model.", flush=True)
+                if due_eval:
+                    self.analyzer.save_metrics(step=step, score=score)
+                self._maybe_update_best_agent(step, score)
 
             # Save checkpoint when a milestone is crossed
             while remaining_milestones and oracle_calls >= remaining_milestones[0]:
@@ -1574,6 +1570,25 @@ class Workflow:
 
             # create `generation/` subdirectory to write generation output to
             os.makedirs(self.constants.results_dir + "generation/", exist_ok=True)
+
+    def _maybe_update_best_agent(self, step: int, score) -> None:
+        """
+        Update the best-agent-so-far on ITS OWN cadence, `rl_best_agent_every`.
+
+        CLAUDE.md fixes "best agent updated every 5 learning steps" as a
+        hyperparameter, and this used to follow `rl_eval_every` instead,
+        because the update sat inside the evaluation branch. `rl_best_agent_every`
+        was declared in the defaults, documented, and read by nothing. The two
+        coincide at their defaults of 5, so the behavior was correct and the
+        parameter was dead; raising `rl_eval_every` to cut evaluation cost
+        would silently have changed a fixed hyperparameter.
+        """
+        if step % int(self.constants.rl_best_agent_every) != 0:
+            return
+        if score > self.best_avg_score:
+            self.best_avg_score = score
+            self.best_agent_model = self._freeze(deepcopy(self.agent_model))
+            print("-- Updated best model.", flush=True)
 
     def _drop_conditions(self, condition_vector):
         """

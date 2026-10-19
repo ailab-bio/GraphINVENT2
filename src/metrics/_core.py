@@ -101,6 +101,31 @@ def bemis_murcko(smiles: str) -> str | None:
         return None
 
 
+# Per-molecule maxima already computed against a given reference set, keyed by
+# that set's digest. Every sampling job computes the core table twice, once
+# over the sample and once over the subset that survives triage, and the second
+# call asks for maxima the first already produced. Measured at reporting scale
+# this is the single most expensive metric in the repository, so the memo turns
+# the filtered pass from a second full computation into a dictionary lookup.
+#
+# Bounded because a long-running process would otherwise accumulate one entry
+# per molecule ever scored; a job computes two passes over at most N molecules,
+# so the bound only ever evicts across jobs in the same process.
+_MAX_SIMILARITY_MEMO: dict = {}
+_MEMO_LIMIT = 200_000
+
+
+def _reference_digest(reference_smiles: list) -> str:
+    """A stable identity for a reference set, so a changed set misses the memo."""
+    import hashlib
+
+    digest = hashlib.blake2b(digest_size=16)
+    for smi in reference_smiles:
+        digest.update(smi.encode())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
 def max_similarity_to_reference(query_smiles: list, reference_smiles: list) -> list:
     """
     For each query molecule, its maximum ECFP4 Tanimoto to any reference molecule.
@@ -108,27 +133,38 @@ def max_similarity_to_reference(query_smiles: list, reference_smiles: list) -> l
     `BulkTanimotoSimilarity` over packed bit vectors, not a Python loop over
     pairs: the reference set is the whole training split, so the pair count is
     the product of two large numbers and the only affordable version of this is
-    the one that stays inside RDKit's C++ for the inner loop.
+    the one that stays inside RDKit's C++ for the inner loop. A numpy
+    packed-bit implementation was tried and measured 2.8x slower, because the
+    broadcast materializes a gigabyte per chunk and the work is memory-bound
+    rather than arithmetic-bound.
+
+    Results are memoized per molecule against the reference set's digest.
     """
     from rdkit import Chem, DataStructs
 
-    reference_fps = []
-    for smi in reference_smiles:
-        mol = Chem.MolFromSmiles(smi)
-        if mol is not None:
-            reference_fps.append(ecfp4(mol))
-    if not reference_fps:
-        return [None] * len(query_smiles)
+    key = _reference_digest(reference_smiles)
+    memo = _MAX_SIMILARITY_MEMO.setdefault(key, {})
+    pending = [s for s in dict.fromkeys(query_smiles) if s and s not in memo]
 
-    out: list = []
-    for smi in query_smiles:
-        mol = Chem.MolFromSmiles(smi) if smi else None
-        if mol is None:
-            out.append(None)
-            continue
-        sims = DataStructs.BulkTanimotoSimilarity(ecfp4(mol), reference_fps)
-        out.append(max(sims) if sims else 0.0)
-    return out
+    if pending:
+        reference_fps = []
+        for smi in reference_smiles:
+            mol = Chem.MolFromSmiles(smi)
+            if mol is not None:
+                reference_fps.append(ecfp4(mol))
+        if not reference_fps:
+            return [None] * len(query_smiles)
+        for smi in pending:
+            mol = Chem.MolFromSmiles(smi)
+            if mol is None:
+                continue
+            sims = DataStructs.BulkTanimotoSimilarity(ecfp4(mol), reference_fps)
+            memo[smi] = max(sims) if sims else 0.0
+        if len(memo) > _MEMO_LIMIT:
+            _MAX_SIMILARITY_MEMO.pop(key, None)
+            _MAX_SIMILARITY_MEMO[key] = {s: memo[s] for s in list(memo)[-_MEMO_LIMIT:]}
+
+    return [memo.get(s) if s else None for s in query_smiles]
 
 
 def compute_core_metrics(
@@ -274,13 +310,20 @@ def compute_core_metrics(
     from rdkit import Chem
 
     sa_values = []
+    n_unscored = 0
     for smi in unique_valid_smiles:
         mol = Chem.MolFromSmiles(smi)
-        if mol is not None:
-            try:
-                sa_values.append(sa_score(mol))
-            except Exception:
-                pass
+        if mol is None:
+            continue
+        try:
+            sa_values.append(sa_score(mol))
+        except Exception:
+            # Counted rather than dropped. The mean was taken over whatever
+            # happened to score, with no record of the denominator, so a run
+            # where a third of the molecules failed read as better than one
+            # where none did.
+            n_unscored += 1
+    results["sa_score_n_unscored"] = n_unscored
     if sa_values:
         results["sa_score_mean"] = float(np.mean(sa_values))
         results["sa_score_median"] = float(np.median(sa_values))

@@ -108,16 +108,3 @@ class OracleFactory:
             for name, spec in specs.items()
             if not name.startswith("_")
         }
-
-    @staticmethod
-    def from_config(config: dict) -> Dict[str, CachedOracle]:
-        """
-        Build oracles from a full params.json dict, reading ``job.oracles``.
-        """
-        job = config.get("job", config)
-        return OracleFactory.from_specs(job.get("oracles", {}))
-
-    @staticmethod
-    def known_types() -> list:
-        """Registered oracle type names."""
-        return sorted(ORACLE_TYPES)

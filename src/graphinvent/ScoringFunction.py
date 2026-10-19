@@ -378,22 +378,6 @@ class ScoringFunction:
         """
         return list(self._composite_log)
 
-    def compute_score(
-        self,
-        graphs: list,
-        termination: torch.Tensor,
-        validity: torch.Tensor,
-        uniqueness: torch.Tensor,
-    ) -> torch.Tensor:
-        """Same interface as before — returns only the final score tensor."""
-        final_score, _ = self.compute_score_with_components(
-            graphs=graphs,
-            termination=termination,
-            validity=validity,
-            uniqueness=uniqueness,
-        )
-        return final_score
-
     def compute_score_with_components(
         self,
         graphs: list,

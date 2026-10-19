@@ -15,13 +15,13 @@ device: cuda
 # RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
 # manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
 #   200 steps x 256 molecules x 2 (agent and best-agent); +41 evaluation rounds; +0.3 h decomposition (2000 molecules x 0.483 s)
-#   = 20.45 h x 1.5 -> 31 h
+#   = 8.07 h x 1.5 -> 13 h
 # This is a CPU extrapolation. Training will finish well inside it on a
 # GPU; generation gains much less, because it is a sequential
 # autoregressive loop with a Python-level decode. Re-measure on
 # Arrhenius and replace these two numbers with what was observed.
 slurm:
-  time: "31:00:00"
+  time: "13:00:00"
   memory: 38G
   gpus: 1
 
@@ -35,3 +35,7 @@ slurm:
 # scored by the COMPLETE surrogate set, not one per component.
 oracle_budget: 10000
 checkpoint_oracle_counts: [1000, 5000]
+
+# This arm is run by REINVENT4, not by this repository. See the experiment's
+# instructions.md for what it needs before it can run.
+optimizer: reinvent4

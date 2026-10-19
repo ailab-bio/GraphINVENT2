@@ -205,6 +205,13 @@ sigma: 20
 # contribution of the best agent so far (BASF) to the loss, in [0, 1]
 alpha: 0.5
 
+# which program runs this optimization. "graphinvent" is this codebase.
+# "reinvent4" marks a baseline arm that an external program runs, and such a
+# job REFUSES to run here: it has no GraphINVENT runner, and a goal_directed
+# job pointed at a GraphINVENT checkpoint would quietly optimize our own model
+# and write a metrics.json that reads as the baseline comparison.
+optimizer: graphinvent
+
 # total oracle call budget; null = run for `rl_steps` steps instead. THE BUDGET
 # IS THE STOPPING RULE for every reported campaign: reinforcement learning can
 # be run indefinitely and the extra steps buy less and less, so we do not train
@@ -228,6 +235,20 @@ checkpoint_oracle_counts: [1000, 5000]
 # of 10,000 molecules, one per checkpoint, and none of those 30,000 scorings
 # moves the counter.
 eval_sample_size: 10000
+# the EVALUATION surrogate: the same featurization and model class as the
+# optimization surrogate, refitted on all data including the test split. It
+# only ever rescores the final molecules and is never the reward, so it is a
+# separate key from anything in `oracles:`. Null = eval_oracle_top10_mean
+# records a null with that reason.
+evaluation_oracle: null
+# the molecules the OPTIMIZATION surrogate was fitted on, for
+# top100_outside_domain_rate. Not the generative model's training split, which
+# is a different set. Null = that key records a null with that reason.
+surrogate_training_set: null
+# a generated molecule is outside the surrogate's applicability domain when its
+# maximum ECFP4 Tanimoto to that training set falls below this.
+applicability_similarity_floor: 0.3
+
 # a molecule is a success at or above this score
 success_threshold: 0.5
 

@@ -67,6 +67,23 @@ def passes_filters(mol) -> bool:
     return not _pains_catalog().HasMatch(mol)
 
 
+@lru_cache(maxsize=200_000)
+def passes_filters_smiles(smiles: str) -> bool:
+    """
+    `passes_filters`, memoized on the SMILES.
+
+    A sampling job asks this of the same molecule at least three times: once in
+    triage, once for `filter_pass_rate` over the sample, and once for
+    `filter_pass_rate_filtered` over the survivors. Measured at reporting scale
+    the alert scan is about five seconds a pass, and the answer cannot change
+    between them.
+    """
+    from rdkit import Chem
+
+    mol = Chem.MolFromSmiles(smiles)
+    return bool(mol is not None and passes_filters(mol))
+
+
 def ro5_violations(mol) -> int:
     """
     How many of Lipinski's four criteria the molecule violates.
@@ -110,8 +127,8 @@ def compute_filter_metrics(unique_valid_smiles: list) -> tuple:
     metrics: dict = {}
     unavailable: dict = {}
 
-    mols = [Chem.MolFromSmiles(smi) for smi in unique_valid_smiles]
-    mols = [mol for mol in mols if mol is not None]
+    parsed = [smi for smi in unique_valid_smiles if Chem.MolFromSmiles(smi) is not None]
+    mols = [Chem.MolFromSmiles(smi) for smi in parsed]
     if not mols:
         metrics["filter_pass_rate"] = None
         metrics["Ro5_pass_rate"] = None
@@ -119,7 +136,7 @@ def compute_filter_metrics(unique_valid_smiles: list) -> tuple:
         unavailable["Ro5_pass_rate"] = "no unique valid molecules to filter"
     else:
         metrics["filter_pass_rate"] = sum(
-            1 for mol in mols if passes_filters(mol)
+            1 for smi in parsed if passes_filters_smiles(smi)
         ) / len(mols)
         metrics["Ro5_pass_rate"] = sum(1 for mol in mols if passes_ro5(mol)) / len(mols)
 
@@ -166,8 +183,8 @@ def compute_property_window_rate(unique_valid_smiles: list, bounds: dict) -> tup
             f"functions. Known: {', '.join(sorted(PROPERTY_REGISTRY))}."
         )
 
-    mols = [Chem.MolFromSmiles(smi) for smi in unique_valid_smiles]
-    mols = [mol for mol in mols if mol is not None]
+    parsed = [smi for smi in unique_valid_smiles if Chem.MolFromSmiles(smi) is not None]
+    mols = [Chem.MolFromSmiles(smi) for smi in parsed]
     if not mols:
         metrics["property_window_rate"] = None
         unavailable["property_window_rate"] = (
@@ -240,11 +257,7 @@ def triage(
         return survivors
 
     reached = len(kept)
-    survivors = []
-    for smi in kept:
-        mol = Chem.MolFromSmiles(smi)
-        if mol is not None and passes_filters(mol):
-            survivors.append(smi)
+    survivors = [smi for smi in kept if passes_filters_smiles(smi)]
     kept = record("structural_alerts", survivors, reached)
 
     if bifunctional:

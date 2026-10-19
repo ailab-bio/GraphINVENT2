@@ -130,43 +130,6 @@ def read_smiles_with_labels(path: str, class_names: list) -> tuple:
     return smiles, labels
 
 
-def read_multilabel(path: str, class_names: list) -> dict:
-    """
-    `{smiles: set of classes}` for every molecule carrying more than one.
-
-    `delta_nll` excludes a multi-label molecule's other legitimate classes from
-    the competing set, and the number excluded is reported: a panel where every
-    molecule belongs to three classes has very little left to compete against,
-    and the metric has to be read knowing that.
-    """
-    try:
-        lines = Path(path).read_text().splitlines()
-    except FileNotFoundError:
-        return {}
-    if not lines:
-        return {}
-    header = [h.strip() for h in lines[0].split("\t")]
-    if header[0].upper() != "SMILES" or any(n not in header for n in class_names):
-        return {}
-    columns = {name: header.index(name) for name in class_names}
-    out: dict = {}
-    for line in lines[1:]:
-        fields = line.split("\t")
-        if not fields or not fields[0].strip():
-            continue
-        hot = set()
-        for name, column in columns.items():
-            if len(fields) > column:
-                try:
-                    if float(fields[column]) > 0.5:
-                        hot.add(name)
-                except ValueError:
-                    continue
-        if len(hot) > 1:
-            out[fields[0].strip()] = hot
-    return out
-
-
 def read_novelty_reference(constants) -> tuple:
     """
     The molecules novelty is measured against, and how many corpora they span.
@@ -1151,10 +1114,8 @@ def evaluate_goal_directed(
 
     _screening_baseline(constants, metrics, unavailable)
 
-    # Group 7: every one of these waits on an input no experiment declares yet.
-    for key, reason in _group7_reasons().items():
-        metrics[key] = None
-        unavailable[key] = reason
+    # The surrogate pair and the applicability-domain check.
+    _surrogate_pair_metrics(constants, scored, metrics, unavailable)
 
     _blocked(metrics, unavailable, goal_directed=True)
 
@@ -1680,14 +1641,74 @@ def _blocked(metrics: dict, unavailable: dict, *, goal_directed: bool = False) -
         )
 
 
-def _group7_reasons() -> dict:
-    # The screening baseline keys are handled by _screening_baseline, which
-    # reports a value when a library is declared.
-    return {
-        "eval_oracle_top10_mean": (
-            "not_implemented: no evaluation surrogate is trained yet"
-        ),
-        "top100_outside_domain_rate": (
-            "not_implemented: no optimization surrogate training set is available yet"
-        ),
-    }
+def _surrogate_pair_metrics(
+    constants, scored: list, metrics: dict, unavailable: dict
+) -> None:
+    """
+    `eval_oracle_top10_mean` and `top100_outside_domain_rate`.
+
+    These are the two halves of the exploitation check. The evaluation
+    surrogate rescores the top ten with a model that saw strictly more data
+    than the one that rewarded them, and the applicability-domain rate catches
+    the same failure from a direction neither surrogate shares, since both have
+    the same blind spots.
+
+    Both record a categorized null naming the key that would supply them when
+    the experiment has not declared one. That is not the same as a metric that
+    came out empty, and the envelope keeps them apart.
+    """
+    from ._baselines import MissingInput as BaselineMissing
+    from ._baselines import applicability_domain_metrics, evaluation_surrogate_metrics
+
+    top100 = [smi for smi, _ in _budget.top100(scored)]
+    top10 = top100[:10]
+
+    oracle_spec = getattr(constants, "evaluation_oracle", None)
+    if not oracle_spec:
+        metrics["eval_oracle_top10_mean"] = None
+        unavailable["eval_oracle_top10_mean"] = (
+            "not_applicable_to_job_type: this experiment declares no "
+            "evaluation surrogate. Set `evaluation_oracle` to the pickle that "
+            "surrogate_<program>_evaluation produced; it is never the reward, "
+            "so it is a separate key from anything in `oracles:`."
+        )
+    else:
+        try:
+            from oracles import OracleFactory
+
+            oracle = OracleFactory.create("evaluation", oracle_spec)
+            metrics.update(evaluation_surrogate_metrics(top10, oracle))
+        except (BaselineMissing, Exception) as error:  # noqa: B014
+            metrics["eval_oracle_top10_mean"] = None
+            unavailable["eval_oracle_top10_mean"] = (
+                f"optional_tool_missing: the evaluation surrogate at "
+                f"{oracle_spec} could not be loaded "
+                f"({type(error).__name__}: {' '.join(str(error).split())[:120]})"
+            )
+
+    training_set = getattr(constants, "surrogate_training_set", None)
+    surrogate_smiles = read_smiles(str(training_set)) if training_set else []
+    if not surrogate_smiles:
+        metrics["top100_outside_domain_rate"] = None
+        unavailable["top100_outside_domain_rate"] = (
+            "not_applicable_to_job_type: this experiment declares no "
+            "`surrogate_training_set`, which is the set the OPTIMIZATION "
+            "surrogate was fitted on, not the generative model's training "
+            "split."
+        )
+        return
+    try:
+        metrics.update(
+            applicability_domain_metrics(
+                top100,
+                surrogate_smiles,
+                similarity_floor=float(
+                    getattr(constants, "applicability_similarity_floor", 0.3)
+                ),
+            )
+        )
+    except BaselineMissing as error:
+        metrics["top100_outside_domain_rate"] = None
+        unavailable["top100_outside_domain_rate"] = "insufficient_sample: " + " ".join(
+            str(error).split()
+        )

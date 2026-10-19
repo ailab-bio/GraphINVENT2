@@ -1,0 +1,33 @@
+{
+  "database": "TPDdb",
+  "homepage": "https://tpddb.idrblab.net",
+  "citation": "Qin X, Zhang Y, Wang Y, et al. TPDdb: the comprehensive database of targeted protein degrader. Nucleic Acids Research 54(D1):D1683-D1691 (2026). doi:10.1093/nar/gkaf996",
+  "retrieved_utc": "2026-10-19T15:40:07.373105+00:00",
+  "sources": [
+    {
+      "modality": "glue",
+      "url": "https://tpddb.idrblab.net/sites/files/tpd_download/MG_main_table.txt",
+      "filename": "MG_main_table.txt",
+      "bytes": 1724726,
+      "sha256": "8a6d0884d4c936c93e7904f723cb25aca252665dee7a4cc7aa46105f8b7216a3",
+      "records_with_smiles": 5217
+    }
+  ],
+  "selection": {
+    "rule": "sorted by (heavy atom count, canonical SMILES); first N kept",
+    "n_molecules": 5216,
+    "modality": "glue",
+    "max_heavy_atoms": null,
+    "n_candidates_after_curation": 5216
+  },
+  "summary": {
+    "heavy_atoms_min": 13,
+    "heavy_atoms_max": 71,
+    "logp_min": -4.794,
+    "logp_max": 8.336,
+    "modalities": [
+      "glue"
+    ]
+  },
+  "regenerate_with": "python scripts/tpddb-create-dataset.py --modality glue --n-molecules None --output data/datasets/tpddb_glue/"
+}

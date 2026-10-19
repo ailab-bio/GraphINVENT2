@@ -10,64 +10,12 @@ here so that whoever supplies the input does not also have to design them.
 
 from __future__ import annotations
 
-from ._budget import BUDGETS, _top_mean
+from ._budget import _top_mean
 from ._core import ecfp4
 
 
 class MissingInput(Exception):
     """A metric's input is absent. The message says which and where from."""
-
-
-def screening_baseline_metrics(
-    library_scores_at_budget: dict | None,
-    generative_top10_at_budget: dict,
-) -> dict:
-    """
-    `vs_baseline_top10_at_<...>` and `vs_delta_top10_at_<...>`.
-
-    A generative method that does not beat random library screening at matched
-    budget has not demonstrated anything, so this runs for every optimization
-    experiment. `vs_delta_*` is the headline comparison.
-
-    Parameters
-    ----------
-    library_scores_at_budget
-        {'1k': [scores], '5k': [...], '10k': [...]} -- the oracle scores of B
-        molecules drawn uniformly at random from a declared screening library,
-        with B the matching budget, scored by the **same** oracle under the
-        **same** seeds as the generative run. At minimum the library is a
-        random matched-size sample from the training and validation splits; an
-        experiment may declare more, and all declared libraries are reported.
-    generative_top10_at_budget
-        {'1k': top10_mean, ...} from the generative run, for the subtraction.
-
-    Raises
-    ------
-    MissingInput
-        When no library has been declared.
-    """
-    if not library_scores_at_budget:
-        raise MissingInput(
-            "vs_baseline_top10_at_* needs a declared screening library: B "
-            "molecules drawn uniformly at random from it, scored by the same "
-            "oracle under the same seeds, for each budget in "
-            f"{sorted(BUDGETS)}.\n"
-            "No experiment declares one yet. Supply "
-            "{'1k': [scores], '5k': [...], '10k': [...]}."
-        )
-
-    results: dict = {}
-    for label in BUDGETS:
-        scores = library_scores_at_budget.get(label)
-        baseline = _top_mean(list(scores), 10) if scores else None
-        results[f"vs_baseline_top10_at_{label}"] = baseline
-        generative = generative_top10_at_budget.get(label)
-        results[f"vs_delta_top10_at_{label}"] = (
-            generative - baseline
-            if baseline is not None and generative is not None
-            else None
-        )
-    return results
 
 
 def evaluation_surrogate_metrics(

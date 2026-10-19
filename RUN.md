@@ -1,9 +1,97 @@
 # RUN.md
 
-Operational runbook for GraphINVENT2 on a SLURM cluster.
+**This is the file to follow. The checklist below is the whole sequence; everything after it is reference you
+read only when a step needs explaining or something goes wrong.**
 
-**Part 1, below, is the only part written so far. Parts 2 onward are appended
-by whoever builds the experiments; do not fold their content into Part 1.**
+Three other documents exist and none of them is a runbook: `CLAUDE.md` is the specification, which says what a
+metric means; `manuscript/experiment-plan.md` is the science, which says why an experiment exists; and each
+`experiments/<name>/instructions.md` says what that one experiment claims and how to read its output. You do not
+need any of them to run jobs.
+
+---
+
+# THE CHECKLIST
+
+Work down it. Each line is one thing to do, in order; where two lines are marked **(parallel)** they do not
+depend on each other. The **detail** column points at the section further down that explains the step.
+
+## A. Get the cluster working (once, about an hour of your attention)
+
+| | Do this | Done when | Detail |
+|---|---|---|---|
+| A1 | Log in, check quotas, pick a project filesystem | you know where `data/` and `experiments/` will live | [Step 1](#step-1-log-in-and-check-your-quotas) |
+| A2 | Clone into a path with **no spaces** | `pwd` has no spaces in it | [Step 2](#step-2-clone-the-repository-somewhere-with-no-spaces-in-the-path) |
+| A3 | Build the environment, then add the CUDA wheel **on top of the lock** | `python -c "import torch; print(torch.version.cuda)"` prints a version, not `None` | [Step 3](#step-3-build-the-environment) |
+| A4 | `bash tools/install.sh` | PROTAC-Splitter, RetroTAC and REINVENT4 report installed | [tools/README.md](tools/README.md) |
+| A5 | Submit the self-test | it reports CUDA true | [Step 4](#step-4-submit-the-self-test) |
+| A6 | Set `slurm.account` | submission stops failing with "account unset" | [Step 5](#step-5-set-the-project-account) |
+| A7 | Run one tutorial job through SLURM | a `metrics.json` appears | [Step 6](#step-6-run-one-development-job-through-slurm) |
+| A8 | **Measure one epoch on the GPU** and update the anchors | `scripts/estimate-walltime.py` numbers come from your hardware | [Step 7](#step-7-measure-one-epoch-on-the-gpu-before-trusting-any-walltime) |
+
+**Do not skip A8.** Every walltime in the repository is a laptop-CPU extrapolation until you do, and three jobs
+are currently sized above a typical partition limit because of it.
+
+## B. Get the data (about an hour, mostly waiting)
+
+| | Do this | Done when | Detail |
+|---|---|---|---|
+| B1 | `python scripts/download_data.py --source tpddb --source zinc --source battslm` | a `MANIFEST.json` in each `data/raw/*` | [Step 2.2](#step-22-the-downloads) |
+| B2 | Build the four corpora and the two conditional ones | the row counts in Step 2.3 match | [Step 2.3](#step-23-build-the-degrader-datasets) |
+| B3 | Re-render the sbatch scripts with cluster paths | `run.sbatch` files carry your project path | [Step 2.1](#step-21-re-render-every-sbatch-with-cluster-paths) |
+| B4 | `python scripts/check-experiments.py` | far fewer "RESOLVE FAILED" lines than before B2 | — |
+
+## C. The kill point (45 minutes, and it can end the program)
+
+| | Do this | Done when | Detail |
+|---|---|---|---|
+| C1 | `bash experiments/surrogate_protac_optimization/fit.sh` | held-out R² printed for pDC50 and Dmax, three targets | [Step 2.4](#step-24-fit-the-protac-surrogates-which-is-a-kill-point) |
+| C2 | `bash experiments/surrogate_protac_evaluation/fit.sh` | same, on all data | same |
+| C3 | Read the R² against the mean-prediction baseline | **you have decided whether to continue** | `experiments/surrogate_protac_optimization/instructions.md` |
+
+**If C3 fails, `protac_goal_directed` and `protac_selectivity` do not run.** That is a result, and it gets
+reported rather than retried.
+
+## D. Train (days of wall clock, minutes of yours)
+
+Submit in this order. Everything in one row can go at once; a row waits on the row above it.
+
+| | Submit | Jobs | Waits on |
+|---|---|---|---|
+| D1 | the preprocess jobs for every corpus you built | `*/jobs/preprocess_*` | B2 |
+| D2 | the base priors **(parallel)** | `mg_prior/jobs/prior_zinc`; `protac_prior/jobs/prior_enumerated` and `battery_prior/jobs/prior_pubchem120k` are blocked, see below | D1 |
+| D3 | the transfer pairs **(parallel)** | each `*_transfer/jobs/prior_transfer` **and** `prior_scratch` | D2 for transfer, D1 for scratch |
+| D4 | the conditional models **(parallel)** | the three `*_conditional/jobs/train` | D1 |
+| D5 | the optimization campaigns | `protac_goal_directed/jobs/rl_smarca2` and `protac_selectivity/jobs/rl_selectivity`. The other two `rl_*` jobs are blocked, see below | C3 passed, D3 |
+
+`prior_scratch` is the from-scratch control and does **not** wait on a prior. Submitting it in D1 alongside the
+preprocess jobs is fine and saves a day.
+
+## E. Sample and report (an hour of yours, hours of wall clock)
+
+| | Do this | Jobs |
+|---|---|---|
+| E1 | Submit every sampling job: **31 samplers at three seeds each, 93 jobs** | `*/jobs/generate_*` |
+| E2 | Submit the screening baselines | `*/jobs/vs_baseline_*` |
+| E3 | Aggregate across seeds, per experiment | `python scripts/aggregate-seeds.py experiments/<name>` |
+| E4 | Open `experiments/<name>/results/report.html` | — |
+
+Nothing is reported from a training job. Each experiment's `instructions.md` names the sampling job that
+produces its numbers.
+
+## What is NOT in this checklist, and why
+
+| | Why it is absent |
+|---|---|
+| the three `reinvent_*` jobs | they refuse to run. REINVENT4 needs its Zenodo prior specialized onto our corpus and a wrapper exposing our scorer as its `ExternalProcess` component. Submitting one would optimize **our** model and write a `metrics.json` that reads as the baseline |
+| `mg_goal_directed` | its reward cannot be fitted: the largest glue target has 30 labelled compounds against a floor of about 100. See `experiments/surrogate_mg_optimization/instructions.md` and decide what it optimizes |
+| `protac_prior` | needs `protac_enumerated`, which upstream's generator did not finish building in three hours |
+| the battery program beyond `prior_scratch` | PubChem-120K is not distributed, `Batt-P30K.h5` upstream is a 134-byte LFS pointer, and the oracle chain does not exist |
+
+---
+
+# Reference
+
+Everything below explains a line of the checklist. Read it when you need it.
 
 ---
 
@@ -240,7 +328,87 @@ visible and it is only observable as a trajectory.
 
 ---
 
-## Step 7: find the usable batch size
+## Step 7: measure one epoch on the GPU, before trusting any walltime
+
+**Every walltime in this repository is a CPU extrapolation.** The anchors in
+`scripts/estimate-walltime.py` were measured on a laptop, and three jobs come
+out above a typical partition limit because of it. The ratio between CPU and
+GPU is not uniform across job types, so there is no correction factor to apply:
+training is dense linear algebra and should gain the most, generation is a
+sequential loop with a Python-level decode and will gain least. Measure the one
+number that decides the schedule.
+
+`mg_prior/jobs/prior_zinc` is the long pole of the whole project, so measure
+that one. Build a subset, preprocess it, and time a single epoch:
+
+```bash
+# A seeded 3,000-molecule subset of the corpus you already built.
+M=$SCRATCH/zinc_epoch
+mkdir -p $M/data/zinc_subset $M/jobs/pre $M/jobs/train
+python - <<'PY'
+import os, pathlib, random
+M = pathlib.Path(os.environ["M"])
+body = [l for l in pathlib.Path("data/datasets/zinc250k/zinc250k.smi").read_text().splitlines() if l.strip()]
+if body[0].split()[0].upper() == "SMILES":
+    body = body[1:]
+random.Random(1).shuffle(body)
+(M / "data/zinc_subset/zinc_subset.smi").write_text("\n".join(body[:3000]) + "\n")
+PY
+
+cat > $M/experiment.yaml <<EOF
+dataset_dir: $M/data/zinc_subset
+max_n_nodes: 54
+seed: 1
+EOF
+cat > $M/jobs/pre/config.yaml <<EOF
+job_type: preprocess
+smiles_file: $M/data/zinc_subset/zinc_subset.smi
+split_type: random
+device: cpu
+EOF
+cat > $M/jobs/train/config.yaml <<EOF
+job_type: unconditional
+epochs: 1
+batch_size: 1000
+block_size: 100000
+sample_every: 1000
+n_samples: 10
+device: cuda
+EOF
+
+python submit.py $M/jobs/pre            # ~1 minute
+python submit.py $M/jobs/train          # the number you want
+```
+
+Read the `time elapsed` line from the training job and divide by the training
+subgraph count, which the preprocess job prints and `train.h5` carries:
+
+```bash
+python -c "import h5py; print(h5py.File('$M/data/zinc_subset/train.h5')['nodes'].shape[0])"
+```
+
+**Measured here for comparison**, same subset, same settings, 57,033 training
+subgraphs from 2,400 molecules (23.8 per molecule):
+
+| device | one epoch | per subgraph | 40 epochs on the full corpus | request after x1.5 |
+|---|---|---|---|---|
+| laptop CPU | 91.9 s | 1.612 ms | 85 h | 128 h |
+| laptop MPS | 54.9 s | 0.962 ms | 51 h | 76 h |
+| GH200 | **measure it** | | | |
+
+The MPS row is this laptop's GPU and is not a prediction of the GH200; it is
+there to show that the CPU row is an upper bound rather than the answer. Put
+your measured per-subgraph number into `ANCHORS` in
+`scripts/estimate-walltime.py` keyed by `max_nodes`, re-run it with `--write`,
+and every job in the project is re-sized from a number that came from the
+hardware it will run on.
+
+If the GH200 number still puts `prior_zinc` above the partition limit, split it
+across submissions. Training resumes from its last checkpoint with the
+optimizer and the learning-rate schedule intact, so three 40-hour submissions
+and one 120-hour submission reach the same model.
+
+## Step 8: find the usable batch size
 
 See [the batch size tuning procedure](#the-batch-size-tuning-procedure).
 
@@ -322,6 +490,29 @@ path directly, since `submit.py` takes any path, or symlink
 location.
 
 ---
+
+## What survives a walltime kill
+
+There is no way to extend a running job, so the question of what a kill costs
+you decides how much of a guess the walltime can afford to be. Set
+`restart: true` in the job's config and resubmit; the job finds its own state.
+
+| job_type | Killed at the walltime, it... | What it resumes from |
+|---|---|---|
+| `preprocess` | **resumes** | The HDF5 files already written. It detects which of `valid.h5`, `test.h5`, `train.h5` are complete and continues from the first that is not, so a kill during `train.h5` does not redo the other two |
+| `unconditional` | **resumes** | The last `model_restart_<epoch>.pth`, with the optimizer and the learning-rate schedule restored. A kill costs at most one epoch |
+| `conditional` | **resumes** | The same path: it is the same training loop |
+| `goal_directed` | **resumes** | The last RL checkpoint. A budget-capped run also keeps the oracle call log, so the budget already spent is not spent again |
+| `generate` | **starts over** | Nothing. This is deliberate: a generate job is minutes, and `molecules.smi`, `molecules.likelihood` and `molecules.valid` have to line up by line number, so a half-written sample is worse than no sample |
+
+Because `generate` is the one that starts over, it is also the one whose
+walltime should be generous rather than tight: there is nothing to lose by
+over-requesting and a whole sample to lose by under-requesting.
+
+Previous outputs are not overwritten in place. A rerun moves the old
+`results/` aside into a timestamped `_previous_run_*` directory first, so a
+kill followed by a restart cannot leave one run's molecules beside another
+run's metrics.
 
 ## The walltime estimation procedure
 
@@ -540,36 +731,16 @@ the derivation is in each job's `config.yaml` and is carried into its `run.sbatc
 sized at all, because their dataset is not built yet and the molecule count the extrapolation needs is unknown;
 re-run the script after the datasets exist.
 
-## THE SESSION PLAN
+## Session sizing
 
-Each session is at most 45 minutes of your attention and ends with jobs running and the laptop closeable. Sessions
-with the same dependency depth can be done in any order.
+**The order is in [THE CHECKLIST](#the-checklist) at the top of this file.** This section used to carry a second
+ordering as a table of fifteen sessions; it disagreed with the checklist after the experiments were
+restructured, and two orderings that disagree are worse than one. It is gone.
 
-| # | Session | Your time | Must have finished first | You submit | You check on return |
-|---|---|---|---|---|---|
-| S1 | Environment: Part 1 steps 1 to 5 | 40 min | nothing | the self-test | `scripts/cluster_selftest` output reports CUDA true |
-| S2 | Re-render every sbatch with cluster paths | 15 min | S1 | nothing | 56 scripts rewritten, spot-check two |
-| S3 | Downloads: TPD-DB, ZINC250k, Batt-SLM | 30 min | S2 | nothing (foreground) | `MANIFEST.json` in each `data/raw/*` |
-| S4 | Dataset builds: glue, then PROTAC | 40 min | S3 | the two build scripts | row counts match the numbers in this part |
-| S5 | **KILL POINT**: the PROTAC surrogates | 45 min | S4 | `bash experiments/surrogate_protac_optimization/fit.sh` then `..._evaluation/fit.sh` | held-out R² against the mean baseline, for pDC50 and Dmax, for all three targets |
-| S5b | The glue surrogates | 10 min | S4 | `bash experiments/surrogate_mg_optimization/fit.sh` | it reproduces the counts and fits nothing: 30 compounds is the largest glue target. See that experiment's `instructions.md` |
-| S6 | Glue program: ZINC preprocess and base prior | 30 min | S4 | `mg_transfer` jobs 1 to 2 | `prior_zinc` convergence log, ~36 h job |
-| S7 | PROTAC program: preprocess and base prior | 30 min | S4 | `protac_transfer` jobs 1 to 3 | `preprocessing.yaml` split counts |
-| S8 | Battery program: preprocess and scratch prior | 40 min | S3 | `battery_transfer` jobs 3 and 5 | validity near 0.93 at step 0 |
-| S9 | Glue transfer and control priors | 25 min | S6 | `prior_transfer`, `prior_scratch` | epoch-1 validation loss, transfer below scratch |
-| S10 | PROTAC transfer and control priors | 25 min | S7 | `prior_transfer`, `prior_scratch` | same comparison |
-| S11 | Conditional datasets and training, all three | 45 min | S9, S10, S8 | three `preprocess_conditional` then three `train` | `condition_vector` present and non-constant |
-| S12 | Every sampling job | 60 min | S9, S10, S8, S11 | 93 generate jobs: 31 samplers at three seeds each | `metrics.json` in each `results/`, and both the unfiltered and `_filtered` metric sets present |
-| S13 | **GATED**: goal-directed runs | 40 min | S5 passed, S11, and L1+L2+L3 closed | three `rl_*` jobs | score trajectory rising, top-100 scaffold count not collapsing |
-| S14 | Baselines: screening and REINVENT4 | 40 min | S13 | the `vs_baseline_*` jobs | `vs_delta_top10_at_10k` positive |
-| S15 | Aggregation across seeds, and the report | 30 min | S12, S13, S14 | nothing | `aggregate.json` per experiment |
-
-Dependency graph as a list: S1 then S2 then S3 then S4. S5, S6, S7 all depend on S4 and are independent of each
-other. S8 depends only on S3. S9 depends on S6; S10 on S7. S11 depends on S8, S9 and S10. S12 depends on S11.
-S13 depends on S5 and S11 and on the three code fixes. S14 depends on S13. S15 depends on S12, S13 and S14.
-
-Total of your attention: about eight hours spread over sixteen sittings. The wall clock is dominated by
-`prior_zinc` and `prior_enumerated`, which are day-scale.
+What is worth keeping from it is the shape of the week. About eight hours of your attention, spread across
+roughly sixteen sittings of forty-five minutes, each ending with jobs running and the laptop closeable. The wall
+clock is dominated by the base priors, which are day-scale: `prior_zinc` is the long pole of the whole project
+at 4.75 M training subgraphs.
 
 **Every dependency above is prose, and none of it is expressed as a SLURM dependency.** There is no
 `--dependency=afterok` in `config/slurm.sh.template`, in `submit.py` or in any rendered `run.sbatch`,
@@ -622,8 +793,27 @@ from the cluster, which sits on a different network.*
 ## Step 2.3: build the degrader datasets
 
 ```bash
+# The two task corpora.
 python scripts/tpddb-create-dataset.py --modality glue   --output data/datasets/tpddb_glue/
 python scripts/tpddb-create-dataset.py --modality protac --output data/datasets/tpddb_protac/
+
+# The two CONDITIONAL corpora, which are different datasets and not a flag on
+# the ones above: the class columns change the HDF5, so a conditional job
+# cannot read a corpus built without them.
+# The flag takes TARGET SYMBOLS, and the column is named is_<symbol> in
+# lowercase. `LABEL=A|B` merges two symbols under one label, which is how
+# IKZF1 and IKZF3 become one class. The names and their ORDER have to match
+# conditioning.properties in the experiment config, because the condition
+# vector is built positionally from these columns.
+python scripts/tpddb-create-dataset.py --modality protac \
+    --conditioning-classes "AR,BTK,EGFR" \
+    --output data/datasets/tpddb_protac_cond/
+python scripts/tpddb-create-dataset.py --modality glue \
+    --conditioning-classes "IKZF=IKZF1|IKZF3,GSPT1,RBM39" \
+    --output data/datasets/tpddb_glue_cond/
+
+# The molecular glue base corpus.
+python scripts/zinc-create-dataset.py --output data/datasets/zinc250k/
 ```
 
 - **MY TIME:** 40 minutes
@@ -631,7 +821,9 @@ python scripts/tpddb-create-dataset.py --modality protac --output data/datasets/
 - **DEPENDS ON:** 2.2
 - **CHECK BEFORE CONTINUING:** the measured numbers, which the build should reproduce. PROTAC: 21,429
   RDKit-parsable rows, 21,429 unique by isomeric canonical SMILES, **19,851 unique once flattened**, median 63
-  heavy atoms, p99 108. Glue: 5,998 rows, 5,998 isomeric unique, **5,703 flattened unique**, median 34, p99 54.
+  heavy atoms, p99 108. Glue: **5,216 rows** as of the 2026-10-19 build. An earlier pass recorded 5,998 here;
+  that number predates a curation change and the build no longer reproduces it, so 5,216 is the one to check
+  against. If you see 5,998 again, something reverted.
 - **IF IT FAILED:** a count far from these means the table schema moved.
 
 **Read the flattening numbers before trusting the deduplication.** The build deduplicates on isomeric canonical
@@ -641,10 +833,25 @@ ethanol it returns one molecule. But `use_chirality` is false, so the model trai
 collapses 1,578 PROTACs and 295 glues. **The real training-set size is 19,851, not 21,429.** Report that number.
 Tautomers are not normalized by either path, which is a separate and unaddressed gap.
 
-## Step 2.4: fit the PROTAC surrogate, which is a kill point
+## Step 2.4: fit the PROTAC surrogates, which is a kill point
+
+**These are not `submit.py` jobs.** A surrogate experiment is a fit script, not
+a job directory, so it has no `config.yaml` and `submit.py` will reject it. Run
+it directly, on the login node or in an interactive allocation:
 
 ```bash
-python submit.py experiments/surrogate_protac_optimization/smarca2 --slurm
+bash experiments/surrogate_protac_optimization/fit.sh
+bash experiments/surrogate_protac_evaluation/fit.sh
+```
+
+The glue surrogates have their own script and it fits nothing: the largest glue
+target carries thirty labelled compounds against a floor of about a hundred.
+Run it to reproduce the counts, then read
+`experiments/surrogate_mg_optimization/instructions.md` before deciding what
+`mg_goal_directed` optimizes:
+
+```bash
+bash experiments/surrogate_mg_optimization/fit.sh
 ```
 
 - **MY TIME:** 45 minutes, most of it reading the held-out scatter

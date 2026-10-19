@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -33,6 +34,7 @@ class CachedOracle:
     """
 
     @staticmethod
+    @lru_cache(maxsize=500_000)
     def _key(smiles: str) -> str:
         """
         Canonical form of *smiles*, which is what the cache is keyed on.
@@ -41,6 +43,13 @@ class CachedOracle:
         compound is submitted twice and the oracle-call count -- the
         authoritative record of the budget spent -- counts it twice. An
         unparseable string is used as given; it will score zero either way.
+
+        Memoized because this is called once per molecule per component per
+        step, and an RL run re-proposes the same molecules constantly. Measured
+        on 1,000 real degraders at 208 us a call: six components over ten steps
+        is 12.5 s, so a 200-step campaign spends about four minutes doing
+        nothing but re-deriving strings it already had. The function is pure,
+        so the memo cannot change a score.
         """
         from rdkit import Chem
 
