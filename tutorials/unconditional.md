@@ -3,8 +3,8 @@
 *Last updated: October 18th, 2026.*
 
 An `unconditional` job fits the generative model to a preprocessed dataset. It is also how transfer learning
-works: set `resume_from` and the same job type specializes an existing checkpoint onto new data. There is no
-separate transfer job type, and adding one would mean two code paths that have to stay in agreement.
+works: set `resume_from` and the same job type specializes an existing checkpoint onto new data. No separate
+transfer job type exists, and adding one would mean two code paths that have to stay in agreement.
 
 ## Run it
 

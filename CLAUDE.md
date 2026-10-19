@@ -171,11 +171,46 @@ is reported for every trained model.
 job directory is self-contained and can be copied or deleted on its own. The old `jobs/` and
 `output/` directories at the repo root are gone; do not reintroduce them.
 
+### What one experiment is
+
+An experiment is **one trained model, or one optimization campaign, together with everything needed
+to evaluate it**. Filters, decomposition and analysis are not experiments; they are the analysis of
+one. Baselines are not experiments; they are arms of the experiment they are a baseline for.
+
+| Experiment | What it is |
+|---|---|
+| `<program>_prior` | unconditional training on the base corpus |
+| `<program>_transfer` | transfer onto the task corpus with `resume_from`, **together with** the from-scratch control on the same corpus. Both arms live in one experiment because neither means anything alone: the comparison is the result |
+| `<program>_conditional` | conditional training on the panel. One experiment, not one per class: all classes are trained in one model and evaluated together |
+| `<program>_goal_directed` | optimization toward the program's oracle, with the virtual screening and REINVENT4 arms inside it |
+| `protac_selectivity` | the bonus campaign, optimizing for degradation of one target and against a second. Virtual screening is its only baseline |
+
+Three programs — `protac`, `mg`, `battery` — give twelve, plus `protac_selectivity`: **thirteen**.
+Four surrogate fits sit beside them as their own experiments, because each level differs in what
+data it may see and that difference is the point: `surrogate_<program>_optimization` is fitted on
+the training and validation splits only and is the RL reward,
+`surrogate_<program>_evaluation` is the same featurization and model class refitted on all data
+including the test split and only ever rescores final molecules.
+
+**All three goal-directed experiments carry both baseline arms**, virtual screening and REINVENT4,
+not the drug-discovery ones only. `protac_selectivity` is the single exception and takes virtual
+screening alone.
+
+**The three priors are never shared.** A PROTAC prior is not a starting point for a glue model and
+neither is a starting point for a solvent model: the size regimes, the atom vocabularies and the
+`max_nodes` values all differ, and a shared prior would silently impose one domain's geometry on
+another.
+
 **Every program follows the same transfer-learning shape**, which is a structural feature of the
 system rather than a choice an experiment makes: a prior trained on a large base corpus, fine-tuned
 on the smaller task corpus with `resume_from`, against a from-scratch control trained on the task
 corpus alone. The comparison between those two arms is what the transfer-learning claim rests on, so
 both are always run.
+
+**Every experiment ends with a sampling job of 10,000 molecules over three seeds**, from the final
+checkpoint or the best agent, and that sample is what the reported metrics are computed on. No
+experiment reports metrics from a training job, from a trajectory, or from a smaller sample. Each
+`instructions.md` names the sampling job that produces its numbers.
 
 ---
 
@@ -356,7 +391,10 @@ by the HTML report, the cross-seed aggregator and any plotting.
   will not. The supporting fields are `fcd_n_generated` and `fcd_n_reference`,
   `validity_n_generated_raw`, `property_window_rate_bounds`, `success_threshold`,
   `novelty_reference_corpora` and `novelty_n_reference_molecules`,
-  `success_definition`, `n_scaffolds`, `n_split_successfully`, `n_warheads_usable`,
+  `success_definition`, `condition_dropout`, `triage_stages`, `triage_pass_rate`,
+  `triage_n_entered`, `triage_sa_max`, `triage_retrotac_min`, `<stage>_pass_rate` and
+  `<stage>_n_reached` for each triage stage,
+  `n_scaffolds`, `n_split_successfully`, `n_warheads_usable`,
   `split_status_counts`, `top100_n_split`, `top100_split_success_rate`, `e3_similarity_floor`,
   `e3_max_similarities`, `e3_n_tested`, `e3_n_cores`, `ecfp4_radius`, `warhead_representation`,
   `warhead_fingerprint_radius`, `warhead_fingerprint_bits`, `knn_reference_pool_size`,
@@ -383,6 +421,34 @@ by the HTML report, the cross-seed aggregator and any plotting.
 - **Every conditional metric is reported alongside its unconditional baseline**, meaning the same
   model sampled the same way with no condition set. A conditional number with no baseline cannot be
   read, because nothing separates conditioning from the base rate of the corpus.
+- **Every sample metric is computed twice, before and after triage, and both are reported.** The
+  second set carries a `_filtered` suffix so the two are unmistakable in one table. Both numbers
+  matter and neither replaces the other: the unfiltered set says what the model actually produces,
+  which is what a generative result is, and the filtered set says what survives triage, which is
+  what a project would carry forward. A paper quoting only the filtered numbers is describing the
+  filter; one quoting only the unfiltered numbers is describing something nobody would make. The
+  denominator of a `_filtered` rate is still `n_samples`, so `validity_filtered` reads as the
+  fraction of the sample that both parsed and survived. Model properties have no filtered twin,
+  because removing molecules from a sample they were never computed over changes nothing: `nll_*`,
+  `uc_jsd`, `delta_nll` and the efficiency keys.
+
+### The triage stack
+
+Named in the output as `triage_stages`, with a pass rate at each stage denominated over the
+molecules that reached it, and `triage_pass_rate` end to end.
+
+| Dataset | Stages |
+|---|---|
+| drug-like | `structural_alerts` (MCF + PAINS), then `synthesizability` (`sa_score < 4.5`) |
+| bifunctional | `structural_alerts`, then `retrotac` (`retrotac >= 0.30` on the whole molecule), then `warhead_synthesizability` (`sa_score < 4.5` on the decomposed warhead) |
+
+Two stacks, because synthesizability is not one measurement. A drug-like molecule is gated on its
+own SA score. A bifunctional one cannot be: SA score reads a PROTAC's size as difficulty and rejects
+chemistry that demonstrably exists, so the whole molecule is gated on RetroTAC and the SA gate moves
+to the warhead, where the fragment is drug-sized and SA behaves. A molecule with no RetroTAC score
+or no usable warhead fails that stage rather than passing it, and the stage rates make that visible:
+a collapsing `warhead_synthesizability_pass_rate` with a collapsing `split_success_rate` beside it
+is a decomposition problem, not a chemistry one.
 
 ### Core metrics, reported for every setting
 
@@ -449,6 +515,34 @@ training deciles rather than held at one value, since a single value populates o
 
 Used when the condition is a class rather than a value, such as a target protein. The continuous
 metrics above have no definition in this case.
+
+**The condition is a one-hot vector that the model embeds.** The HDF5 `condition_vector` is a
+float32 one-hot of width equal to the number of classes, built positionally from the file's columns;
+`condition_dim` equals the number of classes; and `ConditionEncoder`, a two-layer MLP, learns the
+embedding from it end to end. No protein language model embeddings, no sequence features, no
+pretrained protein representations. With three classes and a few thousand molecules a learned
+embedding of a one-hot is everything the data supports, and a thousand-dimensional sequence
+embedding would add variance the training set cannot constrain.
+
+**`conditioning.properties` IS the class-to-index mapping**, recorded in the dataset's
+`preprocessing.yaml` and in the checkpoint's resolved config. It is positional: slot *i* of the
+condition vector is class *i* of that list, in both places. A permuted list therefore conditions on
+one class, reports it as another, and writes a byte-identical HDF5 — there is no shape, no count and
+no checksum that differs — so a dataset whose mapping is not the checkpoint's raises, and a class
+named in `sample_conditions` that is not in the panel raises and names the classes that exist.
+
+**Conditional training drops the condition on `condition_dropout` of its training examples**,
+default 0.1, drawn under the job seed. This is not a regularizer, though it looks like one. Every
+conditional metric is reported against an unconditional baseline, meaning the same model sampled
+with no condition set, and with a one-hot condition "no condition" is the all-zeros vector. A model
+trained only on one-hot inputs has never seen it, so the baseline would measure what the model does
+when asked a question outside its training distribution, and the conditional-minus-baseline gap —
+which is the entire claim — would be partly an artifact of that. Dropping the condition makes zeros
+a legitimate input meaning "unspecified", so the baseline becomes a real measurement and the model
+keeps a usable unconditional mode. Validation keeps its conditions, so model selection picks the
+best conditional model rather than the best average of two modes. The value is recorded in
+`metrics.json`, because a conditional number from a run that trained without it cannot be compared
+with one that did.
 
 The panel is declared with `condition_classes`, a list of the one-hot column names. Nothing else can
 tell a class column from a property that happens to take the values 0 and 1, and the two metric sets
@@ -774,13 +868,34 @@ five job types now have callers, tests and output.
 
 - **`eval_oracle_top10_mean`** and **`top100_outside_domain_rate`**. Both record
   an explicit `not_implemented` null. The inputs they were waiting on now exist
-  — `experiments/surrogates/protac_pdc50_smarca2/` carries the optimization and
+  — `experiments/surrogate_protac_optimization/smarca2/` carries the optimization and
   evaluation pickles and its `PERFORMANCE.md` — so what is missing is the
   wiring and a config key naming the evaluation pickle and the applicability
   floor, not the surrogates. Neither is blocked.
 
 What follows is what has not been *verified*, which is a different claim from
 what has not been written.
+
+**Decisions that are not mine to take.** Each changes the scope of an experiment or the claim made
+from it, so each is listed with a recommendation rather than chosen.
+
+- **The molecular glue surrogates cannot be fitted from TPD-DB.** Measured 2026-10-19: GSPT1 has 30
+  distinct compounds with a pDC50 or Dmax label, IKZF1 has 5, IKZF3 has 1 and RBM39 has 0, against a
+  floor of about a hundred. So `surrogate_mg_optimization` has no usable fit and
+  `mg_goal_directed` has no learned reward available. *Recommendation:* run `mg_goal_directed`
+  against a property-shaping objective rather than an activity surrogate, state in the manuscript
+  that no glue activity model was fittable at this data volume, and keep the fit script so the
+  counts reproduce. The alternative, sourcing a larger glue activity set, is a data question rather
+  than a code one.
+- **No ordering is expressed as a SLURM job dependency.** `config/slurm.sh.template`, `submit.py`
+  and every rendered `run.sbatch` carry no `--dependency=afterok`, so the session table in `RUN.md`
+  is prose and nothing stops a job being submitted before the job that writes its input finishes.
+  *Recommendation:* add an `--after <jobid>` flag to `submit.py` that renders the dependency line.
+  It is listed here rather than done because this document specifies `submit.py` as one positional
+  argument and one optional flag, and widening that is an interface decision.
+- **BTK Dmax is marginal at 57 compounds** under a warhead-scaffold split and is expected to produce
+  a held-out R² near zero. *Recommendation:* fit it, report it, and decide in advance that the zero
+  is the result.
 
 **Blocked on something I cannot obtain.**
 

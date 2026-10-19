@@ -1,6 +1,6 @@
 # SMOKE TEST with a matched screening baseline declared.
 job_type: goal_directed
-pretrained_model_path: experiments/mg_unconditional/jobs/smoke_train/checkpoints/model_restart_2.pth
+pretrained_model_path: experiments/mg_transfer/jobs/smoke_train/checkpoints/model_restart_2.pth
 rl_steps: 2
 rl_best_agent_every: 5
 rl_eval_every: 2

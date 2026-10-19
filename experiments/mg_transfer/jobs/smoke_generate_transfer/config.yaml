@@ -1,0 +1,8 @@
+# SMOKE TEST: the transfer-versus-scratch novelty comparison at toy scale.
+job_type: generate
+sample_mode: generate
+pretrained_model_path: experiments/mg_transfer/jobs/smoke_prior_transfer/checkpoints/model_restart_2.pth
+n_samples: 300
+batch_size: 150
+device: cpu
+dataset_dir: toy_glue

@@ -30,14 +30,13 @@ reward or the gradient contribution per component; see
 # load general packages and functions
 import pickle
 from collections import namedtuple
+from contextlib import contextmanager
 
 import numpy as np
 import sklearn
 import torch
 from rdkit import DataStructs
 from rdkit.Chem import QED, Crippen
-
-from metrics._core import morgan
 
 
 def _load_qsar_model(name: str, path: str) -> sklearn.base.BaseEstimator:
@@ -317,6 +316,33 @@ class ScoringFunction:
             or component.startswith("logp_target=")
             or ("activity" in component and component in self.qsar_models)
         )
+
+    @contextmanager
+    def unmetered(self):
+        """
+        Score without charging the budget, for the reporting samples.
+
+        The budget counts molecules scored *during optimization*. Every budget
+        checkpoint is then sampled and scored for reporting, and those
+        scorings are not part of what the campaign spent: a 10,000-call run
+        draws three samples of `eval_sample_size` molecules afterward, so left
+        metered the counter would finish at several times the budget it was
+        supposed to respect, and the oracle call log would stop being the
+        authoritative record of the spend.
+
+        The cache still fills, so a molecule scored here is free if the
+        optimization meets it later. That is correctness, not accounting: the
+        same molecule must receive the same score either way.
+        """
+        oracles = list(self._oracles.values())
+        previous = [o.metering for o in oracles]
+        for oracle in oracles:
+            oracle.metering = False
+        try:
+            yield
+        finally:
+            for oracle, was in zip(oracles, previous):
+                oracle.metering = was
 
     @property
     def oracle_calls(self) -> int:
@@ -654,6 +680,11 @@ class ScoringFunction:
 
         for idx, mol in enumerate(mols):
             try:
+                # Imported here, not at module scope: graphinvent is importable
+                # with only src/graphinvent on the path, and a module-level
+                # import of metrics breaks that.
+                from metrics._core import morgan
+
                 fingerprint = morgan(mol)
                 ecfp4 = np.zeros((2048,))
                 DataStructs.ConvertToNumpyArray(fingerprint, ecfp4)

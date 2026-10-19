@@ -19,4 +19,4 @@ device: cpu
 sample_conditions: all_classes
 # The unconditional arm's sample, which the post-hoc filter baseline reranks.
 # Without it the conditional numbers can be reported but not falsified.
-baseline_results_dir: experiments/protac_unconditional/jobs/smoke_generate/results/molecules.smi
+baseline_results_dir: experiments/protac_transfer/jobs/smoke_generate/results/molecules.smi

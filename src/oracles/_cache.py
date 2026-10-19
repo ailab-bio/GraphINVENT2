@@ -54,6 +54,13 @@ class CachedOracle:
         self._call_count: int = 0
         # Chronological log of (cumulative_call_count, score) for newly evaluated molecules
         self._optimization_log: list[tuple[int, float]] = []
+        # Whether a new molecule moves the budget counter. The budget counts
+        # molecules scored DURING OPTIMIZATION; the sample drawn from each
+        # budget checkpoint afterward is scored for reporting and is not
+        # charged. A 10,000-call run produces three such samples, so left
+        # metered the counter would finish at four times the budget it was
+        # supposed to respect.
+        self.metering: bool = True
 
     # ------------------------------------------------------------------
     # Core interface
@@ -88,6 +95,8 @@ class CachedOracle:
             new_scores = self._oracle(unique_new)
             for smi, score in zip(unique_new, new_scores):
                 self._cache[smi] = float(score)
+                if not self.metering:
+                    continue
                 self._call_count += 1
                 self._optimization_log.append((self._call_count, float(score)))
 
@@ -151,6 +160,8 @@ class CachedOracle:
             ):
                 self._cache[smi] = float(self._oracle.score_from_raw(value))
                 self._uncertainty_cache[smi] = float(uncertainty)
+                if not self.metering:
+                    continue
                 self._call_count += 1
                 self._optimization_log.append((self._call_count, self._cache[smi]))
 

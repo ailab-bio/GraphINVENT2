@@ -19,14 +19,14 @@ Confirm the fixes landed:
 
 ## KILL CRITERION, checked before this runs
 
-`experiments/surrogates/protac_pdc50_smarca2` must report a held-out R2 that beats a mean-prediction baseline.
+`experiments/surrogate_protac_optimization/smarca2` must report a held-out R2 that beats a mean-prediction baseline.
 If it does not, **this experiment does not run** and that is the finding. The target is SMARCA2 and not AR: AR has
 344 numeric DC50 rows of which 159 are an engineered L702H resistance line, leaving 185 wild-type rows with 86%
 from a single patent. AR appears in the paper as the documented data-poor case.
 
 ## Prerequisites
 
-`protac_unconditional/jobs/prior_transfer`, the surrogate, and `bash tools/install.sh` for RetroTAC.
+`protac_transfer/jobs/prior_transfer`, the surrogate, and `bash tools/install.sh` for RetroTAC.
 
 ## Jobs
 

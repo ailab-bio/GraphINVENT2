@@ -18,7 +18,7 @@ than a hard task. Report the two contrasts separately.
 
 ## Prerequisites
 
-`mg_unconditional/jobs/prior_transfer`, and the curated set with the three one-hot columns.
+`mg_transfer/jobs/prior_transfer`, and the curated set with the three one-hot columns.
 
 ## Submit
 

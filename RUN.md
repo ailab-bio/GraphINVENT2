@@ -551,14 +551,15 @@ with the same dependency depth can be done in any order.
 | S2 | Re-render every sbatch with cluster paths | 15 min | S1 | nothing | 56 scripts rewritten, spot-check two |
 | S3 | Downloads: TPD-DB, ZINC250k, Batt-SLM | 30 min | S2 | nothing (foreground) | `MANIFEST.json` in each `data/raw/*` |
 | S4 | Dataset builds: glue, then PROTAC | 40 min | S3 | the two build scripts | row counts match the numbers in this part |
-| S5 | **KILL POINT**: the PROTAC surrogate | 45 min | S4 | `surrogates/protac_pdc50_smarca2` | held-out R² against the mean baseline |
-| S6 | Glue program: ZINC preprocess and base prior | 30 min | S4 | `mg_unconditional` jobs 1 to 2 | `prior_zinc` convergence log, ~36 h job |
-| S7 | PROTAC program: preprocess and base prior | 30 min | S4 | `protac_unconditional` jobs 1 to 3 | `preprocessing.yaml` split counts |
-| S8 | Battery program: preprocess and scratch prior | 40 min | S3 | `battery_unconditional` jobs 3 and 5 | validity near 0.93 at step 0 |
+| S5 | **KILL POINT**: the PROTAC surrogates | 45 min | S4 | `bash experiments/surrogate_protac_optimization/fit.sh` then `..._evaluation/fit.sh` | held-out R² against the mean baseline, for pDC50 and Dmax, for all three targets |
+| S5b | The glue surrogates | 10 min | S4 | `bash experiments/surrogate_mg_optimization/fit.sh` | it reproduces the counts and fits nothing: 30 compounds is the largest glue target. See that experiment's `instructions.md` |
+| S6 | Glue program: ZINC preprocess and base prior | 30 min | S4 | `mg_transfer` jobs 1 to 2 | `prior_zinc` convergence log, ~36 h job |
+| S7 | PROTAC program: preprocess and base prior | 30 min | S4 | `protac_transfer` jobs 1 to 3 | `preprocessing.yaml` split counts |
+| S8 | Battery program: preprocess and scratch prior | 40 min | S3 | `battery_transfer` jobs 3 and 5 | validity near 0.93 at step 0 |
 | S9 | Glue transfer and control priors | 25 min | S6 | `prior_transfer`, `prior_scratch` | epoch-1 validation loss, transfer below scratch |
 | S10 | PROTAC transfer and control priors | 25 min | S7 | `prior_transfer`, `prior_scratch` | same comparison |
 | S11 | Conditional datasets and training, all three | 45 min | S9, S10, S8 | three `preprocess_conditional` then three `train` | `condition_vector` present and non-constant |
-| S12 | All paired generate jobs | 30 min | S9, S10, S8, S11 | 14 generate jobs | `metrics.json` in each `results/` |
+| S12 | Every sampling job | 60 min | S9, S10, S8, S11 | 93 generate jobs: 31 samplers at three seeds each | `metrics.json` in each `results/`, and both the unfiltered and `_filtered` metric sets present |
 | S13 | **GATED**: goal-directed runs | 40 min | S5 passed, S11, and L1+L2+L3 closed | three `rl_*` jobs | score trajectory rising, top-100 scaffold count not collapsing |
 | S14 | Baselines: screening and REINVENT4 | 40 min | S13 | the `vs_baseline_*` jobs | `vs_delta_top10_at_10k` positive |
 | S15 | Aggregation across seeds, and the report | 30 min | S12, S13, S14 | nothing | `aggregate.json` per experiment |
@@ -567,8 +568,19 @@ Dependency graph as a list: S1 then S2 then S3 then S4. S5, S6, S7 all depend on
 other. S8 depends only on S3. S9 depends on S6; S10 on S7. S11 depends on S8, S9 and S10. S12 depends on S11.
 S13 depends on S5 and S11 and on the three code fixes. S14 depends on S13. S15 depends on S12, S13 and S14.
 
-Total of your attention: about eight hours spread over fifteen sittings. The wall clock is dominated by
+Total of your attention: about eight hours spread over sixteen sittings. The wall clock is dominated by
 `prior_zinc` and `prior_enumerated`, which are day-scale.
+
+**Every dependency above is prose, and none of it is expressed as a SLURM dependency.** There is no
+`--dependency=afterok` in `config/slurm.sh.template`, in `submit.py` or in any rendered `run.sbatch`,
+so nothing stops a job being submitted before the job that writes its input has finished. The
+failure is not loud: a `generate` job submitted before its training job completes fails on a missing
+checkpoint, which is recoverable, but a `preprocess` job submitted twice concurrently writes the
+same HDF5 from two processes, which is not. Until the interface changes, the ordering in this table
+is the only thing enforcing it, and the session boundaries exist so that each sitting ends with
+everything it submitted able to run. `submit.py` takes one positional argument and one optional
+flag by specification, so adding `--after` is an interface change rather than a fix, and it is on
+the decision list in `CLAUDE.md` § Status.
 
 ## Step 2.1: re-render every sbatch with cluster paths
 
@@ -632,7 +644,7 @@ Tautomers are not normalized by either path, which is a separate and unaddressed
 ## Step 2.4: fit the PROTAC surrogate, which is a kill point
 
 ```bash
-python submit.py experiments/surrogates/protac_pdc50_smarca2 --slurm
+python submit.py experiments/surrogate_protac_optimization/smarca2 --slurm
 ```
 
 - **MY TIME:** 45 minutes, most of it reading the held-out scatter
@@ -645,7 +657,7 @@ python submit.py experiments/surrogates/protac_pdc50_smarca2 --slurm
   DC50 rows over 186 compounds, which is marginal under a warhead-scaffold split, so expect an R² near zero and
   decide in advance that you will report it.
 
-*`experiments/surrogates/` exists and carries `protac_pdc50_smarca2`. The fitting script
+*`experiments/surrogate_protac_optimization/` exists and carries `protac_pdc50_smarca2`. The fitting script
 `scripts/train-surrogate.py` works and has been run on the parsed labels; it has not been run on the cluster.*
 
 ---
@@ -655,7 +667,7 @@ python submit.py experiments/surrogates/protac_pdc50_smarca2 --slurm
 Three experiments plus the selectivity showcase, 21 jobs. Each has its own `instructions.md` carrying the
 prerequisites, the submit command, what to check, and the failure mode; this part gives the order and the gates.
 
-Order: `protac_unconditional` jobs `preprocess_tpddb` → `prior_scratch`, and in parallel `preprocess_enumerated`
+Order: `protac_transfer` jobs `preprocess_tpddb` → `prior_scratch`, and in parallel `preprocess_enumerated`
 → `prior_enumerated` → `prior_transfer`, then the two generate jobs. Then `protac_conditional`. Then, gated,
 `protac_goal_directed` and the showcase.
 
@@ -713,7 +725,7 @@ Git LFS pointer; KBS-409 and the F/P-holdout are not in the source repository ei
 What is available from `github.com/Teoroo-CMC/Batt-SLM`: `Batt-SLM/Batt-SLM.smi` at 1.88 MB,
 `Batt-SLM/filter_smiles.py`, the CPI implementation with `SolvFunc-87.csv`, and `Redox-Pot/redox_potential.py`.
 
-So `battery_unconditional` can run `preprocess_battslm`, `prior_scratch` and `generate_scratch` once the download
+So `battery_transfer` can run `preprocess_battslm`, `prior_scratch` and `generate_scratch` once the download
 is wired, and nothing else in the program can run yet.
 
 ## KILL POINT: validate the oracle chain before it scores anything

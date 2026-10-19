@@ -1,0 +1,13 @@
+# The battery solvent base corpus: a 120k PubChem subset. The prior
+# trained here is the starting point for battery_transfer and for nothing
+# else.
+dataset_dir: pubchem120k
+max_n_nodes: 16
+bifunctional: false
+seed: 1
+slurm:
+  account: naiss2024-5-630-gpu
+  # partition left unset on purpose: submit.py uses partition_gpu when
+  # gpus > 0 and partition_cpu otherwise, so a preprocess or screening job
+  # with gpus: 0 does not occupy a GPU node. Hard-coding gpu here sent 13
+  # CPU-only jobs to the GPU partition, one of them for 24 hours.

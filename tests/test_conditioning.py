@@ -266,3 +266,49 @@ def test_condition_vector_dtype_and_batch(batch_size):
 
     assert out.shape[0] == batch_size
     assert out.dtype == torch.float32
+
+
+def test_condition_dropout_zeroes_a_tenth_of_the_batch_and_is_seeded():
+    """
+    The unconditional baseline is only a real measurement when the model has
+    been trained on the zero vector, so a dropout that silently does nothing
+    turns the conditional-minus-baseline gap into an artifact. Nothing about
+    that failure is visible: training converges, the metrics are all present,
+    and the gap looks like a result.
+    """
+    import sys as _sys
+    import types
+
+    import torch
+
+    # Workflow imports Analyzer, which imports `metrics` at module scope, so
+    # src/ has to be on the path as well as src/graphinvent.
+    _src = str(Path(__file__).resolve().parent.parent / "src")
+    if _src not in _sys.path:
+        _sys.path.insert(0, _src)
+    from Workflow import Workflow
+
+    workflow = Workflow.__new__(Workflow)
+    workflow.constants = types.SimpleNamespace(condition_dropout=0.1, seed=1)
+    workflow._condition_rng = None
+
+    conditions = torch.ones(10000, 3)
+    dropped = workflow._drop_conditions(conditions)
+    zeroed = int((dropped.sum(dim=1) == 0).sum())
+    assert 0.08 < zeroed / 10000 < 0.12
+
+    # A surviving row is untouched, not merely non-zero.
+    survivors = dropped[dropped.sum(dim=1) > 0]
+    assert torch.equal(survivors, torch.ones_like(survivors))
+
+    # Seeded: the same job drops the same examples on a rerun.
+    again = Workflow.__new__(Workflow)
+    again.constants = workflow.constants
+    again._condition_rng = None
+    assert torch.equal(dropped, again._drop_conditions(conditions))
+
+    # And a rate of zero is a no-op rather than a near-no-op.
+    off = Workflow.__new__(Workflow)
+    off.constants = types.SimpleNamespace(condition_dropout=0.0, seed=1)
+    off._condition_rng = None
+    assert torch.equal(conditions, off._drop_conditions(conditions))

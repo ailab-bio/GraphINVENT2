@@ -307,7 +307,7 @@ somewhere to put the pin.
 | What | The reference generative optimizer this work compares against |
 | Needed by | the six `reinvent_*` jobs under `experiments/*_goal_directed/` |
 | Source | https://github.com/MolecularAI/REINVENT4 |
-| Pinned to | tag `v4.8.24` |
+| Pinned to | tag `v4.8`, commit `80a8d21aefd9c0d3ec806377522effb30cfca12a` |
 | Citation | Loeffler et al., *J. Cheminform.* 16:20 (2024) |
 | License | Apache-2.0 |
 | Install | `bash tools/install.sh` |
@@ -320,13 +320,78 @@ and `tools/install.sh` skips it with a message on the dev machine. It gets its
 own virtual environment for the same reason PROTAC-Splitter and RetroTAC do:
 its torch pin and ours cannot share an environment.
 
+**The tag was wrong and the installer could never have worked.** It pinned
+`v4.8.24`, which does not exist upstream; `git clone --branch v4.8.24` fails
+with `Remote branch not found`. Upstream's tags stop at `v4.8`. Corrected here
+and in `tools/install.sh`.
+
+### What the source says, read at `v4.8`
+
+Established by reading the repository rather than its documentation, because
+the comparison is only worth running if both methods are scored by the same
+code.
+
+**Our oracle is registered as an `ExternalProcess` component.**
+`reinvent_plugins/components/comp_external_process.py` takes `executable`,
+`args` and `property`, passes the SMILES newline-separated on **stdin**, and
+expects `{"version": 1, "payload": {"<property>": [scores]}}` on **stdout**. No
+reimplementation of our objective in their configuration language is needed or
+permitted: our scorer is the executable and our composite is the one property
+it returns.
+
+**Their aggregation is the identity for a single component, which is what makes
+the comparison fair.** `reinvent/scoring/aggregators/means.py` normalizes the
+weights before aggregating, so with one component the weight ratio is 1 and
+both `arithmetic_mean` and `geometric_mean` return the component's own value.
+Declare **one** component with **one** endpoint, weight 1, no `transform`
+(transforms are `Optional` and skipped when absent, per
+`reinvent/scoring/config.py`), and their scoring layer passes our number
+through untouched. Prefer `arithmetic_mean`: the geometric path applies
+`np.maximum(scores, 1e-8)`, so an exact zero comes out as 1e-8.
+
+**It cannot be capped on molecules scored, and that is the asymmetry to
+manage.** `reinvent/runmodes/RL/learning.py` runs `for step in
+range(self.max_steps)` and the only early exit is `converged(mean_scores,
+step)`, which receives the mean score and the step index and no molecule count.
+So the budget is enforced on our side: our external scorer is the only code
+that sees molecules, so it keeps the per-run counter of unique canonical
+SMILES, writes the trajectory, and marks the 1,000 and 5,000 crossings. Set
+`max_steps` so the budget is always reached first — at the default
+`batch_size = 64`, 10,000 unique molecules needs at least 157 steps before
+duplicates, so request several times that and truncate the trajectory at the
+budget. Note that `run_program.run_command` runs with `check=True`, so a
+non-zero exit from our scorer aborts the whole run rather than ending it
+cleanly.
+
+**The diversity filter is off by default.** `reinvent/runmodes/RL/validation.py`
+declares `diversity_filter: Optional[SectionDiversityFilter] = None`, so the
+section is absent unless written. When present its defaults are
+`bucket_size = 25`, `minscore = 0.4`, `minsimilarity = 0.4` and
+`penalty_multiplier = 0.5`, and `type` is required. Both configurations are run
+and both are reported, because this is the dominant lever on exactly the
+diversity metrics we report.
+
+**Its priors are not in the repository.** `configs/staged_learning.toml` points
+at `priors/reinvent.prior`, and that directory does not exist in the clone;
+upstream publishes the prior models on Zenodo at doi 10.5281/zenodo.15641296.
+They are trained on drug-like space, which is not our corpus, so specialize one
+onto the same task corpus we transfer onto with `run_type =
+"transfer_learning"` (`configs/transfer_learning.toml`: `input_model_file`,
+`smiles_file`, `validation_smiles_file`, `output_model_file`, `num_epochs`).
+That training is not charged to the oracle budget, because ours is not either.
+
+**One more difference worth stating rather than discovering later.** Its
+default learning strategy is DAP with `sigma = 128`; ours is BAR with
+`sigma = 10` or `20`. These are different algorithms with a parameter of the
+same name, and the numbers are not comparable as tuning effort.
+
 **The comparison is not evidence until all six fairness conditions are met**,
 which are listed in `experiments/*_goal_directed/instructions.md`: the pinned
-version, a prior trained on the same corpus, matched tuning effort, the
-diversity filter either matched or disabled with both configurations reported,
-matched size constraints, and a shared oracle cache so the budget means the
-same thing on both sides. A comparison failing any of these is not a result,
-and the instructions say so.
+version, a prior specialized on the same task corpus, matched tuning effort
+with what each side received stated, the diversity filter both on and off with
+both results reported, matched size constraints, the same scoring code through
+a single component, and per-run budget accounting. A comparison failing any of
+these is not a result, and the instructions say so.
 
 ## Reference, not a dependency
 

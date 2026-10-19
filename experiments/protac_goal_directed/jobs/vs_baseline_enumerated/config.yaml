@@ -4,7 +4,7 @@
 job_type: generate
 sample_mode: generate
 dataset_dir: protac_enumerated
-pretrained_model_path: experiments/protac_unconditional/jobs/prior_enumerated/checkpoints/model_restart_40.pth
+pretrained_model_path: experiments/protac_prior/jobs/prior_enumerated/checkpoints/model_restart_40.pth
 n_samples: 10000
 batch_size: 500
 device: cuda

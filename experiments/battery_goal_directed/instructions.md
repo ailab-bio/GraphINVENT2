@@ -25,7 +25,7 @@ itself the result.
 ## KILL CRITERION: validate the chain before using it
 
 Run the chain over KBS-409 and show the known weakly solvating electrolytes come out with permittivity below 10
-and CPI below 0.5 while the conventional dilute electrolytes do not. The labelled external set: MEK, 2Me-DOL,
+and CPI below 0.5 while the conventional dilute electrolytes do not. The labeled external set: MEK, 2Me-DOL,
 DIGDBE, HME, MTBE and OTA as weakly solvating; DMA, DMF, DEF, MPC, EPC, EB, GBL, MF and EF as conventional. **If
 the chain cannot reproduce that separation, nothing in the battery program runs.** KBS-409 is not in the source
 repository either.
@@ -41,7 +41,7 @@ construction criterion and is **not** one of the structural filters; the two are
 
 ## The funnel is not part of the reward
 
-The reward is S7. The posterior verification funnel runs afterwards as a separate script, stage by stage, with a
+The reward is S7. The posterior verification funnel runs afterward as a separate script, stage by stage, with a
 count at each stage so our table lines up with the published one. The published counts (unverified): 180,000
 generated; 7,832 with permittivity below 10 but failing another constraint; 4,647 meeting all requirements; 4,471
 with SA score at most 4.0; minus 75 for maximum Tanimoto above 0.7 to the non-fluorinated KBS-409 solvents; minus

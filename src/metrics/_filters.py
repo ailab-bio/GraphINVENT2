@@ -185,3 +185,101 @@ def compute_property_window_rate(unique_valid_smiles: list, bounds: dict) -> tup
             inside += 1
     metrics["property_window_rate"] = inside / len(mols)
     return metrics, unavailable
+
+
+# The triage stack, in the order it is applied. Named in the output so a
+# reader never has to infer which gates a `_filtered` number passed.
+TRIAGE_STAGES_DRUGLIKE = ("structural_alerts", "synthesizability")
+TRIAGE_STAGES_BIFUNCTIONAL = (
+    "structural_alerts",
+    "retrotac",
+    "warhead_synthesizability",
+)
+
+
+def triage(
+    unique_valid_smiles: list,
+    *,
+    bifunctional: bool = False,
+    retrotac_by_smiles: dict | None = None,
+    warhead_by_smiles: dict | None = None,
+) -> tuple:
+    """
+    The molecules that survive triage, and the pass rate at each stage.
+
+    Returns `(kept, rates)`. `rates` carries one `<stage>_pass_rate` per stage,
+    each denominated over the molecules that *reached* that stage, plus
+    `triage_pass_rate` end to end over the unique valid molecules and
+    `triage_stages` naming the stack in order.
+
+    Two stacks, because synthesizability is not one measurement. A drug-like
+    molecule is gated on its own SA score. A bifunctional one cannot be: SA
+    score reads a PROTAC's size as difficulty and rejects chemistry that
+    demonstrably exists, so the whole molecule is gated on RetroTAC and the SA
+    gate moves to the warhead, where the fragment is drug-sized and SA behaves.
+
+    A molecule with no RetroTAC score or no usable warhead fails that stage
+    rather than passing it. The stage rates make that visible: a collapsing
+    `warhead_synthesizability_pass_rate` with a collapsing
+    `split_success_rate` beside it is a decomposition problem, not a chemistry
+    one.
+    """
+    from rdkit import Chem
+
+    from ._budget import QUALITY_RETROTAC_MIN, QUALITY_SA_MAX
+    from ._properties import sa_score
+
+    stages = TRIAGE_STAGES_BIFUNCTIONAL if bifunctional else TRIAGE_STAGES_DRUGLIKE
+    rates: dict = {"triage_stages": list(stages)}
+    kept = [smi for smi in unique_valid_smiles if smi]
+    n_entered = len(kept)
+
+    def record(stage: str, survivors: list, reached: int) -> list:
+        rates[f"{stage}_pass_rate"] = len(survivors) / reached if reached else None
+        rates[f"{stage}_n_reached"] = reached
+        return survivors
+
+    reached = len(kept)
+    survivors = []
+    for smi in kept:
+        mol = Chem.MolFromSmiles(smi)
+        if mol is not None and passes_filters(mol):
+            survivors.append(smi)
+    kept = record("structural_alerts", survivors, reached)
+
+    if bifunctional:
+        reached = len(kept)
+        scores = retrotac_by_smiles or {}
+        kept = record(
+            "retrotac",
+            [
+                s
+                for s in kept
+                if (scores.get(s) is not None and scores[s] >= QUALITY_RETROTAC_MIN)
+            ],
+            reached,
+        )
+        reached = len(kept)
+        warheads = warhead_by_smiles or {}
+        survivors = []
+        for smi in kept:
+            warhead = warheads.get(smi)
+            mol = Chem.MolFromSmiles(warhead) if warhead else None
+            if mol is not None and sa_score(mol) < QUALITY_SA_MAX:
+                survivors.append(smi)
+        kept = record("warhead_synthesizability", survivors, reached)
+    else:
+        reached = len(kept)
+        survivors = []
+        for smi in kept:
+            mol = Chem.MolFromSmiles(smi)
+            if mol is not None and sa_score(mol) < QUALITY_SA_MAX:
+                survivors.append(smi)
+        kept = record("synthesizability", survivors, reached)
+
+    rates["triage_pass_rate"] = len(kept) / n_entered if n_entered else None
+    rates["triage_n_entered"] = n_entered
+    rates["triage_sa_max"] = QUALITY_SA_MAX
+    if bifunctional:
+        rates["triage_retrotac_min"] = QUALITY_RETROTAC_MIN
+    return kept, rates

@@ -1,6 +1,6 @@
 job_type: conditional
 dataset_dir: tpddb_protac_cond
-resume_from: experiments/protac_unconditional/jobs/prior_transfer/checkpoints/model_restart_20.pth
+resume_from: experiments/protac_transfer/jobs/prior_transfer/checkpoints/model_restart_20.pth
 epochs: 20
 batch_size: 500
 accumulation_steps: 4

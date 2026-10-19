@@ -19,7 +19,7 @@ REINVENT_URL="https://github.com/MolecularAI/REINVENT4.git"
 # v4.8.24. It pins torch==2.12.0, whose wheels cover manylinux_2_28_aarch64 and
 # x86_64 but not macOS arm64, so this installs on the cluster and is skipped on
 # the dev machine rather than failing the whole script.
-REINVENT_SHA="v4.8.24"
+REINVENT_SHA="v4.8"   # upstream has no v4.8.24; a clone of it fails outright
 RETROTAC_SHA="5ba851656753542d4a7f23438c033af280db9935"
 # sha256 of release/gnn_20260828_182305_final.ckpt.gz, from its MANIFEST.txt
 RETROTAC_CKPT_SHA256="83ccd2404cfffec230f7457926a95421731e56cc37268080e491b18d4da038af"

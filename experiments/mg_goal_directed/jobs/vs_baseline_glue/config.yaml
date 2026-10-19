@@ -2,7 +2,7 @@
 # NOT YET IMPLEMENTED as a job type (L27).
 job_type: generate
 sample_mode: generate
-pretrained_model_path: experiments/mg_unconditional/jobs/prior_transfer/checkpoints/model_restart_20.pth
+pretrained_model_path: experiments/mg_transfer/jobs/prior_transfer/checkpoints/model_restart_20.pth
 n_samples: 10000
 batch_size: 500
 device: cuda

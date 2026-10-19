@@ -66,7 +66,7 @@ overwriting it. Those add up: `python cleanup.py --backups --dry-run` lists them
 `metrics.json` has three blocks. `metrics` holds the values, flat, keyed exactly as CLAUDE.md names them. `run`
 records the job type, dataset, seed, device and timestamp. `unavailable` explains every null, with a category:
 `optional_tool_missing`, `insufficient_sample`, or `not_applicable_to_job_type`. A null that carries its reason is
-worth more than a missing key, which is why the file is shaped this way.
+worth more than a missing key.
 
 Metric definitions live in one place, CLAUDE.md's "Evaluation metrics" section, and are implemented once, in
 `src/metrics/`. If a tutorial and CLAUDE.md disagree about what a metric means, CLAUDE.md is right and the

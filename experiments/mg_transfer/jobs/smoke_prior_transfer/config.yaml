@@ -1,0 +1,11 @@
+# SMOKE TEST of the real prior_transfer job, size overridden.
+job_type: unconditional
+resume_from: experiments/mg_prior/jobs/smoke_prior_zinc/checkpoints/model_restart_2.pth
+epochs: 2
+batch_size: 16
+accumulation_steps: 4
+sample_every: 2
+n_samples: 50
+device: cpu
+dataset_dir: toy_glue
+block_size: 1000

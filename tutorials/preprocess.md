@@ -141,8 +141,9 @@ Then the HDF5 gains a `condition_vector` of shape `n_subgraphs × condition_dim`
 job can read it. Without those keys the property columns are dropped and you get an unconditional dataset: the
 file parses either way, so the only signal is `condition_dim: 0` in `preprocessing.yaml`. Check it.
 
-A categorical label is expressed as one numeric column per class holding 0 or 1. There is no separate categorical
-code path, and none is needed: a one-hot label is numeric columns, and the float32 `condition_vector` carries it.
+A categorical label is expressed as one numeric column per class holding 0 or 1. No separate categorical code
+path exists, and none is needed: a one-hot label is numeric columns, and the float32 `condition_vector` carries
+it.
 
 [Conditional generation](./conditional.md) continues from here.
 

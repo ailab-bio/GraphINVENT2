@@ -1,0 +1,15 @@
+# The sampling job that ends this experiment. CLAUDE.md: every experiment
+# ends with 10,000 molecules over three seeds, from the final checkpoint,
+# and the reported metrics are computed on that sample. A prior is a trained
+# model like any other, so it is evaluated like one; without this the
+# experiment would end with a checkpoint and no measurement of it, and the
+# transfer comparison downstream would have no baseline for what the prior
+# alone produces.
+job_type: generate
+sample_mode: generate
+dataset_dir: zinc250k
+pretrained_model_path: experiments/mg_prior/jobs/prior_zinc/checkpoints/model_restart_40.pth
+n_samples: 10000
+batch_size: 500
+device: cuda
+seed: 3

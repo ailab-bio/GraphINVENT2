@@ -47,7 +47,7 @@ seed is stripped before readout, which keeps the output shape identical to the u
 Stripping the seed is not the whole story, and the part that is easy to miss is that the readout *input* changes
 anyway: the condition embedding is concatenated to the graph embedding, making
 `graph_emb_size = gather_width + condition_embedding_dim`. That concatenation is load-bearing. The first action
-of every molecule is taken on an empty graph, where there is no real node to carry the seed's message, so without
+of every molecule is taken on an empty graph, where no real node exists to carry the seed's message, so without
 the concatenation the model would be unconditional for exactly the decision that picks the first atom.
 
 ## Training it

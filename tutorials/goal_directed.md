@@ -142,7 +142,7 @@ well under a percentage point. `results/component_records.json` carries the per-
 component table can be read without re-running the splitter.
 
 The job also writes `results/optimization.png`: the score trajectory, the budget curve with the virtual
-screening baseline on the same axes, and — where the run recorded it — the warhead scaffold count against
+screening baseline on the same axes, and, where the run recorded it, the warhead scaffold count against
 learning step, which is the trajectory the collapse is only visible in.
 
 ## The budget-capped variant

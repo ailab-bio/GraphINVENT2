@@ -291,8 +291,12 @@ def evaluate_generation(
     if n_generated_raw is not None:
         metrics["validity_n_generated_raw"] = int(n_generated_raw)
 
-    # Whole-PROTAC synthesizability, for bifunctional datasets only.
-    _retrotac_metrics(constants, generated_smiles, metrics, unavailable)
+    # Whole-PROTAC synthesizability, for bifunctional datasets only. The
+    # per-molecule scores come back so the triage stack can reuse them rather
+    # than paying for a second pass.
+    retrotac_by_smiles = _retrotac_metrics(
+        constants, generated_smiles, metrics, unavailable
+    )
 
     # fcd, against the test split.
     from ._unconditional import _compute_fcd
@@ -381,6 +385,22 @@ def evaluate_generation(
             )
             if s
         }
+    )
+
+    # Triage, and every metric again over what survives it. Both sets are
+    # reported and neither replaces the other: the unfiltered set says what the
+    # model produces, which is what a generative result is, and the filtered
+    # set says what survives triage, which is what a project would carry
+    # forward. A paper quoting only the filtered numbers describes the filter;
+    # one quoting only the unfiltered numbers describes something nobody would
+    # make.
+    _filtered_metrics(
+        constants,
+        unique_valid,
+        metrics,
+        unavailable,
+        training_smiles=training_smiles,
+        retrotac_by_smiles=retrotac_by_smiles,
     )
 
     def draw(written: dict) -> list:
@@ -1204,6 +1224,16 @@ def evaluate_training(
             "uc_jsd is computed by a generate job with sample_mode: evaluate"
         )
 
+    # The fraction of training examples trained with the condition dropped.
+    # Supporting field, not a metric: the unconditional baseline of every
+    # conditional number is only a real measurement when this is non-zero, so
+    # a reader comparing two runs has to be able to see it without opening the
+    # config.
+    if getattr(constants, "condition_dim", 0) > 0:
+        metrics["condition_dropout"] = float(
+            getattr(constants, "condition_dropout", 0.0) or 0.0
+        )
+
     def draw(_written: dict) -> list:
         from . import _figures
 
@@ -1323,6 +1353,101 @@ COMPONENT_KEYS = (
     "warhead_sa_score_mean",
     "warhead_sa_score_median",
 )
+
+
+def _filtered_metrics(
+    constants,
+    unique_valid: list,
+    metrics: dict,
+    unavailable: dict,
+    *,
+    training_smiles: list,
+    retrotac_by_smiles: dict | None = None,
+) -> None:
+    """
+    The triage pass rates, and the core and component tables recomputed over
+    what survives.
+
+    Every surviving key carries a `_filtered` suffix, so the two sets are
+    unmistakable in one table. The denominator stays `n_samples`, which is what
+    makes `validity_filtered` read as "the fraction of the sample that both
+    parsed and survived triage" rather than as a rate over a set whose size
+    depends on the filter.
+
+    Not everything has a filtered twin, and the ones that do not are model
+    properties rather than sample properties: `nll_*`, `uc_jsd`, the efficiency
+    keys and `delta_nll` do not change when molecules are removed from a
+    sample they were never computed over.
+    """
+    from ._filters import triage
+
+    bifunctional = bool(getattr(constants, "bifunctional", False))
+
+    # The warhead of each molecule, for the bifunctional SA gate. Served from
+    # the splitter cache, which the component metrics have already filled.
+    warhead_by_smiles: dict = {}
+    if bifunctional and unique_valid:
+        from ._components import MissingInput as ComponentMissing
+        from ._components import warhead_records
+
+        try:
+            for record in warhead_records(_subsample(unique_valid, constants)):
+                if record["status"] == "ok":
+                    warhead_by_smiles[record["molecule"]] = record["warhead"]
+        except ComponentMissing as error:
+            reason = " ".join(str(error).split())
+            metrics["triage_pass_rate"] = None
+            unavailable["triage_pass_rate"] = reason
+            return
+
+    kept, rates = triage(
+        unique_valid,
+        bifunctional=bifunctional,
+        retrotac_by_smiles=retrotac_by_smiles,
+        warhead_by_smiles=warhead_by_smiles,
+    )
+    metrics.update(rates)
+
+    if not kept:
+        metrics["validity_filtered"] = 0.0
+        unavailable["validity_filtered"] = (
+            "insufficient_sample: no unique valid molecule survived triage "
+            f"({' then '.join(rates['triage_stages'])}), which on a weak model "
+            "is a real outcome rather than a bug"
+        )
+        return
+
+    core = _core.compute_core_metrics(
+        kept,
+        n_sampled=constants.n_samples,
+        training_smiles=training_smiles,
+        isomeric=_isomeric(constants),
+        property_window=getattr(constants, "property_window", None),
+    )
+    for key, reason in core.pop("_filter_unavailable", {}).items():
+        unavailable[f"{key}_filtered"] = reason
+    for key, value in core.items():
+        metrics[f"{key}_filtered"] = value
+
+    if bifunctional:
+        from ._components import MissingInput as ComponentMissing
+        from ._components import compute_component_metrics
+
+        try:
+            component, _ = compute_component_metrics(
+                _subsample(kept, constants),
+                n_sampled=len(_subsample(kept, constants)),
+                training_warheads=_training_warheads(constants),
+                isomeric=_isomeric(constants),
+            )
+        except ComponentMissing as error:
+            reason = " ".join(str(error).split())
+            for key in COMPONENT_KEYS:
+                metrics[f"{key}_filtered"] = None
+                unavailable[f"{key}_filtered"] = reason
+            return
+        for key, value in component.items():
+            metrics[f"{key}_filtered"] = value
 
 
 def _training_warheads(constants) -> list:

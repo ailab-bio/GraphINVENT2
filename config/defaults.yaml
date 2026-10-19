@@ -88,7 +88,7 @@ n_samples: 2000
 use_tensorboard: false
 
 # the from-scratch control job directory for a transfer job, e.g.
-# experiments/mg_unconditional/jobs/scratch. Its convergence log is overlaid on
+# experiments/mg_transfer/jobs/scratch. Its convergence log is overlaid on
 # this job's training curves, which is the only way the transfer claim is
 # legible: reaching the same final loss in fewer epochs is the claim, and one
 # curve cannot show it. Null for a job that is not a transfer arm.
@@ -138,6 +138,19 @@ condition_type: virtual_node
 # "all_classes", which cycles the panel across generation batches so one job
 # covers every class and the macro-average has something to average.
 sample_conditions: null
+
+# fraction of TRAINING examples whose condition vector is replaced with zeros,
+# drawn under the job seed. Conditional jobs only. This is not a regularizer:
+# every conditional metric is reported against an unconditional baseline,
+# meaning the same model sampled with no condition set, and with a one-hot
+# condition "no condition" is the all-zeros vector. A model trained only on
+# one-hot inputs has never seen it, so the baseline would measure what the
+# model does outside its training distribution and the conditional-minus-
+# baseline gap would be partly an artifact. Dropping the condition on a tenth
+# of the examples makes zeros a legitimate input meaning "unspecified".
+# Validation keeps its conditions, so model selection picks the best
+# conditional model rather than the best average of two modes.
+condition_dropout: 0.1
 
 # null = the condition is a property value; a list of column names = the
 # condition is a class label over that one-hot panel, e.g.
@@ -192,11 +205,29 @@ sigma: 20
 # contribution of the best agent so far (BASF) to the loss, in [0, 1]
 alpha: 0.5
 
-# total oracle call budget; null = run for `epochs` steps instead
+# total oracle call budget; null = run for `rl_steps` steps instead. THE BUDGET
+# IS THE STOPPING RULE for every reported campaign: reinforcement learning can
+# be run indefinitely and the extra steps buy less and less, so we do not train
+# to convergence and we do not early-stop on a plateau. An oracle call is one
+# unique molecule scored by the COMPLETE set of surrogates that makes up the
+# objective, not one call per component, or an objective with six components
+# would look six times more expensive than one with one.
+# null here and set per campaign: the budget is a property of the reported
+# experiment, not of the code, and a global default silently converts every
+# smoke job from step-capped to budget-capped.
 oracle_budget: null
-# oracle call counts at which to checkpoint and evaluate
-checkpoint_oracle_counts: [1000, 3000, 10000]
-eval_sample_size: 30000
+# oracle call counts at which to checkpoint. The three comparison budgets are
+# nested points on ONE 10,000-call trajectory rather than three runs: the run
+# checkpoints as the counter crosses each, which is what a budget curve means
+# and costs one run instead of three. 10,000 is the end of the run and is the
+# final checkpoint.
+checkpoint_oracle_counts: [1000, 5000]
+# molecules sampled from each budget checkpoint for reporting. NOT CHARGED TO
+# THE BUDGET: the budget counts molecules scored *during optimization*, and
+# these are drawn afterward. A 10,000-call run therefore produces three samples
+# of 10,000 molecules, one per checkpoint, and none of those 30,000 scorings
+# moves the counter.
+eval_sample_size: 10000
 # a molecule is a success at or above this score
 success_threshold: 0.5
 

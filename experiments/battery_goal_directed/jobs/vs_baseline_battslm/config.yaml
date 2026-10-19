@@ -2,7 +2,7 @@
 # oracle and budget. NOT YET IMPLEMENTED (L27).
 job_type: generate
 sample_mode: generate
-pretrained_model_path: experiments/battery_unconditional/jobs/prior_scratch/checkpoints/model_restart_60.pth
+pretrained_model_path: experiments/battery_transfer/jobs/prior_scratch/checkpoints/model_restart_60.pth
 n_samples: 10000
 batch_size: 1000
 device: cpu

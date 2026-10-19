@@ -1423,7 +1423,11 @@ class Workflow:
         generates ``eval_sample_size`` molecules, computes the full metrics suite,
         and writes results to ``oracle_eval.csv``.
         """
-        print("* Starting oracle checkpoint evaluation.", flush=True)
+        print(
+            "* Starting oracle checkpoint evaluation. These scorings are NOT "
+            "charged to the oracle budget.",
+            flush=True,
+        )
         csv_path = self.constants.results_dir + "oracle_eval.csv"
         checkpoint_milestones = sorted(self.constants.checkpoint_oracle_counts)
 
@@ -1491,15 +1495,18 @@ class Workflow:
                 write=True,
             )
 
-            # Compute scores with components
-            scores, component_scores = (
-                self.scoring_function.compute_score_with_components(
-                    graphs=all_graphs,
-                    termination=termination_cat,
-                    validity=validity_tensor,
-                    uniqueness=uniqueness_tensor,
+            # Compute scores with components, unmetered: this sample is
+            # drawn from a budget checkpoint for reporting and is not part of
+            # what the campaign spent.
+            with self.scoring_function.unmetered():
+                scores, component_scores = (
+                    self.scoring_function.compute_score_with_components(
+                        graphs=all_graphs,
+                        termination=termination_cat,
+                        validity=validity_tensor,
+                        uniqueness=uniqueness_tensor,
+                    )
                 )
-            )
 
             # Full extended evaluation
             self.analyzer.evaluate_checkpoint_molecules(
@@ -1567,6 +1574,43 @@ class Workflow:
 
             # create `generation/` subdirectory to write generation output to
             os.makedirs(self.constants.results_dir + "generation/", exist_ok=True)
+
+    def _drop_conditions(self, condition_vector):
+        """
+        Replace the condition with zeros for a fraction of the batch's rows.
+
+        NOT A REGULARIZER, though it looks like one. Every conditional metric
+        is reported against an unconditional baseline, which means the same
+        model sampled with no condition set. With a one-hot condition, "no
+        condition" is the all-zeros vector, and a model trained only on
+        one-hot inputs has never seen it: the baseline would then measure what
+        the model does when asked a question outside its training
+        distribution, and the gap between conditional and baseline -- which is
+        the entire claim -- would be partly an artifact of that.
+
+        Dropping the condition on `condition_dropout` of the training examples
+        makes the zero vector a legitimate input meaning "unspecified", so the
+        baseline becomes a real measurement and the model keeps a usable
+        unconditional mode.
+
+        Training only. Validation keeps its conditions, because model
+        selection should choose the best conditional model rather than the
+        best average of two modes.
+
+        The rows are drawn from a CPU generator seeded once from the job seed,
+        so a rerun of the same job drops the same examples.
+        """
+        rate = float(getattr(self.constants, "condition_dropout", 0.0) or 0.0)
+        if rate <= 0.0 or condition_vector is None:
+            return condition_vector
+        if getattr(self, "_condition_rng", None) is None:
+            self._condition_rng = torch.Generator()
+            self._condition_rng.manual_seed(int(self.constants.seed))
+        keep = (
+            torch.rand(condition_vector.size(0), generator=self._condition_rng) >= rate
+        )
+        keep = keep.to(condition_vector.device).view(-1, 1).to(condition_vector.dtype)
+        return condition_vector * keep
 
     def _condition_requests(
         self, prop_names: list, sample_conds: dict, n_batches: int
@@ -2099,6 +2143,7 @@ class Workflow:
 
             if len(batch) == 4:
                 nodes, edges, target_output, condition_vector = batch
+                condition_vector = self._drop_conditions(condition_vector)
                 output = self.model(nodes, edges, condition_vector=condition_vector)
             else:
                 nodes, edges, target_output = batch

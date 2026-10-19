@@ -56,6 +56,19 @@ GRADE_ORDER = ["A", "B", "C", "D"]
 # DC50 and its replicate or assay suffixes, but not DIC50 and not Dmax.
 DC50_TYPE = re.compile(r"^DC50(?:$|[_(\s])", re.I)
 
+# Dmax and its replicate suffixes. A glue row can carry the assay concentration
+# in the type, as `Dmax(10nM)`, and those are NOT pooled with a plain `Dmax`:
+# maximum degradation at 10 nM and at 20 µM are different measurements of
+# different things, and averaging them produces a label that is neither.
+DMAX_TYPE = re.compile(r"^Dmax(?:$|[_\s])", re.I)
+
+# Dmax is a percentage of the protein degraded, so it carries no unit token and
+# a plain number is complete. Values above 100 are percent-of-control artifacts
+# rather than measurements and are dropped rather than clipped, because
+# clipping invents a 100% that nobody observed.
+PERCENT = re.compile(r"^\s*([0-9]*\.?[0-9]+)\s*%?\s*$")
+DMAX_CEILING = 100.0
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(
@@ -66,17 +79,41 @@ def main() -> int:
         "--target", required=True, help="exact Target Symbols value, e.g. SMARCA2"
     )
     ap.add_argument("--output", type=Path, required=True)
+    ap.add_argument(
+        "--endpoint",
+        choices=("pdc50", "dmax"),
+        default="pdc50",
+        help=(
+            "pdc50 is -log10(DC50 in molar), the potency. dmax is the maximum "
+            "fraction of the protein degraded, in [0, 1]. They are different "
+            "questions: a degrader can be potent and only ever remove half the "
+            "protein, and an optimization that reads one as the other will "
+            "chase the wrong molecule."
+        ),
+    )
+    ap.add_argument(
+        "--modality",
+        choices=("protac", "glue"),
+        default="protac",
+        help=(
+            "which pair of TPD-DB tables to read. The two are never pooled: a "
+            "PROTAC presents a defined E3 ligand and a glue has none, the size "
+            "regimes differ by more than a factor of two, and a pooled model "
+            "would be dominated by molecular size rather than by chemistry."
+        ),
+    )
     args = ap.parse_args()
 
     from rdkit import Chem, RDLogger
 
     RDLogger.DisableLog("rdApp.*")
 
+    prefix = "PROTAC" if args.modality == "protac" else "MG"
     main_rows = list(
-        csv.DictReader((args.raw / "PROTAC_main_table.txt").open(), delimiter="\t")
+        csv.DictReader((args.raw / f"{prefix}_main_table.txt").open(), delimiter="\t")
     )
     act_rows = list(
-        csv.DictReader((args.raw / "PROTAC_activity.txt").open(), delimiter="\t")
+        csv.DictReader((args.raw / f"{prefix}_activity.txt").open(), delimiter="\t")
     )
     by_id = {(r.get("TPD ID") or "").strip(): r for r in main_rows}
 
@@ -90,17 +127,35 @@ def main() -> int:
     # DC50, DC50_1, DC50_2 and DC50(SMARCA2) are all DC50 measurements,
     # suffixed by replicate or assay. DIC50 is a different endpoint and Dmax
     # a different quantity, so neither is pooled in.
-    dc50 = [r for r in rows if DC50_TYPE.match((r.get("Activity Type") or "").strip())]
-    counts["DC50 rows"] = len(dc50)
+    is_dmax = args.endpoint == "dmax"
+    matcher = DMAX_TYPE if is_dmax else DC50_TYPE
+    selected = [
+        r for r in rows if matcher.match((r.get("Activity Type") or "").strip())
+    ]
+    counts[f"{args.endpoint} rows"] = len(selected)
 
     numeric, grades = [], []
-    for r in dc50:
+    for r in selected:
         raw = (r.get("Activity") or "").strip()
         if CENSORED.search(raw):
             counts["dropped: censored"] += 1
             continue
         if GRADE.match(raw):
             grades.append((r, GRADE.match(raw).group(1).upper()))
+            continue
+        if is_dmax:
+            m = PERCENT.match(raw)
+            if not m:
+                counts["dropped: unparseable"] += 1
+                continue
+            percent = float(m.group(1))
+            if percent > DMAX_CEILING:
+                counts["dropped: above 100 percent"] += 1
+                continue
+            if percent < 0:
+                counts["dropped: negative"] += 1
+                continue
+            numeric.append((r, percent / 100.0))
             continue
         m = NUMERIC.match(raw)
         if not m:
@@ -111,7 +166,7 @@ def main() -> int:
             counts["dropped: non-positive"] += 1
             continue
         numeric.append((r, molar))
-    counts["numeric with a unit"] = len(numeric)
+    counts["numeric kept"] = len(numeric)
     counts["letter grades"] = len(grades)
 
     def context(record):
@@ -129,21 +184,26 @@ def main() -> int:
     # Replicates of one (compound, cell line) collapse to the geometric mean of
     # DC50, which is the mean of pDC50.
     grouped = defaultdict(list)
-    for record, molar in numeric:
+    for record, value in numeric:
         tpd, smiles, cell, ligase = context(record)
         if not smiles:
             counts["dropped: no parseable parent SMILES"] += 1
             continue
-        grouped[(smiles, cell, ligase)].append(molar)
+        grouped[(smiles, cell, ligase)].append(value)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w") as handle:
-        handle.write("smiles\tpdc50\tcell_line\tligase\tn_replicates\n")
+        handle.write(f"smiles\t{args.endpoint}\tcell_line\tligase\tn_replicates\n")
         for (smiles, cell, ligase), values in sorted(grouped.items()):
-            geo = math.exp(sum(math.log(v) for v in values) / len(values))
-            handle.write(
-                f"{smiles}\t{-math.log10(geo):.4f}\t{cell}\t{ligase}\t{len(values)}\n"
-            )
+            if is_dmax:
+                # Dmax is a bounded fraction, so replicates average
+                # arithmetically. pDC50 is a log, so its replicates average as
+                # the geometric mean of DC50, which is the mean of pDC50.
+                label = sum(values) / len(values)
+            else:
+                geo = math.exp(sum(math.log(v) for v in values) / len(values))
+                label = -math.log10(geo)
+            handle.write(f"{smiles}\t{label:.4f}\t{cell}\t{ligase}\t{len(values)}\n")
     counts["rows written"] = len(grouped)
     counts["distinct compounds"] = len({k[0] for k in grouped})
     counts["distinct cell lines"] = len({k[1] for k in grouped})

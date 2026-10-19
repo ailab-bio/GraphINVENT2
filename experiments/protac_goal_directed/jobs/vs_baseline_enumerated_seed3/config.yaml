@@ -1,0 +1,29 @@
+# SEED 3 OF 3. CLAUDE.md reports every number as a mean and standard
+# deviation over three seeds, and in a `generate` job the seed controls
+# sampling from a fixed checkpoint, so the three seeds are three jobs against
+# the same checkpoint. `scripts/aggregate-seeds.py` writes the aggregate.
+# Identical to vs_baseline_enumerated/config.yaml except for the seed.
+# The harder screen: surrogate-ranked enumeration over the recombinant library,
+# which is what a medicinal chemistry team would do. Same oracle, same budget.
+# NOT YET IMPLEMENTED; see vs_baseline_tpddb.
+job_type: generate
+sample_mode: generate
+dataset_dir: protac_enumerated
+pretrained_model_path: experiments/protac_prior/jobs/prior_enumerated/checkpoints/model_restart_40.pth
+n_samples: 10000
+batch_size: 500
+device: cuda
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   10,000 molecules, scaled to max_nodes 108; +0.3 h decomposition (2000 molecules x 0.483 s)
+#   = 0.42 h x 1.5 -> 1 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
+slurm:
+  time: "01:00:00"
+  memory: 38G
+  gpus: 0
+seed: 3

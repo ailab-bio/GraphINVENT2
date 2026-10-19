@@ -1,0 +1,38 @@
+# The PROTAC base corpus: the PROTAC-Splitter enumerated recombinant
+# library. The prior trained here is the starting point for
+# protac_transfer and for nothing else; a PROTAC prior is not a starting
+# point for a glue or a solvent model, because the size regimes, the atom
+# vocabularies and max_nodes all differ.
+dataset_dir: protac_enumerated
+max_n_nodes: 108
+
+# Bifunctional: RetroTAC scores the whole PROTAC, SA score scores the warheads,
+# and quality_filtered_top10_mean gates on RetroTAC.
+bifunctional: true
+
+# Seeds 1, 2, 3 and NOT 0, 1, 2: main.py guards seeding on `seed > 0`, so seed 0
+# is never applied. Verified: two seed-0 generate runs produced different
+# molecules. Seeds 2 and 3 are run by copying the job directory and changing
+# this key until the multi-seed aggregator exists.
+seed: 1
+
+slurm:
+  account: naiss2024-5-630-gpu
+  # partition left unset on purpose: submit.py uses partition_gpu when
+  # gpus > 0 and partition_cpu otherwise, so a preprocess or screening job
+  # with gpus: 0 does not occupy a GPU node. Hard-coding gpu here sent 13
+  # CPU-only jobs to the GPU partition, one of them for 24 hours.
+
+# property_window_rate for a bifunctional program. The Rule of 5 default is not
+# merely wrong here, it is inverted: measured on 2,000 real TPD-DB degraders
+# only 10.2% fall inside the Ro5 window, while a toy run that generated
+# single-atom fragments scored 1.0. The metric exists to catch a model drifting
+# toward smaller non-degrader-like molecules, and with only upper bounds it
+# scores that exact failure as perfect. These are the TACFormer PROTAC-like
+# bounds from manuscript/experiment-plan.md, lower bounds included.
+property_window:
+  mol_weight: [650.0, 1200.0]
+  tpsa: [120.0, 320.0]
+  rotatable_bonds: [12.0, 45.0]
+  hba: [8.0, 24.0]
+  hbd: [0.0, 8.0]

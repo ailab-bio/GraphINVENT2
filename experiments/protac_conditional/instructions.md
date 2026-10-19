@@ -31,7 +31,7 @@ is question 3 in the report.**
 
 - `preprocess_conditional`, which needs the curated set with the three one-hot columns written by the dataset
   build script.
-- `experiments/protac_unconditional/jobs/prior_transfer` has finished: `train` resumes from its checkpoint.
+- `experiments/protac_transfer/jobs/prior_transfer` has finished: `train` resumes from its checkpoint.
 
 ## Jobs
 

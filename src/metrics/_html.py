@@ -181,33 +181,59 @@ def _format(value) -> str:
     return html.escape(str(value))
 
 
+def _cell(key: str, metrics: dict, unavailable: dict) -> str:
+    """One value cell, or a null carrying its reason as a tooltip."""
+    if key not in metrics:
+        return '<td class="value">&mdash;</td>'
+    value = metrics[key]
+    if value is not None:
+        return f'<td class="value">{_format(value)}</td>'
+    entry = unavailable.get(key, "undefined for this run")
+    if isinstance(entry, dict):
+        entry = f"{entry.get('category', '?')}: {entry.get('reason', '')}"
+    return f'<td class="unavailable" title="{html.escape(entry)}">null</td>'
+
+
 def _metric_rows(metrics: dict, unavailable: dict, keys: list) -> str:
+    """
+    One row per metric, with its `_filtered` twin in the next column.
+
+    Side by side rather than in two tables, because the pair is what is read:
+    the unfiltered number says what the model produces and the filtered one
+    says what survives triage, and a reader comparing them across two tables
+    compares the wrong rows. A metric with no filtered twin shows an em dash
+    there rather than a blank, so "not computed" is distinguishable from
+    "computed and null".
+    """
     rows: list = []
     for key in keys:
-        if key not in metrics:
+        if key.endswith("_filtered"):
             continue
-        value = metrics[key]
-        if value is None:
-            entry = unavailable.get(key, "undefined for this run")
-            if isinstance(entry, dict):
-                entry = f"{entry.get('category', '?')}: {entry.get('reason', '')}"
-            reason = html.escape(entry)
-            rows.append(
-                f"<tr><td>{html.escape(key)}</td>"
-                f'<td class="unavailable">null</td>'
-                f'<td class="reason">{reason}</td></tr>'
-            )
-        else:
-            rows.append(
-                f"<tr><td>{html.escape(key)}</td>"
-                f'<td class="value">{_format(value)}</td><td></td></tr>'
-            )
+        twin = f"{key}_filtered"
+        if key not in metrics and twin not in metrics:
+            continue
+        reason = unavailable.get(key)
+        if isinstance(reason, dict):
+            reason = f"{reason.get('category', '?')}: {reason.get('reason', '')}"
+        rows.append(
+            f"<tr><td>{html.escape(key)}</td>"
+            + _cell(key, metrics, unavailable)
+            + _cell(twin, metrics, unavailable)
+            + f'<td class="reason">{html.escape(reason or "")}</td></tr>'
+        )
     if not rows:
         return ""
-    return (
+    has_filtered = any(f"{k}_filtered" in metrics for k in keys)
+    header = (
         '<table><tr><th>metric</th><th style="text-align:right">value</th>'
-        "<th>note</th></tr>" + "".join(rows) + "</table>"
+        + (
+            '<th style="text-align:right">after triage</th>'
+            if has_filtered
+            else '<th style="text-align:right"></th>'
+        )
+        + "<th>note</th></tr>"
     )
+    return header + "".join(rows) + "</table>"
 
 
 def _svg(smiles: str) -> str:

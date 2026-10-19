@@ -27,6 +27,9 @@ whose failure mode is a plausible wrong number rather than a crash:
     blue, and nothing raises
   - the splitter cache stores a failure as its reason, which made the cached
     and uncached return paths disagree on the shape they hand back
+  - a `_filtered` metric computed over the unfiltered set is present, plausible
+    and agrees with its twin, which reads as a model needing no triage rather
+    than as a filter that never ran
   - conditioning.properties was never checked against the file's columns, so a
     config listing the same properties in the other order trained on one
     property and reported it as another, with a byte-identical HDF5
@@ -690,3 +693,119 @@ class TestTheSplitterCacheReturnsTheSameShapeEitherWay:
             _components._load_cache = original
         assert records[0]["split_status"] == "linker_too_short"
         assert records[0]["warhead"] is None
+
+
+class TestTriageIsAppliedToTheFilteredSet:
+    """
+    The `_filtered` metrics must be computed over what survived triage.
+
+    The failure is silent: computed over the unfiltered set by mistake, every
+    `_filtered` key is present, every value is plausible, and the two columns
+    of the report agree, which reads as a model whose output needs no triage
+    rather than as a filter that never ran. The assertions below are
+    directional rather than exact, because what they guard is that the two
+    sets are different in the way triage makes them different.
+    """
+
+    # Two that pass MCF and PAINS and are easy to make, and one PAINS-matching
+    # catechol, which the structural-alerts stage removes.
+    CLEAN = ["CCOc1ccc(C(=O)NC)cc1", "CC(C)Cc1ccc(C(C)C(=O)O)cc1"]
+    ALERTING = ["Oc1ccccc1O"]
+
+    def test_the_alerting_molecule_is_removed(self):
+        from metrics._filters import triage
+
+        kept, rates = triage(self.CLEAN + self.ALERTING)
+        assert self.ALERTING[0] not in kept
+        assert set(kept) <= set(self.CLEAN)
+        assert rates["triage_n_entered"] == 3
+        assert rates["structural_alerts_pass_rate"] < 1.0
+
+    def test_the_stage_rates_denominate_over_what_reached_them(self):
+        from metrics._filters import triage
+
+        _, rates = triage(self.CLEAN + self.ALERTING)
+        # Stage two sees only what stage one passed, never the original three.
+        assert rates["structural_alerts_n_reached"] == 3
+        assert (
+            rates["synthesizability_n_reached"]
+            == rates["structural_alerts_n_reached"]
+            * rates["structural_alerts_pass_rate"]
+        )
+
+    def test_the_end_to_end_rate_is_the_product_of_the_stages(self):
+        from metrics._filters import triage
+
+        kept, rates = triage(self.CLEAN + self.ALERTING)
+        product = 1.0
+        for stage in rates["triage_stages"]:
+            product *= rates[f"{stage}_pass_rate"]
+        assert rates["triage_pass_rate"] == pytest.approx(product)
+        assert rates["triage_pass_rate"] == pytest.approx(len(kept) / 3)
+
+    def test_a_bifunctional_stack_gates_on_retrotac_and_the_warhead(self):
+        from metrics._filters import triage
+
+        # No RetroTAC score and no warhead: the molecule fails those stages
+        # rather than passing them by default, which is the direction that
+        # matters. A missing input must not become a pass.
+        kept, rates = triage(
+            self.CLEAN, bifunctional=True, retrotac_by_smiles={}, warhead_by_smiles={}
+        )
+        assert kept == []
+        assert rates["triage_stages"] == [
+            "structural_alerts",
+            "retrotac",
+            "warhead_synthesizability",
+        ]
+        assert rates["retrotac_pass_rate"] == 0.0
+
+
+class TestTheEvaluationSampleIsNotChargedToTheBudget:
+    """
+    The budget counts molecules scored during optimization, and nothing else.
+
+    A 10,000-call run draws a sample from each of its budget checkpoints
+    afterward and scores it for reporting. Left metered, those scorings move
+    the same counter, so a run finishes at several times the budget it was
+    supposed to respect and the oracle call log stops being the authoritative
+    record of the spend. Nothing fails: the numbers are all there and all
+    wrong by a factor nobody notices.
+    """
+
+    class _Oracle:
+        """Scores anything, deterministically, without a model."""
+
+        def __call__(self, smiles):
+            return [0.5] * len(smiles)
+
+    def test_unmetered_scoring_fills_the_cache_without_moving_the_counter(self):
+        from oracles import CachedOracle
+
+        oracle = CachedOracle(self._Oracle())
+        oracle(["CCO", "CCC"])
+        assert oracle.call_count == 2
+
+        oracle.metering = False
+        oracle(["c1ccccc1", "CCCC"])
+        assert oracle.call_count == 2, "the reporting sample moved the counter"
+
+        # The cache still filled, which is correctness rather than accounting:
+        # the same molecule must receive the same score either way, and if the
+        # optimization meets it later it is a free cache hit.
+        oracle.metering = True
+        oracle(["c1ccccc1"])
+        assert oracle.call_count == 2
+
+        # And a genuinely new molecule still counts once metering is back on.
+        oracle(["CCCCC"])
+        assert oracle.call_count == 3
+
+    def test_the_optimization_log_records_only_metered_molecules(self):
+        from oracles import CachedOracle
+
+        oracle = CachedOracle(self._Oracle())
+        oracle(["CCO"])
+        oracle.metering = False
+        oracle(["CCC", "CCCC"])
+        assert [count for count, _ in oracle.optimization_log] == [1]

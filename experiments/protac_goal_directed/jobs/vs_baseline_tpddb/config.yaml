@@ -3,7 +3,7 @@
 # this config records the intent so the dependency is visible in the runbook.
 job_type: generate
 sample_mode: generate
-pretrained_model_path: experiments/protac_unconditional/jobs/prior_transfer/checkpoints/model_restart_20.pth
+pretrained_model_path: experiments/protac_transfer/jobs/prior_transfer/checkpoints/model_restart_20.pth
 n_samples: 10000
 batch_size: 500
 device: cuda

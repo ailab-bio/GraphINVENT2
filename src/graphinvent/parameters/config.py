@@ -189,6 +189,17 @@ def resolve(job_dir: Path) -> dict:
     explicit = _merge(experiment_layer, job_layer)
 
     _validate(params, config_path)
+    if (
+        "condition_dropout" in explicit
+        and float(explicit["condition_dropout"] or 0.0) > 0.0
+        and params.get("job_type") != "conditional"
+    ):
+        raise ValueError(
+            f"condition_dropout: {explicit['condition_dropout']} is set on a "
+            f"{params.get('job_type')} job, which has no conditions to drop.\n"
+            "It applies during conditional training only. Remove the key; "
+            "inheriting the default is harmless because nothing reads it here."
+        )
     _apply_checkpoint_architecture(params, explicit)
     _resolve_device(params)
 
@@ -274,6 +285,17 @@ def _validate(params: dict, config_path: Path) -> None:
                 f"{params.get('condition_dim', 0)}. The condition vector has "
                 "one slot per property."
             )
+
+    dropout = params.get("condition_dropout")
+    if dropout is not None and (
+        not isinstance(dropout, (int, float)) or not 0.0 <= float(dropout) < 1.0
+    ):
+        raise ValueError(
+            f"condition_dropout: {dropout!r} is not a fraction in [0, 1).\n"
+            "It is the fraction of training examples whose condition is "
+            "replaced with zeros; 1.0 would train an unconditional model with "
+            "a condition encoder attached."
+        )
 
     # A categorical panel declares its classes, because nothing else can tell
     # a one-hot class column from a property that happens to be 0 or 1, and the
@@ -731,6 +753,78 @@ def _detect_features(params: dict) -> None:
             print(f"  {key:<14}: {params[key]}", flush=True)
 
 
+def _check_dataset_mapping_matches_checkpoint(params: dict) -> None:
+    """
+    The dataset's class-to-index mapping must be the checkpoint's.
+
+    `conditioning.properties` IS the mapping: the condition vector is built
+    positionally from those columns at preprocessing time and each slot is
+    labelled from the same list at generation time. A permuted list therefore
+    conditions on one class, reports it as another, and writes a byte-identical
+    HDF5 -- there is no shape, no count and no checksum that differs.
+
+    `resolve` already compares a `conditioning` set in a config layer against
+    the checkpoint's. This is the other half: the mapping a job inherits from
+    its dataset's `preprocessing.yaml` never passed through that comparison,
+    and inheriting it is the normal case.
+    """
+    checkpoint = params.get("pretrained_model_path") or params.get("resume_from")
+    if not checkpoint or not params.get("condition_dim"):
+        return
+    source = checkpoint_config_path(checkpoint)
+    if not source.exists():
+        return
+    trained_with = _read_yaml(source)
+
+    dataset_mapping = list((params.get("conditioning") or {}).get("properties") or [])
+    checkpoint_mapping = list(
+        (trained_with.get("conditioning") or {}).get("properties") or []
+    )
+    if not checkpoint_mapping or dataset_mapping == checkpoint_mapping:
+        return
+    reordering = (
+        " They are the same classes in a different order, which is the "
+        "dangerous case: every per-class number would be attributed to the "
+        "wrong class and nothing would look wrong."
+        if sorted(dataset_mapping) == sorted(checkpoint_mapping)
+        else ""
+    )
+    raise ValueError(
+        f"The dataset at {params['dataset_dir']} was preprocessed with the "
+        f"class mapping {dataset_mapping}, and the checkpoint {checkpoint} was "
+        f"trained with {checkpoint_mapping}.{reordering}\n"
+        "The mapping is positional: slot i of the condition vector is class i "
+        "of this list, in both places. Preprocess the dataset with the "
+        "checkpoint's mapping, or load a checkpoint trained on this one."
+    )
+
+
+def _check_requested_classes_exist(params: dict) -> None:
+    """
+    Every class named in `sample_conditions` must be in the panel.
+
+    A name that is not in the panel was silently dropped, because the condition
+    vector is built by walking the panel and looking each name up: a typo, or a
+    class from a different dataset, produced a vector of zeros in that slot and
+    a job that reported results for a class it never asked for.
+    """
+    requested = params.get("sample_conditions")
+    if not isinstance(requested, dict):
+        # `all_classes` is a sentinel resolved against the panel itself.
+        return
+    panel = list((params.get("conditioning") or {}).get("properties") or [])
+    if not panel:
+        return
+    unknown = [name for name in requested if name not in panel]
+    if unknown:
+        raise ValueError(
+            f"sample_conditions names {unknown}, which the model was not "
+            f"conditioned on.\nThis dataset's classes are: {panel}.\n"
+            "A name outside the panel was dropped silently, leaving that slot "
+            "at zero and the run reporting a class it never requested."
+        )
+
+
 def derive(params: dict) -> namedtuple:
     """Add the feature vocabulary and tensor shapes, and freeze the result."""
     params = dict(params)
@@ -764,6 +858,8 @@ def derive(params: dict) -> namedtuple:
                 f"preprocessed with condition_dim: {params['condition_dim']}. "
                 "Use job_type: conditional, or an unconditional dataset."
             )
+        _check_dataset_mapping_matches_checkpoint(params)
+        _check_requested_classes_exist(params)
 
     bondtype_to_int = {BondType.SINGLE: 0, BondType.DOUBLE: 1, BondType.TRIPLE: 2}
     if params["use_aromatic_bonds"]:

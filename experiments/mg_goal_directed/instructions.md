@@ -19,7 +19,7 @@ See `protac_goal_directed/instructions.md` for the checks.
 
 ## Prerequisites
 
-`mg_unconditional/jobs/prior_transfer`, and `experiments/surrogates/mg_gspt1_classifier`.
+`mg_transfer/jobs/prior_transfer`, and `experiments/surrogate_protac_optimization/mg_gspt1_classifier`.
 
 ## Submit
 

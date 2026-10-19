@@ -84,7 +84,7 @@ model and fires on a good one.
 
 `uniqueness` and `novelty` at exactly 1.0 are not a result here. With 12 unique valid molecules, none of which
 resembles the training set, the funnel has nothing to bite on. `near_duplicate_rate` is the metric that
-distinguishes a genuinely novel model from one that memorized and added a methyl: it is the fraction of
+distinguishes a novel model from one that memorized and added a methyl: it is the fraction of
 unique-valid molecules whose maximum ECFP4 Tanimoto to any training molecule exceeds 0.9. High novelty beside a
 high near-duplicate rate means memorization.
 
@@ -100,8 +100,8 @@ unavailable.fcd     "insufficient_sample: the Frechet ChemNet Distance needs at 
 
 ChemNet activations are 512-dimensional, so a sample covariance estimated from fewer than 512 molecules is
 singular and is badly conditioned well above that. An FCD from a few hundred molecules is not a noisy version of
-the real number, it is a different and much larger quantity. Published values use 30,000 molecules (MOSES) or
-10,000 (GuacaMol), so there is no sample size at which a small-sample FCD becomes comparable to one of those.
+the real number; it is a different and much larger quantity. Published values use 30,000 molecules (MOSES) or
+10,000 (GuacaMol), so no sample size makes a small-sample FCD comparable to one of those.
 
 The floor is therefore 1,000 unique valid molecules on each side, and below it the metric is not computed. On
 this development set the reference split is about a hundred molecules, so fcd is unavailable **by design**, and
@@ -119,8 +119,7 @@ of 5" as the region compounds fall into by exceeding Ro5, not a filter they pass
 unsettled. Reporting a number there would be inventing one.
 
 Every null in `metrics.json` carries a reason and a category: `optional_tool_missing`,
-`insufficient_sample`, or `not_applicable_to_job_type`. A null with a reason is more useful than an absent key,
-which is why the file is shaped as three blocks rather than one flat dictionary.
+`insufficient_sample`, or `not_applicable_to_job_type`. A null with a reason is more useful than an absent key.
 
 ## Evaluate mode
 
@@ -160,7 +159,7 @@ run always shows the same molecules.
 It also embeds the figures the job wrote. `results/generation.png` has up to three panels: the funnel with its
 counts annotated, the distribution of each molecule's maximum Tanimoto to the training split, and the generated
 against test distributions of MW, logP and SA as z-scores against the test split. The second is where
-memorization shows — a mass piled against 1.0 is a model reproducing its training set while scoring well on
+memorization shows: a mass piled against 1.0 is a model reproducing its training set while scoring well on
 binary novelty. A conditional job writes `results/conditioning.png` beside it. Every figure is saved as `.png`
 at 300 dpi and as `.pdf`; the PDF is the one that goes into the paper. A panel whose input is missing is not
 drawn and the job prints a line saying what was missing, so a two-panel figure is a statement rather than a

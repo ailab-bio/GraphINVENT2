@@ -24,13 +24,13 @@ property_window:
   hbd: [0.0, 8.0]
 
 # The optimization surrogate, fitted by
-# experiments/surrogates/protac_pdc50_smarca2/fit.sh. Held-out RMSE 0.488
+# experiments/surrogate_protac_optimization/smarca2/fit.sh. Held-out RMSE 0.488
 # against a mean-prediction baseline of 0.639 on a warhead-scaffold split,
 # Spearman 0.567: it beats the baseline, which is the kill criterion for
 # this arm. See that directory's PERFORMANCE.md.
 oracles:
   smarca2_pdc50_activity:
     type: sklearn
-    path: experiments/surrogates/protac_pdc50_smarca2/optimization.pickle
+    path: experiments/surrogate_protac_optimization/smarca2/optimization.pickle
     output: predict
     direction: maximize

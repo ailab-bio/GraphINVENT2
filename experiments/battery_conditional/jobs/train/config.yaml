@@ -1,6 +1,6 @@
 job_type: conditional
 dataset_dir: battp30k
-resume_from: experiments/battery_unconditional/jobs/prior_scratch/checkpoints/model_restart_60.pth
+resume_from: experiments/battery_transfer/jobs/prior_scratch/checkpoints/model_restart_60.pth
 epochs: 40
 batch_size: 1000
 accumulation_steps: 512

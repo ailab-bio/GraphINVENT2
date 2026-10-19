@@ -1,0 +1,33 @@
+# SEED 2 OF 3. CLAUDE.md reports every number as a mean and standard
+# deviation over three seeds, and in a `generate` job the seed controls
+# sampling from a fixed checkpoint, so the three seeds are three jobs against
+# the same checkpoint. `scripts/aggregate-seeds.py` writes the aggregate.
+# Identical to generate_unconditional/config.yaml except for the seed.
+job_type: generate
+sample_mode: generate
+dataset_dir: battp30k
+pretrained_model_path: experiments/battery_conditional/jobs/train/checkpoints/model_restart_40.pth
+n_samples: 10000
+batch_size: 1000
+device: cuda
+# The unconditional baseline: same model, dipole set to the training mean so the
+# request carries no information. CLAUDE.md requires it beside every conditional
+# metric.
+sample_conditions:
+  dipole: 2.0
+condition_tolerance:
+  dipole: 0.75
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   10,000 molecules, scaled to max_nodes 16
+#   = 0.06 h x 1.5 -> 1 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
+slurm:
+  time: "01:00:00"
+  memory: 8G
+  gpus: 1
+seed: 2
