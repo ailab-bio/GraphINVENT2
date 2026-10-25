@@ -186,23 +186,44 @@ one. Baselines are not experiments; they are arms of the experiment they are a b
 | Experiment | What it is |
 |---|---|
 | `<program>_prior` | unconditional training on the base corpus |
-| `<program>_transfer` | transfer onto the task corpus with `resume_from`, **together with** the from-scratch control on the same corpus. Both arms live in one experiment because neither means anything alone: the comparison is the result |
-| `<program>_conditional` | conditional training on the panel. One experiment, not one per class: all classes are trained in one model and evaluated together |
-| `<program>_goal_directed` | optimization toward the program's oracle, with the virtual screening arm inside it and the REINVENT4 arm mirroring it from `reinvent4_<program>_goal_directed` |
-| `protac_selectivity` | the bonus campaign, optimizing for degradation of one target and against a second. Virtual screening is its only baseline |
+| `<program>_transfer` | transfer onto the task corpus with `resume_from`, **together with** the from-scratch control on the same corpus. Both arms live in one experiment because neither means anything alone: the comparison is the result. Its jobs are `transfer_arm` and `scratch_control`; neither is the prior, which lives in `<program>_prior` |
+| `<program>_conditional` | conditional training on the panel with a **one-hot** condition. One experiment, not one per class: all classes are trained in one model and evaluated together |
+| `<program>_conditional_esm2` | the same panel conditioned on **ESM-2 embeddings** instead, plus a held-out target the one-hot model structurally cannot address. PROTAC and MG only; battery has no protein |
+| `<program>_goal_directed` | optimization toward the program's oracles, holding **one `rl_<target>` job per selected target per seed**, with the virtual screening arm inside it and the REINVENT4 arm mirroring it from `reinvent4_<program>_goal_directed` |
+| `protac_selectivity` | the bonus campaign, optimizing a predicted SMARCA2-minus-SMARCA4 margin. Virtual screening is its only baseline. Its claim is methodological and it may not report selectivity; see its `instructions.md` |
 
-Three programs — `protac`, `mg`, `battery` — give twelve, plus `protac_selectivity`: **thirteen**.
-Four surrogate fits sit beside them as their own experiments, because each level differs in what
-data it may see and that difference is the point: `surrogate_<program>_optimization` is fitted on
-the training and validation splits only and is the RL reward,
-`surrogate_<program>_evaluation` is the same featurization and model class refitted on all data
-including the test split and only ever rescores final molecules. Five tutorial experiments and six
-REINVENT4 baselines sit beside those, so `experiments/` holds twenty-eight directories of which
-thirteen are the result.
+**Fourteen result experiments.** PROTAC has six — prior, transfer, conditional, conditional_esm2,
+goal_directed, selectivity. MG has five, the same minus selectivity. Battery has three: prior,
+conditional, goal_directed, and **no transfer experiment**, because the source work has no transfer
+stage and its prior trains directly on Batt-SLM. Three surrogate directories sit beside them, one
+per program, plus five tutorial experiments and the REINVENT4 baselines.
+
+**Three programs, three starting conventions, each for a stated reason.** This is not an
+inconsistency to tidy up; write it down in each `instructions.md`.
+
+| Program | Downstream models start from | Why |
+|---|---|---|
+| PROTAC | `protac_transfer/scratch_control` | 21,407 real degraders train a competent model alone, and `protac_goal_directed` additionally runs a scratch-vs-transfer comparison on all three targets, so both checkpoints are wanted |
+| MG | `mg_transfer/transfer_arm` | ZINC250k is too far from glue chemistry to use directly. Measured: of `tpddb_glue`'s 2,538 Murcko scaffolds, 10 appear in a 25,000-molecule ZINC sample, median maximum ECFP4 Tanimoto 0.287, nothing above 0.6 |
+| battery | `battery_prior/prior_battslm` | prior and downstream share one corpus, so there is no transfer step to start from |
 
 **All three goal-directed experiments carry both baseline arms**, virtual screening and REINVENT4,
 not the drug-discovery ones only. `protac_selectivity` is the single exception and takes virtual
 screening alone.
+
+**Three targets per program, not one**, chosen to span data volumes rather than to maximize them,
+and the same three carry both the conditional panel and the goal-directed campaigns wherever the
+data allows. Measured 2026-10-25 on the TPDdb snapshot of 2026-10-17, as distinct compounds with a
+numeric endpoint:
+
+| Program | Targets | pDC50 / Dmax / both | Note |
+|---|---|---|---|
+| PROTAC | SMARCA2, AR, KRAS | 186/152/126, 179/324/111, 69/53/53 | AR merges its aliases and mutants; KRAS's labels come from `KRAS G12D` rows while the conditional class is `KRAS`, which is a recorded approximation. SMARCA4 is reserved for `protac_selectivity` and is not a fourth target |
+| MG | GSPT1, VAV1, CK1α | 30/30/18, 49/49/49, 10/29/9 | all three below the ~100-compound floor, and VAV1 and CK1α below 300 molecules for a conditional class. Reported with their denominators, not omitted |
+
+BTK and EGFR are the tempting alternatives on molecule count and fail on pairing: BTK's pDC50 and
+Dmax compound sets are **disjoint**, EGFR has two Dmax compounds, and ERα has 2,256 activity records
+and no numeric DC50 at all.
 
 **The virtual screening baseline is not a job type.** `scripts/screen-library.py` takes a
 goal-directed job directory and a library, draws uniformly at random, scores through the same
@@ -237,16 +258,40 @@ neither is a starting point for a solvent model: the size regimes, the atom voca
 `max_nodes` values all differ, and a shared prior would silently impose one domain's geometry on
 another.
 
-**Every program follows the same transfer-learning shape**, which is a structural feature of the
-system rather than a choice an experiment makes: a prior trained on a large base corpus, fine-tuned
-on the smaller task corpus with `resume_from`, against a from-scratch control trained on the task
-corpus alone. The comparison between those two arms is what the transfer-learning claim rests on, so
-both are always run.
+**The transfer-learning shape is PROTAC's and MG's, not a universal.** Where it applies it is a
+prior trained on a large base corpus, fine-tuned on the smaller task corpus with `resume_from`,
+against a from-scratch control trained on the task corpus alone, and both arms are always run
+because the comparison between them is the claim. The base-to-task ratios are PROTAC 1,298,401 to
+21,407 and MG 249,455 to 5,210. **Battery has no transfer experiment**: its prior and its downstream
+experiments share one corpus, so there is no second corpus to transfer onto, and the source work has
+no transfer stage either.
+
+One honesty requirement on PROTAC's pair. The synthetic base corpus is built by recombining the
+parts of 492 decomposed TPDdb degraders, and all 492 of those parents are in the task corpus, where
+they are 2.30% of it. The generator drops any recombination identical to a real degrader, so the two
+corpora are disjoint at the molecule level and share chemistry at the fragment level.
+`protac_transfer/instructions.md` says so, because a transfer gain measured on that pair is not a
+pure domain-shift result. MG's pair is the one with a measured domain shift and is the cleaner
+demonstration.
+
+**Every optimization campaign is run from three seeds as three separate training jobs**, not one
+job sampled three times. A seed controls the optimization trajectory itself, so whether the three
+converge on the same chemistry is a result rather than noise to average away, and the per-seed
+agreement is reported alongside the aggregate. That makes `protac_goal_directed` three targets times
+two arms times three seeds, `mg_goal_directed` three times three, and `protac_selectivity` and
+`battery_goal_directed` three each.
 
 **Every experiment ends with a sampling job of 10,000 molecules over three seeds**, from the final
 checkpoint or the best agent, and that sample is what the reported metrics are computed on. No
 experiment reports metrics from a training job, from a trajectory, or from a smaller sample. Each
 `instructions.md` names the sampling job that produces its numbers.
+
+**`battery_goal_directed` is the one exception, at 60,000 molecules per seed.** Its deliverable is
+the set of molecules surviving a posterior verification funnel whose published attrition runs from
+180,000 generated to 30 survivors, a rate near 0.02%. At 10,000 per seed the expected yield is about
+two molecules, so the uniform sample size would produce an empty result rather than a small one.
+Both the survivor count and the survival rate with its denominator are reported, and the rate is the
+comparable quantity.
 
 ---
 
@@ -341,6 +386,35 @@ against another's test set with nothing failing.
 **Conditional jobs** draw condition values at generation time from the test split's distribution, not
 the training split's. **Goal-directed jobs** train the prior on train; screening libraries for the
 virtual screening baseline are declared per experiment and are none of these three splits.
+
+### The active holdout
+
+**Known actives against a program's selected targets are removed from every training set built from
+labeled data.** Rediscovering a molecule the model was trained on is not a rediscovery, and the
+goal-directed claim is that optimization finds high-scoring chemistry rather than that it reproduces
+its training set. The rule, in the order it is applied:
+
+1. **Hold out by activity annotation, not by target annotation.** A compound is an active if it
+   carries a numeric endpoint above the program's threshold for one of the selected targets. Holding
+   out everything merely *annotated* against those targets would remove the thousands of
+   target-annotated molecules that carry no measurement, which is exactly what the conditional panel
+   is built from — the conditional model would then have no positives for the classes it conditions
+   on.
+2. **Apply it where the labeled corpus is used**, which is the conditional training set, the
+   checkpoint each RL campaign starts from, and PROTAC's transfer arm. The synthetic PROTAC library
+   needs no filtering because it carries no target annotations at all, and neither does ZINC250k.
+3. **Where a prior and its downstream experiments share one corpus, the prior's training set is
+   whatever remains after every downstream holdout is removed.** This bites only battery, where the
+   prior trains on Batt-SLM and the conditional labels come from Batt-P30K, which is a **subset** of
+   it: measured 2026-10-25, 29,513 of 29,519 Batt-P30K molecules are in Batt-SLM. So the conditional
+   split set is built first and its test molecules are subtracted from the prior's corpus, along with
+   the non-fluorinated low-permittivity rediscovery set. Without that subtraction the conditional
+   model resumes from a prior trained on its own test split and every conditional number is
+   contaminated. PROTAC and MG need none of this: their priors share no molecules with their
+   downstream data.
+
+The holdout set is kept and reported as a rediscovery target, scored by structural match rather than
+by oracle score, since the oracles are fitted on all available data and have seen it.
 
 ---
 
@@ -497,15 +571,25 @@ molecules that reached it, and `triage_pass_rate` end to end.
 | Dataset | Stages |
 |---|---|
 | drug-like | `structural_alerts` (MCF + PAINS), then `synthesizability` (`sa_score < 4.5`) |
+| battery solvent | `structural_alerts`, then `no_fluorine`, then `dielectric_constant` (`< 10.0`), then `chelation_propensity` (`cpi < 0.5`) |
 | bifunctional | `structural_alerts`, then `retrotac` (`retrotac >= 0.30` on the whole molecule), then `warhead_synthesizability` (`sa_score < 4.5` on the decomposed warhead) |
 
-Two stacks, because synthesizability is not one measurement. A drug-like molecule is gated on its
+Three stacks, because synthesizability is not one measurement. A drug-like molecule is gated on its
 own SA score. A bifunctional one cannot be: SA score reads a PROTAC's size as difficulty and rejects
 chemistry that demonstrably exists, so the whole molecule is gated on RetroTAC and the SA gate moves
 to the warhead, where the fragment is drug-sized and SA behaves. A molecule with no RetroTAC score
 or no usable warhead fails that stage rather than passing it, and the stage rates make that visible:
 a collapsing `warhead_synthesizability_pass_rate` with a collapsing `split_success_rate` beside it
 is a decomposition problem, not a chemistry one.
+
+The battery stack is not a synthesizability question at all; it is the property funnel the solvent
+campaign is judged on, and it is where the gates that are *not* in the reward live. `no_fluorine`
+needs an element-exclusion check, which nothing in `src/` currently implements, and
+`chelation_propensity` needs the coefficients committed at
+`tools/data/cpi_logistic_coefficients.txt`. The published funnel has two further stages this one
+does not: a literature-novelty check through the PubChem, OpenAlex, Semantic Scholar and PubMed APIs,
+and a **manual** database check. A manual stage cannot be reproduced, so our funnel stops before it
+and `battery_goal_directed/instructions.md` records where the two diverge.
 
 ### Core metrics, reported for every setting
 
@@ -573,13 +657,32 @@ training deciles rather than held at one value, since a single value populates o
 Used when the condition is a class rather than a value, such as a target protein. The continuous
 metrics above have no definition in this case.
 
-**The condition is a one-hot vector that the model embeds.** The HDF5 `condition_vector` is a
-float32 one-hot of width equal to the number of classes, built positionally from the file's columns;
-`condition_dim` equals the number of classes; and `ConditionEncoder`, a two-layer MLP, learns the
-embedding from it end to end. No protein language model embeddings, no sequence features, no
-pretrained protein representations. With three classes and a few thousand molecules a learned
-embedding of a one-hot is everything the data supports, and a thousand-dimensional sequence
-embedding would add variance the training set cannot constrain.
+**Two conditioning representations, in two experiments, and the second has to earn its place.**
+`<program>_conditional` uses a one-hot: the HDF5 `condition_vector` is a float32 one-hot of width
+equal to the number of classes, built positionally from the file's columns, `condition_dim` equals
+the number of classes, and `ConditionEncoder`, a two-layer MLP, learns the embedding from it end to
+end. `<program>_conditional_esm2` replaces that one-hot with a mean-pooled **ESM-2** embedding from
+`esm2_t33_650M_UR50D`, 1,280 dimensions, loaded through `transformers` and pinned by revision under
+the `HF_HOME` → `tools/hf-cache/` pattern the other external models use.
+
+This document previously forbade protein language model embeddings outright, and the arithmetic
+behind that ban is still correct, which is why the comparison is structured the way it is: with a
+three-target panel, ESM-2 supplies **three fixed vectors**, one per protein, identical for every
+molecule of that target. Any injective map of three labels carries exactly the information a 3-way
+one-hot carries, so *within* the panel the embedding cannot tell the model anything the one-hot
+cannot, while costing 1,280 input dimensions on a few thousand molecules. What it buys is the one
+thing a one-hot structurally cannot do: **generalize to a target that was never trained on**, since
+the one-hot's weights for an unseen class are never updated. So `<program>_conditional_esm2` trains
+on the panel **plus a held-out target** and reports that target's conditional metrics zero-shot,
+against the one-hot model as the baseline arm. Without the held-out target the experiment is an
+architecture change reported as a result, and it should not be run that way.
+
+Two consequences worth stating before anyone implements it. A 1,280-wide condition cannot come
+through the property-column reader, which asserts one named column per `condition_dim`, so ESM-2
+needs its own `conditioning.source` rather than a wider TSV. And `condition_dropout`'s all-zeros
+vector is a legitimate "unspecified" input for a one-hot but sits far off the manifold of real ESM-2
+embeddings, so the unconditional baseline for that experiment is not the zero vector and needs
+defining separately.
 
 **`conditioning.properties` IS the class-to-index mapping**, recorded in the dataset's
 `preprocessing.yaml` and in the checkpoint's resolved config. It is positional: slot *i* of the
@@ -778,13 +881,35 @@ ZINC and `retrotac >= 0.30` passes 94.0% of real degraders. The RetroTAC floor i
 paper's 0.7, which its authors describe as a reporting convention rather than a calibrated boundary
 and which only 18.8% of real degraders reach.
 
-**When the oracle is a learned surrogate, two are trained.** The *optimization* surrogate is fitted
-on the training and validation splits only and provides the RL reward. The *evaluation* surrogate is
-the same featurization and model class refitted on all data including the test split, and only scores
-the final molecules. Both are reported. A large gap on optimized molecules, when the two agree on
-held-out real molecules, is evidence of exploitation rather than success.
-`top100_outside_domain_rate` catches the same failure from a direction neither surrogate shares,
-since both have the same blind spots.
+**When the oracle is a learned surrogate it is one pooled ensemble, not a pair.** One oracle per
+property per program, fitted on all available data: an XGBoost over a 2048-bit Morgan2 fingerprint
+plus one-hot POI, E3 ligase and cell line, trained across every target at once rather than one model
+per target. Pooling is what makes the fit possible at all — the PROTAC training sets are 1,701 rows
+for pDC50 and 1,467 for Dmax across 88 targets, against 186 compounds for SMARCA2 alone — and the
+POI one-hot is only informative because the model sees more than one POI. Both endpoints are fitted
+separately and combined, equally weighted, into the single composite reward the policy trains on.
+
+**Two cross-validation schemes are reported from that one ensemble, because they estimate different
+things and only one of them is the oracle's job.** Warhead-scaffold-grouped CV is the error that
+applies to scoring novel molecules for a target the model has seen, which is what the reward
+actually does. POI-grouped CV is the error for a target it has never seen, which is what
+`<program>_conditional_esm2` needs to interpret its held-out-target results; for an unseen POI the
+one-hot column is all zeros, so that estimate is honest and pessimistic. Each is labeled with what
+it estimates, and per-target held-out performance is reported as well as overall, because a pooled
+R² can look healthy while one target sits at zero.
+
+**Reward hacking is detected by ensemble disagreement, not by a surrogate gap.** The older design
+fitted an optimization surrogate on train and validation and an evaluation surrogate on everything,
+and read a gap between them on optimized molecules as exploitation. With one oracle there is no gap
+to read, so the detector is the standard deviation across the fold models, reported per molecule and
+over the top 100, alongside `top100_outside_domain_rate`. It comes from the oracle itself and is the
+sharper signal: RL driving molecules into regions where the folds disagree is exploitation.
+
+**The oracle has seen the held-out actives and the generative model has not, so rediscovery is
+scored by structural match to the holdout set and never by oracle score.** Otherwise the answer key
+grades the exam. Each fit carries a `PERFORMANCE.md` with its held-out number against the
+mean-prediction baseline, and a fit that fails to beat its baseline is reported as a failed fit
+rather than used as a reward.
 
 The diversity and quality rows exist to detect reward hacking, which is the default behavior of RL
 against a cheap oracle. Overall diversity stays high while the top-scoring set collapses onto one
@@ -921,46 +1046,95 @@ changes the reported sample efficiency.
 
 ## Status
 
-Verified by running the code on 2026-10-19.
+Verified by running the code on 2026-10-25.
+
+**The design above was settled in a design review and the code has not caught
+up.** Everything this document specifies about the fourteen experiments, the
+three starting conventions, the target trios, the pooled ensemble oracles, the
+active holdout, the third triage stack and the two conditioning representations
+is a decision, not a description. What exists is the twelve-experiment skeleton
+it replaced, with the battery program restructured and the corpora curated. The
+list under *Not yet built* below is the gap, and it is the work queue.
 
 **The three features this section used to list as unbuilt are built.** The
 categorical conditional metrics with their two baselines, the whole-sample
 component metrics in their two-denominator form, and per-job figures for all
 five job types now have callers, tests and output.
 
-**Every key this document specifies is now emitted by a code path.** The two
-that remained unwired, `eval_oracle_top10_mean` and `top100_outside_domain_rate`,
-are wired: a `goal_directed` job reads `evaluation_oracle` and
-`surrogate_training_set`, and records a categorized null naming the key to set
-when an experiment declares neither. `protac_goal_directed` and
-`protac_selectivity` declare both.
+**Every key this document specified as of 2026-10-19 is emitted by a code
+path**, including `eval_oracle_top10_mean` and `top100_outside_domain_rate`,
+which read `evaluation_oracle` and `surrogate_training_set` and record a
+categorized null naming the key to set when an experiment declares neither.
+`protac_goal_directed` and `protac_selectivity` declare both; the battery
+experiments declare neither, so that claim does not extend to them.
+
+**Keys this document has specified since are not emitted**: the `r4_*` REINVENT4
+comparison keys, the ensemble-disagreement reward-hacking detector that replaces
+the surrogate gap, and the battery triage stack's stage rates.
 
 What follows is what has not been *verified*, which is a different claim from
 what has not been written.
 
-**Decisions that are not mine to take.** Each changes the scope of an experiment or the claim made
-from it, so each is listed with a recommendation rather than chosen.
+**Not yet built.** The decisions are made; these are the gaps between this
+document and the code, in dependency order.
 
-- **The molecular glue surrogates cannot be fitted from TPD-DB.** Measured 2026-10-19: GSPT1 has 30
-  distinct compounds with a pDC50 or Dmax label, IKZF1 has 5, IKZF3 has 1 and RBM39 has 0, against a
-  floor of about a hundred. So `surrogate_mg_optimization` has no usable fit and
-  `mg_goal_directed` has no learned reward available. *Recommendation:* run `mg_goal_directed`
-  against a property-shaping objective rather than an activity surrogate, state in the manuscript
-  that no glue activity model was fittable at this data volume, and keep the fit script so the
-  counts reproduce. The alternative, sourcing a larger glue activity set, is a data question rather
-  than a code one.
+- **The 1,298,401-molecule synthetic PROTAC library is not on disk.**
+  `scripts/download_data.py --source protac_splitter` fetches the 223.6 MB
+  Zenodo archive, and no script extracts its `PROTAC SMILES` column into
+  `data/datasets/protac_enumerated/protac_enumerated.smi`. Its HDF5 at
+  `max_nodes` 108 is estimated at 27-31 GB.
+- **No element-exclusion check exists anywhere in `src/`.** The battery
+  objective's `S_f,3` term and the `no_fluorine` triage stage both need one, and
+  `property_window_rate` cannot express it: its registry is nine RDKit
+  descriptors and it raises on anything else.
+- **The third triage stack is specified and not implemented.**
+- **Every optimization experiment has exactly one `rl_*` job** against the
+  eighteen, nine, three and three that three targets, two arms and three seeds
+  require, and the conditional panels still name the superseded targets.
+- **The surrogates are four directories in the old optimization/evaluation
+  shape**, holding one per-target SMARCA2 random forest, against three pooled
+  ensemble oracles. The POI, E3 ligase and cell line identifiers need expert
+  normalization first: 88 target strings with composites like
+  `SMARCA2;SMARCA4`, the AR alias family, `BCL2L1` and `BCL-xL` indexing one
+  protein across disjoint record sets, and cell lines not case-normalized.
+- **`evaluate_external_sample` is not implemented and no `reinvent4_*`
+  experiment directory exists**, so the REINVENT4 arm of every goal-directed
+  experiment is specified and unrunnable. Its mirroring also needs revisiting
+  now that a goal-directed experiment holds many RL jobs rather than one.
+- **Neither `*_conditional_esm2` experiment exists**, and ESM-2 needs its own
+  `conditioning.source`: `condition_dim` is bound to the count of named property
+  columns by four separate validations, and five places decode the condition by
+  thresholding at 0.5, so the categorical metric path needs rewriting.
+- **`tools/README.md` has no entry for any battery asset, ESM-2 or RSE_Atlas**,
+  while the [External tools](#external-tools) section claims the inventory
+  covers the battery assets. That is false and is a bug by that section's own
+  rule.
+- **`manuscript/experiment-plan.md` still describes the superseded grid.**
+
+**Decisions that are not mine to take.**
+
 - **No ordering is expressed as a SLURM job dependency.** `config/slurm.sh.template`, `submit.py`
   and every rendered `run.sbatch` carry no `--dependency=afterok`, so the session table in `RUN.md`
   is prose and nothing stops a job being submitted before the job that writes its input finishes.
   *Recommendation:* add an `--after <jobid>` flag to `submit.py` that renders the dependency line.
   It is listed here rather than done because this document specifies `submit.py` as one positional
   argument and one optional flag, and widening that is an interface decision.
-- **BTK Dmax is marginal at 57 compounds** under a warhead-scaffold split and is expected to produce
-  a held-out R² near zero. *Recommendation:* fit it, report it, and decide in advance that the zero
-  is the result.
+- **All three molecular glue oracles sit below the ~100-compound floor**, at 49,
+  30 and 29 distinct labeled compounds for VAV1, GSPT1 and CK1α, and CK1α's 10
+  pDC50 compounds will not support a per-target error estimate. Pooling across
+  all 88 glue targets raises the training sets to 117 rows for pDC50 and 190 for
+  Dmax, which is the reason the oracles are pooled. Whether that suffices
+  depends on what merging MolGlue-DB adds, which is unmeasured.
 
 **Blocked on something I cannot obtain.**
 
+- **MolGlue-DB.** `https://www.molgluedb.com/` responds, and nothing in this
+  repository fetches or references it; the only bioactivity source wired into
+  `scripts/download_data.py` is TPDdb. It is the one input that could lift the
+  glue oracles off the floor, and its overlap with TPDdb is unmeasured and is
+  itself worth reporting. Merging rule, agreed in advance: geometric mean for
+  replicate DC50 values, arithmetic mean for pDC50 and for Dmax, and anything
+  whose replicates disagree sharply is raised rather than averaged.
 - **DC-200, DN-218, VISC-664 and MP-4K, the molecule lists.** Four of the five
   property datasets the paper fits surrogates on are not in the public release.
   Verified against the complete upstream file tree, 2026-10-25: of 39
@@ -1017,30 +1191,38 @@ known. `battery_prior` trains on `battslm`, its two jobs are
 `preprocess_battslm` and `prior_battslm`, and `battery_conditional` and
 `battery_goal_directed` resume from it.
 
-**`battp30k` is not blocked, and four places say it is.** Measured 2026-10-25:
-`data/raw/battslm/Batt-P30K.h5` is on disk at 183,771,012 bytes with 29,519
-molecule groups, each carrying 13 fields: `coord`, `elems`, `smiles`, a
-`dipole` 3-vector, a **`quadrupole` 6-vector** that nothing in this repository
-had noticed, and `homo`, `lumo`, `gap`, `ip`, `ea` and three energies. There is
-no dielectric-constant field, which is why the dipole is the label: upstream
-reaches the dielectric constant *from* the dipole, through the piecewise
-regression named under the blockers above. `MANIFEST.json` records
-its url, size and sha256 as retrieved on 2026-10-19. The count matches the
-manuscript's 29,519 exactly, and `download_data.py:74` already asserts the true
-size in a comment. So the dipole labels `battery_conditional` needs are present
-and sufficient. What is missing is one extraction script — take the norm of the
-dipole vector per molecule and write `battp30k_dipole.smi`, about 1 MB — and no
-script in `scripts/` does it. The claim that the upstream file is a 134-byte Git
-LFS pointer is stale in `experiments/battery_conditional/instructions.md:13-14`,
-`RUN.md:88` and `RUN.md:929`, as is "not yet wired into `scripts/download_data.py`" in three
-further places: the `battslm` source is wired at `download_data.py:83-92` and
-`RUN.md` step B1 already calls it. Fix the four documents and write the script.
+**`battp30k` is built.** `scripts/battp30k-create-dataset.py` reads all 29,519
+molecule groups of `data/raw/battslm/Batt-P30K.h5` — none unparseable,
+multi-fragment, oversized or duplicated — and writes
+`battp30k_dipole.smi` with SMILES and the dipole norm, plus
+`battp30k_metadata.tsv` with all six DFT labels. Two files rather than one
+because a preprocess job asserts exactly `condition_dim` property columns and
+`battery_conditional` sets `condition_dim: 1`. Verified end to end: a
+200-molecule subset preprocesses to a `condition_vector` of shape (1661, 1).
+It writes **no `dc` column**, deliberately: the dielectric constant is reached
+from the dipole through the LF-MLR-DC-200 regression whose coefficients are
+published only as a raster figure, so a `dc` column would be fabricated. The
+dipole here is also the single-conformer DFT value, not the
+three-lowest-conformer average the published chain uses, and the two must not be
+mixed in one table. The stale claim that the upstream file is a 134-byte Git LFS
+pointer survives at `experiments/battery_conditional/instructions.md:13-14`,
+`RUN.md:88` and `RUN.md:929`.
 
-**`data/datasets/battslm/` has no builder.** Its 115,756 molecules were
-canonicalized and deduplicated from the raw file with the rule recorded in its
-`PROVENANCE.json`, but `scripts/battslm-create-dataset.py` does not exist, so
-the dataset is reproducible only by hand. The other two corpora have their
-builders.
+**`data/datasets/battslm/` has a builder now**, at
+`scripts/battslm-create-dataset.py`, and it checks the delivered corpus against
+every one of Batt-SLM's published selection criteria rather than trusting it.
+Three fail. **29,484 molecules of 115,756 (25.5%) have a maximum Tanimoto to the
+174-molecule F/P-holdout below the stated 0.20 floor** — either our fingerprint
+differs from theirs or the criterion was applied before the heavy-atom
+resampling that follows it in the SI's own description, and a quarter of the
+prior corpus is not deleted on an ambiguous reading, so it is reported and kept.
+The other two are enforced because their molecules are malformed rather than out
+of scope: 21 carry redundant natural-abundance isotope labels (`[14N]`, `[16O]`,
+`[12C]`) that survive canonicalization, so the same molecule with and without
+the label canonicalizes to two strings and every novelty comparison against the
+corpus would treat them as distinct; a disjoint 21 carry degenerate
+fused-aromatic systems (`c1cc2oc1=2`) that parse and are not chemistry. The
+corpus is 115,714 molecules.
 
 **The battery tools are not inventoried.** `tools/README.md` has no entry for
 any battery asset and does not mention PiNet2, which
