@@ -109,6 +109,8 @@ src/metrics/          evaluation (see Evaluation metrics)
 src/oracles/          oracle wrappers, surrogates, and the call-counting cache
 config/defaults.yaml  every parameter and its default value
 config/slurm.sh.template  the one SLURM template
+data/datasets/<name>/ source SMILES and provenance, plus one `split_<type>/` subdirectory
+                      per split set holding that split's files (see Data splits)
 experiments/          one directory per experiment (see below)
 tools/                external tools and data this repository depends on
 tutorials/            one walkthrough per job type
@@ -167,6 +169,11 @@ experiments/<experiment_name>/
 `generate` in both modes, `goal_directed`, `unconditional` and `conditional`, since model efficiency
 is reported for every trained model.
 
+A `preprocess` job writes nothing to its own `results/` but the resolved config and its two figures.
+Splits, HDF5, `train.csv` and `preprocessing.yaml` belong to the dataset, under
+`data/datasets/<name>/split_<type>/`, because every job in every experiment on that dataset reads the
+same split set.
+
 `<experiment_name>` describes the question, not the method: `conditional_logp_zinc`, not `run3`. A
 job directory is self-contained and can be copied or deleted on its own. The old `jobs/` and
 `output/` directories at the repo root are gone; do not reintroduce them.
@@ -182,7 +189,7 @@ one. Baselines are not experiments; they are arms of the experiment they are a b
 | `<program>_prior` | unconditional training on the base corpus |
 | `<program>_transfer` | transfer onto the task corpus with `resume_from`, **together with** the from-scratch control on the same corpus. Both arms live in one experiment because neither means anything alone: the comparison is the result |
 | `<program>_conditional` | conditional training on the panel. One experiment, not one per class: all classes are trained in one model and evaluated together |
-| `<program>_goal_directed` | optimization toward the program's oracle, with the virtual screening and REINVENT4 arms inside it |
+| `<program>_goal_directed` | optimization toward the program's oracle, with the virtual screening arm inside it and the REINVENT4 arm mirroring it from `reinvent4_<program>_goal_directed` |
 | `protac_selectivity` | the bonus campaign, optimizing for degradation of one target and against a second. Virtual screening is its only baseline |
 
 Three programs — `protac`, `mg`, `battery` — give twelve, plus `protac_selectivity`: **thirteen**.
@@ -190,11 +197,41 @@ Four surrogate fits sit beside them as their own experiments, because each level
 data it may see and that difference is the point: `surrogate_<program>_optimization` is fitted on
 the training and validation splits only and is the RL reward,
 `surrogate_<program>_evaluation` is the same featurization and model class refitted on all data
-including the test split and only ever rescores final molecules.
+including the test split and only ever rescores final molecules. Five tutorial experiments and six
+REINVENT4 baselines sit beside those, so `experiments/` holds twenty-eight directories of which
+thirteen are the result.
 
 **All three goal-directed experiments carry both baseline arms**, virtual screening and REINVENT4,
 not the drug-discovery ones only. `protac_selectivity` is the single exception and takes virtual
 screening alone.
+
+**The virtual screening baseline is not a job type.** `scripts/screen-library.py` takes a
+goal-directed job directory and a library, draws uniformly at random, scores through the same
+`CachedOracle` the RL job uses, and writes `results/screening_<library>.json`; that job's
+`screening_baseline_results` key points at the file and the metrics layer computes the `vs_*` keys
+from it. Screening is a random draw plus surrogate calls at milliseconds each, so it needs no SLURM
+allocation. It runs for all four optimization experiments and for no other job type, since there is
+nothing to spend a budget against outside an optimization campaign.
+
+**Six further experiments run the REINVENT4 baseline**, named
+`reinvent4_<program>_<prior|goal_directed>`. REINVENT4 is an external tool, not part of this
+codebase: it lives at its pinned commit under `tools/`, is launched by
+`experiments/reinvent4_*/submit_reinvent.py` with its own config structure, and is never reachable
+from `submit.py` or from a `job_type`. Each has an `instructions.md` naming the single GraphINVENT2
+job it mirrors, and its `config.yaml` records the fairness conditions in machine-readable form: the
+mirrored job, the prior's split directory, the oracle block, the oracle-call budget, the sample size
+and the seeds. `submit_reinvent.py` asserts each against the mirrored job's
+`results/config.resolved.yaml` and refuses to run on a mismatch, so the fairness conditions are a
+check rather than a paragraph. Its generated molecules are scored by this repository's own metric
+functions through `evaluate_external_sample`, because a baseline scored by other code is not a
+comparison.
+
+Three priors and three campaigns, not six of each. The prior comparison answers whether a
+graph-based model matches a SMILES-based one at distribution matching, which is the unconditional
+claim. There is no REINVENT4 transfer arm, because comparing two different fine-tuning mechanisms
+measures REINVENT4's implementation rather than anything about GraphINVENT2, and the transfer claim
+already has its control in the from-scratch arm. There is no REINVENT4 conditional arm; the
+conditional claim is falsified by `baseline_posthoc_`, not by another model.
 
 **The three priors are never shared.** A PROTAC prior is not a starting point for a glue model and
 neither is a starting point for a solvent model: the size regimes, the atom vocabularies and the
@@ -217,6 +254,10 @@ experiment reports metrics from a training job, from a trajectory, or from a sma
 ## Job types
 
 Five job types. These names are the only accepted values; there are no aliases.
+
+A job type is a distinct top-level entry point into the code, which is why the list is five and not
+three or seven: the five are the dispatch keys in `main.py` and the five evaluation functions in
+`src/metrics/_run.py`. A variation that reuses an entry point is configuration, not a job type.
 
 | job_type | Purpose | Needs | Produces |
 |---|---|---|---|
@@ -286,9 +327,17 @@ left 44.7% of test molecules sharing a warhead scaffold with training, against 0
 under `tools/splitter-cache/`, and a molecule that yields no warhead scaffold forms its own group and
 is counted, so the no-shared-warhead guarantee is stated over the molecules that yielded one.
 
-**Splits are fixed per dataset and reused.** Every job in an experiment, and every experiment on the
-same dataset, uses the same split files. Two models evaluated on different test sets are not
-comparable. If a dataset needs a new split, it is a new dataset directory.
+**Splits are fixed per split set and reused.** A split set is identified by `split_type`, `seed`,
+`train_frac` and `valid_frac`, and lives in `data/datasets/<name>/split_<type>/`. Every job in an
+experiment, and every experiment on the same dataset, reads the same one; `split_type` is declared in
+`experiment.yaml` and inherited by every job, exactly as `dataset_dir` is. Two models evaluated on
+different test sets are not comparable, so a preprocess job pointed at an existing split directory
+whose recorded `seed`, `train_frac` or `valid_frac` differ from the current config **raises**, naming
+the key, both values, and the instruction to use a new `dataset_dir`. Re-running with identical split
+parameters is the only case that proceeds. There is no force-resplit flag and no `restart` key: a
+mismatch is never what anyone wanted, and the old behavior — move the previous splits into
+`_previous_run_<timestamp>/` and write new ones — meant a model trained on one split was evaluated
+against another's test set with nothing failing.
 
 **Conditional jobs** draw condition values at generation time from the test split's distribution, not
 the training split's. **Goal-directed jobs** train the prior on train; screening libraries for the
@@ -350,7 +399,14 @@ while `conditioning` is unset are an error, not a silent drop to an unconditiona
 ## Evaluation metrics
 
 Every metric has exactly one implementation and it lives in `src/metrics/`. Do not compute a metric
-inline anywhere else. `Analyzer` owns the model forward pass that produces the likelihood tensors,
+inline anywhere else. A sample from an external model is scored by the same functions:
+`evaluate_external_sample` takes a `.smi` path and computes the core table, FCD, the triage stack and
+the component metrics exactly as `evaluate_generation` does. It differs in one respect and it is the
+one that matters: novelty's reference corpora cannot be discovered by walking a checkpoint lineage,
+because there is no checkpoint, so they are passed explicitly and **asserted equal** to those of the
+arm being compared against — a novelty comparison against a different reference set is not a
+comparison. `nll_*`, `uc_jsd` and `delta_nll` are properties of a model this code cannot evaluate, so
+they record `not_applicable_to_job_type` nulls. `Analyzer` owns the model forward pass that produces the likelihood tensors,
 because only it holds the model and the loaders, but the arithmetic that turns them into `nll_*` and
 `uc_jsd` is in `src/metrics/_likelihood.py` with every other metric.
 
@@ -391,6 +447,7 @@ by the HTML report, the cross-seed aggregator and any plotting.
   will not. The supporting fields are `fcd_n_generated` and `fcd_n_reference`,
   `validity_n_generated_raw`, `property_window_rate_bounds`, `success_threshold`,
   `novelty_reference_corpora` and `novelty_n_reference_molecules`,
+  `reinvent4_commit` and `reinvent4_mirrored_job`,
   `success_definition`, `condition_dropout`, `triage_stages`, `triage_pass_rate`,
   `triage_n_entered`, `triage_sa_max`, `triage_retrotac_min`, `<stage>_pass_rate` and
   `<stage>_n_reached` for each triage stage,
@@ -697,6 +754,8 @@ its size, and if a conclusion flips between models it does not go in the paper.
 | `auc_top10` | area under top-10 mean against oracle calls, up to 10,000 |
 | `vs_baseline_top10_at_<...>` | the same top-10 mean for B molecules drawn uniformly at random from a declared screening library, same oracle, same seeds |
 | `vs_delta_top10_at_<...>` | generative minus virtual screening, the headline comparison |
+| `r4_baseline_top10_at_<...>` | the same top-10 mean for the mirrored REINVENT4 run, same oracle, same budget, same seeds |
+| `r4_delta_top10_at_<...>` | GraphINVENT2 minus REINVENT4. Null with its reason when `reinvent_baseline_results` is unset |
 | `success_rate` | fraction of unique valid molecules scoring at or above `success_threshold`; multiple property thresholds combine with AND |
 | `top100_scaffold_count`, `top100_internal_diversity` | diversity among the 100 highest-scoring molecules |
 | `quality_filtered_top10_mean` | top-10 mean among molecules passing structural filters and a synthesizability gate: `sa_score < 4.5` normally, and `retrotac >= 0.30` for a bifunctional dataset |
@@ -802,9 +861,14 @@ laptop with no GPU:
    writes its expected outputs. Catches interface breakage.
 
 A fifth file, `tests/test_metric_sanity.py`, is ratified: the four above exercise `src/graphinvent/`
-and none imports `src/metrics/`, which is where every reported number comes from. Any further test
-needs a one-line justification of the specific failure it catches, recorded at the top of the file.
-Delete tests that do not earn this.
+and none imports `src/metrics/`, which is where every reported number comes from. A sixth,
+`tests/test_guards_fire.py`, is ratified on the justification recorded at its top: a
+behavior-selecting guard is correct code that does not run, and two shipped dead because the check
+sat where a value is read from a config layer while almost every parameter is inherited rather than
+set, so the check ran on the rare path and skipped the common one. Every case in it inherits the bad
+value from the experiment layer, which is the path that was dead. Any further test needs a one-line
+justification of the specific failure it catches, recorded at the top of the file. Delete tests that
+do not earn this.
 
 `pytest-timeout` is in the dev extra with a default timeout, because a metric that stops terminating
 hangs the suite at 100% CPU with no error rather than failing. Every test that guards a fix is
@@ -902,6 +966,46 @@ from it, so each is listed with a recommendation rather than chosen.
   and not reachable from here. Every number that would have come from them is
   either absent from the manuscript or carries its own measured source; none is
   guessed. Nothing else in the repository waits on them.
+- **PubChem-120K, the battery base corpus.** Not distributed with
+  `Teoroo-CMC/Batt-SLM`, and the selection procedure is in the same absent
+  supporting information. `battery_prior` names it in `experiment.yaml` and all
+  five of its jobs, and `battery_transfer`'s `extra_dataset` points at it, so
+  `battery_prior` cannot run at all and `battery_transfer` can run its
+  from-scratch arm and not its transfer arm. The only molecule count in the
+  repository, 119,995 at `preprocess_pubchem120k/config.yaml:12`, is unsourced.
+  In raw form it would be about 2 MB, scaled from Batt-SLM's 115,756 molecules
+  in 1.88 MB of the same sub-17-heavy-atom chemistry, so this is an availability
+  problem and not a storage one.
+
+**`battp30k` is not blocked, and four places say it is.** Measured 2026-10-25:
+`data/raw/battslm/Batt-P30K.h5` is on disk at 183,771,012 bytes with 29,519
+molecule groups, each carrying `smiles` and a `dipole` 3-vector alongside
+`homo`, `lumo`, `gap`, `ip`, `ea` and the energies, and `MANIFEST.json` records
+its url, size and sha256 as retrieved on 2026-10-19. The count matches the
+manuscript's 29,519 exactly, and `download_data.py:74` already asserts the true
+size in a comment. So the dipole labels `battery_conditional` needs are present
+and sufficient. What is missing is one extraction script — take the norm of the
+dipole vector per molecule and write `battp30k_dipole.smi`, about 1 MB — and no
+script in `scripts/` does it. The claim that the upstream file is a 134-byte Git
+LFS pointer is stale in `experiments/battery_conditional/instructions.md:13-14`,
+`experiments/battery_transfer/instructions.md:13-16`, `RUN.md:88` and
+`RUN.md:929`, as is "not yet wired into `scripts/download_data.py`" in three
+further places: the `battslm` source is wired at `download_data.py:83-92` and
+`RUN.md` step B1 already calls it. Fix the four documents and write the script.
+
+**`data/datasets/battslm/` has no builder.** Its 115,756 molecules were
+canonicalized and deduplicated from the raw file with the rule recorded in its
+`PROVENANCE.json`, but `scripts/battslm-create-dataset.py` does not exist, so
+the dataset is reproducible only by hand. The other two corpora have their
+builders.
+
+**The battery tools are not inventoried.** `tools/README.md` has no entry for
+any battery asset and does not mention PiNet2, which
+`battery_conditional/instructions.md` names as the predictor needed to measure
+achieved dipole on generated molecules. This document asserts above that the
+inventory "covers PROTAC-Splitter, RetroTAC, REINVENT4 and the battery assets",
+which is currently false, and a dependency used but not recorded there is a bug
+by the rule in [External tools](#external-tools).
 
 **Unverifiable without the cluster — the arrival checklist.** Run these in this
 order on Arrhenius before submitting anything. They are ordered by how early a
@@ -932,8 +1036,10 @@ because several of them fail as something other than themselves.
    wheels for `manylinux_2_28_aarch64` and `x86_64` and none for macOS arm64, so
    `tools/install.sh` installs it on the cluster and skips it here with a
    message. *The failure looks like:* a baseline arm that silently never ran.
-   Its six fairness conditions, in each goal-directed experiment's
-   `instructions.md`, must all be met before any REINVENT number is reported.
+   The fairness conditions are now asserted by
+   `experiments/reinvent4_*/submit_reinvent.py` against the mirrored job's
+   `results/config.resolved.yaml`, so what to check here is that those
+   assertions pass on the cluster rather than that somebody read them.
 5. **Every walltime and memory request.** They are now derived rather than
    guessed: `scripts/estimate-walltime.py` applies `RUN.md`'s procedure to the
    measured CPU per-unit costs and writes the number and its derivation into

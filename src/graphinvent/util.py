@@ -381,7 +381,7 @@ def write_preprocessing_parameters(params: namedtuple, n_oversized: int = 0) -> 
     the split block is the authoritative record of how the three splits were
     made: changing it means a new dataset, not a re-run.
     """
-    dataset_dir = Path(params.dataset_dir)
+    split_dir = Path(params.split_dir)
     recorded = {
         key: getattr(params, key)
         for key in (
@@ -417,8 +417,8 @@ def write_preprocessing_parameters(params: namedtuple, n_oversized: int = 0) -> 
         **_split_notes(),
         **{
             f"n_{split}": (
-                sum(1 for _ in open(dataset_dir / f"{split}.smi"))
-                if (dataset_dir / f"{split}.smi").exists()
+                sum(1 for _ in open(split_dir / f"{split}.smi"))
+                if (split_dir / f"{split}.smi").exists()
                 else 0
             )
             for split in ("train", "valid", "test")
@@ -426,7 +426,7 @@ def write_preprocessing_parameters(params: namedtuple, n_oversized: int = 0) -> 
     }
     recorded["run_info"] = _build_run_info(device=params.device)
 
-    with open(dataset_dir / "preprocessing.yaml", "w") as f:
+    with open(split_dir / "preprocessing.yaml", "w") as f:
         yaml.safe_dump(recorded, f, sort_keys=True, default_flow_style=False)
 
 

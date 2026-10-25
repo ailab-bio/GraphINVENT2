@@ -95,6 +95,15 @@ def main() -> int:
                 ddir = REPO / ddir
             if not ddir.is_dir():
                 missing_inputs.append((name, "dataset_dir", str(ddir)))
+            else:
+                # The splits live in a per-strategy subdirectory, so a job can
+                # name a dataset that exists and a split set that was never
+                # built.
+                sdir = pathlib.Path(str(params.get("split_dir", "")))
+                if not sdir.is_absolute():
+                    sdir = REPO / sdir
+                if not sdir.is_dir():
+                    missing_inputs.append((name, "split_dir", str(sdir)))
 
     print(f"{'JOB':48} {'TYPE':14} RESULT")
     print("-" * 84)

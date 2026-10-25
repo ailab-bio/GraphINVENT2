@@ -27,7 +27,7 @@ RDLogger.DisableLog("rdApp.*")
 
 @pytest.fixture(scope="module")
 def preprocessed(tmp_path_factory) -> Path:
-    """Run one preprocessing job and return its dataset directory."""
+    """Run one preprocessing job and return the split directory it wrote."""
     root = tmp_path_factory.mktemp("split")
     dataset_dir = root / "dataset"
     dataset_dir.mkdir()
@@ -55,7 +55,7 @@ def preprocessed(tmp_path_factory) -> Path:
         check=True,
         capture_output=True,
     )
-    return dataset_dir
+    return dataset_dir / "split_scaffold"
 
 
 def _canonical(path: Path) -> list:
@@ -75,7 +75,9 @@ def test_splits_cover_every_input_molecule(preprocessed):
     molecules = set()
     for split in SPLITS:
         molecules |= set(_canonical(preprocessed / f"{split}.smi"))
-    assert molecules == set(_canonical(preprocessed / "molecules.smi"))
+    # The source corpus stays at the dataset root; only the splits move into
+    # the per-strategy subdirectory.
+    assert molecules == set(_canonical(preprocessed.parent / "molecules.smi"))
 
 
 def test_no_scaffold_is_shared_between_splits(preprocessed):
@@ -113,7 +115,7 @@ def test_no_subgraph_derives_from_another_splits_molecule(preprocessed):
             **yaml.safe_load((REPO_ROOT / "config/defaults.yaml").read_text()),
             **{k: v for k, v in recorded.items() if k not in ("split", "run_info")},
             "job_type": "generate",
-            "dataset_dir": str(preprocessed),
+            "dataset_dir": str(preprocessed.parent),
             "job_dir": str(preprocessed),
         }
     )

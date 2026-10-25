@@ -487,7 +487,7 @@ class Workflow:
         existing train/valid/test .smi files are also backed up, since they
         will be overwritten by the new split.
         """
-        dataset_dir = self.constants.dataset_dir
+        split_dir = self.constants.split_dir
         candidates = [
             "train.h5",
             "valid.h5",
@@ -500,15 +500,13 @@ class Workflow:
             candidates += ["train.smi", "valid.smi", "test.smi"]
 
         stale = [
-            dataset_dir + name
-            for name in candidates
-            if os.path.exists(dataset_dir + name)
+            split_dir + name for name in candidates if os.path.exists(split_dir + name)
         ]
         if not stale:
             return
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_dir = dataset_dir + f"_previous_run_{timestamp}/"
+        backup_dir = split_dir + f"_previous_run_{timestamp}/"
         os.makedirs(backup_dir, exist_ok=True)
 
         print(
@@ -657,71 +655,110 @@ class Workflow:
             shutil.move(path, backup_dir + name)
             print(f"  Moved: {name}", flush=True)
 
-    def _check_restart_params_match(self, dataset_dir: str) -> bool:
-        """
-        Returns True if ``preprocessing.yaml`` in ``dataset_dir`` exists and
-        all keys it contains match the current constants.
+    # Changing one of these changes WHICH MOLECULES are in each split, so
+    # rebuilding in place would leave a model already trained here evaluated
+    # against a different test set. Fatal.
+    #
+    # max_n_nodes and use_chirality are here and not below because both act
+    # before the split rather than after it: molecules above the cap are
+    # dropped, and deduplication is keyed on the representation the model sees,
+    # so lowering the cap or dropping the chiral tag moves molecules between
+    # splits as surely as changing the seed does.
+    SPLIT_IDENTITY_KEYS = (
+        "strategy",
+        "seed",
+        "train_frac",
+        "valid_frac",
+        "max_n_nodes",
+        "use_chirality",
+    )
 
-        If the file is absent or any value differs, prints a warning and returns
-        False so the caller can fall back to a fresh start.
+    # Changing one of these changes the HDF contents but not which molecule is
+    # in which split. A rebuild from the same .smi files is correct and harms
+    # nothing; only resuming a half-built HDF5 is wrong, so this returns False
+    # rather than raising.
+    VOCABULARY_KEYS = (
+        "atom_types",
+        "formal_charge",
+        "imp_H",
+        "chirality",
+        "use_aromatic_bonds",
+        "use_canon",
+        "use_explicit_H",
+        "ignore_H",
+        "decoding_route",
+    )
+
+    def _guard_existing_split(self, split_dir: str) -> bool:
         """
-        recorded = Path(dataset_dir) / "preprocessing.yaml"
+        Decide whether an existing split set may be resumed, and raise if the
+        split itself would be silently redefined.
+
+        Returns False when there is no recorded split, which is a first build,
+        or when the feature vocabulary has changed, which makes a half-built
+        HDF5 unresumable but is otherwise harmless. Returns True when the
+        recorded split and vocabulary both match, which is the legitimate
+        re-run.
+
+        Raises when a split-identity key differs. Rebuilding a split set under
+        different parameters used to move the previous splits into
+        ``_previous_run_<timestamp>/`` and write new ones, so a model trained
+        against one split was then evaluated against another's test set with
+        nothing failing. A split set is identified by split_type, seed,
+        train_frac and valid_frac; changing any of them means a new dataset.
+        """
+        recorded = Path(split_dir) / "preprocessing.yaml"
         if not recorded.exists():
-            print(
-                "* restart=True but no preprocessing.yaml found in "
-                f"{dataset_dir} — starting fresh.",
-                flush=True,
-            )
             return False
 
         with open(recorded) as f:
             saved = yaml.safe_load(f)
         saved.update(saved.pop("split", {}))
 
-        # Compare only the keys that determine the HDF contents. The file also
-        # holds bookkeeping written after the fact (`run_info`, the split
-        # counts), which has no counterpart on `constants` and would make every
-        # restart look like a mismatch.
-        comparable = (
-            "atom_types",
-            "formal_charge",
-            "imp_H",
-            "chirality",
-            "max_n_nodes",
-            "use_aromatic_bonds",
-            "use_canon",
-            "use_chirality",
-            "use_explicit_H",
-            "ignore_H",
-            "decoding_route",
-            "strategy",
-            "train_frac",
-            "valid_frac",
-        )
+        # `strategy` is this file's name for split_type; the rest read straight
+        # off constants. The file also holds bookkeeping written after the fact
+        # (`run_info`, the split counts), which has no counterpart on
+        # `constants` and would make every re-run look like a mismatch.
         current = {"strategy": self.constants.split_type}
-        mismatches = {
-            key: (saved[key], current.get(key, getattr(self.constants, key, None)))
-            for key in comparable
-            if key in saved
-            and saved[key] != current.get(key, getattr(self.constants, key, None))
-        }
-        if mismatches:
+
+        def differing(keys) -> dict:
+            return {
+                key: (saved[key], current.get(key, getattr(self.constants, key, None)))
+                for key in keys
+                if key in saved
+                and saved[key] != current.get(key, getattr(self.constants, key, None))
+            }
+
+        redefined = differing(self.SPLIT_IDENTITY_KEYS)
+        if redefined:
             lines = "\n".join(
-                f"  {k}: saved={v[0]!r}, current={v[1]!r}"
-                for k, v in mismatches.items()
+                f"  {k}: recorded={v[0]!r}, this job={v[1]!r}"
+                for k, v in redefined.items()
+            )
+            raise ValueError(
+                f"{recorded} records a different split set than this job "
+                "declares, and rebuilding it in place would leave every model "
+                "already trained on it evaluated against a different test "
+                f"split.\n  Mismatched keys:\n{lines}\n"
+                "A split set is identified by split_type, seed, train_frac and "
+                "valid_frac. Point this job at a new dataset_dir, or restore "
+                "the parameters this split was built with."
+            )
+
+        stale_vocabulary = differing(self.VOCABULARY_KEYS)
+        if stale_vocabulary:
+            lines = "\n".join(
+                f"  {k}: recorded={v[0]!r}, this job={v[1]!r}"
+                for k, v in stale_vocabulary.items()
             )
             print(
-                "* restart=True but current parameters differ from the saved "
-                "preprocessing — starting fresh instead.\n"
-                f"  Mismatched keys:\n{lines}",
+                "* The split is unchanged but the feature vocabulary is not, so "
+                "the existing HDF5 cannot be resumed and will be rebuilt from "
+                f"the same splits.\n  Changed keys:\n{lines}",
                 flush=True,
             )
             return False
 
-        print(
-            "* restart=True and parameters match — resuming previous preprocessing.",
-            flush=True,
-        )
         return True
 
     def preprocess_phase(self) -> None:
@@ -733,20 +770,28 @@ class Workflow:
         (``constants.split_type``).  Otherwise the three .smi files are expected
         to already exist in the dataset directory (Mode B).
         """
-        dataset_dir = self.constants.dataset_dir
+        split_dir = self.constants.split_dir
+        os.makedirs(split_dir, exist_ok=True)
 
         # Only Mode A splits, so only Mode A can drop anything for being too
         # large; the other routes take the .smi files as given.
         self.n_oversized = 0
 
         smiles_file = getattr(self.constants, "smiles_file", None)
-        restart = self.constants.restart
 
-        # If restart=True, validate that current params match the saved
-        # preprocessing.yaml.  If they don't match, the dataset was
-        # built with different settings — force a fresh start instead.
-        if restart:
-            restart = self._check_restart_params_match(dataset_dir)
+        # Runs unconditionally, not only under restart: a mismatch against an
+        # existing split set is fatal however the job was launched, because the
+        # harm is overwriting a split other jobs have already been evaluated
+        # against. `restart` then decides only whether to resume this split's
+        # half-built HDF files or rebuild them.
+        existing = self._guard_existing_split(split_dir)
+        restart = self.constants.restart and existing
+        if self.constants.restart and not existing:
+            print(
+                "* restart=True but no preprocessing.yaml found in "
+                f"{split_dir} — starting fresh.",
+                flush=True,
+            )
 
         if not restart:
             # Move any leftover files from a previous run out of the way.
@@ -757,7 +802,7 @@ class Workflow:
             if smiles_file:
                 self.n_oversized = split_smiles_file(
                     smiles_file=smiles_file,
-                    dataset_dir=dataset_dir,
+                    split_dir=split_dir,
                     split_type=self.constants.split_type,
                     train_frac=self.constants.train_frac,
                     valid_frac=self.constants.valid_frac,
@@ -772,12 +817,12 @@ class Workflow:
                 missing = [
                     name
                     for name in ("train.smi", "valid.smi", "test.smi")
-                    if not os.path.exists(dataset_dir + name)
+                    if not os.path.exists(split_dir + name)
                 ]
                 if missing:
                     raise FileNotFoundError(
                         f"The following required file(s) are missing from "
-                        f"{dataset_dir}:\n"
+                        f"{split_dir}:\n"
                         + "".join(f"  - {m}\n" for m in missing)
                         + "\nSet 'smiles_file' in your params.json for "
                         "automatic splitting, or provide the missing files."
@@ -829,12 +874,12 @@ class Workflow:
             else:
                 raise ValueError(
                     "restart=True but no in-progress HDF files were found in "
-                    f"{dataset_dir}. Set 'restart': false to start from scratch."
+                    f"{split_dir}. Set 'restart': false to start from scratch."
                 )
 
-        self._preprocess_figure(dataset_dir)
+        self._preprocess_figure()
 
-    def _preprocess_figure(self, dataset_dir: str) -> None:
+    def _preprocess_figure(self) -> None:
         """
         The heavy-atom distribution with `max_nodes` marked, and the molecule
         count per split.

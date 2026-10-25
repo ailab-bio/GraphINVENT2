@@ -10,8 +10,12 @@ the method that produced the training labels. That closure is why this experimen
 
 ## Blockers
 
-- `Batt-P30K.h5` in the source repository is a **134 byte Git LFS pointer**, not the data. Either fetch it with
-  `git lfs` or take it from Zenodo 10.5281/zenodo.21061162. Not yet wired into `scripts/download_data.py`.
+- `Batt-P30K.h5` is **present**: `data/raw/battslm/Batt-P30K.h5`, 183,771,012 bytes, 29,519 molecule groups
+  each carrying `smiles` and a `dipole` 3-vector, fetched 2026-10-19 and recorded in that directory's
+  `MANIFEST.json` with its url and sha256. `scripts/download_data.py` fetches it under `--source battslm`.
+  What is missing is the extraction: no script takes the norm of the dipole vector per molecule and writes
+  `data/datasets/battp30k/battp30k_dipole.smi` (about 1 MB), so `battp30k` does not exist on disk and no job
+  in this experiment can run. Write that script; the labels are sufficient.
 - Measuring the achieved dipole needs the PiNet2 predictor, which is the battery oracle's electronic-property
   stage. See `battery_goal_directed/instructions.md` for whether it installs.
 - **L13 is a prerequisite.** This input carries property columns, which preprocess currently drops silently

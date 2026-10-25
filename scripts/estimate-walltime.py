@@ -106,7 +106,9 @@ def _count(path: Path) -> int:
     return len(lines)
 
 
-def molecules_in(dataset_dir: Path, train_frac: float = 0.8) -> int | None:
+def molecules_in(
+    dataset_dir: Path, split_dir: Path, train_frac: float = 0.8
+) -> int | None:
     """
     Molecules to extrapolate from, or None when nothing can be counted.
 
@@ -118,7 +120,7 @@ def molecules_in(dataset_dir: Path, train_frac: float = 0.8) -> int | None:
     for a training job. The derivation written into each config says which of
     the two sources the number came from.
     """
-    split = dataset_dir / "train.smi"
+    split = split_dir / "train.smi"
     if split.exists():
         return _count(split)
     corpus = dataset_dir / f"{dataset_dir.name}.smi"
@@ -160,8 +162,9 @@ def estimate(job: Path) -> dict:
         if params.get("job_type") == "preprocess"
         else float(params.get("train_frac", 0.8) or 0.8)
     )
-    n_molecules = molecules_in(dataset, train_frac)
-    from_corpus = not (dataset / "train.smi").exists()
+    split_dir = dataset / f"split_{params.get('split_type') or 'scaffold'}"
+    n_molecules = molecules_in(dataset, split_dir, train_frac)
+    from_corpus = not (split_dir / "train.smi").exists()
 
     needs_dataset = job_type in ("preprocess", "unconditional", "conditional")
     if needs_dataset and n_molecules is None:

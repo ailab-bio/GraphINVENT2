@@ -76,10 +76,14 @@ def checkpoint(dataset, tmp_path_factory) -> Path:
 
 
 def test_preprocess_writes_hdf5_and_splits(dataset):
+    # The splits and the recorded vocabulary live in the per-strategy
+    # subdirectory, not at the dataset root, so two split sets of one dataset
+    # cannot overwrite each other.
+    split_dir = dataset / "split_scaffold"
     for name in ("train", "valid", "test"):
-        assert (dataset / f"{name}.smi").exists()
-        assert (dataset / f"{name}.h5").exists()
-    assert (dataset / "preprocessing.yaml").exists()
+        assert (split_dir / f"{name}.smi").exists()
+        assert (split_dir / f"{name}.h5").exists()
+    assert (split_dir / "preprocessing.yaml").exists()
 
 
 def test_unconditional_writes_a_checkpoint(checkpoint):

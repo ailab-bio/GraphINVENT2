@@ -11,9 +11,10 @@ mean anything.
 ## Blockers, both data
 
 - **PubChem-120K is not available.** It is not distributed in the Teoroo-CMC/Batt-SLM repository (which carries
-  `Batt-SLM/Batt-SLM.smi`, `Batt-SLM/filter_smiles.py`, `CPI/`, `Redox-Pot/` and a `Batt-P30K/` whose `.h5` is a
-  134 byte Git LFS pointer), and the reconstruction procedure is documented only in the supporting information,
-  which is not in this repository. `preprocess_pubchem120k` and `prior_pubchem120k` cannot run. **Question 4.**
+  `Batt-SLM/Batt-SLM.smi`, `Batt-SLM/filter_smiles.py`, `CPI/`, `Redox-Pot/` and `Batt-P30K/Batt-P30K.h5`, the
+  last of which we do have at its full 183,771,012 bytes), and the reconstruction procedure is documented only
+  in the supporting information, which is not in this repository. `preprocess_pubchem120k` and
+  `prior_pubchem120k` cannot run. **Question 4.**
 - The two source PDFs are absent from `manuscript/refs/`, so no number attributed to the source work in this
   directory has been verified against the paper. All are marked unverified.
 
@@ -22,8 +23,9 @@ either.
 
 ## Prerequisites
 
-`Batt-SLM.smi` downloaded (not yet wired into `scripts/download_data.py`) and
-`scripts/battslm-create-dataset.py` written (not yet).
+`Batt-SLM.smi` downloaded (`scripts/download_data.py --source battslm`, which is wired) and
+`scripts/battslm-create-dataset.py` written (not yet: `data/datasets/battslm/` exists with its
+`PROVENANCE.json` but was built by hand, so it is not reproducible from the repository).
 
 ## The split
 

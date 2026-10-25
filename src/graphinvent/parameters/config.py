@@ -36,7 +36,6 @@ JOB_TYPES = (
 
 SPLIT_TYPES = ("scaffold", "warhead_scaffold", "random", "custom")
 SAMPLE_MODES = ("generate", "evaluate")
-OPTIMIZERS = ("graphinvent", "reinvent4")
 
 # The only injection mechanism the GGNN implements. The key existed with no
 # dispatch and no validation, so any value behaved as "virtual_node" and a
@@ -208,6 +207,19 @@ def resolve(job_dir: Path) -> dict:
     return params
 
 
+def split_dir_for(params: dict) -> Path:
+    """
+    The subdirectory of `dataset_dir` holding this job's split set.
+
+    A split set is identified by `split_type`, `seed`, `train_frac` and
+    `valid_frac`; the strategy names the directory and the other three are
+    checked against the `preprocessing.yaml` inside it. `split_type` is
+    therefore a path component for every job type, not a preprocess-only
+    setting.
+    """
+    return Path(params["dataset_dir"]) / f"split_{params.get('split_type')}"
+
+
 def _job_keys(config_path: Path) -> set:
     """The keys this job's own config.yaml sets, ignoring what it inherits."""
     own = _read_yaml(Path(config_path))
@@ -241,6 +253,35 @@ def _validate(params: dict, config_path: Path) -> None:
             "resolved against it."
         )
 
+    # split_type is validated here rather than in the preprocess branch because
+    # it is now a path component for every job type: a job that inherits an
+    # unimplemented value would otherwise build a path out of it and fail as a
+    # missing directory instead of naming the key.
+    if params["split_type"] not in SPLIT_TYPES:
+        raise ValueError(
+            f"split_type: {params['split_type']} is not a split strategy.\n"
+            f"Valid values: {', '.join(SPLIT_TYPES)}"
+        )
+    if params["split_type"] == "custom":
+        raise NotImplementedError(
+            "split_type: custom is a hook with no implementation, and "
+            "selecting it raises by specification.\n"
+            "Add your splitting logic to split_smiles_file() in "
+            "src/graphinvent/DataProcessor.py, or choose one of: "
+            + ", ".join(t for t in SPLIT_TYPES if t != "custom")
+            + "."
+        )
+    split_dir = split_dir_for(params)
+    params["split_dir"] = str(split_dir)
+    if job_type != "preprocess" and not split_dir.is_dir():
+        raise ValueError(
+            f"split_dir {split_dir} does not exist.\n"
+            f"This job declares split_type: {params['split_type']}, which "
+            f"selects that subdirectory of {dataset_dir}.\n"
+            "Run a preprocess job with this split_type, or set split_type in "
+            "the experiment's experiment.yaml to the split that was built."
+        )
+
     if params["use_explicit_H"] and params["ignore_H"]:
         raise ValueError(
             "use_explicit_H and ignore_H cannot both be true: a hydrogen is "
@@ -269,25 +310,6 @@ def _validate(params: dict, config_path: Path) -> None:
             f"Valid values: {', '.join(SAMPLE_MODES)}.\n"
             "generate writes molecules and computes the metric tables; "
             "evaluate computes NLL and UC-JSD."
-        )
-
-    optimizer = params.get("optimizer", "graphinvent")
-    if optimizer not in OPTIMIZERS:
-        raise ValueError(
-            f"optimizer: {optimizer!r} is not an optimizer.\n"
-            f"Valid values: {', '.join(OPTIMIZERS)}"
-        )
-    if optimizer != "graphinvent":
-        raise NotImplementedError(
-            f"This job declares optimizer: {optimizer}, which this repository "
-            "does not run.\n"
-            "It is a baseline arm for an external program, and submitting it "
-            "here would optimize a GraphINVENT checkpoint and write a "
-            "metrics.json that reads as that baseline's result.\n"
-            "What it needs before it can run is in the experiment's "
-            "instructions.md: the pinned REINVENT4 install, its prior from "
-            "Zenodo specialized onto this task corpus, and a wrapper that "
-            "exposes our scoring function as its ExternalProcess component."
         )
 
     if params.get("condition_type") not in CONDITION_TYPES:
@@ -365,20 +387,6 @@ def _validate(params: dict, config_path: Path) -> None:
             )
 
     if job_type == "preprocess":
-        if params["split_type"] not in SPLIT_TYPES:
-            raise ValueError(
-                f"split_type: {params['split_type']} is not a split strategy.\n"
-                f"Valid values: {', '.join(SPLIT_TYPES)}"
-            )
-        if params["split_type"] == "custom":
-            raise NotImplementedError(
-                "split_type: custom is a hook with no implementation, and "
-                "selecting it raises by specification.\n"
-                "Add your splitting logic to split_smiles_file() in "
-                "src/graphinvent/DataProcessor.py, or choose one of: "
-                + ", ".join(t for t in SPLIT_TYPES if t != "custom")
-                + "."
-            )
         if params["train_frac"] + params["valid_frac"] >= 1.0:
             raise ValueError(
                 f"train_frac ({params['train_frac']}) + valid_frac "
@@ -471,14 +479,14 @@ def novelty_reference_sets(params: dict) -> list:
     """
     sets, seen_ckpts = [], set()
 
-    def add(dataset_dir) -> None:
-        if not dataset_dir:
+    def add(split_dir) -> None:
+        if not split_dir:
             return
-        train = str(Path(dataset_dir) / "train.smi")
+        train = str(Path(split_dir) / "train.smi")
         if train not in sets:
             sets.append(train)
 
-    add(params.get("dataset_dir"))
+    add(params.get("split_dir"))
     checkpoint = params.get("resume_from") or params.get("pretrained_model_path")
     while checkpoint and checkpoint not in seen_ckpts:
         seen_ckpts.add(checkpoint)
@@ -499,7 +507,7 @@ def novelty_reference_sets(params: dict) -> list:
             ) from error
         if not produced_by:
             break
-        add(produced_by.get("dataset_dir"))
+        add(produced_by.get("split_dir"))
         checkpoint = produced_by.get("resume_from") or produced_by.get(
             "pretrained_model_path"
         )
@@ -731,11 +739,12 @@ def get_tensor_dimensions(
 
 def _load_dataset_features(params: dict) -> None:
     """Read the feature vocabulary written by the dataset's preprocessing job."""
-    source = Path(params["dataset_dir"]) / "preprocessing.yaml"
+    source = Path(params["split_dir"]) / "preprocessing.yaml"
     if not source.exists():
         raise ValueError(
             f"{source} is missing. Run a preprocess job on "
-            f"{params['dataset_dir']} before training or sampling from it."
+            f"{params['dataset_dir']} with split_type: "
+            f"{params['split_type']} before training or sampling from it."
         )
     recorded = _read_yaml(source)
     for key in FEATURE_KEYS:
@@ -745,16 +754,14 @@ def _load_dataset_features(params: dict) -> None:
 
 def _detect_features(params: dict) -> None:
     """Scan the SMILES a preprocessing job is about to decompose."""
-    dataset_dir = Path(params["dataset_dir"])
+    split_dir = Path(params["split_dir"])
     smiles_file = params["smiles_file"]
 
     # In the splitting case the split files do not exist yet.
     if smiles_file and Path(smiles_file).exists():
         smi_paths = [str(smiles_file)]
     else:
-        smi_paths = [
-            str(dataset_dir / n) for n in ("train.smi", "valid.smi", "test.smi")
-        ]
+        smi_paths = [str(split_dir / n) for n in ("train.smi", "valid.smi", "test.smi")]
 
     # Scanning a second dataset as well gives a transfer-learning pair one
     # shared vocabulary, so the checkpoint fits both.
@@ -964,6 +971,10 @@ def derive(params: dict) -> namedtuple:
     """Add the feature vocabulary and tensor shapes, and freeze the result."""
     params = dict(params)
 
+    # `resolve` sets this, but `derive` is also called directly with a params
+    # dict, and every split-level path below is built from it.
+    params.setdefault("split_dir", str(split_dir_for(params)))
+
     # The RL schedule has its own config keys, and `_validate` rejects the
     # supervised ones on a goal_directed job. They are mapped onto the internal
     # schedule here, once, rather than at each of the ten places the training
@@ -1043,15 +1054,16 @@ def derive(params: dict) -> namedtuple:
         "checkpoints_dir": str(job_dir / "checkpoints") + "/",
         "logs_dir": str(job_dir / "logs") + "/",
         "tensorboard_dir": str(job_dir / "logs" / "tensorboard") + "/",
-        "training_set": str(Path(params["dataset_dir"]) / "train.smi"),
+        "training_set": str(Path(params["split_dir"]) / "train.smi"),
         # Every corpus the model has seen, for novelty and near_duplicate_rate.
         "novelty_reference_sets": novelty_reference_sets(params),
-        "validation_set": str(Path(params["dataset_dir"]) / "valid.smi"),
-        "test_set": str(Path(params["dataset_dir"]) / "test.smi"),
+        "validation_set": str(Path(params["split_dir"]) / "valid.smi"),
+        "test_set": str(Path(params["split_dir"]) / "test.smi"),
     }
     derived.update(params)
     derived["job_dir"] = str(job_dir) + "/"
     derived["dataset_dir"] = str(Path(params["dataset_dir"])) + "/"
+    derived["split_dir"] = str(Path(params["split_dir"])) + "/"
 
     Constants = namedtuple("CONSTANTS", sorted(derived))
     _Constants._resolved = Constants(**derived)

@@ -273,7 +273,8 @@ class TestHDF5RoundTrip:
             capture_output=True,
         )
 
-        recorded = yaml.safe_load((dataset_dir / "preprocessing.yaml").read_text())
+        split_dir = dataset_dir / "split_scaffold"
+        recorded = yaml.safe_load((split_dir / "preprocessing.yaml").read_text())
         job_constants = config.derive(
             {
                 **yaml.safe_load((REPO_ROOT / "config/defaults.yaml").read_text()),
@@ -289,7 +290,7 @@ class TestHDF5RoundTrip:
         # added, so the terminate bit also marks partial subgraphs that happen
         # to equal another molecule's finished graph. Those decode to nothing,
         # which is why only the molecules that do decode are collected.
-        with h5py.File(dataset_dir / "train.h5", "r") as f:
+        with h5py.File(split_dir / "train.h5", "r") as f:
             complete = f["action_probs"][:, -1] > 0
             nodes = f["nodes"][:][complete]
             edges = f["edges"][:][complete]
@@ -315,7 +316,7 @@ class TestHDF5RoundTrip:
 
         expected = {
             Chem.CanonSmiles(line.split("\t")[0].strip())
-            for line in (dataset_dir / "train.smi").read_text().splitlines()
+            for line in (split_dir / "train.smi").read_text().splitlines()
             if line.strip() and not line.startswith("SMILES")
         }
         assert expected <= decoded, (

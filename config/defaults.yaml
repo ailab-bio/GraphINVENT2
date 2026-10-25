@@ -66,7 +66,9 @@ ignore_H: false
 # breadth-first ("bfs") or depth-first ("dfs") decoding route
 decoding_route: bfs
 
-# resume an interrupted preprocessing or training job from its saved state
+# resume an interrupted preprocessing or training job from its saved state. It
+# never decides whether to re-split: a preprocess job whose split parameters
+# differ from the ones recorded in the split directory raises either way.
 restart: false
 
 # --- training --------------------------------------------------------------
@@ -204,13 +206,6 @@ rl_batch_size: null
 sigma: 20
 # contribution of the best agent so far (BASF) to the loss, in [0, 1]
 alpha: 0.5
-
-# which program runs this optimization. "graphinvent" is this codebase.
-# "reinvent4" marks a baseline arm that an external program runs, and such a
-# job REFUSES to run here: it has no GraphINVENT runner, and a goal_directed
-# job pointed at a GraphINVENT checkpoint would quietly optimize our own model
-# and write a metrics.json that reads as the baseline comparison.
-optimizer: graphinvent
 
 # total oracle call budget; null = run for `rl_steps` steps instead. THE BUDGET
 # IS THE STOPPING RULE for every reported campaign: reinforcement learning can

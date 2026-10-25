@@ -405,7 +405,7 @@ def _check_conditioning(
 
 def split_smiles_file(
     smiles_file: str,
-    dataset_dir: str,
+    split_dir: str,
     split_type: str,
     train_frac: float,
     valid_frac: float,
@@ -417,14 +417,14 @@ def split_smiles_file(
 ) -> int:
     """
     Read `smiles_file`, split it, and write train.smi / valid.smi / test.smi
-    into `dataset_dir`.
+    into `split_dir`, the dataset's subdirectory for this split strategy.
 
     When the input file is a tab-separated TSV with property columns, the split
     files preserve the TSV format (including the header).
 
     Args:
         smiles_file : Path to the input SMILES file (plain or TSV).
-        dataset_dir : Directory where the split .smi files will be written.
+        split_dir   : Directory where the split .smi files will be written.
         split_type  : One of "scaffold", "warhead_scaffold" or "random"; "custom"
                       is a hook with no implementation.
         train_frac  : Fraction of molecules for the training set.
@@ -444,7 +444,7 @@ def split_smiles_file(
         The number of molecules dropped for exceeding `max_n_nodes`.
     """
     smiles_file = Path(smiles_file)
-    dataset_dir = Path(dataset_dir)
+    split_dir = Path(split_dir)
     test_frac = 1.0 - train_frac - valid_frac
 
     if test_frac < 0:
@@ -550,29 +550,29 @@ def split_smiles_file(
     valid_smi = [smiles[i] for i in valid_idx]
     test_smi = [smiles[i] for i in test_idx]
 
-    dataset_dir.mkdir(parents=True, exist_ok=True)
+    split_dir.mkdir(parents=True, exist_ok=True)
 
     if has_conditions:
         train_cond = [condition_vectors[i] for i in train_idx]
         valid_cond = [condition_vectors[i] for i in valid_idx]
         test_cond = [condition_vectors[i] for i in test_idx]
         _write_smiles_with_conditions(
-            train_smi, train_cond, condition_names, dataset_dir / "train.smi"
+            train_smi, train_cond, condition_names, split_dir / "train.smi"
         )
         _write_smiles_with_conditions(
-            valid_smi, valid_cond, condition_names, dataset_dir / "valid.smi"
+            valid_smi, valid_cond, condition_names, split_dir / "valid.smi"
         )
         _write_smiles_with_conditions(
-            test_smi, test_cond, condition_names, dataset_dir / "test.smi"
+            test_smi, test_cond, condition_names, split_dir / "test.smi"
         )
     else:
-        _write_smiles(train_smi, dataset_dir / "train.smi")
-        _write_smiles(valid_smi, dataset_dir / "valid.smi")
-        _write_smiles(test_smi, dataset_dir / "test.smi")
+        _write_smiles(train_smi, split_dir / "train.smi")
+        _write_smiles(valid_smi, split_dir / "valid.smi")
+        _write_smiles(test_smi, split_dir / "test.smi")
 
     print(
         f"  Wrote {len(train_smi)} train / {len(valid_smi)} valid / {len(test_smi)} test "
-        f"molecules to {dataset_dir}/",
+        f"molecules to {split_dir}/",
         flush=True,
     )
     return n_oversized
@@ -698,7 +698,7 @@ class DataProcessor:
         molecules in the data in groups (or "mini-batches").
         """
         chunked_path = f"{self.path[:-3]}h5.chunked"
-        restart_index_file = constants.dataset_dir + "index.restart"
+        restart_index_file = constants.split_dir + "index.restart"
         resuming = constants.restart and os.path.exists(restart_index_file)
 
         # "a" would reopen a half-written file from a crashed run and then fail
@@ -732,7 +732,7 @@ class DataProcessor:
                     util.write_last_molecule_idx(
                         last_molecule_idx=self.resume_idx,
                         dataset_size=self.dataset_size,
-                        restart_file_path=constants.dataset_dir,
+                        restart_file_path=constants.split_dir,
                     )
 
                 if self.resume_idx >= self.n_molecules:
@@ -763,7 +763,7 @@ class DataProcessor:
         """
         try:
             self.resume_idx, self.dataset_size = util.read_last_molecule_idx(
-                restart_file_path=constants.dataset_dir
+                restart_file_path=constants.split_dir
             )
         except (OSError, ValueError):
             self.resume_idx, self.dataset_size = 0, 0

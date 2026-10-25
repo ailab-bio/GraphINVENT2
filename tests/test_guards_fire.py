@@ -51,14 +51,19 @@ def workspace():
     shutil.rmtree(root, ignore_errors=True)
 
 
-def _dataset(root, name="ds", **overrides):
+def _dataset(root, name="ds", split_type="scaffold", **overrides):
+    """A dataset directory: the source corpus at its root, the splits and the
+    recorded vocabulary in the per-strategy subdirectory every job reads."""
     directory = root / "data" / name
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / "preprocessing.yaml").write_text(
+    (directory / "corpus.smi").write_text("SMILES\nCCO\n")
+    split_dir = directory / f"split_{split_type}"
+    split_dir.mkdir(parents=True, exist_ok=True)
+    (split_dir / "preprocessing.yaml").write_text(
         yaml.safe_dump({**VOCABULARY, **overrides})
     )
     for split in ("train.smi", "valid.smi", "test.smi"):
-        (directory / split).write_text("SMILES\nCCO\n")
+        (split_dir / split).write_text("SMILES\nCCO\n")
     return directory
 
 
@@ -94,7 +99,7 @@ def test_a_behavior_selecting_key_is_rejected_when_inherited(
         {
             "job_type": "preprocess",
             "dataset_dir": str(dataset),
-            "smiles_file": str(dataset / "train.smi"),
+            "smiles_file": str(dataset / "corpus.smi"),
         },
         {key: bad},
     )
@@ -117,7 +122,7 @@ def test_the_custom_split_raises_before_any_molecule_is_read(workspace):
         {
             "job_type": "preprocess",
             "dataset_dir": str(dataset),
-            "smiles_file": str(dataset / "train.smi"),
+            "smiles_file": str(dataset / "corpus.smi"),
         },
         {"split_type": "custom"},
     )
@@ -221,3 +226,108 @@ def test_a_requested_class_outside_the_panel_is_refused(workspace):
         _resolve(job)
     message = " ".join(str(caught.value).split())
     assert "is_typo" in message and "is_a" in message
+
+
+def _preprocess_job(workspace, dataset, **overrides):
+    return _job(
+        workspace,
+        {
+            "job_type": "preprocess",
+            "dataset_dir": str(dataset),
+            "smiles_file": str(dataset / "corpus.smi"),
+            "split_type": "scaffold",
+            "train_frac": 0.8,
+            "valid_frac": 0.1,
+            "seed": 1,
+            **overrides,
+        },
+    )
+
+
+def _record_split_as_built(constants, split_dir):
+    """Write the preprocessing.yaml a completed run would have written.
+
+    Built from the resolved constants rather than a literal, so the recorded
+    vocabulary is the one this corpus actually detects and the only thing a
+    later job can differ on is what that job changed.
+    """
+    from Workflow import Workflow
+
+    recorded = {key: getattr(constants, key) for key in Workflow.VOCABULARY_KEYS}
+    recorded["max_n_nodes"] = constants.max_n_nodes
+    recorded["use_chirality"] = constants.use_chirality
+    recorded["seed"] = constants.seed
+    recorded["split"] = {
+        "strategy": constants.split_type,
+        "train_frac": constants.train_frac,
+        "valid_frac": constants.valid_frac,
+    }
+    (split_dir / "preprocessing.yaml").write_text(yaml.safe_dump(recorded))
+
+
+def _guard(constants):
+    from Workflow import Workflow
+
+    workflow = Workflow.__new__(Workflow)
+    workflow.constants = constants
+    return workflow._guard_existing_split(constants.split_dir)
+
+
+@pytest.mark.parametrize(
+    "override, expected",
+    [
+        ({"seed": 99}, "seed"),
+        ({"train_frac": 0.5}, "train_frac"),
+        ({"valid_frac": 0.05}, "valid_frac"),
+        ({"max_n_nodes": 2}, "max_n_nodes"),
+        ({"use_chirality": True}, "use_chirality"),
+    ],
+)
+def test_rebuilding_a_split_set_under_different_parameters_is_refused(
+    workspace, override, expected
+):
+    """A split set is identified by split_type, seed, train_frac, valid_frac,
+    max_n_nodes and use_chirality.
+
+    Preprocessing a dataset a second time under different parameters used to
+    move the existing splits into `_previous_run_<timestamp>/` and write new
+    ones, so a model trained against one split was then evaluated against
+    another's test split with nothing failing. The guard runs however the job
+    was launched, not only under restart, because the harm is overwriting a
+    split other jobs have already been evaluated against. `max_n_nodes` and
+    `use_chirality` are in the fatal set because both act before the split:
+    one drops oversized molecules, the other is the deduplication key.
+    """
+    dataset = _dataset(workspace)
+    as_built = _resolve(_preprocess_job(workspace, dataset))
+    _record_split_as_built(as_built, Path(as_built.split_dir))
+
+    changed = _resolve(_preprocess_job(workspace, dataset, **override))
+    with pytest.raises(ValueError) as caught:
+        _guard(changed)
+    message = " ".join(str(caught.value).split())
+    assert expected in message and "new dataset_dir" in message
+
+
+def test_rebuilding_a_split_set_under_the_same_parameters_is_allowed(workspace):
+    """The legitimate re-run, which must not be caught by the guard above."""
+    dataset = _dataset(workspace)
+    as_built = _resolve(_preprocess_job(workspace, dataset))
+    _record_split_as_built(as_built, Path(as_built.split_dir))
+
+    assert _guard(_resolve(_preprocess_job(workspace, dataset))) is True
+
+
+def test_a_changed_vocabulary_rebuilds_rather_than_raising(workspace):
+    """A vocabulary change makes a half-built HDF5 unresumable but moves no
+    molecule between splits, so it must not be fatal."""
+    dataset = _dataset(workspace)
+    as_built = _resolve(_preprocess_job(workspace, dataset))
+    split_dir = Path(as_built.split_dir)
+    _record_split_as_built(as_built, split_dir)
+
+    recorded = yaml.safe_load((split_dir / "preprocessing.yaml").read_text())
+    recorded["decoding_route"] = "dfs"
+    (split_dir / "preprocessing.yaml").write_text(yaml.safe_dump(recorded))
+
+    assert _guard(_resolve(_preprocess_job(workspace, dataset))) is False

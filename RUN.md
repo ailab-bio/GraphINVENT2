@@ -71,7 +71,7 @@ preprocess jobs is fine and saves a day.
 | | Do this | Jobs |
 |---|---|---|
 | E1 | Submit every sampling job: **31 samplers at three seeds each, 93 jobs** | `*/jobs/generate_*` |
-| E2 | Submit the screening baselines | `*/jobs/vs_baseline_*` |
+| E2 | Run the screening baselines. Not jobs: a random draw plus surrogate calls, so no allocation is needed | `python scripts/screen-library.py experiments/<exp>/jobs/<rl_job> --library <name>`, then set that job's `screening_baseline_results` to the `results/screening_<name>.json` it wrote |
 | E3 | Aggregate across seeds, per experiment | `python scripts/aggregate-seeds.py experiments/<name>` |
 | E4 | Open `experiments/<name>/results/report.html` | — |
 
@@ -82,10 +82,10 @@ produces its numbers.
 
 | | Why it is absent |
 |---|---|
-| the three `reinvent_*` jobs | they refuse to run. REINVENT4 needs its Zenodo prior specialized onto our corpus and a wrapper exposing our scorer as its `ExternalProcess` component. Submitting one would optimize **our** model and write a `metrics.json` that reads as the baseline |
+| the REINVENT4 baselines | they are not jobs and `submit.py` cannot run them. They live in the six `experiments/reinvent4_*` directories, are launched by `submit_reinvent.py` with REINVENT4's own config structure, and their molecules are scored by `evaluate_external_sample`. Each needs REINVENT4's Zenodo prior specialized onto our corpus and a wrapper exposing our scorer as its `ExternalProcess` component |
 | `mg_goal_directed` | its reward cannot be fitted: the largest glue target has 30 labelled compounds against a floor of about 100. See `experiments/surrogate_mg_optimization/instructions.md` and decide what it optimizes |
 | `protac_prior` | needs `protac_enumerated`, which upstream's generator did not finish building in three hours |
-| the battery program beyond `prior_scratch` | PubChem-120K is not distributed, `Batt-P30K.h5` upstream is a 134-byte LFS pointer, and the oracle chain does not exist |
+| the battery program beyond `prior_scratch` | PubChem-120K is not distributed and the oracle chain does not exist. `Batt-P30K.h5` **is** present — 183,771,012 bytes, 29,519 molecules with dipole labels, fetched 2026-10-19 — and what is missing is a script to extract `battp30k_dipole.smi` from it |
 
 ---
 
@@ -926,8 +926,9 @@ has 100 numeric DC50 rows in total and RBM39 has none. Whether to run it at all 
 
 Three experiments, 18 jobs, and the most blocked of the three. In dependency order the blockers are: the oracle
 does not exist; PiNet2 is not installed and its aarch64 viability is unknown; PubChem-120K is not distributed and
-cannot be reconstructed without the supporting information; `Batt-P30K.h5` in the source repository is a 134 byte
-Git LFS pointer; KBS-409 and the F/P-holdout are not in the source repository either.
+cannot be reconstructed without the supporting information; `battp30k_dipole.smi` has no extraction script, though
+`Batt-P30K.h5` itself is on disk at its full 183,771,012 bytes with all 29,519 dipole labels; KBS-409 and the
+F/P-holdout are not in the source repository either.
 
 What is available from `github.com/Teoroo-CMC/Batt-SLM`: `Batt-SLM/Batt-SLM.smi` at 1.88 MB,
 `Batt-SLM/filter_smiles.py`, the CPI implementation with `SolvFunc-87.csv`, and `Redox-Pot/redox_potential.py`.
