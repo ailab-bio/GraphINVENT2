@@ -33,3 +33,9 @@ evaluation_oracle:
 # The set the OPTIMIZATION surrogate was fitted on, for
 # top100_outside_domain_rate. Not the generative model's training split.
 surrogate_training_set: data/surrogates/smarca2_pdc50.tsv
+
+# warhead_scaffold, because a whole-molecule Bemis-Murcko scaffold of a
+# PROTAC contains every ring system and is nearly unique per compound, so a
+# whole-molecule scaffold split degenerates to random and leaks analogues.
+# It names the split directory every job here reads, so it is declared once.
+split_type: warhead_scaffold

@@ -36,3 +36,6 @@ property_window:
   rotatable_bonds: [12.0, 45.0]
   hba: [8.0, 24.0]
   hbd: [0.0, 8.0]
+
+# Names the split directory every job here reads; see Data splits.
+split_type: scaffold

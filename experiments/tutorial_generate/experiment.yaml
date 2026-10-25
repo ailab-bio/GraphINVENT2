@@ -3,6 +3,9 @@
 # Same 1,000-molecule ZINC250k subset the prior was trained on, so the feature
 # vocabulary in the dataset matches the one baked into the checkpoint. Pointing
 # this at a different dataset makes the checkpoint fail to load, which is what
-# happened when the other tutorials were moved to zinc1k and this one was not.
-dataset_dir: zinc1k
+# happened when the other tutorials were moved to dev_zinc and this one was not.
+dataset_dir: dev_zinc
 seed: 1
+
+# Names the split directory every job here reads; see Data splits.
+split_type: scaffold

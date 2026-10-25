@@ -6,7 +6,7 @@
 #
 #   python submit.py experiments/protac_transfer/jobs/smoke_train
 job_type: unconditional
-dataset_dir: toy_protac
+dataset_dir: dev_protac
 epochs: 2
 batch_size: 16
 accumulation_steps: 4

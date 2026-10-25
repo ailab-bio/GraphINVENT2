@@ -6,10 +6,9 @@
 #
 #   python submit.py experiments/protac_transfer/jobs/smoke_preprocess
 job_type: preprocess
-smiles_file: data/datasets/toy_protac/toy_protac.smi
-split_type: warhead_scaffold
+smiles_file: data/datasets/dev_protac/dev_protac.smi
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 100
-dataset_dir: toy_protac
+dataset_dir: dev_protac
 max_n_nodes: 50

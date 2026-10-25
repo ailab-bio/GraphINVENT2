@@ -1,9 +1,12 @@
 # Train a prior on a fixed 1,000-molecule random subset of ZINC250k and sample
 # from it. Runs end to end on a laptop CPU in a few minutes.
 #
-# The subset is data/datasets/zinc1k/zinc1k.smi: 1,000 unique canonical SMILES
+# The subset is data/datasets/dev_zinc/dev_zinc.smi: 1,000 unique canonical SMILES
 # drawn with Python's random.Random(1) from the 249,455-molecule
 # chemical_vae ZINC250k release, deduplicated by canonical SMILES. Committed,
 # 45 KB, so the development experiments are reproducible without a download.
-dataset_dir: zinc1k
+dataset_dir: dev_zinc
 seed: 1
+
+# Names the split directory every job here reads; see Data splits.
+split_type: scaffold

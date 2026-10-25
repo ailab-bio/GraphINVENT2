@@ -26,7 +26,7 @@ device: cpu
 ```
 
 Here the key is `pretrained_model_path` rather than `resume_from`, because this job samples from a fixed
-checkpoint instead of continuing to train it. The experiment points at `dataset_dir: zinc1k`, the same dataset the
+checkpoint instead of continuing to train it. The experiment points at `dataset_dir: dev_zinc`, the same dataset the
 prior was trained on, because the feature vocabulary baked into the checkpoint has to match the dataset's.
 Pointing it elsewhere makes the checkpoint fail to load.
 

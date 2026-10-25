@@ -5,4 +5,4 @@ pretrained_model_path: experiments/mg_transfer/jobs/smoke_train/checkpoints/mode
 n_samples: 300
 batch_size: 150
 device: cpu
-dataset_dir: toy_glue
+dataset_dir: dev_glue

@@ -11,3 +11,6 @@ slurm:
   # gpus > 0 and partition_cpu otherwise, so a preprocess or screening job
   # with gpus: 0 does not occupy a GPU node. Hard-coding gpu here sent 13
   # CPU-only jobs to the GPU partition, one of them for 24 hours.
+
+# Names the split directory every job here reads; see Data splits.
+split_type: scaffold

@@ -18,7 +18,7 @@ success_definition: one-versus-rest classifier probability >= 0.7 for degrades-G
   potency criterion.
 use_tensorboard: true
 device: cpu
-dataset_dir: toy_glue
+dataset_dir: dev_glue
 batch_size: 16
 block_size: 1000
 score_thresholds:

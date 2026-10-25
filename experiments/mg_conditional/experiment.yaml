@@ -25,3 +25,6 @@ conditioning:
 # The same three columns named as a panel, which is what selects the
 # categorical metric set over the continuous one.
 condition_classes: ["is_ikzf", "is_gspt1", "is_rbm39"]
+
+# Names the split directory every job here reads; see Data splits.
+split_type: scaffold

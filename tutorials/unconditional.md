@@ -33,7 +33,7 @@ device: cpu
 `batch_size × accumulation_steps`: raise it when the batch you want will not fit in memory. `sample_every` is the
 evaluation cadence, in epochs.
 
-The dataset is a fixed 1,000-molecule random subset of ZINC250k, committed at `data/datasets/zinc1k/zinc1k.smi`
+The dataset is a fixed 1,000-molecule random subset of ZINC250k, committed at `data/datasets/dev_zinc/dev_zinc.smi`
 so the tutorial reproduces without a download.
 
 ## Watching it train
@@ -148,4 +148,4 @@ falling while the generated molecules stay invalid is normal early: the model le
 before it learns to close a valence.
 
 A `generate` job that fails to load this checkpoint almost always means the dataset vocabularies differ. The
-tutorial experiments all point at `zinc1k` for that reason.
+tutorial experiments all point at `dev_zinc` for that reason.

@@ -5,5 +5,8 @@
 # top100_scaffold_count and quality_filtered_top10_mean actually detect
 # collapse. See manuscript/experiment-plan.md for what collapsed behavior
 # looks like, so a future reader can tell a working detector from a broken one.
-dataset_dir: zinc1k
+dataset_dir: dev_zinc
 seed: 1
+
+# Names the split directory every job here reads; see Data splits.
+split_type: scaffold

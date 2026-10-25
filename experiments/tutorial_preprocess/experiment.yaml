@@ -1,3 +1,6 @@
 # Turn a SMILES file into training-ready HDF5 and fix the three splits.
-dataset_dir: debug
+dataset_dir: dev_zinc
 seed: 1
+
+# Names the split directory every job here reads; see Data splits.
+split_type: scaffold

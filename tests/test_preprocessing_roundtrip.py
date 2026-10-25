@@ -9,7 +9,6 @@ shows up only as poor samples much later, so these tests assert exact chemical
 identity rather than mere parseability.
 """
 
-import shutil
 import subprocess
 import sys
 from collections import namedtuple
@@ -249,10 +248,11 @@ class TestHDF5RoundTrip:
 
         dataset_dir = tmp_path / "dataset"
         dataset_dir.mkdir()
-        shutil.copy(
-            REPO_ROOT / "data/datasets/debug/debug.smi",
-            dataset_dir / "molecules.smi",
-        )
+        source = REPO_ROOT / "data/datasets/dev_zinc/dev_zinc.smi"
+        molecules = [line for line in source.read_text().splitlines() if line.strip()][
+            :30
+        ]
+        (dataset_dir / "molecules.smi").write_text("\n".join(molecules) + "\n")
         job_dir = tmp_path / "exp" / "jobs" / "preprocess"
         job_dir.mkdir(parents=True)
         (job_dir / "config.yaml").write_text(
@@ -262,6 +262,11 @@ class TestHDF5RoundTrip:
                     "dataset_dir": str(dataset_dir),
                     "smiles_file": str(dataset_dir / "molecules.smi"),
                     "batch_size": 100,
+                    # 17 of these 30 molecules carry a stereocentre. Without
+                    # this the representation cannot express one, so the round
+                    # trip would be lossless only because both sides were
+                    # flattened, which is not what this test claims to check.
+                    "use_chirality": True,
                     "seed": 1,
                 }
             )
@@ -314,11 +319,27 @@ class TestHDF5RoundTrip:
             if smiles:
                 decoded.add(Chem.CanonSmiles(smiles))
 
+        def without_bond_stereo(smiles: str) -> str:
+            """Canonicalize at the level of chemistry the graph can express.
+
+            The node and edge features carry atom chirality but no double-bond
+            geometry, so a cis/trans assignment cannot survive the round trip
+            by construction. Comparing a flattened decoded set against a
+            reference that still carries E/Z would report a representation
+            limit as data corruption.
+            """
+            molecule = Chem.MolFromSmiles(smiles)
+            for bond in molecule.GetBonds():
+                if bond.GetStereo() != Chem.BondStereo.STEREONONE:
+                    bond.SetStereo(Chem.BondStereo.STEREONONE)
+            return Chem.MolToSmiles(molecule)
+
         expected = {
-            Chem.CanonSmiles(line.split("\t")[0].strip())
+            without_bond_stereo(line.split("\t")[0].strip())
             for line in (split_dir / "train.smi").read_text().splitlines()
             if line.strip() and not line.startswith("SMILES")
         }
+        decoded = {without_bond_stereo(s) for s in decoded}
         assert expected <= decoded, (
             f"{len(expected - decoded)} training molecules did not survive "
             "the HDF5 round trip"

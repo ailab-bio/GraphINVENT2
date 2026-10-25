@@ -8,7 +8,7 @@
 # resume_from dropped: the experiment's prior is unconditional and the
 # architecture-key rule forbids changing condition_dim across a checkpoint.
 job_type: conditional
-dataset_dir: toy_protac_cond
+dataset_dir: dev_protac_classes
 epochs: 2
 batch_size: 16
 accumulation_steps: 4

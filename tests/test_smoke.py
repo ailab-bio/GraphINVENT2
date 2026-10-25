@@ -6,7 +6,6 @@ says it writes. These catch interface breakage: a renamed config key, a moved
 output directory, a dispatch branch that no longer exists.
 """
 
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -15,10 +14,22 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEBUG_SMILES = REPO_ROOT / "data/datasets/debug/debug.smi"
-CONDITIONAL_SMILES = (
-    REPO_ROOT / "data/datasets/tpddb_protac10_logp/tpddb_protac10_logp.smi"
-)
+DEV_SMILES = REPO_ROOT / "data/datasets/dev_zinc/dev_zinc.smi"
+CONDITIONAL_SMILES = REPO_ROOT / "data/datasets/dev_zinc_props/dev_zinc_props.smi"
+
+
+def write_sample(source: Path, destination: Path, n: int = 30) -> None:
+    """Copy the first *n* molecules of *source*, keeping a header if present.
+
+    The development corpora are 1,000 molecules; these tests only need enough
+    to exercise the code path, and preprocessing cost grows with the corpus, so
+    they take a prefix rather than the whole file.
+    """
+    lines = [line for line in source.read_text().splitlines() if line.strip()]
+    header = lines[:1] if lines and lines[0].upper().startswith("SMILES") else []
+    body = lines[len(header) : len(header) + n]
+    destination.write_text("\n".join(header + body) + "\n")
+
 
 TRAINING = {
     "epochs": 2,
@@ -49,7 +60,7 @@ def dataset(tmp_path_factory) -> Path:
     root = tmp_path_factory.mktemp("smoke")
     dataset_dir = root / "debug"
     dataset_dir.mkdir()
-    shutil.copy(DEBUG_SMILES, dataset_dir / "molecules.smi")
+    write_sample(DEV_SMILES, dataset_dir / "molecules.smi")
 
     job_dir = root / "exp" / "jobs" / "preprocess"
     run_job(
@@ -166,7 +177,7 @@ def test_a_killed_job_resumes_from_its_last_checkpoint(dataset):
 def test_conditional_trains_on_a_dataset_with_properties(tmp_path):
     dataset_dir = tmp_path / "logp"
     dataset_dir.mkdir()
-    shutil.copy(CONDITIONAL_SMILES, dataset_dir / "molecules.smi")
+    write_sample(CONDITIONAL_SMILES, dataset_dir / "molecules.smi")
 
     run_job(
         tmp_path / "exp" / "jobs" / "preprocess",
@@ -175,8 +186,14 @@ def test_conditional_trains_on_a_dataset_with_properties(tmp_path):
             "dataset_dir": str(dataset_dir),
             "smiles_file": str(dataset_dir / "molecules.smi"),
             "batch_size": 100,
-            "condition_dim": 1,
-            "conditioning": {"properties": ["logP"], "source": "smiles_file"},
+            "condition_dim": 2,
+            # Must name the file's property columns in the file's order: the
+            # vector is built positionally and generation labels each slot from
+            # here, so a transposed declaration is byte-identical on disk.
+            "conditioning": {
+                "properties": ["logp", "mol_weight"],
+                "source": "smiles_file",
+            },
             "seed": 1,
         },
     )
@@ -187,7 +204,7 @@ def test_conditional_trains_on_a_dataset_with_properties(tmp_path):
         {
             "job_type": "conditional",
             "dataset_dir": str(dataset_dir),
-            "sample_conditions": {"logP": 1.0},
+            "sample_conditions": {"logp": 1.0, "mol_weight": 300.0},
             **TRAINING,
         },
     )

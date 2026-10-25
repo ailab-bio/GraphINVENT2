@@ -30,3 +30,6 @@ conditioning:
 # rather than the generator's control.
 condition_tolerance:
   dipole: 0.75
+
+# Names the split directory every job here reads; see Data splits.
+split_type: scaffold

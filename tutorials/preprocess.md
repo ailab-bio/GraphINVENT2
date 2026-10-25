@@ -16,10 +16,10 @@ About five seconds on 30 molecules. The configuration is two lines:
 
 ```yaml
 job_type: preprocess
-smiles_file: data/datasets/debug/debug.smi
+smiles_file: data/datasets/dev_zinc/dev_zinc.smi
 ```
 
-Everything else is inherited. `experiments/tutorial_preprocess/experiment.yaml` sets `dataset_dir: debug`, and
+Everything else is inherited. `experiments/tutorial_preprocess/experiment.yaml` sets `dataset_dir: dev_zinc`, and
 `config/defaults.yaml` supplies the rest.
 
 ## What it prints
@@ -31,7 +31,7 @@ Everything else is inherited. `experiments/tutorial_preprocess/experiment.yaml` 
   imp_H         : [0, 1, 2, 3]
   max_n_nodes   : 13
 * Run mode: 'preprocess'
-* Reading SMILES from data/datasets/debug/debug.smi …
+* Reading SMILES from data/datasets/dev_zinc/dev_zinc.smi …
   30 molecules read.
 * Splitting (scaffold): 80% train / 10% valid / 10% test
 ```
@@ -50,7 +50,7 @@ molecules in the set.
 
 ## What it writes
 
-Into `data/datasets/debug/`:
+Into `data/datasets/dev_zinc/split_scaffold/`:
 
 ```
 train.h5  valid.h5  test.h5        the preprocessed graphs
@@ -101,23 +101,38 @@ so when you do.
 `n_dropped_oversized` counts molecules above `max_n_nodes`, removed before splitting. The dataset is not the input
 file without that number, which is why it is recorded rather than printed and forgotten.
 
-## Splits are fixed per dataset
+## Splits are fixed per split set
 
-Every job in an experiment, and every experiment on the same dataset, reads the same split files. Do not
-re-split between jobs: two models evaluated on different test sets are not comparable. If a dataset needs a new
-split it is a new dataset directory.
-
-Re-running preprocessing on a dataset that already has splits moves the old files aside rather than overwriting
-them:
+A split set is identified by `split_type`, `seed`, `train_frac`, `valid_frac`, `max_n_nodes` and
+`use_chirality`, and it lives in its own subdirectory of the dataset:
 
 ```
-* Found 6 leftover file(s) from a previous preprocessing run.
-  Backup location: data/datasets/debug/_previous_run_20261018_204135/
+data/datasets/dev_zinc/
+    dev_zinc.smi            the source corpus
+    split_scaffold/         train/valid/test .smi and .h5, train.csv, preprocessing.yaml
 ```
 
-With the same `seed` and fractions the new split reproduces the old one exactly, so a re-run is safe. Changing
-either produces a different dataset wearing the same name, which is the failure the backup exists to make
-visible.
+`split_type` names that directory, so it is declared once in `experiment.yaml` and inherited by every job in
+the experiment, exactly as `dataset_dir` is. Two split sets of one dataset therefore sit side by side and
+cannot overwrite each other: preprocessing the same corpus with `split_type: random` writes `split_random/`
+and leaves `split_scaffold/` untouched.
+
+Every job in an experiment, and every experiment on the same dataset, reads the same split set. Two models
+evaluated on different test sets are not comparable, so re-running preprocessing with a different `seed` or
+different fractions does not re-split -- it raises:
+
+```
+ValueError: data/datasets/dev_zinc/split_scaffold/preprocessing.yaml records a different split set than this
+job declares, and rebuilding it in place would leave every model already trained on it evaluated against a
+different test split.
+  Mismatched keys:
+  seed: recorded=1, this job=99
+A split set is identified by split_type, seed, train_frac and valid_frac. Point this job at a new dataset_dir,
+or restore the parameters this split was built with.
+```
+
+Re-running with identical parameters is the only case that proceeds, and it reproduces the same split exactly.
+If you want a different split, it is a new `dataset_dir`.
 
 ## Conditioning on properties
 

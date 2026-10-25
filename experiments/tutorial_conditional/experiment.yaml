@@ -2,5 +2,8 @@
 # RDKit, so the continuous conditional metrics are measurable with no surrogate
 # in the loop. Same 1,000-molecule ZINC250k subset as the unconditional
 # experiment, with the two properties as tab-separated columns.
-dataset_dir: zinc1k_logp_mw
+dataset_dir: dev_zinc_props
 seed: 1
+
+# Names the split directory every job here reads; see Data splits.
+split_type: scaffold

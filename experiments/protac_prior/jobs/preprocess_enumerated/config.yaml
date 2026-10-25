@@ -2,7 +2,6 @@ job_type: preprocess
 # BLOCKER: the enumerated library is not yet fetched by download_data.py.
 smiles_file: data/raw/protac_splitter/enumerated_protacs.smi
 dataset_dir: protac_enumerated
-split_type: scaffold
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 1000

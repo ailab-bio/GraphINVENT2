@@ -23,7 +23,7 @@ success_definition: predicted pDC50 >= 6.0 (DC50 <= 1 uM) from the optimization 
   over unique valid molecules
 use_tensorboard: true
 device: cpu
-dataset_dir: toy_protac
+dataset_dir: dev_protac
 batch_size: 16
 block_size: 1000
 score_thresholds:

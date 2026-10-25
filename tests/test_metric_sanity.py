@@ -435,7 +435,7 @@ class TestConditioningDeclarationMatchesTheFile:
     identical HDF5, which is why no run could have revealed it.
     """
 
-    FILE = Path("data/datasets/zinc1k/zinc1k_logp_mw.smi")
+    FILE = Path("data/datasets/dev_zinc_props/dev_zinc_props.smi")
 
     def _check(self, declared, dim, columns=("logp", "mol_weight")):
         from DataProcessor import _check_conditioning
@@ -500,9 +500,16 @@ class TestOpenShellIsNotAMolecule:
         # training set, so this is the other half of the invariant.
         from rdkit import Chem
 
-        train = REPO_ROOT / "data" / "datasets" / "zinc1k" / "train.smi"
+        train = (
+            REPO_ROOT
+            / "data"
+            / "datasets"
+            / "dev_zinc"
+            / "split_scaffold"
+            / "train.smi"
+        )
         if not train.exists():
-            pytest.skip("zinc1k development split is not present")
+            pytest.skip("the dev_zinc scaffold split is not present")
         n = 0
         for line in train.read_text().splitlines():
             token = line.split("\t")[0].split()[0] if line.strip() else ""

@@ -24,7 +24,7 @@ success_definition: predicted paired delta-pDC50 >= 1.0 log unit in favour of SM
   is +1.27 log
 use_tensorboard: true
 device: cpu
-dataset_dir: toy_protac
+dataset_dir: dev_protac
 batch_size: 16
 block_size: 1000
 score_thresholds:

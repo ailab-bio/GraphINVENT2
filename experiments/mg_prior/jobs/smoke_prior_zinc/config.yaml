@@ -1,6 +1,6 @@
 # SMOKE TEST of the real prior_zinc job, size overridden.
 job_type: unconditional
-dataset_dir: toy_zinc
+dataset_dir: dev_zinc
 max_n_nodes: 54
 epochs: 2
 batch_size: 16

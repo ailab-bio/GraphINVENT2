@@ -83,7 +83,7 @@ groups. `test_model.py`, `test_metrics.py`, `test_metrics_module.py`, `test_scor
 `test_conditioning.py` are self-contained and run anywhere.
 `test_preprocessing.py` verifies a *completed preprocessing job*, so it needs
 `tests/config.py` to point at a dataset directory that already holds the `.smi` and `.h5`
-files; it defaults to `data/datasets/debug`.
+files; it defaults to `data/datasets/dev_zinc`.
 
 ```bash
 pytest tests/ -v

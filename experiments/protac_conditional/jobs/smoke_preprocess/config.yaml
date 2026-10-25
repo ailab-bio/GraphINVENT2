@@ -6,9 +6,8 @@
 #
 #   python submit.py experiments/protac_conditional/jobs/smoke_preprocess
 job_type: preprocess
-smiles_file: data/datasets/toy_protac_cond/toy_protac_cond.smi
-dataset_dir: toy_protac_cond
-split_type: scaffold
+smiles_file: data/datasets/dev_protac_classes/dev_protac_classes.smi
+dataset_dir: dev_protac_classes
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 100

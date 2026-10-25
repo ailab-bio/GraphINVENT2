@@ -39,3 +39,9 @@ property_window:
   rotatable_bonds: [12.0, 45.0]
   hba: [8.0, 24.0]
   hbd: [0.0, 8.0]
+
+# warhead_scaffold, because a whole-molecule Bemis-Murcko scaffold of a
+# PROTAC contains every ring system and is nearly unique per compound, so a
+# whole-molecule scaffold split degenerates to random and leaks analogues.
+# It names the split directory every job here reads, so it is declared once.
+split_type: warhead_scaffold

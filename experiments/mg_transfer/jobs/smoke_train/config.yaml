@@ -12,5 +12,5 @@ accumulation_steps: 4
 sample_every: 2
 n_samples: 100
 device: cpu
-dataset_dir: toy_glue
+dataset_dir: dev_glue
 block_size: 1000

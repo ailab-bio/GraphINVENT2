@@ -1,7 +1,6 @@
 job_type: preprocess
 smiles_file: data/datasets/battp30k/battp30k_dipole.smi
 dataset_dir: battp30k
-split_type: scaffold
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 1000

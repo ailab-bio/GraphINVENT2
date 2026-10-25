@@ -6,9 +6,8 @@
 #
 #   python submit.py experiments/mg_conditional/jobs/smoke_preprocess
 job_type: preprocess
-smiles_file: data/datasets/toy_glue_cond/toy_glue_cond.smi
-dataset_dir: toy_glue_cond
-split_type: scaffold
+smiles_file: data/datasets/dev_glue_classes/dev_glue_classes.smi
+dataset_dir: dev_glue_classes
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 100

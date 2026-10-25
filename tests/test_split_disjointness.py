@@ -8,7 +8,6 @@ visible in the training curves. These tests run a real preprocessing job and
 check the splits at both the molecule and the subgraph level.
 """
 
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -19,8 +18,17 @@ import yaml
 from rdkit import Chem, RDLogger
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SOURCE_SMILES = REPO_ROOT / "data/datasets/debug/debug.smi"
+SOURCE_SMILES = REPO_ROOT / "data/datasets/dev_zinc/dev_zinc.smi"
 SPLITS = ("train", "valid", "test")
+
+
+def _write_sample(source: Path, destination: Path, n: int = 30) -> None:
+    """The first *n* molecules of the development corpus: enough to split."""
+    lines = [line for line in source.read_text().splitlines() if line.strip()]
+    header = lines[:1] if lines and lines[0].upper().startswith("SMILES") else []
+    body = lines[len(header) : len(header) + n]
+    destination.write_text("\n".join(header + body) + "\n")
+
 
 RDLogger.DisableLog("rdApp.*")
 
@@ -31,7 +39,7 @@ def preprocessed(tmp_path_factory) -> Path:
     root = tmp_path_factory.mktemp("split")
     dataset_dir = root / "dataset"
     dataset_dir.mkdir()
-    shutil.copy(SOURCE_SMILES, dataset_dir / "molecules.smi")
+    _write_sample(SOURCE_SMILES, dataset_dir / "molecules.smi")
 
     job_dir = root / "exp" / "jobs" / "preprocess"
     job_dir.mkdir(parents=True)

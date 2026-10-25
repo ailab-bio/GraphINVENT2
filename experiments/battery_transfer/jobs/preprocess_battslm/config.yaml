@@ -3,7 +3,6 @@ smiles_file: data/datasets/battslm/battslm.smi
 dataset_dir: battslm
 # The published split: 5,000 of 115,756 held out as test (4.32%), remainder 9:1.
 # So train 0.861, valid 0.096, test 0.043.
-split_type: scaffold
 train_frac: 0.861
 valid_frac: 0.096
 batch_size: 1000

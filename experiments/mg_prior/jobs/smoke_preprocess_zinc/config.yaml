@@ -1,10 +1,9 @@
 # SMOKE TEST, with extra_dataset set so the pair shares a vocabulary.
 job_type: preprocess
-smiles_file: data/datasets/toy_zinc/toy_zinc.smi
-dataset_dir: toy_zinc
+smiles_file: data/datasets/dev_zinc/dev_zinc.smi
+dataset_dir: dev_zinc
 max_n_nodes: 30
-split_type: scaffold
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 100
-extra_dataset: data/datasets/toy_glue/toy_glue.smi
+extra_dataset: data/datasets/dev_glue/dev_glue.smi
