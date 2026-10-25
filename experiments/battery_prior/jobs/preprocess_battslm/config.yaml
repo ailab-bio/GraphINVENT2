@@ -1,0 +1,13 @@
+job_type: preprocess
+smiles_file: data/datasets/battslm/battslm.smi
+dataset_dir: battslm
+train_frac: 0.8
+valid_frac: 0.1
+batch_size: 1000
+# WALLTIME AND MEMORY ARE UNVERIFIED ESTIMATES. Nothing here has run on
+# Arrhenius. Re-measure by the RUN.md Part 1 walltime procedure.
+# Basis: 115,714 molecules at max_nodes 16, which is small per molecule.
+slurm:
+  time: "04:00:00"
+  gpus: 0
+  memory: "32G"

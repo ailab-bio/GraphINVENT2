@@ -1,5 +1,5 @@
 job_type: goal_directed
-pretrained_model_path: experiments/battery_transfer/jobs/prior_scratch/checkpoints/model_restart_60.pth
+pretrained_model_path: experiments/battery_prior/jobs/prior_battslm/checkpoints/model_restart_60.pth
 # The published fine-tuning schedule, mapped onto the rl_* keys. These differ
 # from the Atance et al. defaults CLAUDE.md gives (200 steps, best agent every
 # 5, eval every 5): the step count and cadence agree, the batch size is this

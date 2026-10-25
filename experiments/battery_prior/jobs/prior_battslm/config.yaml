@@ -1,5 +1,5 @@
 job_type: unconditional
-dataset_dir: pubchem120k
+dataset_dir: battslm
 epochs: 60
 batch_size: 1000
 accumulation_steps: 512

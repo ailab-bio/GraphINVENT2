@@ -6,7 +6,7 @@
 job_type: generate
 sample_mode: generate
 dataset_dir: tpddb_protac
-pretrained_model_path: experiments/protac_transfer/jobs/prior_scratch/checkpoints/model_restart_20.pth
+pretrained_model_path: experiments/protac_transfer/jobs/scratch_control/checkpoints/model_restart_20.pth
 n_samples: 10000
 batch_size: 500
 device: cuda

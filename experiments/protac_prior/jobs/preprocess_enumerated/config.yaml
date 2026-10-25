@@ -1,6 +1,9 @@
 job_type: preprocess
-# BLOCKER: the enumerated library is not yet fetched by download_data.py.
-smiles_file: data/raw/protac_splitter/enumerated_protacs.smi
+# BLOCKER: `python scripts/download_data.py --source protac_splitter` fetches
+# the 223.6 MB Datasets.zip, but no script yet extracts its
+# dataset-synthetic-{train,validation,test}.csv `PROTAC SMILES` column into
+# this .smi. 1,298,401 molecules, about 161 MB.
+smiles_file: data/datasets/protac_enumerated/protac_enumerated.smi
 dataset_dir: protac_enumerated
 train_frac: 0.8
 valid_frac: 0.1

@@ -20,7 +20,6 @@ O=CCl
 O=CF
 O=CP
 C#CC#N
-C#CC#[14N]
 C#COC
 C1=COC=1
 C1=NCO1
@@ -51,12 +50,10 @@ CC(=O)Cl
 CC(=O)F
 CC(=O)P
 CC(C)=O
-CC(C)=[16O]
 CC1=C=N1
 CC1=CO1
 CC1=NC1
 CC1CO1
-CC1C[16O]1
 CC=C=O
 CC=NF
 CC=S=O
@@ -80,7 +77,6 @@ CN(F)Cl
 CN(F)F
 CN(F)P
 CN(P)P
-CN([19F])[19F]
 CN1CO1
 CN=C=O
 CN=CF
@@ -125,7 +121,6 @@ CSC=O
 CSN=O
 CSOF
 CSP=O
-C[12C](C)=O
 C[N+](=O)[O-]
 ClC1=CO1
 ClC1C=N1
@@ -187,7 +182,6 @@ PCOP
 S=C1CO1
 c1coo1
 c1cso1
-o1c2oc1=2
 C#CC(=O)F
 C#CC(C)=O
 C#CC1=CO1
@@ -984,7 +978,6 @@ S=C1CCO1
 S=C1COC1
 S=NC1CC1
 [O-][N+]#CCF
-c1cc2oc1=2
 c1ccoc1
 c1cnoc1
 c1cnon1
@@ -1693,7 +1686,6 @@ CC(C)C=C=O
 CC(C)C=S=O
 CC(C)CC#N
 CC(C)CC=O
-CC(C)CC=[16O]
 CC(C)CN=O
 CC(C)CN=P
 CC(C)CN=S
@@ -3843,7 +3835,6 @@ c1cc2c(o1)O2
 c1cc2c(o1)S2
 c1cc2c(s1)O2
 c1cc2n(c1)O2
-c1cc2nnc1=2
 c1cc2oc1C2
 c1ccncc#1
 c1ccncc1
@@ -7616,7 +7607,6 @@ CCCOCCC
 CCCOCCCl
 CCCOCCF
 CCCOCCP
-CCCOCC[19F]
 CCCOCN=O
 CCCOCOC
 CCCOCP=O
@@ -10839,7 +10829,6 @@ O=C(OP)C(Cl)Cl
 O=C(OP)C1CO1
 O=C(P)C(F)(F)F
 O=C(P)OC(=O)P
-O=C([35Cl])C1CCC1
 O=C1C#CC(=O)C1
 O=C1C#CCC1=O
 O=C1C#CCCC1
@@ -11951,7 +11940,6 @@ c1cc2nc(c1)C2
 c1cc2nc(c1)O2
 c1cc2nc(n1)O2
 c1cc2oc1CC2
-c1cc2oc=2oo1
 c1ccc2c(c1)O2
 c1ccoooc1
 c1ccosoc1
@@ -25953,7 +25941,6 @@ COc1cc#ccc1
 COc1cc(=O)c1=O
 COc1cc(C)co1
 COc1cc(F)cs1
-COc1cc2ccc1=2
 COc1ccc(C)o1
 COc1ccc(Cl)o1
 COc1ccc(F)o1
@@ -29994,7 +29981,6 @@ O=CSCC(Cl)(Cl)Cl
 O=CSCC(F)(F)F
 O=CSCCSC=O
 O=CSc1ccco1
-O=C[12c]1ccccc1
 O=Cc1cc(Cl)co1
 O=Cc1cc(Cl)ns1
 O=Cc1cc(F)co1
@@ -30872,9 +30858,6 @@ S=c1nccccn1
 S=c1ncccnn1
 S=c1oc2c(o1)CC2
 S=c1occ(CCl)o1
-[14N]#Cc1ccccc1
-[14N]#Cc1cccnc1
-[14N]#Cc1ccncc1
 [C-]#[N+]C(C)O[P+](=O)[O-]
 [N-]=[N+]=NCC[N+](=O)[O-]
 [O-][N+]#Cc1ccco1
@@ -30934,11 +30917,8 @@ c1cc2n3c1CCC23
 c1cc2nc(n1)CC2
 c1cc2nc(n1)OO2
 c1cc2nc(n1)SS2
-c1cc2oc=2cco1
-c1cc2oc=2ccs1
 c1ccc2c(c1)CO2
 c1ccc2c(c1)N=N2
-c1ccc2oc=2oc1
 c1cccoocc1
 c1ccn(C2CC2)c1
 c1ccnoocc1
@@ -36845,7 +36825,6 @@ C=CCOS(=O)C=CC
 C=CCOS(=O)CCC
 C=CCOS(=O)OCC
 C=CCOS(=S)CCC
-C=CCO[12C](=O)C(=C)C
 C=CCOc1ccco1
 C=CCP(=O)(CC)CC
 C=CCP(=O)(CC)OC
@@ -39768,7 +39747,6 @@ CC(=O)c1cc(Cl)co1
 CC(=O)c1cc(Cl)cs1
 CC(=O)c1cc(Cl)on1
 CC(=O)c1cc(F)cs1
-CC(=O)c1cc2ccc1=2
 CC(=O)c1ccc(C)o1
 CC(=O)c1ccc(C)s1
 CC(=O)c1ccc(Cl)o1
@@ -53941,7 +53919,6 @@ CCOc1cc(C)on1
 CCOc1cc(C)sn1
 CCOc1cc(Cl)cs1
 CCOc1cc(Cl)on1
-CCOc1cc2ccc1=2
 CCOc1ccc(C)o1
 CCOc1ccc(C)s1
 CCOc1ccc(Cl)s1
@@ -55409,7 +55386,6 @@ CN(C)[N+]([O-])=NOCCl
 CN(C)c1cc(=O)c1=O
 CN(C)c1cc(Cl)co1
 CN(C)c1cc(F)cs1
-CN(C)c1cc2ccc1=2
 CN(C)c1ccc(F)o1
 CN(C)c1ccc(F)s1
 CN(C)c1ccccc1
@@ -60144,7 +60120,6 @@ CS(=O)Oc1cocn1
 CS(=O)S(=O)C(F)(F)F
 CS(=O)SCC(F)(F)F
 CS(=O)SCS(C)(=O)=O
-CS(=O)c1cc2ccc1=2
 CS(=O)c1ccc(F)s1
 CS(=O)c1ccccc1
 CS(=O)c1ccccn1
@@ -64531,7 +64506,6 @@ O=C(P)c1ccccc1
 O=C(P)c1ccccn1
 O=C(P)c1cccnc1
 O=C(PPF)C(F)(F)F
-O=C([35Cl])c1ccccc1
 O=C([N+](=O)[O-])C(F)(F)F
 O=C([O-])C1CCC[N+]1=O
 O=C([O-])[N+]12CCC(C1)O2
@@ -66890,14 +66864,12 @@ O=Cc1ccc(F)cn1
 O=Cc1ccc(F)nc1
 O=Cc1ccc(F)nn1
 O=Cc1ccc(N=O)o1
-O=Cc1ccc([19F])cc1
 O=Cc1cccc(=O)o1
 O=Cc1cccc(Cl)n1
 O=Cc1cccc(F)c1
 O=Cc1cccc(F)n1
 O=Cc1cccc2c1O2
 O=Cc1ccccc1F
-O=Cc1ccccc1[19F]
 O=Cc1cccn1CF
 O=Cc1cccnc1Cl
 O=Cc1cccnc1F
@@ -67917,7 +67889,6 @@ O=[N+]([O-])On1ccnc1
 O=[N+]([O-])On1ccnn1
 O=[N+]([O-])On1cncn1
 O=[N+]([O-])S(=O)C(F)(F)F
-O=[N+]([O-])c1c2cccc1-2
 O=[N+]([O-])c1cc(Cl)co1
 O=[N+]([O-])c1cc(F)cs1
 O=[N+]([O-])c1ccc(Cl)o1
@@ -67976,8 +67947,6 @@ O=c1cc(F)oc(F)n1
 O=c1cc(F)occ1F
 O=c1cc(F)onc1F
 O=c1cc2oc(c1)OC2
-O=c1ccc(=O)c2oc1=2
-O=c1ccc(=O)c2sc1=2
 O=c1ccc(=O)ocn1
 O=c1ccc(=O)onc1
 O=c1ccc(=O)onn1
@@ -68331,7 +68300,6 @@ c1ccc2c(c1)OPS2
 c1ccc2c(c1)OSO2
 c1ccc2c(c1)OSS2
 c1ccc2c(c1)SOS2
-c1cccc2oc=2cc1
 c1ccccoccc1
 c1cccocncc1
 c1cccscncc1
@@ -74624,7 +74592,6 @@ CC(=O)OSCCN(C)C
 CC(=O)OSSOC(C)=O
 CC(=O)OSc1cccs1
 CC(=O)Oc1cc(=O)c1=O
-CC(=O)Oc1cc2ccc1=2
 CC(=O)Oc1ccccc1
 CC(=O)Oc1cccn1C
 CC(=O)Oc1cccnc1
@@ -83815,7 +83782,6 @@ CCCOSSSC(C)=O
 CCCOc1cc(=O)c1=O
 CCCOc1cc(C)cs1
 CCCOc1cc(C)on1
-CCCOc1cc2ccc1=2
 CCCOc1ccc(C)o1
 CCCOc1ccc(C)s1
 CCCOc1ccccc1
@@ -89689,7 +89655,6 @@ COC(=O)c1cc(Cl)cs1
 COC(=O)c1cc(Cl)on1
 COC(=O)c1cc(F)co1
 COC(=O)c1cc(F)cs1
-COC(=O)c1cc2ccc1=2
 COC(=O)c1ccc(C)o1
 COC(=O)c1ccc(C)s1
 COC(=O)c1ccc(Cl)o1
@@ -92972,7 +92937,6 @@ CSc1ccncc1C#N
 CSc1ccncc1SC
 CSc1cnccc1C#N
 CSc1ncc(F)cc1Cl
-C[12C](=O)Oc1ccccc1
 C[N+](C)(C)C(F)S(=O)(=O)[O-]
 C[N+](C)(C)CCOC(=O)[O-]
 C[N+](C)(C)CCS(=O)(=O)[O-]
@@ -94867,7 +94831,6 @@ O=C(OS(=O)(=O)F)C(F)F
 O=C(O[N+](=O)[O-])C(F)(F)F
 O=C(P)C(F)(F)C(F)(F)F
 O=C(P)OC(=O)C(F)(F)F
-O=C([35Cl])c1cccc(F)c1
 O=C(c1ccco1)C(Cl)Cl
 O=C(c1ccco1)C(F)F
 O=C(c1ccco1)C1CC1
@@ -96805,7 +96768,6 @@ S=CCN=Cc1ccoc1
 S=CCOCCOCC=S
 S=PC(=S)C1CCCCO1
 S=c1ccoc2c1CCC2
-[14N]#Cc1cc(F)cc(F)c1
 [C-]#[N+]CCC(C)(C)[N+](=O)[O-]
 [N-]=[N+]=NSCCO[N+](=O)[O-]
 [O-][N+]#CC=Cc1ccco1
@@ -96913,7 +96875,6 @@ c1coc(COC2CO2)c1
 c1coc(N2CCCC2)c1
 c1coc(OC2CCC2)c1
 c1coc(OCC2CO2)c1
-c1coc2occoc=2o1
 c1csc(C2CCCO2)c1
 c1csc(C2CCCO2)n1
 c1csc(C2CCOC2)c1
@@ -104116,7 +104077,6 @@ CCOC(=O)c1c#cccc1
 CCOC(=O)c1cc(=O)ss1
 CCOC(=O)c1cc(C)co1
 CCOC(=O)c1cc(F)cs1
-CCOC(=O)c1cc2ccc1=2
 CCOC(=O)c1ccc(Cl)s1
 CCOC(=O)c1ccc(F)o1
 CCOC(=O)c1ccc(F)s1
@@ -107780,7 +107740,6 @@ COCOCCCCCCCl
 COCOCCCOC(C)=O
 COCOCCN(C)C(C)C
 COCOCCN(C)CCF
-COCOCCN(C)CC[19F]
 COCOCCN1CCCC1
 COCOCCOC(=S)SC
 COCOCCOC(C)(C)C
@@ -108409,7 +108368,6 @@ FC(F)COCCCCCCl
 FC(F)COCCOCCCl
 FC(F)COCOCC(F)F
 FC(F)COP1OCCCO1
-FC(F)CO[12c]1ccccc1
 FC(F)COc1ccccc1
 FC(F)COc1ccccn1
 FC(F)COc1cccnc1

@@ -1,15 +1,51 @@
 {
+  "built_utc": "2026-10-25T16:54:06.418188+00:00",
+  "citation": "Zhang Z-Y, Mercado R, Le TT, Zhang C. Unlocking the Chemical Space for Rechargeable Batteries with Generative Solvent Design System. ACS Nano 2026;20:20714-20729. doi:10.1021/acsnano.6c06255",
+  "published_criteria": {
+    "aprotic": true,
+    "charge_neutral_and_non_radical": true,
+    "contains_carbon_and_oxygen_or_nitrogen": true,
+    "elements": [
+      "C",
+      "Cl",
+      "F",
+      "H",
+      "N",
+      "O",
+      "P",
+      "S"
+    ],
+    "enforced": [
+      "aromatic_rings",
+      "isotopic"
+    ],
+    "heavy_atoms": [
+      3,
+      16
+    ],
+    "max_aromatic_rings": 1,
+    "max_molecular_weight": 600.0,
+    "min_tanimoto_to_fp_holdout": 0.2,
+    "no_isotopic_or_isomeric_smiles": true,
+    "source": "manuscript/nn6c06255_si_001.pdf section 1",
+    "violations": {
+      "aromatic_rings": 21,
+      "isotopic": 21,
+      "tanimoto_to_fp_holdout": 29484
+    }
+  },
+  "regenerate_with": "python scripts/battslm-create-dataset.py --output /Users/rocom/Library/Mobile Documents/com~apple~CloudDocs/Documents/GitHub/GraphINVENT2/data/datasets/battslm/",
+  "selection": {
+    "n_malformed": 42,
+    "n_molecules": 115714,
+    "n_multifragment": 0,
+    "n_unparseable": 0,
+    "rule": "canonicalized, deduplicated, single-fragment, sorted by (heavy atoms, canonical SMILES)"
+  },
   "source_file": "data/raw/battslm/Batt-SLM.smi",
   "source_sha256": "c2ec78256ce6189366aebd9f7f0403e669c963e911cf51f7732083bce6374a1d",
-  "built_utc": "2026-10-19T08:48:15.622019+00:00",
-  "selection": {
-    "rule": "canonicalized, deduplicated, single-fragment, sorted by (heavy atoms, canonical SMILES)",
-    "n_molecules": 115756,
-    "max_heavy_atoms": 16,
-    "n_candidates_after_curation": 115756
-  },
   "summary": {
-    "heavy_atoms_min": 3,
-    "heavy_atoms_max": 16
+    "heavy_atoms_max": 16,
+    "heavy_atoms_min": 3
   }
 }

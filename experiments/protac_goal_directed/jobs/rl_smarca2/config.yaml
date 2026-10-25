@@ -1,5 +1,5 @@
 job_type: goal_directed
-pretrained_model_path: experiments/protac_transfer/jobs/prior_transfer/checkpoints/model_restart_20.pth
+pretrained_model_path: experiments/protac_transfer/jobs/transfer_arm/checkpoints/model_restart_20.pth
 # The RL schedule uses its own keys. Setting `epochs` or `sample_every` here is
 # rejected: a learning step is not an epoch.
 rl_steps: 200

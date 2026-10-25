@@ -1,21 +1,23 @@
 job_type: unconditional
-resume_from: experiments/battery_prior/jobs/prior_pubchem120k/checkpoints/model_restart_60.pth
-epochs: 60
-batch_size: 1000
-accumulation_steps: 512
-sample_every: 10
+dataset_dir: tpddb_protac
+# No resume_from. This is the control that makes transfer_arm a result.
+# Every other key matches transfer_arm, or the comparison is confounded.
+epochs: 20
+batch_size: 500
+accumulation_steps: 4
+sample_every: 5
 n_samples: 10000
 device: cuda
 # WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
 # RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
 # manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
-#   60 epochs x 2,203,975 subgraphs (corpus x train_frac) x 1.61 ms; +7 evaluation rounds
-#   = 59.57 h x 1.5 -> 90 h
+#   20 epochs x 1,042,294 subgraphs (corpus x train_frac) x 5.16 ms; +5 evaluation rounds; +0.3 h decomposition (2000 molecules x 0.483 s)
+#   = 30.91 h x 1.5 -> 47 h
 # This is a CPU extrapolation. Training will finish well inside it on a
 # GPU; generation gains much less, because it is a sequential
 # autoregressive loop with a Python-level decode. Re-measure on
 # Arrhenius and replace these two numbers with what was observed.
 slurm:
-  time: "90:00:00"
-  memory: 8G
+  time: "47:00:00"
+  memory: 38G
   gpus: 1

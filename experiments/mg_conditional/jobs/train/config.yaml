@@ -1,6 +1,6 @@
 job_type: conditional
 dataset_dir: tpddb_glue_cond
-resume_from: experiments/mg_transfer/jobs/prior_transfer/checkpoints/model_restart_20.pth
+resume_from: experiments/mg_transfer/jobs/transfer_arm/checkpoints/model_restart_20.pth
 epochs: 20
 batch_size: 500
 accumulation_steps: 4

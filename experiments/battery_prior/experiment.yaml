@@ -1,7 +1,9 @@
-# The battery solvent base corpus: a 120k PubChem subset. The prior
-# trained here is the starting point for battery_transfer and for nothing
-# else.
-dataset_dir: pubchem120k
+# The battery solvent corpus: Batt-SLM's 115,756 molecules. This is what the
+# source work trains its prior on; there is no separate PubChem base corpus and
+# no transfer stage in that work, and PubChem-120K was never distributed. The
+# prior trained here is the starting point for battery_conditional and
+# battery_goal_directed.
+dataset_dir: battslm
 max_n_nodes: 16
 bifunctional: false
 seed: 1

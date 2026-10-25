@@ -1,0 +1,11 @@
+{
+  "file": "cpi_logistic_coefficients.txt",
+  "what": "Fitted coefficients of the chelation propensity index (CPI) logistic classifier, used by the battery posterior verification funnel to separate weakly solvating electrolytes (CPI < 0.5) from conventional dilute electrolytes.",
+  "formula": "CPI = 0.355*SASA(O/N,max) + 0.110*Num(13O) + 0.044*Num(14O) + 0.006*Num(15O) - 0.012, on features divided by the recorded means",
+  "feature_normalization_means": [62.8283065, 0.482012957, 0.139376848, 0.0148126957],
+  "fitted_on": "46 molecules of CPI/Input/Features-NoF.csv, 21 WSE and 25 CDE",
+  "url": "https://raw.githubusercontent.com/Teoroo-CMC/Batt-SLM/HEAD/CPI/LogR-CPI/result.txt",
+  "retrieved_utc": "2026-10-25",
+  "why_committed": "scripts/download_data.py did not fetch this file, so data/raw/battslm/chelation_propensity_index.py had an implementation and no coefficients and predict_cpi() could not run. It is 405 bytes.",
+  "citation": "Z.-Y. Zhang, R. Mercado, T. T. Le, C. Zhang, ACS Nano 2026, 20, 20714-20729, doi 10.1021/acsnano.6c06255"
+}

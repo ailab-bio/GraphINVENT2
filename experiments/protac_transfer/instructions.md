@@ -21,10 +21,10 @@ training on the real set alone, with a from-scratch model as the control that ma
 | `preprocess_enumerated` | the enumerated download | HDF5 for the base corpus |
 | `prior_enumerated` | `preprocess_enumerated` | the base prior |
 | `preprocess_tpddb` | the TPD-DB download | HDF5 for the task corpus, scaffold split recorded |
-| `prior_transfer` | `prior_enumerated`, `preprocess_tpddb` | specializes the base prior onto the task corpus |
-| `prior_scratch` | `preprocess_tpddb` | the control: same data, no `resume_from` |
-| `generate_transfer` | `prior_transfer` | **produces this experiment's core metrics** |
-| `generate_scratch` | `prior_scratch` | the control's core metrics |
+| `transfer_arm` | `prior_enumerated`, `preprocess_tpddb` | specializes the base prior onto the task corpus |
+| `scratch_control` | `preprocess_tpddb` | the control: same data, no `resume_from` |
+| `generate_transfer` | `transfer_arm` | **produces this experiment's core metrics** |
+| `generate_scratch` | `scratch_control` | the control's core metrics |
 
 ## Submit
 
@@ -32,11 +32,11 @@ training on the real set alone, with a from-scratch model as the control that ma
 
 Then chain with the dependency flag, substituting the returned job id:
 
-    sbatch --dependency=afterok:<id> experiments/protac_transfer/jobs/prior_scratch/run.sbatch
+    sbatch --dependency=afterok:<id> experiments/protac_transfer/jobs/scratch_control/run.sbatch
 
 ## What to check when it finishes
 
-- `jobs/prior_transfer/logs/convergence.log` and `jobs/prior_scratch/logs/convergence.log`: compare column
+- `jobs/transfer_arm/logs/convergence.log` and `jobs/scratch_control/logs/convergence.log`: compare column
   `avg_valid_loss` at epoch 1 and at the final epoch. The transfer model should start lower. Record the epoch at
   which it first reaches the scratch model's final loss.
 - `jobs/generate_transfer/results/metrics.json`, key `validity`, `uniqueness`, `novelty`, `vun`,
@@ -52,7 +52,7 @@ nulled likelihood keys; they do not compute the core metric table.
 
 ## Failure mode
 
-If `prior_transfer` shows the same epoch-1 validation loss as `prior_scratch`, the checkpoint is not being loaded.
+If `transfer_arm` shows the same epoch-1 validation loss as `scratch_control`, the checkpoint is not being loaded.
 Check that `resume_from` names a file that exists and that the log line `Loading model from:` appears. A silent
 no-op here previously came from using `pretrained_model_path` instead of `resume_from`, which is now rejected.
 

@@ -42,9 +42,31 @@ ZINC250K_URL = (
     "master/models/zinc_properties/250k_rndm_zinc_drugs_clean_3.csv"
 )
 
+# The synthetic PROTAC library, the base corpus for the PROTAC prior: 1,298,401
+# recombinant degraders released with PROTAC-Splitter. Open access, MIT, no
+# authentication. It carries POI ligand, linker and E3 binder substructures but
+# NO target-protein annotation, so it is a distribution-matching corpus only and
+# nothing conditional can be trained on it.
+#
+# This is a download and not an enumeration. scripts/protac-enumerate-library.py
+# used to build a local substitute by recombining the 492 decomposed TPD-DB
+# degraders, and it was removed: upstream's own generator accumulates results
+# with a pd.concat().drop_duplicates() inside its result loop, which is
+# quadratic in the batch count, and its ThreadPoolExecutor wraps a Python-level
+# RDKit loop so it is GIL-bound and --max-workers has no effect. The measured
+# rate was under 1.85 molecules/s, which is over eight days for this many
+# molecules, and the parts it recombined all came from the task corpus anyway.
+PROTAC_SPLITTER_ZENODO = (
+    "https://zenodo.org/api/records/15797310/files/Datasets.zip/content"
+)
+
 SOURCES = {
     "tpddb": ("data/raw/tpddb", [(TPDDB_BASE + name, name) for name in TPDDB_FILES]),
     "zinc": ("data/raw/zinc", [(ZINC250K_URL, "250k_rndm_zinc_drugs_clean_3.csv")]),
+    "protac_splitter": (
+        "data/raw/protac_splitter",
+        [(PROTAC_SPLITTER_ZENODO, "Datasets.zip")],
+    ),
 }
 
 # The battery assets come from a git repository rather than from URLs, because
@@ -70,6 +92,24 @@ BATTSLM_FROM_TIP = [
     ("CPI/SolvFunc-87.csv", "SolvFunc-87.csv"),
     ("CPI/chelation_propensity_index.py", "chelation_propensity_index.py"),
     ("Redox-Pot/redox_potential.py", "redox_potential.py"),
+    # Four artifacts the battery objective needs that this script used to leave
+    # behind, so the code to use them was present and could not run:
+    #   - the fitted CPI coefficients, without which predict_cpi() has an
+    #     implementation and no model. Also committed at
+    #     tools/data/cpi_logistic_coefficients.txt, because it is 405 bytes and
+    #     the funnel cannot be computed without it.
+    #   - RX-392 and its two input tables, the only one of the paper's five
+    #     property datasets that was actually released. They are what the S_r
+    #     redox term of the objective is fitted on.
+    ("CPI/LogR-CPI/result.txt", "CPI-LogR-result.txt"),
+    ("Redox-Pot/Redox-Ener/RX-392.csv", "RX-392.csv"),
+    ("Redox-Pot/Redox-Ener/Input/EA-Red.csv", "EA-Red.csv"),
+    ("Redox-Pot/Redox-Ener/Input/IE-Ox.csv", "IE-Ox.csv"),
+    ("Redox-Pot/Redox-Ener/redox_free_ener.py", "redox_free_ener.py"),
+    # The PiNet2 loader, needed to read the dipole checkpoints that the
+    # dielectric-constant chain starts from.
+    ("Batt-P30K/build_pinet2.py", "build_pinet2.py"),
+    ("Batt-P30K/io/hdf5_gsds.py", "hdf5_gsds.py"),
 ]
 # A Git LFS object, 183,771,012 bytes.
 BATTSLM_LFS = [("Batt-P30K/Batt-P30K.h5", "Batt-P30K.h5")]

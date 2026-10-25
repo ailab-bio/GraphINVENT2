@@ -1,0 +1,32 @@
+{
+  "built_utc": "2026-10-25T16:55:39.173757+00:00",
+  "citation": "Zhang Z-Y, Mercado R, Le TT, Zhang C. Unlocking the Chemical Space for Rechargeable Batteries with Generative Solvent Design System. ACS Nano 2026;20:20714-20729. doi:10.1021/acsnano.6c06255",
+  "conditioning_columns": [
+    "dipole"
+  ],
+  "conditioning_file": "battp30k_dipole.smi",
+  "dft_level": "wB97X-V/def2-TZVPPD/SMD(eps=18.5)",
+  "metadata_columns": [
+    "dipole",
+    "homo",
+    "lumo",
+    "gap",
+    "ip",
+    "ea"
+  ],
+  "metadata_file": "battp30k_metadata.tsv",
+  "notes": {
+    "dielectric_constant": "deliberately absent. It is reached from the dipole through the LF-MLR-DC-200 piecewise regression, whose fitted coefficients are published only as a raster figure (SI figure S15), so no dc column can be written without fabricating one.",
+    "dipole": "the norm of the DFT dipole 3-vector for the single conformer whose coordinates the source file carries, NOT the three-lowest-conformer average the published permittivity chain uses"
+  },
+  "regenerate_with": "python scripts/battp30k-create-dataset.py --output /Users/rocom/Library/Mobile Documents/com~apple~CloudDocs/Documents/GitHub/GraphINVENT2/data/datasets/battp30k/",
+  "selection": {
+    "n_groups_in_source": 29519,
+    "n_molecules": 29519,
+    "n_multifragment": 0,
+    "n_over_heavy_atom_cap": 0,
+    "n_unparseable": 0,
+    "rule": "one row per canonical SMILES, parseable and single-fragment, at most 16 heavy atoms; sorted by canonical SMILES"
+  },
+  "source_file": "data/raw/battslm/Batt-P30K.h5"
+}

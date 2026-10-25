@@ -135,6 +135,36 @@ def parse_table(raw: bytes, modality: str) -> List[Dict[str, str]]:
     return records
 
 
+# The elements degrader and glue chemistry actually contains. An allowlist
+# rather than a denylist, because a new curation artifact in a later TPDdb
+# snapshot would pass a denylist in silence.
+#
+# Measured on the 2026-10-17 snapshot, 21,429 PROTAC records carried sixteen
+# distinct atom symbols, and five of them were artifacts of mangled SMILES
+# rather than chemistry: moscovium (`Mc`, 1 molecule, a synthetic element whose
+# half-life is milliseconds), chromium (1, in `[c]([Cr])`), nickel (3, in
+# `[Ni]2[CH2]CC`), arsenic (4), and bare `[H]` as a heavy atom (12). Three of
+# those also carried radical electrons. Twenty-one molecules, 0.1% of the
+# corpus.
+#
+# They are excluded for two reasons beyond being wrong. The action tensor is
+# linear in the atom-type count, so at max_nodes 108 sixteen atom types give an
+# 83,377-wide action_probs against 57,457 for eleven, a 31% narrower output
+# layer on a corpus whose HDF5 runs to tens of gigabytes. And `preprocess_tpddb`
+# shares one feature vocabulary with the 1.3M-molecule synthetic library through
+# `extra_dataset`, so an artifact in either corpus widens the tensor for both.
+#
+# This is dataset curation and belongs in the manuscript's methods: the rule,
+# the counts and the reason are recorded here and echoed into PROVENANCE.json by
+# main(), so the numbers can be quoted without re-deriving them.
+ALLOWED_ELEMENTS = frozenset(("B", "Br", "C", "Cl", "F", "I", "N", "O", "P", "S", "Se"))
+
+# Filled by curate() and written into PROVENANCE.json, so every molecule the
+# builder discarded is accounted for by reason rather than only by the surviving
+# count. The manuscript's methods section quotes these.
+CURATION_COUNTS: dict = {}
+
+
 def curate(
     records: List[Dict[str, str]], max_heavy_atoms: Optional[int]
 ) -> List[Dict[str, object]]:
@@ -145,12 +175,19 @@ def curate(
     Rejects anything RDKit cannot sanitize and anything with more than one
     fragment: the decoding route is produced by a graph traversal that cannot
     order disconnected components, so salts and mixtures are unusable rather
-    than merely awkward.  Duplicates are collapsed on canonical SMILES.
+    than merely awkward.  Also rejects molecules outside ALLOWED_ELEMENTS and
+    molecules carrying radical electrons; an open shell is not a molecule, and
+    the generated-molecule writer refuses to emit one, so training on them asks
+    the model to learn a distribution it is then forbidden to sample from.
+    Duplicates are collapsed on canonical SMILES.
     """
     kept: Dict[str, Dict[str, object]] = {}
     n_unparseable = 0
     n_multifragment = 0
     n_too_large = 0
+    n_bad_element = 0
+    n_radical = 0
+    rejected_elements: Dict[str, int] = {}
 
     for record in records:
         mol = Chem.MolFromSmiles(record["smiles"])
@@ -159,6 +196,15 @@ def curate(
             continue
         if len(Chem.GetMolFrags(mol)) > 1:
             n_multifragment += 1
+            continue
+        foreign = {a.GetSymbol() for a in mol.GetAtoms()} - ALLOWED_ELEMENTS
+        if foreign:
+            n_bad_element += 1
+            for symbol in foreign:
+                rejected_elements[symbol] = rejected_elements.get(symbol, 0) + 1
+            continue
+        if any(a.GetNumRadicalElectrons() for a in mol.GetAtoms()):
+            n_radical += 1
             continue
         n_heavy = mol.GetNumHeavyAtoms()
         if max_heavy_atoms is not None and n_heavy > max_heavy_atoms:
@@ -180,8 +226,24 @@ def curate(
 
     print(
         f"  {len(kept)} usable, {n_unparseable} unparseable, "
-        f"{n_multifragment} multi-fragment, {n_too_large} over the size cap",
+        f"{n_multifragment} multi-fragment, {n_too_large} over the size cap, "
+        f"{n_bad_element} outside the element vocabulary, {n_radical} radical",
         flush=True,
+    )
+    if rejected_elements:
+        breakdown = ", ".join(
+            f"{sym} {n}" for sym, n in sorted(rejected_elements.items())
+        )
+        print(f"  elements rejected: {breakdown}", flush=True)
+    CURATION_COUNTS.update(
+        {
+            "unparseable": n_unparseable,
+            "multi_fragment": n_multifragment,
+            "over_size_cap": n_too_large,
+            "outside_element_vocabulary": n_bad_element,
+            "radical_bearing": n_radical,
+            "rejected_element_counts": dict(sorted(rejected_elements.items())),
+        }
     )
     return list(kept.values())
 
@@ -385,6 +447,14 @@ def main() -> int:
             "max_heavy_atoms": args.max_heavy_atoms,
             "n_candidates_after_curation": len(curated),
         },
+        # Why molecules were discarded, not only how many survived. The element
+        # vocabulary is an allowlist; see ALLOWED_ELEMENTS for the rule and the
+        # measured artifact counts it exists to remove.
+        "curation": {
+            "allowed_elements": sorted(ALLOWED_ELEMENTS),
+            "radicals_rejected": True,
+            "counts": CURATION_COUNTS,
+        },
         "summary": {
             "heavy_atoms_min": min(sizes),
             "heavy_atoms_max": max(sizes),
@@ -392,10 +462,21 @@ def main() -> int:
             "logp_max": max(logps),
             "modalities": sorted({r["modality"] for r in selected}),
         },
+        # --conditioning-classes has to appear here when it was given. It used
+        # to be omitted, so the recorded command for a conditional dataset
+        # rebuilt it as a plain SMILES list: the one-hot columns the whole
+        # experiment conditions on would have vanished, and nothing would have
+        # failed until a training job reported condition_dim against zero
+        # property columns.
         "regenerate_with": (
             "python scripts/tpddb-create-dataset.py "
             f"--modality {args.modality} --n-molecules {args.n_molecules} "
-            f"--output {args.output}/"
+            + (
+                f"--conditioning-classes {args.conditioning_classes} "
+                if args.conditioning_classes
+                else ""
+            )
+            + f"--output {args.output}/"
         ),
     }
     with open(args.output / "PROVENANCE.json", "w") as f:

@@ -26,7 +26,7 @@ from a single patent. AR appears in the paper as the documented data-poor case.
 
 ## Prerequisites
 
-`protac_transfer/jobs/prior_transfer`, the surrogate, and `bash tools/install.sh` for RetroTAC.
+`protac_transfer/jobs/transfer_arm`, the surrogate, and `bash tools/install.sh` for RetroTAC.
 
 ## Jobs
 

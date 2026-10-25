@@ -5,7 +5,7 @@
 # Identical to generate_scratch/config.yaml except for the seed.
 job_type: generate
 sample_mode: generate
-pretrained_model_path: experiments/mg_transfer/jobs/prior_scratch/checkpoints/model_restart_20.pth
+pretrained_model_path: experiments/mg_transfer/jobs/scratch_control/checkpoints/model_restart_20.pth
 n_samples: 10000
 batch_size: 500
 device: cuda

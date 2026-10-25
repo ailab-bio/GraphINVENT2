@@ -1,5 +1,5 @@
 job_type: goal_directed
-pretrained_model_path: experiments/protac_transfer/jobs/prior_transfer/checkpoints/model_restart_20.pth
+pretrained_model_path: experiments/protac_transfer/jobs/transfer_arm/checkpoints/model_restart_20.pth
 rl_steps: 200
 rl_best_agent_every: 5
 rl_eval_every: 5

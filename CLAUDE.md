@@ -72,8 +72,7 @@ path slower or harder, that is a regression even when the cluster path gets fast
   is a bug.
 
 Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; that pair is the single source
-of truth, on every machine, and nothing else declares a dependency. The lock file is not yet
-generated, which [Status](#status) records. RDKit, PyTorch, h5py, numpy, PyYAML and matplotlib are core; fcd,
+of truth, on every machine, and nothing else declares a dependency. RDKit, PyTorch, h5py, numpy, PyYAML and matplotlib are core; fcd,
 XGBoost, PROTAC-Splitter and AutoDock Vina are optional extras used by evaluation and RL only. The
 install commands are in `RUN.md`. Adding a core dependency needs a reason.
 
@@ -962,25 +961,70 @@ from it, so each is listed with a recommendation rather than chosen.
 
 **Blocked on something I cannot obtain.**
 
-- **The two ACS Nano PDFs.** Not in `manuscript/refs/`, which does not exist,
-  and not reachable from here. Every number that would have come from them is
-  either absent from the manuscript or carries its own measured source; none is
-  guessed. Nothing else in the repository waits on them.
-- **PubChem-120K, the battery base corpus.** Not distributed with
-  `Teoroo-CMC/Batt-SLM`, and the selection procedure is in the same absent
-  supporting information. `battery_prior` names it in `experiment.yaml` and all
-  five of its jobs, and `battery_transfer`'s `extra_dataset` points at it, so
-  `battery_prior` cannot run at all and `battery_transfer` can run its
-  from-scratch arm and not its transfer arm. The only molecule count in the
-  repository, 119,995 at `preprocess_pubchem120k/config.yaml:12`, is unsourced.
-  In raw form it would be about 2 MB, scaled from Batt-SLM's 115,756 molecules
-  in 1.88 MB of the same sub-17-heavy-atom chemistry, so this is an availability
-  problem and not a storage one.
+- **DC-200, DN-218, VISC-664 and MP-4K, the molecule lists.** Four of the five
+  property datasets the paper fits surrogates on are not in the public release.
+  Verified against the complete upstream file tree, 2026-10-25: of 39
+  non-checkpoint files, the only experimental labels are `RX-392.csv` with 392
+  rows of redox potentials and the fitted CPI coefficients. Dielectric constant
+  and donor number appear only as 87 rows of `DC_Pred` and `DN_Pred` in
+  `CPI/SolvFunc-87.csv` and `CPI/Input/Features.csv`, which are *outputs* of the
+  unreleased models; viscosity and melting point appear nowhere. `Batt-SLM.smi`
+  carries no property columns and `Batt-P30K.h5` has no dielectric, viscosity or
+  melting-point field, so the labels are not recoverable from either. The SI
+  (now on disk, see below) gives each dataset's size, model architecture and
+  performance but not its molecules. One source is named: **MP-4K comes from the
+  Bradley open melting-point dataset**, so it is reconstructible. DC-200 and
+  VISC-664 are not traced to a source and must come from the authors or be
+  curated from reference data with the substitution recorded.
+- **The numeric coefficients of the dielectric-constant regression.** §2.5 of
+  the SI specifies the architecture exactly — a linear fit of dielectric
+  constant against squared dipole moment for molecules with a dipole ≤ 4.0 D,
+  and an MLR-based ensemble predicting that linear coefficient above 4.0 D,
+  together denoted LF-MLR-DC-200 — but the fitted values appear only in Figure
+  S15, which is a raster plot. The architecture can be reimplemented; the
+  published coefficients cannot be read off.
+
+**The Supporting Information is on disk** at
+`manuscript/nn6c06255_si_001.pdf`, and the main PDF is obtainable at
+`research.chalmers.se/publication/553200`. This section previously recorded both
+as unreachable. What the SI settles:
+
+- **Batt-SLM's selection criteria and resampling procedure in full** (§1), so
+  `scripts/battslm-create-dataset.py` can be written faithfully rather than by
+  hand: elements H/C/N/O/F/P/S/Cl, 2 < heavy atoms < 17, MW < 600 Da, fewer than
+  2 aromatic rings, charge-neutral and non-radical, no isotopic or isomeric
+  SMILES, contains C and at least one O or N, aprotic (no O-H, N-H, S-H), and a
+  minimum Tanimoto similarity to the 174-molecule F/P-holdout of 0.20.
+- **PiNet2-P3's architecture (Table S1) and validation MAEs (Table S2)**:
+  dipole moment 0.062 ± 0.002 D, HOMO 76.55 ± 1.74 meV, LUMO 53.62 ± 3.36 meV,
+  EA 139.67 ± 6.46 meV, IP 81.72 ± 4.36 meV, averaged over three models.
+- **The Figure 8 verification funnel, stage by stage** — see
+  `experiments/battery_goal_directed/instructions.md`.
+
+**PubChem-120K is real, and this section previously said it never existed.**
+Figure S3 of the SI defines it: *"a control dataset, where 119,995 molecules
+were uniformly sampled in terms of the number of heavy atoms from PubChem"*. So
+the 119,995 that used to sit at `preprocess_pubchem120k/config.yaml:12` was not
+unsourced after all — it is exactly the SI's number. What is true is that it is
+a **chemical-space control** used for the comparison in Figures S3b and S3c, not
+a prior training corpus: the paper's prior trains **directly on Batt-SLM**,
+115,756 molecules, random split with a 5,000-molecule test set, and there is no
+transfer-learning stage anywhere in it. So deleting `battery_transfer` was
+right, for the right reason — it was reconstructing a stage the source work does
+not have — but the corpus it named is a real and reconstructible dataset, and if
+the chemical-space comparison is ever wanted, the sampling procedure is now
+known. `battery_prior` trains on `battslm`, its two jobs are
+`preprocess_battslm` and `prior_battslm`, and `battery_conditional` and
+`battery_goal_directed` resume from it.
 
 **`battp30k` is not blocked, and four places say it is.** Measured 2026-10-25:
 `data/raw/battslm/Batt-P30K.h5` is on disk at 183,771,012 bytes with 29,519
-molecule groups, each carrying `smiles` and a `dipole` 3-vector alongside
-`homo`, `lumo`, `gap`, `ip`, `ea` and the energies, and `MANIFEST.json` records
+molecule groups, each carrying 13 fields: `coord`, `elems`, `smiles`, a
+`dipole` 3-vector, a **`quadrupole` 6-vector** that nothing in this repository
+had noticed, and `homo`, `lumo`, `gap`, `ip`, `ea` and three energies. There is
+no dielectric-constant field, which is why the dipole is the label: upstream
+reaches the dielectric constant *from* the dipole, through the piecewise
+regression named under the blockers above. `MANIFEST.json` records
 its url, size and sha256 as retrieved on 2026-10-19. The count matches the
 manuscript's 29,519 exactly, and `download_data.py:74` already asserts the true
 size in a comment. So the dipole labels `battery_conditional` needs are present
@@ -988,8 +1032,7 @@ and sufficient. What is missing is one extraction script — take the norm of th
 dipole vector per molecule and write `battp30k_dipole.smi`, about 1 MB — and no
 script in `scripts/` does it. The claim that the upstream file is a 134-byte Git
 LFS pointer is stale in `experiments/battery_conditional/instructions.md:13-14`,
-`experiments/battery_transfer/instructions.md:13-16`, `RUN.md:88` and
-`RUN.md:929`, as is "not yet wired into `scripts/download_data.py`" in three
+`RUN.md:88` and `RUN.md:929`, as is "not yet wired into `scripts/download_data.py`" in three
 further places: the `battslm` source is wired at `download_data.py:83-92` and
 `RUN.md` step B1 already calls it. Fix the four documents and write the script.
 

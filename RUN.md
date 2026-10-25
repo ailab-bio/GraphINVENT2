@@ -59,11 +59,11 @@ Submit in this order. Everything in one row can go at once; a row waits on the r
 |---|---|---|---|
 | D1 | the preprocess jobs for every corpus you built | `*/jobs/preprocess_*` | B2 |
 | D2 | the base priors **(parallel)** | `mg_prior/jobs/prior_zinc`; `protac_prior/jobs/prior_enumerated` and `battery_prior/jobs/prior_pubchem120k` are blocked, see below | D1 |
-| D3 | the transfer pairs **(parallel)** | each `*_transfer/jobs/prior_transfer` **and** `prior_scratch` | D2 for transfer, D1 for scratch |
+| D3 | the transfer pairs **(parallel)** | each `*_transfer/jobs/transfer_arm` **and** `scratch_control` | D2 for transfer, D1 for scratch |
 | D4 | the conditional models **(parallel)** | the three `*_conditional/jobs/train` | D1 |
 | D5 | the optimization campaigns | `protac_goal_directed/jobs/rl_smarca2` and `protac_selectivity/jobs/rl_selectivity`. The other two `rl_*` jobs are blocked, see below | C3 passed, D3 |
 
-`prior_scratch` is the from-scratch control and does **not** wait on a prior. Submitting it in D1 alongside the
+`scratch_control` is the from-scratch control and does **not** wait on a prior. Submitting it in D1 alongside the
 preprocess jobs is fine and saves a day.
 
 ## E. Sample and report (an hour of yours, hours of wall clock)
@@ -85,7 +85,7 @@ produces its numbers.
 | the REINVENT4 baselines | they are not jobs and `submit.py` cannot run them. They live in the six `experiments/reinvent4_*` directories, are launched by `submit_reinvent.py` with REINVENT4's own config structure, and their molecules are scored by `evaluate_external_sample`. Each needs REINVENT4's Zenodo prior specialized onto our corpus and a wrapper exposing our scorer as its `ExternalProcess` component |
 | `mg_goal_directed` | its reward cannot be fitted: the largest glue target has 30 labelled compounds against a floor of about 100. See `experiments/surrogate_mg_optimization/instructions.md` and decide what it optimizes |
 | `protac_prior` | needs `protac_enumerated`, which upstream's generator did not finish building in three hours |
-| the battery program beyond `prior_scratch` | PubChem-120K is not distributed and the oracle chain does not exist. `Batt-P30K.h5` **is** present — 183,771,012 bytes, 29,519 molecules with dipole labels, fetched 2026-10-19 — and what is missing is a script to extract `battp30k_dipole.smi` from it |
+| the battery program beyond `scratch_control` | PubChem-120K is not distributed and the oracle chain does not exist. `Batt-P30K.h5` **is** present — 183,771,012 bytes, 29,519 molecules with dipole labels, fetched 2026-10-19 — and what is missing is a script to extract `battp30k_dipole.smi` from it |
 
 ---
 
@@ -874,12 +874,12 @@ bash experiments/surrogate_mg_optimization/fit.sh
 Three experiments plus the selectivity showcase, 21 jobs. Each has its own `instructions.md` carrying the
 prerequisites, the submit command, what to check, and the failure mode; this part gives the order and the gates.
 
-Order: `protac_transfer` jobs `preprocess_tpddb` → `prior_scratch`, and in parallel `preprocess_enumerated`
-→ `prior_enumerated` → `prior_transfer`, then the two generate jobs. Then `protac_conditional`. Then, gated,
+Order: `protac_transfer` jobs `preprocess_tpddb` → `scratch_control`, and in parallel `preprocess_enumerated`
+→ `prior_enumerated` → `transfer_arm`, then the two generate jobs. Then `protac_conditional`. Then, gated,
 `protac_goal_directed` and the showcase.
 
 **The enumerated library is a blocker for the base prior.** It is not in `download_data.py`. Until it is, the
-PROTAC program can run `preprocess_tpddb`, `prior_scratch` and `generate_scratch` only, which means no transfer
+PROTAC program can run `preprocess_tpddb`, `scratch_control` and `generate_scratch` only, which means no transfer
 result for degraders.
 
 **max_nodes is 108, not 120.** Measured as the 99th percentile on the curated set. The brief said 120; using it
@@ -909,8 +909,8 @@ Three experiments, 17 jobs. The cheapest program: glues are drug-like, median 34
 **Run this program first.** It exercises every code path the PROTAC program uses at a fraction of the allocation,
 so a pipeline bug costs hours here rather than days there.
 
-Order: `preprocess_zinc` and `preprocess_glue` in parallel, then `prior_zinc`, then `prior_transfer` and
-`prior_scratch`, then the generate pair, then `mg_conditional`, then, gated, `mg_goal_directed`.
+Order: `preprocess_zinc` and `preprocess_glue` in parallel, then `prior_zinc`, then `transfer_arm` and
+`scratch_control`, then the generate pair, then `mg_conditional`, then, gated, `mg_goal_directed`.
 
 **The conditioning panel measures out as specified**: IKZF1/3 merged 1,493 molecules, GSPT1 2,358, RBM39 526, all
 clearing 300. IKZF1/3 against GSPT1 is the hard pair, both cereblon neosubstrates reached by glutarimide
@@ -933,7 +933,7 @@ F/P-holdout are not in the source repository either.
 What is available from `github.com/Teoroo-CMC/Batt-SLM`: `Batt-SLM/Batt-SLM.smi` at 1.88 MB,
 `Batt-SLM/filter_smiles.py`, the CPI implementation with `SolvFunc-87.csv`, and `Redox-Pot/redox_potential.py`.
 
-So `battery_transfer` can run `preprocess_battslm`, `prior_scratch` and `generate_scratch` once the download
+So `battery_transfer` can run `preprocess_battslm`, `scratch_control` and `generate_scratch` once the download
 is wired, and nothing else in the program can run yet.
 
 ## KILL POINT: validate the oracle chain before it scores anything

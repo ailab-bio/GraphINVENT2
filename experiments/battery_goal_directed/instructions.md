@@ -42,15 +42,38 @@ construction criterion and is **not** one of the structural filters; the two are
 ## The funnel is not part of the reward
 
 The reward is S7. The posterior verification funnel runs afterward as a separate script, stage by stage, with a
-count at each stage so our table lines up with the published one. The published counts (unverified): 180,000
-generated; 7,832 with permittivity below 10 but failing another constraint; 4,647 meeting all requirements; 4,471
-with SA score at most 4.0; minus 75 for maximum Tanimoto above 0.7 to the non-fluorinated KBS-409 solvents; minus
-548 for CPI above 0.5; then PubChem CID lookup, a literature check, and a ring strain filter at predicted RSE
-below 23 kcal/mol; 30 final candidates.
+count at each stage so our table lines up with the published one. **Every count below is now verified** against
+§5 of the Supporting Information at `manuscript/nn6c06255_si_001.pdf`, which this file previously marked
+unverified: 180,000 generated; 7,832 with permittivity below 10 but failing another constraint; 4,647 meeting all
+requirements; 4,471 with SA score at most 4.0; minus 75 for maximum Tanimoto above 0.7 to the non-fluorinated
+KBS-409 solvents; minus 548 for CPI above 0.5; then PubChem CID lookup, a literature check, and a ring strain
+filter at predicted RSE below 23 kcal/mol; 30 final candidates.
 
 The source describes 4,647 as already including CPI below 0.5 and then removes 548 for CPI above 0.5 two steps
 later. The consistent reading, which we implement, is that CPI was applied **after** the SA and Tanimoto stages.
 Each filter is applied once, in a stated order, with a count at every stage.
+
+Three things the SI adds that change what a faithful reproduction can claim.
+
+**The 180,000 came from nine fine-tuned generators at 100 RL steps**, not three and not 200. We run three seeds
+per Q31, so 60,000 samples per seed reaches the same total by a different route, and the per-seed spread is ours
+rather than theirs. Say so when the counts are compared.
+
+**The last two stages are not automatable.** After the RSE filter the published funnel groups candidates by
+functional group, picks the molecule least similar to the F/P holdout from each group, then iteratively adds
+whichever remaining candidate is least similar to those already chosen — that part we can implement. It then
+yields a 64-molecule "promising set" which was **manually checked against SciFinder** to reach the final 30. A
+manual database check cannot be reproduced here, so our funnel stops at the promising set and reports its size
+and composition. Any comparison to the number 30 has to say that the published figure passed through a manual
+step and ours did not.
+
+**Table S11 is the answer key.** It lists all 30 published candidates with PubChem CID where one exists, plus
+predicted reduction and oxidation potentials, donor number, permittivity and SA score. Structures are images, so
+SMILES are not extractable from the text, but the CIDs resolve. This is the reference set to compare our
+promising set against, and it is a far stronger check than matching a count.
+
+Two external dependencies this implies, neither inventoried in `tools/README.md`: **RSE_Atlas** for ring strain
+energies, and the PubChem, OpenAlex, Semantic Scholar and PubMed APIs for the literature-novelty stage.
 
 ## Submit
 

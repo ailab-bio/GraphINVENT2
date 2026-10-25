@@ -24,4 +24,4 @@ slurm:
 # subsets of these two corpora: 116 against 113 node features and a 12960
 # against 3840 action tensor, which is a loud RuntimeError rather than a silent
 # fallback, but it stops the transfer arm dead.
-extra_dataset: data/raw/protac_splitter/enumerated_protacs.smi
+extra_dataset: data/datasets/protac_enumerated/protac_enumerated.smi

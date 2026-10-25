@@ -2,7 +2,7 @@
   "database": "TPDdb",
   "homepage": "https://tpddb.idrblab.net",
   "citation": "Qin X, Zhang Y, Wang Y, et al. TPDdb: the comprehensive database of targeted protein degrader. Nucleic Acids Research 54(D1):D1683-D1691 (2026). doi:10.1093/nar/gkaf996",
-  "retrieved_utc": "2026-10-19T15:40:07.373105+00:00",
+  "retrieved_utc": "2026-10-25T16:41:58.276546+00:00",
   "sources": [
     {
       "modality": "glue",
@@ -15,10 +15,38 @@
   ],
   "selection": {
     "rule": "sorted by (heavy atom count, canonical SMILES); first N kept",
-    "n_molecules": 5216,
+    "n_molecules": 5210,
     "modality": "glue",
     "max_heavy_atoms": null,
-    "n_candidates_after_curation": 5216
+    "n_candidates_after_curation": 5210
+  },
+  "curation": {
+    "allowed_elements": [
+      "B",
+      "Br",
+      "C",
+      "Cl",
+      "F",
+      "I",
+      "N",
+      "O",
+      "P",
+      "S",
+      "Se"
+    ],
+    "radicals_rejected": true,
+    "counts": {
+      "unparseable": 1,
+      "multi_fragment": 0,
+      "over_size_cap": 0,
+      "outside_element_vocabulary": 6,
+      "radical_bearing": 0,
+      "rejected_element_counts": {
+        "Fe": 1,
+        "Ni": 2,
+        "Si": 3
+      }
+    }
   },
   "summary": {
     "heavy_atoms_min": 13,

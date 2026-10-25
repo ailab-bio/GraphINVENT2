@@ -12,7 +12,7 @@ batch_size: 100
 # split sets on one path, which raises. Detection cannot be relied on to agree,
 # because it scans extra_dataset too and the percentile over dev_zinc plus
 # dev_glue is 33 while dev_zinc's own is 34. dev_glue takes the same value
-# because smoke_prior_transfer resumes from smoke_prior_zinc and max_n_nodes
+# because smoke_transfer_arm resumes from smoke_prior_zinc and max_n_nodes
 # sets every stored tensor's width.
 max_n_nodes: 34
 extra_dataset: data/datasets/dev_zinc/dev_zinc.smi

@@ -1,4 +1,4 @@
-# SMOKE TEST of the real prior_transfer job, size overridden.
+# SMOKE TEST of the real transfer_arm job, size overridden.
 job_type: unconditional
 resume_from: experiments/mg_prior/jobs/smoke_prior_zinc/checkpoints/model_restart_2.pth
 epochs: 2

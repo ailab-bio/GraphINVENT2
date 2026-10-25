@@ -7,8 +7,8 @@
 # alone produces.
 job_type: generate
 sample_mode: generate
-dataset_dir: pubchem120k
-pretrained_model_path: experiments/battery_prior/jobs/prior_pubchem120k/checkpoints/model_restart_60.pth
+dataset_dir: battslm
+pretrained_model_path: experiments/battery_prior/jobs/prior_battslm/checkpoints/model_restart_60.pth
 n_samples: 10000
 batch_size: 500
 device: cuda
