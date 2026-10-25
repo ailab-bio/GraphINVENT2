@@ -1,0 +1,51 @@
+atom_types:
+- Br
+- C
+- Cl
+- F
+- I
+- N
+- O
+- S
+chirality:
+- None
+- R
+- S
+condition_dim: 0
+conditioning: null
+decoding_route: bfs
+formal_charge:
+- -1
+- 0
+- 1
+ignore_H: false
+imp_H:
+- 0
+- 1
+- 2
+- 3
+max_n_nodes: 34
+run_info:
+  cuda_version: n/a
+  device: mps
+  device_name: mps
+  git_hash: 807181b
+  numpy_version: 2.4.4
+  python_version: 3.13.5
+  rdkit_version: 2025.09.6
+  timestamp: '2026-10-25T15:19:00+01:00'
+  torch_version: 2.11.0
+split:
+  n_dropped_oversized: 0
+  n_test: 29
+  n_train: 238
+  n_valid: 30
+  seed: 1
+  smiles_file: data/datasets/dev_glue/dev_glue.smi
+  strategy: scaffold
+  train_frac: 0.8
+  valid_frac: 0.1
+use_aromatic_bonds: true
+use_canon: true
+use_chirality: false
+use_explicit_H: false

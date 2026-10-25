@@ -5,5 +5,14 @@ dataset_dir: dev_glue
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 100
-max_n_nodes: 30
+# dev_zinc's 99th-percentile heavy-atom count, stated rather than detected.
+# max_n_nodes identifies a split set, because it drops oversized molecules
+# before splitting, and three jobs in three experiments preprocess dev_zinc
+# into the same split_scaffold/ directory: two values would be two different
+# split sets on one path, which raises. Detection cannot be relied on to agree,
+# because it scans extra_dataset too and the percentile over dev_zinc plus
+# dev_glue is 33 while dev_zinc's own is 34. dev_glue takes the same value
+# because smoke_prior_transfer resumes from smoke_prior_zinc and max_n_nodes
+# sets every stored tensor's width.
+max_n_nodes: 34
 extra_dataset: data/datasets/dev_zinc/dev_zinc.smi

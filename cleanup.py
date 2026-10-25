@@ -24,7 +24,7 @@ python cleanup.py --all
 
 # Scope to specific paths
 python cleanup.py --outputs --experiments-dir experiments
-python cleanup.py --preprocessed --dataset-dir data/datasets/debug data/datasets/test
+python cleanup.py --preprocessed --dataset-dir data/datasets/dev_zinc data/datasets/dev_glue
 """
 
 import argparse
@@ -254,7 +254,7 @@ def _parse_args() -> argparse.Namespace:
     what.add_argument(
         "--backups",
         action="store_true",
-        help="Remove _previous_run_* backup directories from outputs and datasets.",
+        help="Remove _previous_run_* backup directories from job output directories.",
     )
     what.add_argument(
         "--all",

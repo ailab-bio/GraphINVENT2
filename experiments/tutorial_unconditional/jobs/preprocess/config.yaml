@@ -3,8 +3,12 @@ smiles_file: data/datasets/dev_zinc/dev_zinc.smi
 train_frac: 0.8
 valid_frac: 0.1
 batch_size: 1000
-# max_n_nodes is left to detection: CLAUDE.md's rule is the 99th-percentile
-# heavy-atom count, which for this subset is 34.
+# dev_zinc's 99th-percentile heavy-atom count, stated rather than detected:
+# max_n_nodes identifies a split set, because it drops oversized molecules
+# before splitting, and three jobs preprocess dev_zinc into the same
+# split_scaffold/ directory. mg_prior/smoke_preprocess_zinc must state the same
+# value, since detection there scans dev_glue as well and returns 33.
+max_n_nodes: 34
 
 # Preprocessing is CPU-only work, so it asks for no GPU.
 

@@ -476,56 +476,13 @@ class Workflow:
 
         return net
 
-    def _backup_stale_preprocessing_files(self, mode_a: bool = False) -> None:
-        """
-        If .h5 or .h5.chunked files left over from a previous (failed or
-        interrupted) preprocessing run are present in the dataset directory,
-        move them into a timestamped backup subdirectory so the new run can
-        start cleanly.
-
-        When ``mode_a`` is True (single SMILES file with auto-split), any
-        existing train/valid/test .smi files are also backed up, since they
-        will be overwritten by the new split.
-        """
-        split_dir = self.constants.split_dir
-        candidates = [
-            "train.h5",
-            "valid.h5",
-            "test.h5",
-            "train.h5.chunked",
-            "valid.h5.chunked",
-            "test.h5.chunked",
-        ]
-        if mode_a:
-            candidates += ["train.smi", "valid.smi", "test.smi"]
-
-        stale = [
-            split_dir + name for name in candidates if os.path.exists(split_dir + name)
-        ]
-        if not stale:
-            return
-
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_dir = split_dir + f"_previous_run_{timestamp}/"
-        os.makedirs(backup_dir, exist_ok=True)
-
-        print(
-            f"* Found {len(stale)} leftover file(s) from a previous "
-            "preprocessing run.  Moving them to a backup directory before "
-            "starting fresh.",
-            flush=True,
-        )
-        print(f"  Backup location: {backup_dir}", flush=True)
-        for path in stale:
-            name = os.path.basename(path)
-            shutil.move(path, backup_dir + name)
-            print(f"  Moved: {name}", flush=True)
-
     def _backup_stale_generation_files(self) -> None:
         """
         Before a fresh generation run, move any existing output (generation/
         directory, *_samples.* files) to a timestamped backup
-        subdirectory, matching the pattern used by preprocessing and training.
+        subdirectory, matching the pattern used by training. Preprocessing does
+        not do this: its output belongs to the dataset rather than the job, and
+        the split guard already rules out the only case worth preserving.
         """
         job_dir = self.constants.job_dir
         results_dir = self.constants.results_dir
@@ -794,10 +751,14 @@ class Workflow:
             )
 
         if not restart:
-            # Move any leftover files from a previous run out of the way.
-            # In Mode A also back up existing .smi files since they'll be overwritten.
-            self._backup_stale_preprocessing_files(mode_a=bool(smiles_file))
-
+            # Leftover files from a previous run are overwritten rather than
+            # moved aside: the HDF writer opens with mode "w" unless it is
+            # resuming, and `_guard_existing_split` has already raised if this
+            # run would redefine the split set, so whatever is here was built
+            # from the same split parameters and is about to be rebuilt
+            # identically. Copying it into `_previous_run_<timestamp>/` first
+            # doubled the dataset's size on every re-run and preserved nothing.
+            #
             # --- Mode A: split a single SMILES file ---
             if smiles_file:
                 self.n_oversized = split_smiles_file(
