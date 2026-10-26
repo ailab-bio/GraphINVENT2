@@ -121,6 +121,47 @@ def main() -> int:
             flush=True,
         )
 
+    # HOW MUCH OF THIS LIBRARY THE SURROGATE WAS FITTED ON. At minimum the
+    # library is a random matched-size sample from the training and validation
+    # splits, which is also where the surrogate's labels come from, so the
+    # screen is scored in-sample while the generator is scored out-of-sample.
+    # That biases the margin against the generator, and the size of the bias
+    # was never reported. Canonical SMILES on both sides, since a raw-string
+    # comparison would miss every molecule written differently.
+    overlap = None
+    training_set = params.get("surrogate_training_set")
+    if training_set and Path(training_set).exists():
+        from rdkit import Chem, RDLogger
+
+        RDLogger.DisableLog("rdApp.*")
+
+        def canonical(smiles):
+            mol = Chem.MolFromSmiles(smiles)
+            return Chem.MolToSmiles(mol) if mol is not None else None
+
+        fitted_on = set()
+        for line in Path(training_set).read_text().splitlines()[1:]:
+            field = line.split("\t")[0].strip()
+            if field:
+                fitted_on.add(canonical(field))
+        fitted_on.discard(None)
+        library_canonical = [canonical(s) for s in library]
+        shared = sum(1 for s in library_canonical if s is not None and s in fitted_on)
+        overlap = shared / len(library) if library else None
+        print(
+            f"* {shared} of {len(library)} library molecules "
+            f"({overlap:.1%}) are rows the surrogate was fitted on, so that "
+            "fraction of the screen is scored in-sample.",
+            flush=True,
+        )
+    else:
+        print(
+            "* surrogate_training_set is not declared or not on disk, so the "
+            "in-sample fraction of this screen is unmeasured and the "
+            "comparison records a null for it.",
+            flush=True,
+        )
+
     per_seed: dict = {}
     for seed in args.seeds:
         score, cached = build_oracle(params)
@@ -171,6 +212,16 @@ def main() -> int:
                     "library_size": len(library),
                     "budget": args.budget,
                     "seeds": args.seeds,
+                    "draw": "uniform at random, without replacement",
+                    # The fraction of this library the surrogate was fitted
+                    # on, and whether the budget bound at all. A screen of a
+                    # library smaller than the budget is exhaustive, which is
+                    # a different baseline from a matched one.
+                    "surrogate_training_overlap": overlap,
+                    "surrogate_training_set": (
+                        str(training_set) if training_set else None
+                    ),
+                    "exhaustive": len(library) <= args.budget,
                 },
                 "metrics": aggregate,
                 "per_seed": per_seed,

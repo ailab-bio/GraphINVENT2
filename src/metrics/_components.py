@@ -45,6 +45,24 @@ SPLITTER_PYTHON = TOOLS / "PROTAC-Splitter" / ".venv" / "bin" / "python"
 # canonical SMILES, and lives under tools/ rather than in a home directory.
 SPLITTER_MODEL = "adaptive"
 SPLITTER_CACHE = TOOLS / "splitter-cache"
+
+# The concordance between the two splitter models, which every absolute
+# component-level number has to be read against. On 500 real degraders adaptive
+# decomposed 492 and xgboost 472, the second a strict subset of the first, and
+# the two return identical fragments for 329 of the 472 both decomposed: 69.7%.
+# NEITHER MODEL IS GROUND TRUTH, so that is a concordance and not an accuracy,
+# and it bounds how much confidence a component metric deserves.
+#
+# It is emitted beside every component metric because the detector that carries
+# the reward-hacking claim -- top100_warhead_scaffold_count -- is a component
+# metric, and it was being reported with no model, no version and no band. A
+# reader cannot otherwise tell a decomposition artifact from a chemistry result.
+SPLITTER_CONCORDANCE = 0.697
+SPLITTER_CONCORDANCE_NOTE = (
+    "adaptive vs xgboost on 500 real TPD-DB degraders: 492 and 472 decomposed, "
+    "xgboost a strict subset, identical fragments for 329 of the 472 both "
+    "decomposed. A concordance, not an accuracy: neither model is ground truth."
+)
 # Weights land here, never in the library's default cache: a cluster home
 # directory has a small quota and a surprise download into one is a failure
 # waiting to happen.
@@ -463,6 +481,7 @@ def warhead_records(smiles_list: list, *, model: str = SPLITTER_MODEL) -> list:
                     "e3_fragment": None,
                     "split_status": entry.get("failed", "no_prediction"),
                     "status": "no_prediction",
+                    "splitter_model": model,
                 }
             )
             continue
@@ -475,6 +494,7 @@ def warhead_records(smiles_list: list, *, model: str = SPLITTER_MODEL) -> list:
                 "e3_fragment": fragments["e3"],
                 "split_status": "ok",
                 "status": status,
+                "splitter_model": model,
             }
         )
     return records
@@ -513,6 +533,31 @@ def e3_cores() -> list:
     return cores
 
 
+def _splitter_commit() -> str | None:
+    """
+    The pinned PROTAC-Splitter commit, read from the clone rather than from
+    `tools/README.md`, so it records what ran and not what was intended.
+
+    `git` is read-only here. None when the clone is absent, which is also when
+    the component metrics are unavailable.
+    """
+    import subprocess
+
+    clone = TOOLS / "PROTAC-Splitter"
+    if not (clone / ".git").exists():
+        return None
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(clone), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return result.stdout.strip() or None
+
+
 def compute_component_metrics(
     generated_smiles: list,
     n_sampled: int,
@@ -539,6 +584,15 @@ def compute_component_metrics(
     from rdkit import Chem, DataStructs
 
     records = warhead_records(generated_smiles)
+    # The splitter's identity, beside every number it produced. `SPLITTER_MODEL`
+    # was a module constant reachable by no config key and emitted nowhere, so a
+    # component table carried no record of what decomposed it.
+    provenance = {
+        "splitter_model": SPLITTER_MODEL,
+        "splitter_commit": _splitter_commit(),
+        "splitter_concordance": SPLITTER_CONCORDANCE,
+        "splitter_concordance_note": SPLITTER_CONCORDANCE_NOTE,
+    }
     split_ok = [r for r in records if r["split_status"] == "ok"]
     usable = [r for r in split_ok if r["status"] == "ok"]
 
@@ -558,6 +612,7 @@ def compute_component_metrics(
         "split_status_counts": status_counts,
         "e3_similarity_floor": e3_similarity_floor_for_report(),
         "ecfp4_radius": ECFP4_RADIUS,
+        **provenance,
     }
     if not usable:
         results["e3_recognizable_rate"] = None
@@ -712,6 +767,9 @@ def compute_class_warhead_metrics(
     *,
     n_unique_valid: int,
     isomeric: bool = False,
+    training_warheads_by_label: dict | None = None,
+    class_match_threshold: float | None = None,
+    requested_class: str | None = None,
 ) -> tuple:
     """
     The per-class warhead row for one requested class, plus its nulls.
@@ -728,6 +786,21 @@ def compute_class_warhead_metrics(
     conditioning from retrieval: of the warheads generated for this class, how
     many are absent from *this class's* training warheads. Both are reported,
     and they are expected to disagree.
+
+    `warhead_class_match_median`, `warhead_class_match_rate` and
+    `warhead_class_selectivity_margin` are the component-level versions of the
+    three keys the conditional claim is actually read on, and they are computed
+    here when `training_warheads_by_label` is supplied.  They did not exist:
+    CLAUDE.md defines ``warhead_*`` as "the core **and conditional** metrics
+    recomputed over target-binding components", on the stated ground that a
+    whole-molecule statistic for a PROTAC is dominated by the linker, but only
+    the core half was implemented.  So ``class_selectivity_margin`` for a
+    degrader panel was a whole-molecule number dominated by the shared E3
+    ligands, glutarimide cores and PEG linkers -- which is why a real degrader
+    clears the 0.4 match threshold against a *foreign* class about 29% of the
+    time.  The component-level version is the one that can separate a model
+    that learned a class's warhead chemistry from one that learned the shape of
+    a degrader.
     """
     split_ok = [r for r in records if r["split_status"] == "ok"]
     usable = [r for r in split_ok if r["status"] == "ok"]
@@ -792,4 +865,67 @@ def compute_class_warhead_metrics(
         row["warhead_novelty_in_class"] = sum(
             1 for w in unique if w not in reference
         ) / len(unique)
+
+    # The conditional half of warhead_*, recomputed over the components. Only
+    # when the caller supplied every class's training warheads: the selectivity
+    # margin is the on-class maximum Tanimoto minus the best off-class one, so
+    # it needs the other classes and not just this one.
+    for key in (
+        "warhead_class_match_median",
+        "warhead_class_match_rate",
+        "warhead_class_selectivity_margin",
+    ):
+        row[key] = None
+    if (
+        training_warheads_by_label
+        and requested_class
+        and warheads
+        and class_match_threshold is not None
+    ):
+        from ._conditions import class_match_metrics
+
+        populated = {
+            label: pool for label, pool in training_warheads_by_label.items() if pool
+        }
+        if requested_class not in populated:
+            for key in (
+                "warhead_class_match_median",
+                "warhead_class_match_rate",
+                "warhead_class_selectivity_margin",
+            ):
+                unavailable[key] = (
+                    "insufficient_sample: the training split yielded no usable "
+                    f"warhead for class '{requested_class}', so there is "
+                    "nothing at the component level for a generated warhead to "
+                    "resemble"
+                )
+        else:
+            matches = class_match_metrics(
+                warheads,
+                [requested_class] * len(warheads),
+                populated,
+                # The caller's threshold, never a second copy of the default:
+                # the whole-molecule and component-level versions of this
+                # metric have to be gated at the same value or the two columns
+                # are not comparable.
+                threshold=class_match_threshold,
+            )
+            row["warhead_class_match_median"] = matches.get("class_match_median")
+            row["warhead_class_match_rate"] = matches.get("class_match_rate")
+            row["warhead_class_selectivity_margin"] = matches.get(
+                "class_selectivity_margin"
+            )
+            if len(populated) < 2:
+                unavailable["warhead_class_selectivity_margin"] = (
+                    "insufficient_sample: a selectivity margin needs an "
+                    "off-class comparison, and only one class in the panel "
+                    "yielded training warheads"
+                )
+    elif not warheads:
+        for key in (
+            "warhead_class_match_median",
+            "warhead_class_match_rate",
+            "warhead_class_selectivity_margin",
+        ):
+            unavailable[key] = "insufficient_sample: no usable warhead for this class"
     return row, unavailable

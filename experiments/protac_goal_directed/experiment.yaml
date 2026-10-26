@@ -1,6 +1,10 @@
 dataset_dir: tpddb_protac
 max_n_nodes: 108
 bifunctional: true
+# The bifunctional triage stack: structural alerts, then RetroTAC >= 0.30 on the
+# whole molecule, then sa_score < 4.5 on the decomposed warhead. Named rather
+# than derived from the boolean above, and the two are cross-checked.
+triage_stack: bifunctional
 seed: 1
 slurm:
   account: naiss2024-5-630-gpu
@@ -28,20 +32,45 @@ property_window:
 # against a mean-prediction baseline of 0.639 on a warhead-scaffold split,
 # Spearman 0.567: it beats the baseline, which is the kill criterion for
 # this arm. See that directory's PERFORMANCE.md.
+#
+# THE TRANSFORM IS NOT OPTIONAL and its bounds are a modeling decision, stated
+# here and in the write-up. The surrogate reports pDC50 directly, which spans
+# 5.94 to 10.05 on the 241-row training table; the default identity transform
+# clamps to [0, 1], so every prediction would score exactly 1.0, the augmented
+# likelihood would add a constant, and the BAR loss would express no preference
+# between molecules. `clipped_linear` from 5.0 to 10.0 makes the score linear
+# in pDC50 across the whole label range: 5.0 (DC50 = 10 uM, inactive) scores 0
+# and 10.0 (DC50 = 0.1 nM, beyond what the data resolves) scores 1.
 oracles:
   smarca2_pdc50_activity:
     type: sklearn
     path: experiments/surrogate_protac_optimization/smarca2/optimization.pickle
     output: predict
     direction: maximize
+    transform:
+      type: clipped_linear
+      low: 5.0
+      high: 10.0
 
 # The evaluation surrogate rescores the final molecules with a model that saw
 # strictly more data than the one that rewarded them. It is never the reward,
 # so it is not in `oracles:`. A large gap against top10_mean_at_10k, when the
 # two agree on held-out real molecules, is evidence of exploitation.
+# It carries the SAME output and transform as the optimization oracle, because
+# a gap between two differently scaled scores measures the scaling. `output`
+# was unset, which defaulted to `proba` and called predict_proba on a
+# RandomForestRegressor; the metrics layer caught the AttributeError and
+# recorded eval_oracle_top10_mean as a missing optional tool, so the detector
+# reported its own misconfiguration as an absent dependency.
 evaluation_oracle:
   type: sklearn
   path: experiments/surrogate_protac_optimization/smarca2/evaluation.pickle
+  output: predict
+  direction: maximize
+  transform:
+    type: clipped_linear
+    low: 5.0
+    high: 10.0
 # The set the OPTIMIZATION surrogate was fitted on, for
 # top100_outside_domain_rate. Not the generative model's training split.
 surrogate_training_set: data/surrogates/smarca2_pdc50.tsv

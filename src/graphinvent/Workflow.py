@@ -311,7 +311,11 @@ class Workflow:
 
             print("-- Loading pretrained model checkpoint.", flush=True)
             self.model = util.load_saved_model(
-                model=self.model, path=self.constants.resume_from
+                model=self.model,
+                path=self.constants.resume_from,
+                conditional_warm_start=getattr(
+                    self.constants, "conditional_warm_start", False
+                ),
             )
 
             print("-- Defining optimizer.", flush=True)

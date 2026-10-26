@@ -842,7 +842,9 @@ def log_likelihoods_to_tensorboard(
         tb_writer.add_scalar("Train/prior_loglikelihood", avg_prior_loglikelihood, step)
 
 
-def load_saved_model(model: torch.nn.Module, path: str) -> torch.nn.Module:
+def load_saved_model(
+    model: torch.nn.Module, path: str, conditional_warm_start: bool = False
+) -> torch.nn.Module:
     """
     Loads a pre-saved neural net model.
 
@@ -850,6 +852,11 @@ def load_saved_model(model: torch.nn.Module, path: str) -> torch.nn.Module:
     ----
         model (torch.nn.Module) : Existing but bare-bones model variable.
         path (str)              : Path to the saved model.
+        conditional_warm_start (bool) : Load an UNCONDITIONAL checkpoint into a
+            conditional model, which `config._apply_checkpoint_architecture`
+            sets when that is what the job declares.  Anything else is a strict
+            load, so a shape mismatch still fails rather than being papered
+            over.
 
     Returns:
     -------
@@ -862,13 +869,134 @@ def load_saved_model(model: torch.nn.Module, path: str) -> torch.nn.Module:
     if isinstance(state, dict) and "model" in state:
         # Checkpoint saved with optimizer/scheduler state (RL jobs, and
         # supervised jobs since the restart fix).
-        model.load_state_dict(state["model"])
+        state_dict = state["model"]
     elif isinstance(state, torch.nn.Module):
         # GraphINVENT v1.0 pickled the whole module.  NOTE: assigning to
         # `model.state_dict` here (as this function used to) shadows the method
         # and leaves the weights untouched, silently yielding an untrained model.
-        model.load_state_dict(state.state_dict())
+        state_dict = state.state_dict()
     else:
         # Plain state_dict (GraphINVENT v2.0).
-        model.load_state_dict(state)
+        state_dict = state
+
+    if conditional_warm_start:
+        _warm_start_conditional(model, state_dict)
+    else:
+        model.load_state_dict(state_dict)
     return model
+
+
+def _warm_start_conditional(model: torch.nn.Module, state_dict: dict) -> None:
+    """
+    Load an unconditional checkpoint into a conditional model.
+
+    A conditional model is a strict superset of the unconditional one it
+    resumes from, and the difference is in exactly two places:
+
+    * ``condition_encoder.*``, which does not exist in the checkpoint;
+    * the first linear layer of ``fAddNet2``, ``fConnNet2`` and ``fTermNet2``,
+      whose input grew by ``condition_embedding_dim`` because the condition
+      embedding is concatenated onto the graph embedding.  The concatenation
+      puts the condition **last**, so the new input columns are the trailing
+      ones and the pretrained columns keep their meaning.
+
+    The virtual-edge message network is *not* in that list: the message nets are
+    built as ``range(n_edge_features + 1)`` whether or not conditioning is on,
+    so it is present in an unconditional checkpoint -- carrying its
+    initialization, because nothing ever trained it.  Loading those untrained
+    weights would inject noise into every real node from the first step, so its
+    output layer is zeroed here.
+
+    Both of the condition's pathways into the model therefore start at zero: the
+    readout path through the concatenated columns, and the message path from the
+    virtual seed node.  Message aggregation is a sum and the seed is stripped
+    before readout, so the warm-started model computes exactly what the prior
+    computed, and the conditioning is learned from there.  That is what makes
+    the comparison in the conditional experiments a measurement of
+    conditioning rather than of a different initialization.
+
+    One consequence worth knowing before reading a training curve.  The zeroed
+    readout columns receive gradient on the first backward pass, because the
+    gradient of a weight is its input times the upstream gradient and the
+    condition embedding is not zero.  The condition *encoder* does not: the
+    gradient reaching it is the zeroed weight transposed times the upstream
+    gradient.  So the encoder is unupdated for exactly one optimizer step and
+    learns from the second, which is how a zero-initialized adapter behaves and
+    is asserted in ``tests/test_conditioning.py``.  It means the first step's
+    loss is the prior's loss, not a sign that the conditioning is inert.
+    """
+    target = model.state_dict()
+    loaded, grown, zeroed, fresh = [], [], [], []
+
+    # The ONLY tensors a conditional warm start may reshape, and by exactly how
+    # much. Naming them explicitly rather than accepting any tensor that merely
+    # fits keeps a genuine architecture difference an error: a permissive rule
+    # that zero-padded whatever was too small would quietly accept a checkpoint
+    # with a different hidden width and train on a half-initialized model.
+    width = model.condition_embedding_dim
+    widenable = {
+        f"ActionProbReadout.{net}.seq.0.weight"
+        for net in ("fAddNet2", "fConnNet2", "fTermNet2")
+    }
+
+    for name, destination in target.items():
+        source = state_dict.get(name)
+        if source is None:
+            fresh.append(name)
+            continue
+        if source.shape == destination.shape:
+            destination.copy_(source)
+            loaded.append(name)
+            continue
+        expected = (*destination.shape[:-1], destination.shape[-1] - width)
+        if name not in widenable or tuple(source.shape) != expected:
+            raise ValueError(
+                f"Cannot warm-start '{name}': the checkpoint holds "
+                f"{tuple(source.shape)} and this model needs "
+                f"{tuple(destination.shape)}.\n"
+                "A conditional warm start widens exactly three tensors, by "
+                f"exactly condition_embedding_dim ({width}) on their last "
+                f"dimension: {', '.join(sorted(widenable))}.\n"
+                "Any other mismatch means the two architectures differ in "
+                "something that is not the conditioning, and loading across it "
+                "would produce a partly initialized model rather than a warm "
+                "start."
+            )
+        # The condition embedding is concatenated AFTER the graph embedding, so
+        # the new columns are the trailing ones and every pretrained column
+        # keeps its meaning. They are zeroed, never left at random.
+        destination.zero_()
+        destination[..., : source.shape[-1]].copy_(source)
+        grown.append(f"{name} {tuple(source.shape)}->{tuple(destination.shape)}")
+
+    # Zero the virtual-edge message net's output layer, so the seed node sends
+    # nothing until training teaches it to. The index comes from the model
+    # rather than from a constant: the virtual edge is the extra message net
+    # beyond the real bond types, so it is always the last one.
+    virtual_edge = f"msg_nns.{len(model.msg_nns) - 1}.seq."
+    output_layer = max(
+        int(name.split(".")[3])
+        for name in target
+        if name.startswith(virtual_edge) and name.split(".")[3].isdigit()
+    )
+    for name, parameter in target.items():
+        if name.startswith(f"{virtual_edge}{output_layer}."):
+            parameter.zero_()
+            zeroed.append(name)
+
+    model.load_state_dict(target)
+
+    print(
+        f"-- Conditional warm start: {len(loaded)} tensors loaded unchanged, "
+        f"{len(grown)} widened, {len(zeroed)} zeroed, {len(fresh)} initialized "
+        "fresh.",
+        flush=True,
+    )
+    for entry in grown:
+        print(f"     widened  {entry}", flush=True)
+    for entry in zeroed:
+        print(
+            f"     zeroed   {entry}  (virtual-edge message net, untrained)", flush=True
+        )
+    for entry in fresh:
+        print(f"     fresh    {entry}", flush=True)

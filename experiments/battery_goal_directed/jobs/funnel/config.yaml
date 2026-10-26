@@ -5,14 +5,22 @@
 job_type: generate
 sample_mode: generate
 pretrained_model_path: experiments/battery_goal_directed/jobs/rl_nonf_lowdc/checkpoints/best_agent.pth
-n_samples: 10000
+# 60,000 and not the uniform 10,000, because this job's deliverable is the set
+# of molecules surviving a funnel whose published attrition runs from 180,000
+# generated to 30 survivors, a rate near 0.02%. At 10,000 per seed the expected
+# yield is about two molecules, so the table would be empty rather than small
+# and the comparison against the published counts could not be made at all.
+# Three seeds at 60,000 reach the published total of 180,000 by a different
+# route -- nine generators at 100 RL steps there against three at 200 here --
+# so the per-seed spread is ours and not theirs.
+n_samples: 60000
 batch_size: 1000
 device: cpu
 # WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
 # RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
 # manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
-#   10,000 molecules, scaled to max_nodes 16
-#   = 0.06 h x 1.5 -> 1 h
+#   60,000 molecules, scaled to max_nodes 16
+#   = 0.36 h x 1.5 -> 1 h
 # This is a CPU extrapolation. Training will finish well inside it on a
 # GPU; generation gains much less, because it is a sequential
 # autoregressive loop with a Python-level decode. Re-measure on

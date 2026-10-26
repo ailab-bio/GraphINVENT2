@@ -47,3 +47,20 @@ slurm:
 # scored by the COMPLETE surrogate set, not one per component.
 oracle_budget: 10000
 checkpoint_oracle_counts: [1000, 5000]
+
+# THE VIRTUAL SCREENING BASELINE, which `vs_delta_top10_at_*` is computed from
+# and which is this campaign's only claim of having beaten the naive
+# alternative. Declared here so the requirement is visible: the key was set in
+# no real job, so `_screening_baseline` took its early-return branch and wrote
+# six explicit nulls in every run while the provenance table marked those rows
+# ready.
+#
+# The file does not exist until the screen is run, and until then these keys
+# record a categorized null naming the command rather than failing the job:
+#   python scripts/screen-library.py experiments/mg_goal_directed/jobs/rl_gspt1 --library <library.smi>
+# It is a uniform random draw plus surrogate calls at milliseconds each, so it
+# needs no allocation. The library is at minimum a matched-size random sample
+# from this dataset's train and validation splits; the screen reports what
+# fraction of it the surrogate was fitted on, because that fraction is scored
+# in-sample while the generator is scored out-of-sample.
+screening_baseline_results: experiments/mg_goal_directed/jobs/rl_gspt1/results/screening_train.json

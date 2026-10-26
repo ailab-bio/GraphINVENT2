@@ -821,6 +821,12 @@ def _categorical_condition_metrics(
                     warheads_by_label[name],
                     n_unique_valid=len(set(molecules)),
                     isomeric=isomeric,
+                    # The conditional half of warhead_*: the whole panel's
+                    # training warheads, because a selectivity margin is the
+                    # on-class similarity minus the best off-class one.
+                    training_warheads_by_label=warheads_by_label,
+                    class_match_threshold=threshold,
+                    requested_class=name,
                 )
                 warhead_rows[name] = row
                 # The row's keys are already CLAUDE.md's names, so the class
@@ -838,16 +844,34 @@ def _categorical_condition_metrics(
             # the thing the flat dictionary cannot survive. Their per-class
             # values are there with the suffix; their panel-level value is the
             # whole-sample one.
-            key = "warhead_novelty_in_class"
-            values = [
-                row[key] for row in warhead_rows.values() if row.get(key) is not None
-            ]
-            results[key] = float(sum(values) / len(values)) if values else None
-            if not values:
-                unavailable[key] = (
-                    "insufficient_sample: no class in the panel produced a "
-                    f"value for {key}"
-                )
+            # The three conditional warhead keys get one too, for the same
+            # reason: they have no whole-sample twin, because "the match to the
+            # requested class" is only defined per class.
+            for key in (
+                "warhead_novelty_in_class",
+                "warhead_class_match_median",
+                "warhead_class_match_rate",
+                "warhead_class_selectivity_margin",
+            ):
+                sampled = [
+                    name
+                    for name, row in warhead_rows.items()
+                    if row.get(key) is not None
+                ]
+                # Macro-average over the whole panel or not at all, as with the
+                # whole-molecule keys: one class's value under the panel's name
+                # is not the panel's number.
+                if len(sampled) == len(class_names) and class_names:
+                    results[key] = float(
+                        sum(warhead_rows[name][key] for name in sampled) / len(sampled)
+                    )
+                else:
+                    results[key] = None
+                    unavailable[key] = (
+                        f"insufficient_sample: {key} is the macro-average over "
+                        f"the panel {class_names}, and only {sampled} produced "
+                        "a value. The per-class keys carry what was measured."
+                    )
             results["component_sample_size"] = COMPONENT_SAMPLE_SIZE
             results["component_sample_seed"] = int(getattr(constants, "seed", 0) or 0)
         except ComponentMissing as error:
@@ -859,11 +883,20 @@ def _categorical_condition_metrics(
                     "warhead_uniqueness",
                     "warhead_diversity",
                     "warhead_novelty_in_class",
+                    "warhead_class_match_median",
+                    "warhead_class_match_rate",
+                    "warhead_class_selectivity_margin",
                 ):
                     results[f"{key}_{name}"] = None
                     unavailable[f"{key}_{name}"] = reason
-            results["warhead_novelty_in_class"] = None
-            unavailable["warhead_novelty_in_class"] = reason
+            for key in (
+                "warhead_novelty_in_class",
+                "warhead_class_match_median",
+                "warhead_class_match_rate",
+                "warhead_class_selectivity_margin",
+            ):
+                results[key] = None
+                unavailable[key] = reason
 
     # Baseline 1: the training molecules of the requested label, sampled to the
     # same N per class. The retrieval ceiling.
@@ -942,7 +975,7 @@ def _categorical_condition_metrics(
         ):
             results[key] = None
             unavailable[key] = (
-                "not_applicable_to_job_type: the post-hoc filter baseline needs "
+                "not_configured: the post-hoc filter baseline needs "
                 "an unconditional sample from the same architecture to rerank; "
                 "set baseline_results_dir to its molecules.smi. Without it the "
                 "conditional numbers cannot be falsified, only reported."
@@ -1195,6 +1228,8 @@ def evaluate_training(
             getattr(constants, "condition_dropout", 0.0) or 0.0
         )
 
+    _epochs_to_match(constants, metrics, unavailable)
+
     def draw(_written: dict) -> list:
         from . import _figures
 
@@ -1212,6 +1247,71 @@ def evaluate_training(
         )
 
     _finish(constants, metrics, unavailable, draw=draw)
+
+
+def _epochs_to_match(constants, metrics: dict, unavailable: dict) -> None:
+    """
+    `epochs_to_match`: the first epoch at which this run's validation loss
+    reaches the control's FINAL validation loss.
+
+    This is the transfer claim's whole content -- "reaches the control's final
+    validation loss in fewer epochs and ends below it" -- and it had no
+    implementation anywhere, while the manuscript quoted it for all three
+    programs. Without it the claim rests on a reader's eye on a figure that was
+    also not drawing the control, because `control_job_dir` was unset.
+
+    Null, with its reason, when no control is declared or its log is not
+    readable. Null and explicitly reported when this run never reaches the
+    control's final loss, which is a real outcome for a transfer arm that is no
+    better than from-scratch training and must not read as a missing number.
+
+    The parser is `_figures._read_convergence` rather than a second one here:
+    two parsers for one log file is how the two drift apart.
+    """
+    from ._figures import _read_convergence
+
+    control = getattr(constants, "control_job_dir", None)
+    if not control:
+        metrics["epochs_to_match"] = None
+        unavailable["epochs_to_match"] = (
+            "not_configured: this job declares no control_job_dir, so there is "
+            "no from-scratch curve to match. Set it on the transfer arm to the "
+            "scratch control's job directory; it is also what overlays the "
+            "control on the training figure."
+        )
+        return
+
+    ours = _read_convergence(Path(constants.logs_dir) / "convergence.log").get(
+        "validation"
+    )
+    theirs = _read_convergence(Path(control) / "logs" / "convergence.log").get(
+        "validation"
+    )
+    if not ours or not theirs:
+        metrics["epochs_to_match"] = None
+        unavailable["epochs_to_match"] = (
+            f"insufficient_sample: needs a validation-loss series from both "
+            f"this job and the control at {control}; one of the two "
+            "convergence logs is missing or carries none."
+        )
+        return
+
+    target = theirs["y"][-1]
+    metrics["epochs_to_match_target_loss"] = target
+    metrics["epochs_to_match_control_epochs"] = int(theirs["x"][-1])
+    for epoch, loss in zip(ours["x"], ours["y"]):
+        if loss <= target:
+            metrics["epochs_to_match"] = int(epoch)
+            return
+
+    metrics["epochs_to_match"] = None
+    unavailable["epochs_to_match"] = (
+        f"undefined_for_this_run: this run's validation loss never reached the "
+        f"control's final {target:.4f} (best {min(ours['y']):.4f} at epoch "
+        f"{int(ours['x'][ours['y'].index(min(ours['y']))])}). That is a real "
+        "outcome and not a missing measurement: on this pair, transfer did not "
+        "beat training from scratch."
+    )
 
 
 def evaluate_model_scoring(
@@ -1340,19 +1440,37 @@ def _filtered_metrics(
     keys and `delta_nll` do not change when molecules are removed from a
     sample they were never computed over.
     """
-    from ._filters import triage
+    from ._filters import TRIAGE_STAGES, MissingStage, triage
 
-    bifunctional = bool(getattr(constants, "bifunctional", False))
+    stack = getattr(constants, "triage_stack")
+    bifunctional = stack == "bifunctional"
+
+    # THE SET THAT ENTERS TRIAGE. For a bifunctional dataset the warhead SA
+    # gate needs a decomposition, decomposition costs seconds per molecule, and
+    # the warheads are therefore served from the seeded component subsample.
+    # Triage used to run over the full unique-valid list anyway, so on a
+    # 10,000-molecule sample about 8,000 molecules reached the warhead stage
+    # with no entry in the dictionary and failed it for want of one: the stage
+    # rate and `triage_pass_rate` were capped near 0.2 and every `_filtered`
+    # rate was understated roughly fivefold. Worse, the diagnostic inverted --
+    # `split_success_rate` is computed over the subsample and stayed healthy,
+    # so a dictionary miss read as the chemistry failure it was not.
+    #
+    # So the bifunctional stack triages exactly the molecules the warheads
+    # cover, and the filtered denominators are that subsample rather than
+    # `n_samples`. `triage_n_entered` records it, so a `_filtered` rate is
+    # always readable against the set it was computed over.
+    triage_input = _subsample(unique_valid, constants) if bifunctional else unique_valid
 
     # The warhead of each molecule, for the bifunctional SA gate. Served from
     # the splitter cache, which the component metrics have already filled.
     warhead_by_smiles: dict = {}
-    if bifunctional and unique_valid:
+    if bifunctional and triage_input:
         from ._components import MissingInput as ComponentMissing
         from ._components import warhead_records
 
         try:
-            for record in warhead_records(_subsample(unique_valid, constants)):
+            for record in warhead_records(triage_input):
                 if record["status"] == "ok":
                     warhead_by_smiles[record["molecule"]] = record["warhead"]
         except ComponentMissing as error:
@@ -1361,12 +1479,23 @@ def _filtered_metrics(
             unavailable["triage_pass_rate"] = reason
             return
 
-    kept, rates = triage(
-        unique_valid,
-        bifunctional=bifunctional,
-        retrotac_by_smiles=retrotac_by_smiles,
-        warhead_by_smiles=warhead_by_smiles,
-    )
+    try:
+        kept, rates = triage(
+            triage_input,
+            stack=stack,
+            retrotac_by_smiles=retrotac_by_smiles,
+            warhead_by_smiles=warhead_by_smiles,
+        )
+    except MissingStage as error:
+        # A declared stage this code cannot compute. Every filtered key is a
+        # categorized null naming what is missing; none of them is a number
+        # from a stack this dataset did not declare.
+        metrics["triage_pass_rate"] = None
+        unavailable["triage_pass_rate"] = "not_implemented: " + " ".join(
+            str(error).split()
+        )
+        metrics["triage_stages"] = list(TRIAGE_STAGES[stack])
+        return
     metrics.update(rates)
 
     if not kept:
@@ -1378,9 +1507,14 @@ def _filtered_metrics(
         )
         return
 
+    # The denominator is `n_samples`, so `validity_filtered` reads as the
+    # fraction of the sample that both parsed and survived triage -- except on
+    # the bifunctional stack, where triage ran over the component subsample and
+    # the only honest denominator is the set that entered. `triage_n_entered`
+    # carries it in both cases.
     core = _core.compute_core_metrics(
         kept,
-        n_sampled=constants.n_samples,
+        n_sampled=len(triage_input) if bifunctional else constants.n_samples,
         training_smiles=training_smiles,
         isomeric=_isomeric(constants),
         property_window=getattr(constants, "property_window", None),
@@ -1564,9 +1698,28 @@ def _screening_baseline(constants, metrics: dict, unavailable: dict) -> None:
             for key in (f"vs_baseline_top10_at_{label}", f"vs_delta_top10_at_{label}"):
                 metrics[key] = None
                 unavailable[key] = (
-                    "not_applicable_to_job_type: this experiment declares no "
+                    "not_configured: this experiment declares no "
                     "screening library. Run scripts/screen-library.py against "
                     "one and set screening_baseline_results to its output."
+                )
+        return
+
+    # A declared baseline that has not been run yet is not a broken config: the
+    # screen is a separate step and this job may legitimately run first. It
+    # records a categorized null naming the command, rather than crashing a
+    # generate job over a baseline it does not itself produce. A file that
+    # exists and cannot be parsed still raises, because that is corruption.
+    if not Path(path).exists():
+        for label in _budget.BUDGETS:
+            for key in (f"vs_baseline_top10_at_{label}", f"vs_delta_top10_at_{label}"):
+                metrics[key] = None
+                unavailable[key] = (
+                    f"not_configured: this experiment declares "
+                    f"screening_baseline_results: {path}, which has not been "
+                    "written yet. Run `python scripts/screen-library.py "
+                    "<this job dir> --library <library.smi>`; it is a random "
+                    "draw plus surrogate calls at milliseconds each, so it "
+                    "needs no allocation."
                 )
         return
 
@@ -1580,8 +1733,19 @@ def _screening_baseline(constants, metrics: dict, unavailable: dict) -> None:
         ) from error
 
     baseline = payload.get("metrics", {})
-    metrics["screening_library"] = payload.get("run", {}).get("library")
-    metrics["screening_library_size"] = payload.get("run", {}).get("library_size")
+    run = payload.get("run", {})
+    metrics["screening_library"] = run.get("library")
+    metrics["screening_library_size"] = run.get("library_size")
+    # Two supporting fields that decide how the comparison reads. The library is
+    # usually the surrogate's own training data, so the screen is scored
+    # in-sample while the generator is scored out-of-sample, which biases the
+    # margin against the generator by an amount nobody had measured. And where
+    # the library is smaller than the budget the screen is exhaustive rather
+    # than matched, which is a different baseline under the same name.
+    metrics["screening_surrogate_training_overlap"] = run.get(
+        "surrogate_training_overlap"
+    )
+    metrics["screening_exhaustive"] = run.get("exhaustive")
     for label in _budget.BUDGETS:
         key = f"vs_baseline_top10_at_{label}"
         entry = baseline.get(key)
@@ -1667,7 +1831,7 @@ def _surrogate_pair_metrics(
     if not oracle_spec:
         metrics["eval_oracle_top10_mean"] = None
         unavailable["eval_oracle_top10_mean"] = (
-            "not_applicable_to_job_type: this experiment declares no "
+            "not_configured: this experiment declares no "
             "evaluation surrogate. Set `evaluation_oracle` to the pickle that "
             "surrogate_<program>_evaluation produced; it is never the reward, "
             "so it is a separate key from anything in `oracles:`."
@@ -1678,7 +1842,14 @@ def _surrogate_pair_metrics(
 
             oracle = OracleFactory.create("evaluation", oracle_spec)
             metrics.update(evaluation_surrogate_metrics(top10, oracle))
-        except (BaselineMissing, Exception) as error:  # noqa: B014
+        except (BaselineMissing, FileNotFoundError, ImportError) as error:
+            # A genuinely absent artifact or dependency. Everything else
+            # propagates: this used to catch bare Exception, so an
+            # `evaluation_oracle` block with no `output:` -- which defaults to
+            # `proba` and calls predict_proba on a RandomForestRegressor --
+            # recorded the key as a missing optional tool, and the exploitation
+            # detector reported its own misconfiguration as an absent
+            # dependency. A configuration error is not a missing tool.
             metrics["eval_oracle_top10_mean"] = None
             unavailable["eval_oracle_top10_mean"] = (
                 f"optional_tool_missing: the evaluation surrogate at "
@@ -1691,7 +1862,7 @@ def _surrogate_pair_metrics(
     if not surrogate_smiles:
         metrics["top100_outside_domain_rate"] = None
         unavailable["top100_outside_domain_rate"] = (
-            "not_applicable_to_job_type: this experiment declares no "
+            "not_configured: this experiment declares no "
             "`surrogate_training_set`, which is the set the OPTIMIZATION "
             "surrogate was fitted on, not the generative model's training "
             "split."

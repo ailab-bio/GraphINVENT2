@@ -397,6 +397,32 @@ def main() -> int:
                 rho = float(spearmanr(truth, predictions).statistic)
             except Exception:
                 rho = float("nan")
+            # Two R^2 values, against two different baselines, because the
+            # verdict below and sklearn's r2_score used to disagree silently.
+            # r2_score measures variance explained against the TEST mean, which
+            # no model at fit time can know; the kill criterion is stated
+            # against the mean-prediction baseline, which is the TRAINING mean.
+            # On the SMARCA2 fit these differ by 0.075, so naming one "the"
+            # held-out R^2 misreports whichever criterion is being applied.
+            r2_test_mean = float(r2_score(truth, predictions))
+            r2_train_mean = float(1.0 - (rmse**2) / (rmse_baseline**2))
+            # A bootstrap interval, because the decision to spend a whole
+            # optimization allocation rested on a point estimate from fewer
+            # than fifty held-out rows. Resampling the residual pairs gives the
+            # sampling spread of the margin; it does NOT correct for the same
+            # compound appearing in several rows, which would need a clustered
+            # resample over compounds and is the stronger check to run.
+            boot_rng = np.random.default_rng(args.seed)
+            margins = []
+            n_test = len(truth)
+            for _ in range(2000):
+                pick = boot_rng.integers(0, n_test, n_test)
+                boot_rmse = float(
+                    np.sqrt(np.mean((truth[pick] - predictions[pick]) ** 2))
+                )
+                boot_base = float(np.sqrt(np.mean((truth[pick] - baseline[pick]) ** 2)))
+                margins.append(boot_base - boot_rmse)
+            lo, hi = (float(v) for v in np.percentile(margins, [2.5, 97.5]))
             print(
                 f"  RMSE    : {rmse:.3f}   (mean-prediction baseline "
                 f"{rmse_baseline:.3f})",
@@ -404,15 +430,24 @@ def main() -> int:
             )
             print(f"  Spearman: {rho:.3f}", flush=True)
             print(
-                f"  beats the mean-prediction baseline: "
-                f"{'YES' if rmse < rmse_baseline else 'NO'}",
+                f"  margin over baseline: {rmse_baseline - rmse:.3f} "
+                f"[95% bootstrap {lo:.3f}, {hi:.3f}] on n = {n_test} held-out rows",
                 flush=True,
             )
             print(
-                f"  R^2     : {r2_score(labels[test_idx], predictions):.3f}", flush=True
+                f"  beats the mean-prediction baseline: "
+                f"{'YES' if rmse < rmse_baseline else 'NO'}"
+                f"{'' if lo > 0 else '  (interval includes zero)'}",
+                flush=True,
             )
             print(
-                f"  MAE     : {mean_absolute_error(labels[test_idx], predictions):.3f}",
+                f"  R^2     : {r2_train_mean:.3f} against the mean-prediction "
+                f"baseline (the stated kill criterion); {r2_test_mean:.3f} "
+                "against the test mean (sklearn r2_score)",
+                flush=True,
+            )
+            print(
+                f"  MAE     : {mean_absolute_error(truth, predictions):.3f}",
                 flush=True,
             )
     else:
@@ -457,17 +492,46 @@ def main() -> int:
 
     oracle_type = "proba" if is_classification else "predict"
     print(f"* Wrote {args.output}", flush=True)
+    if is_classification:
+        transform_advice = (
+            "A classifier's probability is already a desirability in [0, 1], so "
+            "no transform is needed."
+        )
+        transform_block = ""
+    else:
+        # The advice used to omit the transform, and this text is copied
+        # verbatim into the fit log and from there into the oracle block, so
+        # the omission propagated: with no transform the identity clamps every
+        # prediction into [0, 1] and a label scale above 1.0 collapses the
+        # reward to a constant. The bounds printed here are this fit's own
+        # label range, as a starting point, not a recommendation.
+        low, high = float(np.min(labels)), float(np.max(labels))
+        transform_advice = (
+            "THE TRANSFORM IS REQUIRED for a regression output and the oracle "
+            "raises without one: the raw value is not a desirability, and the "
+            f"identity transform clamps to [0, 1] while this fit's labels span "
+            f"{low:.2f} to {high:.2f}. Choose low and high on the label scale "
+            "as a modeling decision and state them in the write-up; the "
+            "bounds below are this fit's label range, not advice. Then "
+            "re-derive success_threshold on the transformed [0, 1] scale, "
+            "because success_rate compares the transformed composite."
+        )
+        transform_block = (
+            f'      "transform": {{"type": "clipped_linear", '
+            f'"low": {low:.1f}, "high": {high:.1f}}},\n'
+        )
     print(
         "\nUse it by adding this to the 'oracles' block of a goal_directed config:\n"
         f'  "{args.output.stem}": {{\n'
         f'      "type": "sklearn",\n'
         f'      "path": "{args.output}",\n'
         f'      "output": "{oracle_type}",\n'
+        f"{transform_block}"
         f'      "direction": "maximize"\n'
         "  }\n"
         "and naming it in 'score_components'. The featurization is stored in "
         "the pickle and the oracle reads it, so there is nothing to keep in "
-        "sync by hand.",
+        f"sync by hand.\n\n{transform_advice}",
         flush=True,
     )
     return 0

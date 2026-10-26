@@ -98,9 +98,32 @@ def main() -> int:
             if numeric:
                 values = [v for _, v in numeric]
                 block["mean"] = statistics.fmean(values)
-                # Population standard deviation: these are the seeds we ran,
-                # not a sample from a larger pool of seeds.
-                block["std"] = statistics.pstdev(values) if len(values) > 1 else 0.0
+                # SAMPLE standard deviation, and null rather than zero for a
+                # single run. This was pstdev with a 0.0 fallback, and both
+                # halves misreported the intervals the paper decides on.
+                #
+                # A zero-width interval is not a measured spread, and the
+                # stated decision rule -- a winner where intervals do not
+                # overlap -- marks a winner on every comparison against one.
+                # Each goal-directed experiment currently holds exactly one
+                # rl_* job, so every reported optimization interval came from
+                # this branch; the three generate_best_agent_seed* jobs resample
+                # one checkpoint and carry no optimization variance at all.
+                #
+                # And the three seeds are a sample from the seed distribution,
+                # not the population: pstdev understates the sample SD by 22%
+                # at n = 3, which makes the non-overlap rule anti-conservative
+                # (about p = 0.12 per comparison rather than 0.07).
+                if len(values) > 1:
+                    block["std"] = statistics.stdev(values)
+                    block["std_kind"] = "sample (statistics.stdev)"
+                else:
+                    block["std"] = None
+                    block["std_unavailable"] = (
+                        f"one run in this group ({[j for _, j, _ in entries]}); "
+                        "a spread needs at least two, and 0.0 would read as a "
+                        "measured zero spread and win every overlap comparison"
+                    )
             job_block["metrics"][key] = block
         aggregate[base] = job_block
 
@@ -186,9 +209,16 @@ def _render(experiment: str, aggregate: dict) -> str:
             n = f"{cell['n_with_value']}"
             if cell["n_null"]:
                 n += f" <span class='note'>({cell['n_null']} null)</span>"
+            # A single-run group has no spread, and the cell says so rather
+            # than printing 0.0000, which reads as a measured zero.
+            std = (
+                f"{cell['std']:.4f}"
+                if cell["std"] is not None
+                else "<span class='null'>one run</span>"
+            )
             parts.append(
                 f"<tr><td>{_html.escape(key)}</td><td>{cell['mean']:.4f}</td>"
-                f"<td>{cell['std']:.4f}</td><td>{n}</td></tr>"
+                f"<td>{std}</td><td>{n}</td></tr>"
             )
         parts.append("</table>")
     parts.append("</body></html>")

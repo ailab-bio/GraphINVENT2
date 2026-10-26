@@ -1,6 +1,6 @@
 # SMARCA2 pDC50 surrogate
 
-*Last updated: October 19th, 2026.*
+*Last updated: October 26th, 2026.*
 
 The reward for `experiments/protac_goal_directed`. Refit 2026-10-19 after three
 defects in the trainer were corrected; the numbers below supersede anything
@@ -37,13 +37,50 @@ bifunctional corpus, 194 train against 47 test with no warhead scaffold shared.
 | | surrogate | mean-prediction baseline |
 |---|---|---|
 | RMSE | **0.488** | 0.639 |
-| R² | 0.342 | 0.0 by construction |
+| margin over baseline | **0.151** [95% bootstrap 0.017, 0.287] | |
+| R² against the mean-prediction baseline | **0.416** | 0.0 by construction |
+| R² against the test mean (`r2_score`) | 0.342 | |
 | Spearman | 0.567 | undefined |
 | MAE | 0.386 | |
 
-**It beats the baseline, so the goal-directed arm is not killed.** A Spearman of
-0.567 on warhead-disjoint held-out compounds is real ranking signal rather than
-memorization of a congeneric series.
+**It beats the baseline, so the goal-directed arm is not killed** — but by a
+margin whose lower bound nearly touches zero, and the bar it clears is not the
+one that matters. Three qualifications, added 2026-10-26 after the trainer
+learned to report an interval and two R² values:
+
+**The two R² values are against different baselines and were conflated.** The
+kill criterion is stated against the mean-prediction baseline, which is the
+*training* mean, because that is the only mean a model has at fit time; sklearn's
+`r2_score` measures variance explained against the *test* mean, which nothing
+could have known. They differ by 0.074 here, and the 0.342 quoted in earlier
+versions of this file and in the manuscript is the second one under the first
+one's name.
+
+**The margin's interval nearly includes zero.** Resampling the 47 held-out
+residuals 2,000 times puts the RMSE margin at 0.151 with a 95% interval of
+[0.017, 0.287]. The interval is not clustered by compound — 47 rows cover fewer
+than 47 compounds — so the true interval is wider than this one. A whole
+optimization allocation rests on a margin whose lower bound is 0.017 log units.
+
+**That lower bound is far inside the label's own noise.** The pooled
+within-compound, across-cell-line SD of this endpoint is **0.405 log units** (55
+compounds with more than one row), and across the raw TPDdb table 49% of
+repeated (compound, target) measurements differ by more than 0.5 log. So the
+entire margin of 0.151 log is smaller than the assay-to-assay variability of the
+quantity being predicted, and R² should be read against the achievable ceiling
+that noise implies: against a total label SD of 0.851 on this table, an
+irreducible 0.405 caps R² at **0.774**, not at 1.0. Measured on the committed
+label file, reproducible in one pass over it. A Spearman of 0.567 on
+warhead-disjoint compounds is still
+real ranking signal; it is ranking signal measured against a noisy ruler.
+
+**Still outstanding, and each needs a run rather than an edit.** There is no
+cross-validation: one 80/20 split at one seed, so the ensemble-disagreement
+reward-hacking detector `CLAUDE.md` specifies has no folds to disagree, and any
+"standard deviation over seeds" for this panel has no referent. The three
+configurations tabulated below were compared across *different* test sets, so
+their R² values are not comparable to each other. Refit at 5–10 split seeds and
+add grouped k-fold over warhead scaffolds.
 
 What it does not license. The absolute RMSE is half a log unit, so this ranks
 candidates and does not predict potency. Degradation depends on ternary-complex

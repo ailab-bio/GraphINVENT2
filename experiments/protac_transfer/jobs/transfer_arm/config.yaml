@@ -23,3 +23,11 @@ slurm:
   time: "47:00:00"
   memory: 38G
   gpus: 1
+
+# THE FROM-SCRATCH CONTROL for this arm. Two things read it and neither worked
+# without it: `epochs_to_match`, which is the transfer claim's whole content --
+# the control's final validation loss, reached in fewer epochs -- and the
+# training figure's overlaid control curve, which is the only way one figure
+# can show that claim. The figure's own guard, that equal first-epoch losses
+# would mean the checkpoint was not loaded, also cannot fire without it.
+control_job_dir: experiments/protac_transfer/jobs/scratch_control

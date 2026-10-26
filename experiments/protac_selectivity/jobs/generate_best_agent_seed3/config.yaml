@@ -5,7 +5,13 @@
 # Identical to generate_best_agent/config.yaml except for the seed.
 job_type: generate
 sample_mode: generate
-pretrained_model_path: experiments/protac_selectivity/jobs/rl_selectivity/checkpoints/best_agent.pth
+# Loads SEED 3's OWN best agent, not seed 1's. All three of these jobs used
+# to load the single rl job's checkpoint, so the three "seeds" resampled one
+# optimization run and the interval Table 4 reports carried no optimization
+# variance at all -- while its caption said it did. The duplicate-seed guard in
+# aggregate-seeds.py does not catch this, because the seeds differ and only the
+# checkpoint was shared.
+pretrained_model_path: experiments/protac_selectivity/jobs/rl_selectivity_seed3/checkpoints/best_agent.pth
 n_samples: 10000
 batch_size: 500
 device: cuda

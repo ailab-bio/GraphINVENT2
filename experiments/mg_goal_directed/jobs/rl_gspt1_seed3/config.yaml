@@ -1,0 +1,81 @@
+# SEED 3 OF 3. In a goal_directed job the seed controls the OPTIMIZATION
+# TRAJECTORY itself, not a resampling of a finished checkpoint, so the three
+# seeds have to be three separate training runs: whether they converge on the
+# same chemistry is a result rather than noise to average away, and in
+# policy-gradient RL against a cheap oracle that variance is the dominant term.
+#
+# This experiment held exactly one rl_* job while Table 4's caption claimed its
+# intervals "include optimization variance" and three generate jobs all loaded
+# the one best_agent.pth, so every reported interval was a resampling of a
+# single run. `scripts/aggregate-seeds.py` groups on the _seed<N> suffix and
+# now reports no interval at all for a one-run group, rather than 0.0.
+#
+# Identical to rl_gspt1/config.yaml except for the seed and the screening
+# baseline path, which is per job because the screen is scored per trajectory.
+job_type: goal_directed
+pretrained_model_path: experiments/mg_transfer/jobs/transfer_arm/checkpoints/model_restart_20.pth
+rl_steps: 200
+rl_best_agent_every: 5
+rl_eval_every: 5
+rl_batch_size: 256
+accumulation_steps: 1
+n_samples: 2000
+# sigma 20 for an activity-like objective, per CLAUDE.md.
+sigma: 20
+alpha: 0.5
+score_components: ["gspt1_selectivity_activity"]
+score_type: continuous
+oracles:
+  gspt1_selectivity_activity:
+    type: sklearn
+    path: data/surrogates/mg_gspt1_classifier_oracle.pickle
+success_threshold: 0.7
+success_definition: "one-versus-rest classifier probability >= 0.7 for degrades-GSPT1-rather-than-another-neosubstrate, over unique valid molecules. This is a chemotype-selectivity criterion and NOT a potency criterion."
+# The per-step trajectory -- validity, uniqueness, novelty and internal
+# diversity at every evaluation step -- is written to TensorBoard and nowhere
+# else now that logs/generation.log is gone. The diversity-collapse figure is
+# drawn from it, so this must stay true for any run that is reported.
+use_tensorboard: true
+device: cuda
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   200 steps x 256 molecules x 2 (agent and best-agent); +41 evaluation rounds
+#   = 3.10 h x 1.5 -> 5 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
+slurm:
+  time: "05:00:00"
+  memory: 19G
+  gpus: 1
+
+# THE BUDGET IS THE STOPPING RULE for this campaign. Reinforcement learning can
+# be run indefinitely and the extra steps buy less and less, so we do not train
+# to convergence and we do not early-stop on a plateau: the run stops at a
+# fixed number of oracle calls and the comparison is made at 1,000, 5,000 and
+# 10,000. Those three are nested points on ONE trajectory, reached by
+# checkpointing as the counter crosses each, which is what a budget curve means
+# and costs one run instead of three. An oracle call is one unique molecule
+# scored by the COMPLETE surrogate set, not one per component.
+oracle_budget: 10000
+checkpoint_oracle_counts: [1000, 5000]
+
+# THE VIRTUAL SCREENING BASELINE, which `vs_delta_top10_at_*` is computed from
+# and which is this campaign's only claim of having beaten the naive
+# alternative. Declared here so the requirement is visible: the key was set in
+# no real job, so `_screening_baseline` took its early-return branch and wrote
+# six explicit nulls in every run while the provenance table marked those rows
+# ready.
+#
+# The file does not exist until the screen is run, and until then these keys
+# record a categorized null naming the command rather than failing the job:
+#   python scripts/screen-library.py experiments/mg_goal_directed/jobs/rl_gspt1_seed3 --library <library.smi>
+# It is a uniform random draw plus surrogate calls at milliseconds each, so it
+# needs no allocation. The library is at minimum a matched-size random sample
+# from this dataset's train and validation splits; the screen reports what
+# fraction of it the surrogate was fitted on, because that fraction is scored
+# in-sample while the generator is scored out-of-sample.
+screening_baseline_results: experiments/mg_goal_directed/jobs/rl_gspt1_seed3/results/screening_train.json
+seed: 3

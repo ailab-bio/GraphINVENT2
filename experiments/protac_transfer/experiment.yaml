@@ -12,6 +12,10 @@ max_n_nodes: 108
 # Bifunctional: RetroTAC scores the whole PROTAC, SA score scores the warheads,
 # and quality_filtered_top10_mean gates on RetroTAC.
 bifunctional: true
+# The bifunctional triage stack: structural alerts, then RetroTAC >= 0.30 on the
+# whole molecule, then sa_score < 4.5 on the decomposed warhead. Named rather
+# than derived from the boolean above, and the two are cross-checked.
+triage_stack: bifunctional
 
 # Seeds 1, 2, 3 and NOT 0, 1, 2: main.py guards seeding on `seed > 0`, so seed 0
 # is never applied. Verified: two seed-0 generate runs produced different

@@ -182,6 +182,80 @@ def test_a_transposed_property_order_is_refused(workspace):
     assert "pLogS" in message and "MW" in message
 
 
+def test_a_conditional_dataset_warm_starts_from_an_unconditional_checkpoint(
+    workspace,
+):
+    """
+    The case that blocked all three conditional experiments.
+
+    Every one of them resumes from its program's unconditional prior, which the
+    starting-convention table requires, while `condition_dim` is fixed by the
+    dataset. The guard read that pair as an architecture conflict and raised,
+    so no conditional model could be trained as configured. It is a warm start:
+    the conditional model is a strict superset of the unconditional one.
+    """
+    conditioning = {"properties": ["is_ar", "is_btk"], "source": "smiles_file"}
+    dataset = _dataset(workspace, condition_dim=2, conditioning=conditioning)
+    checkpoint = _checkpoint(workspace, condition_dim=0)
+    job = _generate_job(workspace, dataset, checkpoint, {"is_ar": 1.0, "is_btk": 0.0})
+
+    resolved = _resolve(job)
+
+    # The dataset's conditioning survives, and the warm start is recorded
+    # rather than inferred downstream.
+    assert resolved.condition_dim == 2
+    assert resolved.conditioning["properties"] == ["is_ar", "is_btk"]
+    assert resolved.conditional_warm_start is True
+
+
+def test_two_disagreeing_conditionings_are_still_refused(workspace):
+    """
+    The direction that remains an error, and the reason it has to.
+
+    Slot i of this dataset's condition vector is not slot i of the one the
+    checkpoint was trained on, so the condition means something different on
+    each side and no shape, count or checksum differs.
+    """
+    source = {"source": "smiles_file"}
+    dataset = _dataset(
+        workspace,
+        condition_dim=2,
+        conditioning={"properties": ["is_ar", "is_btk"], **source},
+    )
+    checkpoint = _checkpoint(
+        workspace,
+        condition_dim=2,
+        conditioning={"properties": ["is_kras", "is_smarca2"], **source},
+    )
+    job = _generate_job(workspace, dataset, checkpoint, {"is_ar": 1.0, "is_btk": 0.0})
+    # The property-order guard reaches it first, which is the sharper message.
+    with pytest.raises(ValueError) as caught:
+        _resolve(job)
+    message = " ".join(str(caught.value).split())
+    assert "is_ar" in message and "is_kras" in message
+
+
+def test_a_conditional_checkpoint_is_not_a_warm_start_for_a_wider_dataset(workspace):
+    """
+    Three classes into a two-class checkpoint is not a warm start either: the
+    existing condition columns already carry a meaning the new panel changes.
+    """
+    source = {"source": "smiles_file"}
+    dataset = _dataset(
+        workspace,
+        condition_dim=3,
+        conditioning={"properties": ["is_ar", "is_btk", "is_kras"], **source},
+    )
+    checkpoint = _checkpoint(
+        workspace,
+        condition_dim=2,
+        conditioning={"properties": ["is_ar", "is_btk"], **source},
+    )
+    job = _generate_job(workspace, dataset, checkpoint)
+    with pytest.raises(ValueError):
+        _resolve(job)
+
+
 def test_the_same_order_is_accepted(workspace):
     """The control. A guard that rejects everything is not a guard."""
     conditioning = {"properties": ["pLogS", "MW"], "source": "smiles_file"}

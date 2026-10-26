@@ -1,6 +1,10 @@
 dataset_dir: tpddb_protac
 max_n_nodes: 108
 bifunctional: true
+# The bifunctional triage stack: structural alerts, then RetroTAC >= 0.30 on the
+# whole molecule, then sa_score < 4.5 on the decomposed warhead. Named rather
+# than derived from the boolean above, and the two are cross-checked.
+triage_stack: bifunctional
 seed: 1
 slurm:
   account: naiss2024-5-630-gpu
@@ -27,9 +31,18 @@ property_window:
 # strictly more data than the one that rewarded them. It is never the reward,
 # so it is not in `oracles:`. A large gap against top10_mean_at_10k, when the
 # two agree on held-out real molecules, is evidence of exploitation.
+# `output` and `transform` match the optimization oracle's, on the pDC50 scale:
+# a gap between two differently scaled scores measures the scaling, and with
+# `output` unset the default `proba` calls predict_proba on a regressor.
 evaluation_oracle:
   type: sklearn
   path: experiments/surrogate_protac_optimization/smarca2/evaluation.pickle
+  output: predict
+  direction: maximize
+  transform:
+    type: clipped_linear
+    low: 5.0
+    high: 10.0
 # The set the OPTIMIZATION surrogate was fitted on, for
 # top100_outside_domain_rate. Not the generative model's training split.
 surrogate_training_set: data/surrogates/smarca2_pdc50.tsv

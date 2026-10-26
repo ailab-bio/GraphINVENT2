@@ -114,10 +114,12 @@ class SklearnOracle(BaseOracle):
         ``predict_proba(X)[:, 1]``, the positive-class probability.  Use for a
         binary activity classifier.
     ``"predict"``
-        ``predict(X)``, for a regressor reporting pIC50, logS, or similar.  Pair
-        it with a transform, since the raw value is not a desirability.
+        ``predict(X)``, for a regressor reporting pIC50, logS, or similar.  A
+        transform is **required**, since the raw value is not a desirability;
+        omitting it raises.
     ``"decision"``
         ``decision_function(X)``, for an SVM without calibrated probabilities.
+        A transform is required here too.
 
     Uncertainty is available when the estimator is an ensemble exposing
     ``estimators_`` (random forest, extra trees, bagging): the spread of the
@@ -195,6 +197,28 @@ class SklearnOracle(BaseOracle):
             raise ValueError(
                 f"Unknown output '{output}' for oracle '{name}'. "
                 "Choose from: proba, predict, decision."
+            )
+
+        # `predict` and `decision` report an unbounded native quantity, and the
+        # default identity transform clamps it to [0, 1]. For a regressor whose
+        # labels sit above 1.0 -- pDC50 spans 5.94 to 10.05 on the SMARCA2 set
+        # -- every prediction clamps to exactly 1.0, the augmented likelihood
+        # adds a constant, and the BAR loss expresses no preference between
+        # molecules: the campaign optimizes nothing and reports
+        # quality_filtered_top10_mean as 1.0 and success_rate as 0.0. That is
+        # indistinguishable from a healthy run in the metrics, so it is refused
+        # here rather than discovered afterward.
+        if output in ("predict", "decision") and not transform:
+            raise ValueError(
+                f"Oracle '{name}' sets output: {output}, which reports the "
+                "model's own unbounded value, and declares no transform.\n"
+                "The identity transform clamps to [0, 1], so a regression "
+                "target on any other scale collapses to a constant score and "
+                "the reward carries no gradient.\n"
+                "Declare a transform in the oracle block, e.g.\n"
+                "  transform: {type: clipped_linear, low: 5.0, high: 10.0}\n"
+                "with low and high on this model's own output scale. The "
+                "bounds are a modeling decision and belong in the write-up."
             )
 
     def _raw_predict(self, features: np.ndarray) -> np.ndarray:

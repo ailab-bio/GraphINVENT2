@@ -35,9 +35,22 @@ is question 3 in the report.**
 
 ## Jobs
 
-`preprocess_conditional` then `train`, then the four generate jobs, which may run in any order.
-`generate_unconditional` samples the same model with no condition set and is the baseline every categorical
-metric is reported against.
+`preprocess_conditional` then `train`, then the generate jobs, which may run in any order.
+
+`generate_panel` (plus `_seed2`, `_seed3`) is the job that produces this experiment's reported numbers.
+It samples with `sample_conditions: all_classes`, which cycles the one-hot across batches, and so is the
+only job that can produce the macro-averaged categorical metrics CLAUDE.md defines. The per-class
+`generate_<class>` jobs remain for their `_<class>` breakdown; `categorical_block` refuses to emit a bare
+macro-average name from a job that sampled one class, because a one-class value under the panel's name is
+not the panel's number.
+
+`generate_unconditional` samples the same model with every class set to zero. **It cannot emit a
+categorical metric itself**, and it is not the baseline those metrics are reported against: with an
+all-zeros condition there is no requested label to group molecules by, so every categorical key in that
+job is a categorized null. Its role is to supply the sample that the per-class jobs' `baseline_posthoc_`
+baseline reranks, which is why `generate_panel` points `baseline_results_dir` at its `molecules.smi`. The
+two baselines that make the claim falsifiable are `baseline_lookup_` (the retrieval ceiling, drawn from
+the training split and needing no configuration) and `baseline_posthoc_`.
 
 ## Submit
 
@@ -64,7 +77,7 @@ metric is reported against.
 
 ## Core metrics come from
 
-`generate_ar`, `generate_btk`, `generate_egfr`, with `generate_unconditional` as the baseline.
+`generate_panel` and its two seed siblings, for every macro-averaged key. `generate_ar`, `generate_btk` and `generate_egfr` for the per-class breakdown only. The baselines are `baseline_lookup_` and `baseline_posthoc_`, the second built from `generate_unconditional`'s sample.
 
 ## Failure mode
 

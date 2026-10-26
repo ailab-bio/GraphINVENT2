@@ -146,7 +146,58 @@ def main() -> int:
     parser.add_argument(
         "--output", type=Path, default=REPO_ROOT / "data/datasets/battslm"
     )
+    # THE ACTIVE HOLDOUT, which nothing implemented. Where a prior and its
+    # downstream experiments share one corpus the prior's training set is
+    # whatever remains after every downstream holdout is removed, and that
+    # bites battery and only battery: the conditional labels come from
+    # Batt-P30K, which is a SUBSET of Batt-SLM -- 29,513 of 29,519 Batt-P30K
+    # molecules are in it -- so without this subtraction the conditional model
+    # resumes from a prior trained on its own test split and, in CLAUDE.md's
+    # own words, every conditional number is contaminated.
+    #
+    # It is also the other direction of the rediscovery problem: 403 of the 409
+    # known battery solvents in KBS-409.csv are in this corpus, 229 of the 235
+    # non-fluorinated ones, so a funnel whose survivors match the published
+    # candidates demonstrates memorization unless they are held out.
+    #
+    # The decision is required rather than defaulted: one of these two flags
+    # must be given, so a contaminated corpus can only be built on purpose and
+    # the choice lands in PROVENANCE.json either way.
+    parser.add_argument(
+        "--subtract",
+        type=Path,
+        nargs="+",
+        metavar="SMILES",
+        help=(
+            "SMILES files whose molecules are removed from the corpus: the "
+            "conditional split's test molecules, and the rediscovery holdout. "
+            "Build the conditional split set FIRST, then pass its test.smi "
+            "here, which is the order CLAUDE.md specifies."
+        ),
+    )
+    parser.add_argument(
+        "--no-subtract",
+        action="store_true",
+        help=(
+            "Build with no holdout subtraction, accepting that any downstream "
+            "conditional or rediscovery number from this corpus is "
+            "contaminated. Recorded in PROVENANCE.json."
+        ),
+    )
     args = parser.parse_args()
+
+    if bool(args.subtract) == bool(args.no_subtract):
+        print(
+            "Pass either --subtract with the files to hold out, or "
+            "--no-subtract to accept a contaminated corpus.\n"
+            "Batt-P30K is a subset of Batt-SLM (29,513 of 29,519 molecules), "
+            "so a prior built from this corpus without subtraction has been "
+            "trained on the conditional experiment's test split, and 403 of "
+            "the 409 known solvents in KBS-409 are in it as well. There is no "
+            "default that is right for both cases, so neither is assumed.",
+            file=sys.stderr,
+        )
+        return 1
 
     if not args.raw.exists():
         print(
@@ -221,6 +272,34 @@ def main() -> int:
     else:
         print("    every molecule satisfies every criterion", flush=True)
 
+    # The holdout subtraction, by canonical SMILES on both sides, because a
+    # match on the raw string would miss every molecule written differently
+    # upstream.
+    subtracted: dict = {}
+    for path in args.subtract or ():
+        if not path.exists():
+            print(f"{path} does not exist.", file=sys.stderr)
+            return 1
+        removed = 0
+        for candidate in read_smiles(path):
+            mol = Chem.MolFromSmiles(candidate)
+            if mol is None:
+                continue
+            if kept.pop(Chem.MolToSmiles(mol), None) is not None:
+                removed += 1
+        subtracted[str(path)] = removed
+    if subtracted:
+        print("* Active holdout", flush=True)
+        for path, removed in subtracted.items():
+            print(f"    {removed:7} molecules removed, from {path}", flush=True)
+    elif args.no_subtract:
+        print(
+            "* Active holdout: NONE, by --no-subtract. Any conditional or "
+            "rediscovery number from a model trained on this corpus is "
+            "contaminated and must say so.",
+            flush=True,
+        )
+
     ordered = sorted(kept.items(), key=lambda kv: (kv[1], kv[0]))
     args.output.mkdir(parents=True, exist_ok=True)
     destination = args.output / f"{args.output.name}.smi"
@@ -256,12 +335,33 @@ def main() -> int:
             "enforced": sorted(ENFORCED_CRITERIA),
             "violations": dict(sorted(violations.items())),
         },
+        # Whether the downstream holdouts were subtracted, and how many
+        # molecules each one removed. A reader of any conditional or
+        # rediscovery number from this corpus needs this row to interpret it.
+        "active_holdout": {
+            "applied": bool(subtracted),
+            "removed_per_file": subtracted,
+            "n_removed": sum(subtracted.values()),
+            "note": (
+                "Batt-P30K is a subset of Batt-SLM, so without this "
+                "subtraction the conditional model resumes from a prior "
+                "trained on its own test split; and 403 of the 409 known "
+                "solvents in KBS-409 are in the corpus, so an unsubtracted "
+                "rediscovery result is a memorization result."
+            ),
+        },
         "summary": {
             "heavy_atoms_min": ordered[0][1],
             "heavy_atoms_max": ordered[-1][1],
         },
         "regenerate_with": (
-            f"python scripts/battslm-create-dataset.py --output {args.output}/"
+            "python scripts/battslm-create-dataset.py "
+            + (
+                "--subtract " + " ".join(str(p) for p in args.subtract)
+                if args.subtract
+                else "--no-subtract"
+            )
+            + f" --output {args.output}/"
         ),
     }
     with open(args.output / "PROVENANCE.json", "w") as handle:

@@ -9,6 +9,20 @@
 dataset_dir: battp30k
 max_n_nodes: 16
 bifunctional: false
+# The battery solvent triage stack: no_fluorine, permittivity < 10.0, then
+# chelation propensity index < 0.5. Declared because the stack used to be
+# selected on `bifunctional`, a boolean with no third value, so these
+# experiments silently ran the DRUG-LIKE stack -- whose MCF/PAINS alerts reject
+# 7 of the 15 reference solvents in this program's own validation set (DMF, DEF,
+# the formates and the whole acyclic formal/acetal family the campaign searches
+# for) and 18.9% of the Batt-SLM corpus -- while none of the campaign's own
+# gates ran. There is no alert stage here: the published funnel has none either,
+# and an extra stage would make our counts un-comparable to the published ones,
+# which is the comparison this program's claim rests on. The last two stages are
+# not implemented, so every `_filtered` key here is a categorized null naming
+# what is missing. That is the correct state: a fabricated number is worse than
+# an absent one.
+triage_stack: battery_solvent
 seed: 1
 slurm:
   account: naiss2024-5-630-gpu

@@ -270,8 +270,21 @@ def compute_core_metrics(
             if scored
             else 0.0
         )
+        # The threshold and the denominator, as supporting fields. The rate is
+        # a step function of the cut and the cut is calibrated for drug-like
+        # space: leave-one-out on the committed degrader corpus gives a median
+        # maximum ECFP4 Tanimoto of 0.905 with 50-55% above 0.9, against 0%
+        # for ZINC250k and 0% for Batt-SLM. So a model that reproduces the
+        # degrader training distribution perfectly reports about 0.55 here,
+        # and the number is unreadable across programs without the cut beside
+        # it. The per-corpus leave-one-out line is the baseline to plot it
+        # against and is not computed here.
+        results["near_duplicate_rate_threshold"] = NEAR_DUPLICATE_THRESHOLD
+        results["near_duplicate_rate_n_scored"] = len(scored)
     else:
         results["near_duplicate_rate"] = None
+        results["near_duplicate_rate_threshold"] = NEAR_DUPLICATE_THRESHOLD
+        results["near_duplicate_rate_n_scored"] = 0
 
     # internal_diversity: mean pairwise Tanimoto distance over unique valid.
     if n_unique_valid >= 2:

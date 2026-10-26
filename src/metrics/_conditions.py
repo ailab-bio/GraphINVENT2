@@ -485,6 +485,19 @@ def categorical_block(
     k_keys = sorted(
         {k for row in per_class.values() for k in row if k.startswith("knn_purity_")}
     )
+    # THE MACRO-AVERAGE NEEDS THE WHOLE PANEL, and a job that sampled one class
+    # cannot produce one. `_macro` averages over the classes that returned a
+    # number, so a single-class job emitted that one class's value under the
+    # panel's bare name -- `class_selectivity_margin` reading as the panel
+    # macro-average when it was the AR number alone. Every one of the nine
+    # per-class jobs did exactly that, and nothing in the output distinguished
+    # it from a real panel average.
+    #
+    # The bare names are therefore emitted only when every class was sampled.
+    # The `_<class>` keys are emitted either way, because a per-class job's
+    # per-class numbers are correct and are what it exists to produce.
+    sampled = [name for name, row in per_class.items() if row["n_unique_valid"]]
+    whole_panel = len(sampled) == len(class_names)
     for key in (
         "class_match_median",
         "class_match_rate",
@@ -492,12 +505,24 @@ def categorical_block(
         "novelty",
         *k_keys,
     ):
-        metrics[key] = _macro(per_class, key)
-        if metrics[key] is None:
+        if whole_panel:
+            metrics[key] = _macro(per_class, key)
+            if metrics[key] is None:
+                unavailable[key] = (
+                    "insufficient_sample: no class in the panel produced a "
+                    f"value for {key}; every class needs at least one valid "
+                    "molecule and training molecules carrying its label"
+                )
+        else:
+            metrics[key] = None
             unavailable[key] = (
-                "insufficient_sample: no class in the panel produced a value "
-                f"for {key}; every class needs at least one valid molecule and "
-                "training molecules carrying its label"
+                f"not_configured: {key} is defined as the macro-average over "
+                f"the panel {list(class_names)}, and this job sampled only "
+                f"{sampled}. A one-class value under the panel's name is not "
+                "the panel's number. Run a job with "
+                "`sample_conditions: all_classes`, which cycles the one-hot "
+                f"across batches; the per-class {key}_<class> keys below are "
+                "this job's own result and are unaffected."
             )
         for name, row in per_class.items():
             metrics[f"{key}_{name}"] = row.get(key)

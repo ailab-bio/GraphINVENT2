@@ -46,6 +46,17 @@ CONDITION_TYPES = ("virtual_node",)
 # file are implemented.
 CONDITION_SOURCES = ("smiles_file",)
 
+# Which triage stack a dataset's `_filtered` metrics are computed through.
+# This was a boolean -- `bifunctional`, with no third value -- so a battery
+# experiment, which sets bifunctional: false, silently ran the drug-like stack:
+# MCF/PAINS alerts plus sa_score < 4.5. Measured on 2,000 Batt-SLM molecules
+# that stack rejects 26.3% of the real training corpus and four of the fifteen
+# reference solvents (DMF, DEF, methyl and ethyl formate, and the whole acyclic
+# formal/acetal family, which is the chemistry the campaign searches for),
+# while none of the campaign's own gates ran at all. A behavior-selecting value
+# must never fall through to a default, so the stack is named.
+TRIAGE_STACKS = ("drug_like", "bifunctional", "battery_solvent")
+
 # Keys that describe the model's shape. When a checkpoint is loaded they come
 # from the job that produced it; a conflicting value in the config is an error.
 ARCH_KEYS = (
@@ -312,6 +323,31 @@ def _validate(params: dict, config_path: Path) -> None:
             "evaluate computes NLL and UC-JSD."
         )
 
+    # Checked for every job type, like sample_mode and for the same reason: the
+    # value is inherited from the experiment layer in every real job, so a
+    # check that only ran where the key is set would run on the rare path.
+    if params.get("triage_stack") not in TRIAGE_STACKS:
+        raise ValueError(
+            f"{config_path} sets triage_stack: {params.get('triage_stack')!r}, "
+            "which is not a triage stack.\n"
+            f"Valid values: {', '.join(TRIAGE_STACKS)}.\n"
+            "drug_like is structural alerts then sa_score < 4.5; bifunctional "
+            "moves the SA gate to the decomposed warhead and gates the whole "
+            "molecule on RetroTAC; battery_solvent is the solvent property "
+            "funnel."
+        )
+    # The two keys describe the same dataset and a disagreement between them
+    # means one of the two metric families is computed for the wrong chemistry.
+    if bool(params.get("bifunctional")) != (params["triage_stack"] == "bifunctional"):
+        raise ValueError(
+            f"{config_path} sets bifunctional: {params.get('bifunctional')!r} "
+            f"with triage_stack: {params['triage_stack']!r}.\n"
+            "A bifunctional dataset takes the bifunctional stack and no other "
+            "stack applies to one: whole-molecule SA score reads a PROTAC's "
+            "size as difficulty, and the warhead gate needs the decomposition "
+            "that `bifunctional` turns on."
+        )
+
     if params.get("condition_type") not in CONDITION_TYPES:
         raise ValueError(
             f"condition_type: {params.get('condition_type')} is not an "
@@ -540,29 +576,69 @@ def _apply_checkpoint_architecture(params: dict, explicit: dict) -> None:
         )
 
     produced_by = _read_yaml(source)
+
+    # THE CONDITIONAL WARM START. A conditional dataset resumed from an
+    # unconditional checkpoint used to raise here, which blocked all three
+    # conditional experiments: every one of them resumes from its program's
+    # unconditional prior, as CLAUDE.md's starting-convention table requires,
+    # while `condition_dim` is fixed by the dataset. Both rules are right and
+    # the guard made them contradictory.
+    #
+    # The resolution is that this one direction is a legitimate warm start
+    # rather than an architecture conflict, because the conditional model is a
+    # strict superset of the unconditional one. The virtual-edge message
+    # network already exists in an unconditional checkpoint -- the message nets
+    # are built as `range(n_edge_features + 1)` whether or not conditioning is
+    # on, and the extra one simply goes unused -- so the only genuinely new
+    # parameters are the condition encoder and the trailing condition columns
+    # of the three readout layers the condition embedding is concatenated into.
+    #
+    # `util.load_saved_model` loads the shared weights, zeroes those new
+    # columns and zeroes the virtual-edge net's output layer, so the
+    # warm-started model begins function-identical to the prior and learns the
+    # conditioning from zero. That is reported rather than inferred, and the
+    # opposite direction -- a conditional checkpoint into a different
+    # conditioning -- still raises, because the condition vector would then
+    # mean something other than what the checkpoint was trained on.
+    checkpoint_is_unconditional = not produced_by.get("condition_dim")
+    job_is_conditional = bool(explicit.get("condition_dim"))
+    warm_start = checkpoint_is_unconditional and job_is_conditional
+    # The keys the conditional architecture owns in a warm start. Everything
+    # else still comes from the checkpoint, because everything else must match
+    # for the shared weights to load at all.
+    conditional_keys = (
+        "condition_dim",
+        "condition_embedding_dim",
+        "condition_type",
+        "conditioning",
+    )
+
     for key in ARCH_KEYS:
         if key not in produced_by:
+            continue
+        if warm_start and key in conditional_keys:
+            # Keep this job's value: the dataset defines it and the checkpoint
+            # has nothing to say about it.
             continue
         if key in explicit and explicit[key] != produced_by[key]:
             # condition_dim and conditioning are properties of the DATASET,
             # recorded in its preprocessing.yaml, so "remove the key from
             # config.yaml" is not advice anyone can follow: the value is not in
-            # config.yaml. A conditional dataset resumed from an unconditional
-            # checkpoint is the case that reaches this, and it needs a
-            # different answer, not a shorter config.
+            # config.yaml.
             if key in ("condition_dim", "conditioning"):
                 raise ValueError(
                     f"This job's dataset was preprocessed with {key}: "
                     f"{explicit[key]}, but the checkpoint {checkpoint} was "
                     f"trained with {key}: {produced_by[key]}.\n"
-                    "A conditional model cannot be initialized from an "
-                    "unconditional checkpoint: the condition encoder and the "
-                    "virtual-edge message network do not exist in it, and "
-                    "condition_dim is fixed by the dataset rather than by "
-                    "this config.\n"
-                    "Either drop resume_from and train this model from "
-                    "scratch, or point resume_from at a checkpoint trained on "
-                    "a dataset with the same conditioning."
+                    "Both are conditional and they disagree, so the condition "
+                    "vector does not mean the same thing on both sides: slot "
+                    "i of this dataset's vector is not slot i of the one the "
+                    "checkpoint was trained on, and nothing in the shapes "
+                    "would reveal it.\n"
+                    "Point resume_from at a checkpoint trained on a dataset "
+                    "with the same conditioning, or drop resume_from. "
+                    "Resuming from an UNCONDITIONAL checkpoint is supported "
+                    "and is handled as a warm start."
                 )
             raise ValueError(
                 f"config.yaml sets {key}: {explicit[key]}, but the checkpoint "
@@ -571,6 +647,21 @@ def _apply_checkpoint_architecture(params: dict, explicit: dict) -> None:
                 "from config.yaml."
             )
         params[key] = produced_by[key]
+
+    params["conditional_warm_start"] = warm_start
+    if warm_start:
+        print(
+            f"* Conditional warm start from the unconditional checkpoint "
+            f"{checkpoint}.\n"
+            f"  condition_dim {params['condition_dim']} and "
+            f"condition_embedding_dim {params['condition_embedding_dim']} come "
+            "from this dataset; every other architecture key comes from the "
+            "checkpoint.\n"
+            "  The condition encoder is initialized fresh, and the condition's "
+            "two pathways into the model start at zero, so the model begins "
+            "equivalent to the prior.",
+            flush=True,
+        )
 
 
 def _resolve_device(params: dict) -> None:
@@ -941,6 +1032,30 @@ def _check_dataset_mapping_matches_checkpoint(params: dict) -> None:
     )
 
 
+def _set_conditional_warm_start(params: dict) -> None:
+    """
+    Record whether this job loads an unconditional checkpoint into a
+    conditional model, which `util.load_saved_model` needs to know.
+
+    Set here rather than in `_apply_checkpoint_architecture`, where the guard
+    itself lives, because `condition_dim` is a property of the DATASET: a job
+    that inherits it from `preprocessing.yaml` has no such key in any config
+    layer, so the value is only certain once `_load_dataset_features` has run.
+    The guard had to relax in the other place and the flag has to be set here,
+    and reading it from the wrong one would silently mean "strict load" for
+    exactly the jobs that inherit their conditioning, which is the normal case.
+    """
+    checkpoint = params.get("pretrained_model_path") or params.get("resume_from")
+    if not checkpoint or not params.get("condition_dim"):
+        params["conditional_warm_start"] = False
+        return
+    source = checkpoint_config_path(checkpoint)
+    if not source.exists():
+        params["conditional_warm_start"] = False
+        return
+    params["conditional_warm_start"] = not _read_yaml(source).get("condition_dim")
+
+
 def _check_requested_classes_exist(params: dict) -> None:
     """
     Every class named in `sample_conditions` must be in the panel.
@@ -1007,6 +1122,7 @@ def derive(params: dict) -> namedtuple:
         _check_dataset_features_match_checkpoint(params)
         _check_dataset_mapping_matches_checkpoint(params)
         _check_requested_classes_exist(params)
+        _set_conditional_warm_start(params)
 
     bondtype_to_int = {BondType.SINGLE: 0, BondType.DOUBLE: 1, BondType.TRIPLE: 2}
     if params["use_aromatic_bonds"]:

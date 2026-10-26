@@ -13,13 +13,19 @@ sigma: 20
 alpha: 0.5
 score_components: ["smarca2_pdc50_activity"]
 score_type: continuous
-oracles:
-  smarca2_pdc50_activity:
-    type: sklearn
-    path: data/surrogates/protac_pdc50_smarca2_oracle.pickle
-# Set here and never inherited: 6.0 is 1 uM on the pDC50 scale.
-success_threshold: 6.0
-success_definition: "predicted pDC50 >= 6.0 (DC50 <= 1 uM) from the optimization surrogate, over unique valid molecules"
+# The oracle block is inherited from experiment.yaml and is not restated here.
+# It used to be, with `path` overridden to
+# data/surrogates/protac_pdc50_smarca2_oracle.pickle, which does not exist --
+# config layers merge key by key with the job winning, so the job could not
+# start, and the performance quoted in experiment.yaml described a different
+# artifact from the one this job would have loaded.
+#
+# Set here and never inherited. success_rate compares the TRANSFORMED composite
+# score, so the threshold is on the [0, 1] scale the oracle's clipped_linear
+# transform produces, not on the pDC50 scale: with low 5.0 and high 10.0,
+# pDC50 6.0 maps to 0.2.
+success_threshold: 0.2
+success_definition: "transformed optimization-surrogate score >= 0.2, which is predicted pDC50 >= 6.0 (DC50 <= 1 uM) under the clipped_linear transform from 5.0 to 10.0 declared in experiment.yaml, over unique valid molecules"
 # The per-step trajectory -- validity, uniqueness, novelty and internal
 # diversity at every evaluation step -- is written to TensorBoard and nowhere
 # else now that logs/generation.log is gone. The diversity-collapse figure is
@@ -50,3 +56,20 @@ slurm:
 # scored by the COMPLETE surrogate set, not one per component.
 oracle_budget: 10000
 checkpoint_oracle_counts: [1000, 5000]
+
+# THE VIRTUAL SCREENING BASELINE, which `vs_delta_top10_at_*` is computed from
+# and which is this campaign's only claim of having beaten the naive
+# alternative. Declared here so the requirement is visible: the key was set in
+# no real job, so `_screening_baseline` took its early-return branch and wrote
+# six explicit nulls in every run while the provenance table marked those rows
+# ready.
+#
+# The file does not exist until the screen is run, and until then these keys
+# record a categorized null naming the command rather than failing the job:
+#   python scripts/screen-library.py experiments/protac_goal_directed/jobs/rl_smarca2 --library <library.smi>
+# It is a uniform random draw plus surrogate calls at milliseconds each, so it
+# needs no allocation. The library is at minimum a matched-size random sample
+# from this dataset's train and validation splits; the screen reports what
+# fraction of it the surrogate was fitted on, because that fraction is scored
+# in-sample while the generator is scored out-of-sample.
+screening_baseline_results: experiments/protac_goal_directed/jobs/rl_smarca2/results/screening_train.json

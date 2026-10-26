@@ -258,6 +258,15 @@ success_definition: null
 # vs_delta_top10_at_* comparison; left unset, both report as unavailable.
 screening_baseline_results: null
 
+# molecules.smi of the UNCONDITIONAL sample this conditional job's post-hoc
+# baseline reranks. CLAUDE.md calls baseline_posthoc_ the one baseline that can
+# falsify the conditional claim -- if an unconditional model plus a one-line
+# reranking reaches the same class_selectivity_margin, the conditioning bought
+# nothing -- and the key was set in two smoke tests and no real job, so those
+# keys were an explicit null everywhere and the conditional numbers could be
+# reported but not falsified. Left unset, they still report as unavailable.
+baseline_results_dir: null
+
 # --- generation and evaluation ---------------------------------------------
 
 # "generate" writes molecules and metrics; "evaluate" computes NLL and UC-JSD
@@ -276,6 +285,24 @@ sample_mode: generate
 # SA score is reported either way, and for a bifunctional dataset it is also
 # the right measure for the decomposed warheads, where molecules are drug-sized.
 bifunctional: false
+
+# Which triage stack the `_filtered` metrics are computed through. Named rather
+# than derived from `bifunctional`, because that boolean has no third value and
+# a battery experiment therefore ran the drug-like stack in silence: MCF/PAINS
+# alerts reject DMF, DEF, the formates and the whole acyclic formal/acetal
+# family, which is the chemotype the solvent campaign searches for, and 26.3%
+# of the Batt-SLM training corpus. Validated against the implemented set, and
+# cross-checked against `bifunctional`, which must agree with it.
+#   drug_like       -> structural_alerts, then sa_score < 4.5
+#   bifunctional    -> structural_alerts, retrotac >= 0.30 on the whole
+#                      molecule, then sa_score < 4.5 on the decomposed warhead
+#   battery_solvent -> no_fluorine, dielectric_constant < 10.0, then
+#                      chelation_propensity cpi < 0.5. No alert stage: the
+#                      published funnel has none, and MCF/PAINS reject 7 of the
+#                      15 reference solvents. The last two stages are not
+#                      implemented and record categorized nulls; see
+#                      src/metrics/_filters.py for what each needs.
+triage_stack: drug_like
 
 # property_window_rate: the fraction of unique valid molecules whose every
 # named property falls inside its window. Each experiment sets its own bounds

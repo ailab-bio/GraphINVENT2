@@ -253,6 +253,163 @@ def test_virtual_edge_mlp_is_unused_without_conditioning():
     assert model.condition_encoder is None
 
 
+class TestConditionalWarmStart:
+    """
+    Loading an unconditional checkpoint into a conditional model.
+
+    All three conditional experiments resume from their program's unconditional
+    prior, which the architecture-key guard used to refuse outright, so no
+    conditional model could be trained as configured. A conditional model is a
+    strict superset of the unconditional one, so the load is possible; what
+    makes it a *warm start* rather than a partial load is that the condition's
+    two pathways into the model start at zero, so the model begins computing
+    exactly what the prior computed. Without that, the conditional experiment
+    would be measuring a different initialization as well as conditioning.
+    """
+
+    def _warm_started(self, condition_dim=3):
+        import util
+
+        prior = _model(condition_dim=0)
+        conditional = _model(condition_dim=condition_dim)
+        util._warm_start_conditional(conditional, prior.state_dict())
+        conditional.eval()
+        return prior, conditional
+
+    def test_the_shared_weights_are_the_prior_s(self):
+        prior, conditional = self._warm_started()
+        prior_state = prior.state_dict()
+        shared = 0
+        for name, tensor in conditional.state_dict().items():
+            if name not in prior_state or name.startswith("msg_nns.3."):
+                continue
+            source = prior_state[name]
+            if source.shape == tensor.shape:
+                assert torch.equal(tensor, source), name
+                shared += 1
+        assert shared > 10
+
+    def test_the_new_condition_columns_are_zero_not_random(self):
+        _, conditional = self._warm_started()
+        width = conditional.condition_embedding_dim
+        assert width > 0
+        for net in ("fAddNet2", "fConnNet2", "fTermNet2"):
+            weight = getattr(conditional.ActionProbReadout, net).seq[0].weight
+            assert torch.all(weight[:, -width:] == 0.0), net
+            # The pretrained columns are not zero, so this is a warm start and
+            # not a reinitialized layer.
+            assert torch.any(weight[:, :-width] != 0.0), net
+
+    def test_the_untrained_virtual_edge_net_is_zeroed(self):
+        """
+        The virtual-edge message net exists in an unconditional checkpoint,
+        carrying its initialization because nothing ever trained it. Loading
+        those weights would inject noise into every real node from step one.
+        """
+        _, conditional = self._warm_started()
+        virtual = conditional.msg_nns[conditional.constants.n_edge_features]
+        output = virtual.seq[len(virtual.seq) - 1]
+        assert torch.all(output.weight == 0.0)
+        assert torch.all(output.bias == 0.0)
+
+    def test_the_warm_started_model_computes_what_the_prior_computed(self):
+        """
+        The whole point. Message aggregation is a sum and the seed is stripped
+        before readout, so a zeroed condition pathway contributes nothing and
+        the logits must match the prior's to numerical tolerance -- for ANY
+        condition vector, including one the model will later learn from.
+        """
+        prior, conditional = self._warm_started()
+        nodes, edges = _but_1_en_3_yne_batch(prior.constants)
+
+        with torch.no_grad():
+            expected = prior(nodes, edges)
+            for condition in (
+                torch.zeros(1, 3),
+                torch.tensor([[1.0, 0.0, 0.0]]),
+                torch.tensor([[0.0, 0.0, 1.0]]),
+                torch.tensor([[5.0, -3.0, 2.0]]),
+            ):
+                actual = conditional(nodes, edges, condition_vector=condition)
+                assert torch.allclose(actual, expected, atol=1e-5), condition
+
+    def test_the_condition_still_learns(self):
+        """
+        Starting at zero must not mean staying at zero.
+
+        The zeroed columns do receive gradient on the very first backward pass,
+        because the gradient of a weight is its input times the upstream
+        gradient and the condition embedding is not zero. The *encoder* does
+        not: the gradient reaching it is the zeroed weight transposed times the
+        upstream gradient, which is zero on both of its pathways. So the
+        encoder is dead for exactly one step and alive from the second, once
+        the readout columns have moved off zero -- the same mechanism a
+        zero-initialized adapter relies on. Both halves are asserted, because
+        "dead for one step" and "dead forever" differ by one optimizer step and
+        nothing else would distinguish them.
+        """
+        _, conditional = self._warm_started()
+        conditional.train()
+        nodes, edges = _but_1_en_3_yne_batch(conditional.constants)
+        condition = torch.tensor([[1.0, 0.0, 0.0]])
+        width = conditional.condition_embedding_dim
+
+        conditional(nodes, edges, condition_vector=condition).sum().backward()
+
+        # Step one: the readout's condition columns move, the encoder does not.
+        for net in ("fAddNet2", "fConnNet2", "fTermNet2"):
+            grad = getattr(conditional.ActionProbReadout, net).seq[0].weight.grad
+            assert torch.any(grad[:, -width:] != 0.0), net
+        assert all(
+            torch.all(p.grad == 0.0) for p in conditional.condition_encoder.parameters()
+        )
+
+        optimizer = torch.optim.SGD(conditional.parameters(), lr=0.1)
+        optimizer.step()
+        optimizer.zero_grad()
+
+        # Step two: the pathway is open, so the encoder learns.
+        conditional(nodes, edges, condition_vector=condition).sum().backward()
+        for name, parameter in conditional.condition_encoder.named_parameters():
+            assert parameter.grad is not None, name
+            assert torch.any(parameter.grad != 0.0), f"condition_encoder.{name}"
+
+    def test_the_model_stops_matching_the_prior_once_it_has_trained(self):
+        """
+        The equality above is an initialization property, not a permanent one.
+        If it survived training, the conditioning would be frozen.
+        """
+        prior, conditional = self._warm_started()
+        nodes, edges = _but_1_en_3_yne_batch(prior.constants)
+        condition = torch.tensor([[1.0, 0.0, 0.0]])
+
+        conditional.train()
+        optimizer = torch.optim.SGD(conditional.parameters(), lr=0.1)
+        for _ in range(3):
+            optimizer.zero_grad()
+            conditional(nodes, edges, condition_vector=condition).sum().backward()
+            optimizer.step()
+
+        conditional.eval()
+        with torch.no_grad():
+            assert not torch.allclose(
+                conditional(nodes, edges, condition_vector=condition),
+                prior(nodes, edges),
+                atol=1e-5,
+            )
+
+    def test_a_mismatch_that_is_not_the_conditioning_still_fails(self):
+        import util
+
+        prior = _model(condition_dim=0)
+        state = prior.state_dict()
+        name = "gru.weight_ih"
+        state[name] = state[name][:, :-1].clone()
+        with pytest.raises(ValueError) as raised:
+            util._warm_start_conditional(_model(condition_dim=3), state)
+        assert name in str(raised.value)
+
+
 @pytest.mark.parametrize("batch_size", [1, 3])
 def test_condition_vector_dtype_and_batch(batch_size):
     model = _model(condition_dim=2)

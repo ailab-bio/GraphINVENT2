@@ -36,6 +36,15 @@ whose failure mode is a plausible wrong number rather than a crash:
   - every molecule counted valid was an open shell: RDKit sanitizes a radical
     without complaint, so 253 of 253 generated molecules with unpaired
     electrons were counted in validity and in every metric downstream of it
+  - the triage stack was selected on a boolean with no third value, so a
+    battery experiment ran the drug-like stack in silence: MCF/PAINS alerts
+    reject DMF, DEF, the formates and the acyclic acetals the solvent campaign
+    searches for, and the campaign's own gates never ran
+  - the bifunctional warhead gate read a dictionary built over the component
+    subsample while triage ran over the full sample, so about 8,000 of 10,000
+    molecules failed the stage for want of an entry and every `_filtered` rate
+    was understated roughly fivefold, with `split_success_rate` healthy beside
+    it so the miss read as a chemistry failure
 """
 
 import sys
@@ -571,6 +580,124 @@ class TestCategoricalBaselinesAreNotTheSample:
         assert metrics["class_match_median"] == 1.0
         assert metrics["novelty"] == 0.0
 
+    def test_a_one_class_job_does_not_report_a_panel_macro_average(self):
+        """
+        Every categorical key is defined as the macro-average over the panel,
+        and `_macro` averages over whatever produced a number -- so a job that
+        pinned one class emitted that class's value under the panel's bare
+        name. All nine per-class jobs in the two conditional experiments did
+        exactly that, and nothing in metrics.json distinguished it from a real
+        panel average. The per-class keys stay, because they are correct.
+        """
+        from metrics._conditions import categorical_block
+
+        training = [s for pool in self.TRAINING.values() for s in pool]
+        metrics, unavailable, _ = categorical_block(
+            self.TRAINING["a"],
+            ["a", "a"],
+            self.PANEL,
+            self.TRAINING,
+            [(self.TRAINING["a"][0], "a"), (self.TRAINING["b"][0], "b")],
+            threshold=0.4,
+            training_smiles=training,
+            isomeric=False,
+        )
+        for key in ("class_match_median", "class_selectivity_margin", "novelty"):
+            assert metrics[key] is None, key
+            assert "macro-average" in unavailable[key], key
+            # Class a was sampled, so its own value is reported.
+            assert metrics[f"{key}_a"] is not None, key
+
+    def test_the_conditional_warhead_keys_discriminate_at_the_component_level(self):
+        """
+        CLAUDE.md defines `warhead_*` as the core AND conditional metrics
+        recomputed over the target-binding component, because a whole-molecule
+        statistic for a PROTAC is dominated by the linker. Only the core half
+        existed, so `class_selectivity_margin` for a degrader panel was a
+        whole-molecule number dominated by shared E3 ligands and PEG linkers --
+        which is why a real degrader clears the 0.4 threshold against a foreign
+        class about 29% of the time. These three keys are the half that can
+        tell a model that learned a class's warhead chemistry from one that
+        learned the shape of a degrader.
+        """
+        from metrics._components import compute_class_warhead_metrics
+
+        training = {
+            "ar": [
+                "CC(=O)Nc1ccc(C#N)c(C(F)(F)F)c1",
+                "CC(C)(O)C(=O)Nc1ccc(C#N)cc1",
+            ],
+            "btk": [
+                "Nc1ncnc2c1c(-c1ccccc1)nn2C1CCCCC1",
+                "Nc1ncnc2c1c(-c1ccc(F)cc1)nn2C1CCCC1",
+            ],
+        }
+
+        def records(warheads):
+            return [
+                {
+                    "split_status": "ok",
+                    "status": "ok",
+                    "warhead": w,
+                    "molecule": w,
+                }
+                for w in warheads
+            ]
+
+        def margin(warhead, requested):
+            row, _ = compute_class_warhead_metrics(
+                records([warhead]),
+                training[requested],
+                n_unique_valid=1,
+                training_warheads_by_label=training,
+                class_match_threshold=0.4,
+                requested_class=requested,
+            )
+            return row
+
+        # An AR-like warhead asked for as AR: positive margin.
+        on_class = margin("CC(=O)Nc1ccc(C#N)c(Cl)c1", "ar")
+        assert on_class["warhead_class_selectivity_margin"] > 0.4
+        assert on_class["warhead_class_match_median"] > 0.4
+        assert on_class["warhead_class_match_rate"] == 1.0
+
+        # A BTK warhead asked for as AR: the margin has to go negative, which
+        # is the direction a whole-molecule comparison cannot reliably show.
+        off_class = margin("Nc1ncnc2c1c(-c1ccccc1)nn2C1CCCCC1", "ar")
+        assert off_class["warhead_class_selectivity_margin"] < -0.5
+        assert off_class["warhead_class_match_rate"] == 0.0
+
+    def test_the_warhead_conditional_keys_are_null_not_absent_without_a_panel(self):
+        """A key that vanishes cannot be told from one that was never defined."""
+        from metrics._components import compute_class_warhead_metrics
+
+        row, _ = compute_class_warhead_metrics(
+            [
+                {
+                    "split_status": "ok",
+                    "status": "ok",
+                    "warhead": "CCO",
+                    "molecule": "CCO",
+                }
+            ],
+            ["CCO"],
+            n_unique_valid=1,
+        )
+        for key in (
+            "warhead_class_match_median",
+            "warhead_class_match_rate",
+            "warhead_class_selectivity_margin",
+        ):
+            assert key in row and row[key] is None, key
+
+    def test_the_whole_panel_does_report_one(self):
+        """The control: the guard must not suppress a legitimate average."""
+        metrics, _ = self._block(
+            self.TRAINING["a"] + self.TRAINING["b"], ["a", "a", "b", "b"]
+        )
+        assert metrics["class_match_median"] is not None
+        assert metrics["class_selectivity_margin"] is not None
+
     def test_a_novel_on_class_sample_is_novel_and_still_matches(self):
         # Chlorinated analogs: the same series, absent from the training set.
         smiles = [
@@ -722,7 +849,7 @@ class TestTriageIsAppliedToTheFilteredSet:
     def test_the_alerting_molecule_is_removed(self):
         from metrics._filters import triage
 
-        kept, rates = triage(self.CLEAN + self.ALERTING)
+        kept, rates = triage(self.CLEAN + self.ALERTING, stack="drug_like")
         assert self.ALERTING[0] not in kept
         assert set(kept) <= set(self.CLEAN)
         assert rates["triage_n_entered"] == 3
@@ -731,7 +858,7 @@ class TestTriageIsAppliedToTheFilteredSet:
     def test_the_stage_rates_denominate_over_what_reached_them(self):
         from metrics._filters import triage
 
-        _, rates = triage(self.CLEAN + self.ALERTING)
+        _, rates = triage(self.CLEAN + self.ALERTING, stack="drug_like")
         # Stage two sees only what stage one passed, never the original three.
         assert rates["structural_alerts_n_reached"] == 3
         assert (
@@ -743,7 +870,7 @@ class TestTriageIsAppliedToTheFilteredSet:
     def test_the_end_to_end_rate_is_the_product_of_the_stages(self):
         from metrics._filters import triage
 
-        kept, rates = triage(self.CLEAN + self.ALERTING)
+        kept, rates = triage(self.CLEAN + self.ALERTING, stack="drug_like")
         product = 1.0
         for stage in rates["triage_stages"]:
             product *= rates[f"{stage}_pass_rate"]
@@ -757,7 +884,10 @@ class TestTriageIsAppliedToTheFilteredSet:
         # rather than passing them by default, which is the direction that
         # matters. A missing input must not become a pass.
         kept, rates = triage(
-            self.CLEAN, bifunctional=True, retrotac_by_smiles={}, warhead_by_smiles={}
+            self.CLEAN,
+            stack="bifunctional",
+            retrotac_by_smiles={},
+            warhead_by_smiles={},
         )
         assert kept == []
         assert rates["triage_stages"] == [
@@ -766,6 +896,41 @@ class TestTriageIsAppliedToTheFilteredSet:
             "warhead_synthesizability",
         ]
         assert rates["retrotac_pass_rate"] == 0.0
+
+    def test_a_battery_dataset_does_not_fall_through_to_the_drug_like_stack(self):
+        from metrics._filters import (
+            TRIAGE_STAGES,
+            MissingStage,
+            passes_filters_smiles,
+            triage,
+        )
+
+        # The chemistry the fall-through rejected: DMF, methyl formate and
+        # dimethoxymethane are reference solvents and leading weakly-solvating
+        # chemotypes, and the drug-like stack's MCF alerts take all three. If
+        # the battery stack ever silently becomes the drug-like one again, this
+        # is the measurement that changes.
+        solvents = ["CN(C)C=O", "COC=O", "COCOC"]
+        assert not any(passes_filters_smiles(smi) for smi in solvents)
+
+        # The battery stack has no alert stage at all -- the published funnel
+        # has none, and MCF/PAINS encode liabilities that mean nothing for a
+        # solvent -- so these three must survive to the property stages.
+        assert "structural_alerts" not in TRIAGE_STAGES["battery_solvent"]
+
+        # The two uncomputable property stages raise rather than being skipped,
+        # so no battery `_filtered` number is ever produced by another stack.
+        with pytest.raises(MissingStage) as raised:
+            triage(solvents + ["CCOCCOCC"], stack="battery_solvent")
+        assert "dielectric_constant" in str(raised.value)
+        assert "chelation_propensity" in str(raised.value)
+
+    def test_an_unknown_stack_raises_and_names_the_implemented_set(self):
+        from metrics._filters import triage
+
+        with pytest.raises(ValueError) as raised:
+            triage(self.CLEAN, stack="solvent")
+        assert "battery_solvent" in str(raised.value)
 
 
 class TestTheEvaluationSampleIsNotChargedToTheBudget:

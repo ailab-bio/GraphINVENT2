@@ -1,0 +1,48 @@
+# THE PANEL JOB: the one that produces the macro-averaged categorical metrics.
+#
+# Every categorical key in CLAUDE.md is defined as the macro-average across the
+# panel, and this experiment had only per-class jobs, each pinning one class.
+# A single-class job's macro-average is that one class, so
+# `class_selectivity_margin` was emitted under the panel's name carrying one
+# class's value; `categorical_block` now refuses to emit the bare names unless
+# every class was sampled, and this job is what satisfies that.
+#
+# `all_classes` cycles the one-hot across generation batches, so one sample
+# covers the panel. The per-class generate_<class> jobs stay: their
+# `_<class>` keys are correct and are what they exist to produce.
+job_type: generate
+sample_mode: generate
+dataset_dir: tpddb_glue_cond
+pretrained_model_path: experiments/mg_conditional/jobs/train/checkpoints/model_restart_20.pth
+n_samples: 10000
+batch_size: 500
+device: cuda
+sample_conditions: all_classes
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   10,000 molecules, scaled to max_nodes 54
+#   = 0.06 h x 1.5 -> 1 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
+slurm:
+  time: "01:00:00"
+  memory: 19G
+  gpus: 1
+# THE POST-HOC BASELINE, which CLAUDE.md calls "the one that can falsify the
+# claim": the unconditional sample reranked per class by similarity to that
+# class's training molecules, cut to the same N. If an unconditional model plus
+# one line of reranking reaches the same class_selectivity_margin, the
+# conditioning bought nothing.
+#
+# The key appeared in two smoke tests and in no real job, so every
+# `baseline_posthoc_*` key was an explicit null in all nine per-class jobs and
+# the conditional numbers could be reported but not falsified.
+#
+# It points at the SAMPLE, not at the metrics: generate_unconditional cannot
+# emit a categorical metric itself -- its all-zeros condition has no requested
+# label, so there is nothing to group by -- and its job here is to supply the
+# molecules this baseline reranks.
+baseline_results_dir: experiments/mg_conditional/jobs/generate_unconditional/results/molecules.smi

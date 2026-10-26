@@ -171,7 +171,7 @@ def compute_property_window_rate(unique_valid_smiles: list, bounds: dict) -> tup
     if not bounds:
         metrics["property_window_rate"] = None
         unavailable["property_window_rate"] = (
-            "not_applicable_to_job_type: no property_window is set for this "
+            "not_configured: no property_window is set for this "
             "experiment, and the rate is undefined without explicit bounds"
         )
         return metrics, unavailable
@@ -206,18 +206,76 @@ def compute_property_window_rate(unique_valid_smiles: list, bounds: dict) -> tup
 
 # The triage stack, in the order it is applied. Named in the output so a
 # reader never has to infer which gates a `_filtered` number passed.
-TRIAGE_STAGES_DRUGLIKE = ("structural_alerts", "synthesizability")
-TRIAGE_STAGES_BIFUNCTIONAL = (
-    "structural_alerts",
-    "retrotac",
-    "warhead_synthesizability",
-)
+TRIAGE_STAGES = {
+    "drug_like": ("structural_alerts", "synthesizability"),
+    "bifunctional": ("structural_alerts", "retrotac", "warhead_synthesizability"),
+    # No structural-alert stage, and that is a deliberate departure from the
+    # stack as first specified. MCF and PAINS encode assay-interference and
+    # mammalian-toxicity liabilities for a compound that will enter an animal,
+    # and they carry no meaning for an electrolyte solvent. Measured here:
+    # they reject 7 of the 15 reference solvents in this program's own
+    # oracle-validation set -- DMF, DEF, methyl and ethyl formate,
+    # dimethoxymethane, diethoxymethane and 1,1-dimethoxyethane -- and 18.9%
+    # of a 2,000-molecule sample of the real Batt-SLM training corpus. MCF7
+    # (`[#6&!H0]=[#8]`) takes the formates and formamides and MCF19
+    # (`[#6&!H0](-&!@[#8])-&!@[#8]`) takes the acyclic acetals, which are the
+    # leading non-fluorinated weakly-solvating chemotype and the chemistry
+    # this campaign searches for.
+    #
+    # The published funnel has no such stage either: its `S_f3` term is an
+    # element exclusion, and its verification stages are permittivity, SA
+    # score, maximum Tanimoto, CPI, then literature and manual checks (SI
+    # section 5). Including an alert stage would make our funnel
+    # un-comparable to the published one, which is the comparison the battery
+    # claim rests on.
+    "battery_solvent": (
+        "no_fluorine",
+        "dielectric_constant",
+        "chelation_propensity",
+    ),
+}
+
+# The two battery property stages that cannot be computed, and why. They are
+# raised rather than skipped, so a battery `_filtered` number is a categorized
+# null and never a number produced by some other dataset's stack.
+#
+# dielectric_constant: the published gate is epsilon < 10 from LF-MLR-DC-200,
+# a linear fit of permittivity against squared dipole moment below 4.0 D with
+# an MLR ensemble above it (SI section 2.5). The architecture is specified and
+# the fitted coefficients appear only in raster Figure S15, so the published
+# stage cannot be reproduced; a refit against the 87 published DC_Pred outputs
+# would be a substituted model and must be reported as one.
+#
+# chelation_propensity: the gate is cpi < 0.5 from the coefficients committed
+# at tools/data/cpi_logistic_coefficients.txt, which are implementable -- but
+# the four features (maximum O/N solvent-accessible surface area and the
+# Boltzmann-weighted counts of 1,3-, 1,4- and 1,5-O pairs) are computed over 50
+# ETKDG conformers with MMFF optimization per molecule, which is seconds to
+# tens of seconds each and does not fit a 60,000-molecule funnel on the laptop
+# path. It needs the same subsample-and-cache treatment the decomposition has.
+_BATTERY_STAGE_BLOCKERS = {
+    "dielectric_constant": (
+        "the epsilon < 10 gate needs LF-MLR-DC-200, whose architecture is in "
+        "SI section 2.5 and whose fitted coefficients are published only in "
+        "raster Figure S15; no substitute model is declared"
+    ),
+    "chelation_propensity": (
+        "the cpi < 0.5 gate needs the four conformer-averaged features behind "
+        "tools/data/cpi_logistic_coefficients.txt, which cost 50 ETKDG "
+        "embeddings and MMFF optimizations per molecule and have no cached "
+        "implementation here"
+    ),
+}
+
+
+class MissingStage(RuntimeError):
+    """A declared triage stage that this code cannot compute."""
 
 
 def triage(
     unique_valid_smiles: list,
     *,
-    bifunctional: bool = False,
+    stack: str,
     retrotac_by_smiles: dict | None = None,
     warhead_by_smiles: dict | None = None,
 ) -> tuple:
@@ -229,11 +287,21 @@ def triage(
     `triage_pass_rate` end to end over the unique valid molecules and
     `triage_stages` naming the stack in order.
 
-    Two stacks, because synthesizability is not one measurement. A drug-like
-    molecule is gated on its own SA score. A bifunctional one cannot be: SA
-    score reads a PROTAC's size as difficulty and rejects chemistry that
-    demonstrably exists, so the whole molecule is gated on RetroTAC and the SA
-    gate moves to the warhead, where the fragment is drug-sized and SA behaves.
+    Three stacks, selected by name from `stack`. It used to be two, selected on
+    the `bifunctional` boolean, which had no third value: a battery experiment
+    sets `bifunctional: false` and so ran the drug-like stack in silence, where
+    MCF/PAINS alerts reject DMF, DEF, the formates and the acyclic acetals the
+    solvent campaign is searching for.
+
+    Synthesizability is not one measurement, which is why the first two stacks
+    differ. A drug-like molecule is gated on its own SA score. A bifunctional
+    one cannot be: SA score reads a PROTAC's size as difficulty and rejects
+    chemistry that demonstrably exists, so the whole molecule is gated on
+    RetroTAC and the SA gate moves to the warhead, where the fragment is
+    drug-sized and SA behaves. The battery stack is not a synthesizability
+    question at all; it is the property funnel the solvent campaign is judged
+    on, and two of its four stages raise `MissingStage` because they cannot be
+    computed -- see `_BATTERY_STAGE_BLOCKERS`.
 
     A molecule with no RetroTAC score or no usable warhead fails that stage
     rather than passing it. The stage rates make that visible: a collapsing
@@ -246,7 +314,13 @@ def triage(
     from ._budget import QUALITY_RETROTAC_MIN, QUALITY_SA_MAX
     from ._properties import sa_score
 
-    stages = TRIAGE_STAGES_BIFUNCTIONAL if bifunctional else TRIAGE_STAGES_DRUGLIKE
+    if stack not in TRIAGE_STAGES:
+        raise ValueError(
+            f"triage_stack: {stack!r} is not a triage stack.\n"
+            f"Valid values: {', '.join(sorted(TRIAGE_STAGES))}."
+        )
+    bifunctional = stack == "bifunctional"
+    stages = TRIAGE_STAGES[stack]
     rates: dict = {"triage_stages": list(stages)}
     kept = [smi for smi in unique_valid_smiles if smi]
     n_entered = len(kept)
@@ -256,9 +330,10 @@ def triage(
         rates[f"{stage}_n_reached"] = reached
         return survivors
 
-    reached = len(kept)
-    survivors = [smi for smi in kept if passes_filters_smiles(smi)]
-    kept = record("structural_alerts", survivors, reached)
+    if "structural_alerts" in stages:
+        reached = len(kept)
+        survivors = [smi for smi in kept if passes_filters_smiles(smi)]
+        kept = record("structural_alerts", survivors, reached)
 
     if bifunctional:
         reached = len(kept)
@@ -281,6 +356,31 @@ def triage(
             if mol is not None and sa_score(mol) < QUALITY_SA_MAX:
                 survivors.append(smi)
         kept = record("warhead_synthesizability", survivors, reached)
+    elif stack == "battery_solvent":
+        # An element-exclusion check, which nothing in src/ implemented: the
+        # campaign is defined as *non*-fluorinated and about 20% of the
+        # Batt-SLM corpus is fluorinated, so with no gate the funnel's own
+        # defining criterion was never applied.
+        reached = len(kept)
+        survivors = []
+        for smi in kept:
+            mol = Chem.MolFromSmiles(smi)
+            if mol is not None and not any(
+                atom.GetSymbol() == "F" for atom in mol.GetAtoms()
+            ):
+                survivors.append(smi)
+        kept = record("no_fluorine", survivors, reached)
+
+        blocked = "; ".join(
+            f"{stage}: {reason}" for stage, reason in _BATTERY_STAGE_BLOCKERS.items()
+        )
+        raise MissingStage(
+            "the battery_solvent triage stack stops after no_fluorine, because "
+            f"{len(_BATTERY_STAGE_BLOCKERS)} of its stages are not "
+            f"implemented -- {blocked}. Every battery `_filtered` metric is "
+            "null until they are, rather than a number produced by another "
+            "dataset's stack."
+        )
     else:
         reached = len(kept)
         survivors = []

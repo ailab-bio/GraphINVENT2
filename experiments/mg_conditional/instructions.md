@@ -42,7 +42,7 @@ generated nothing valid. Positive means a held-out molecule is more likely under
 
 ## Core metrics come from
 
-`generate_ikzf`, `generate_gspt1`, `generate_rbm39`, with `generate_unconditional` as the baseline.
+`generate_panel` and its two seed siblings, for every macro-averaged key: a job that pins one class cannot produce a macro-average over the panel. `generate_ikzf`, `generate_gspt1` and `generate_rbm39` for the per-class breakdown only. The baselines are `baseline_lookup_` (the retrieval ceiling) and `baseline_posthoc_`, built from `generate_unconditional`'s sample; that job cannot emit a categorical metric itself, because an all-zeros condition has no requested label to group by.
 
 ## Failure mode
 
