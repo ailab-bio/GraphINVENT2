@@ -1,0 +1,40 @@
+# SEED 2 OF 3. In a TRAINING job the seed controls the run itself, not a
+# resampling of a finished checkpoint, so three seeds must be three separate
+# training runs. Table 2 reports mean (standard deviation) over seeds 1, 2
+# and 3, and until this job existed the only per-seed jobs in this experiment
+# were generate_scratch_seed2/3, which sampled ONE finished checkpoint three
+# times. The reported interval was therefore sampling noise presented as
+# training noise -- the same defect already fixed in the goal-directed
+# experiments by giving each seed its own rl_* job.
+#
+# What the seed controls in THIS arm: there is no checkpoint to inherit, so it
+# controls weight initialization as well as batch order. That makes it the
+# larger of the two variances, and it is the control that makes
+# transfer_arm_seed2 a result rather than a single run.
+#
+# Identical to scratch_control/config.yaml except for the seed.
+
+job_type: unconditional
+dataset_dir: tpddb_protac
+# No resume_from. This is the control that makes transfer_arm a result.
+# Every other key matches transfer_arm, or the comparison is confounded.
+epochs: 20
+batch_size: 500
+accumulation_steps: 4
+sample_every: 5
+n_samples: 10000
+device: cuda
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   20 epochs x 1,042,294 subgraphs (corpus x train_frac) x 5.16 ms; +5 evaluation rounds; +0.3 h decomposition (2000 molecules x 0.483 s)
+#   = 30.91 h x 1.5 -> 47 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
+slurm:
+  time: "47:00:00"
+  memory: 38G
+  gpus: 1
+seed: 2

@@ -1,0 +1,224 @@
+# Target-symbol normalization for the TPDdb activity tables.
+#
+# WHY THIS FILE EXISTS. POI-grouped cross-validation estimates the error on a
+# target the model has never seen. That estimate is only honest if no molecule
+# measured against a protein appears in the training folds under a different
+# spelling. TPDdb's `Target Symbols` column is free text: the same protein
+# arrives as `AR`, `Androgen receptor`, `AR L702H` and `AR-V7`, and a composite
+# like `KRAS/CRAF` names two proteins at once. Grouping on the raw string would
+# put `SMARCA2` and `SMARCA2;SMARCA4` in different folds, leaking the very
+# target the fold exists to hold out.
+#
+# HOW IT IS USED. `scripts/tpddb-activity-labels.py` maps each raw string to a
+# SET of canonical symbols. `scripts/train-surrogate.py --group-by poi` then
+# forms groups as the CONNECTED COMPONENTS over shared symbols, so a composite
+# lands in the same fold as each of its members. Component sizes are printed,
+# because a composite chain can merge two families into one coarse group and
+# that is a property of the data a reader has to see.
+#
+# CURATION RULES, applied uniformly so the judgment can be audited rather than
+# the output taken on trust:
+#   1. Mutants, isoforms, splice variants and phospho-forms collapse to the
+#      gene. `KRAS G12D` and `KRAS G12C` are KRAS; `AR-V7` is AR; `BRD4 long`
+#      is BRD4. A degrader selective for a mutant is still trained on that
+#      gene's chemistry, so for leakage purposes it is one group.
+#   2. Aliases and trivial names resolve to the HGNC symbol. `BCL-xL` is
+#      BCL2L1, `CK1α` is CSNK1A1, `HER2` is ERBB2, `Tau` is MAPT.
+#   3. Fusions and complexes expand to every protein named. `BCR-ABL` is
+#      {BCR, ABL1}; `14-3-3σ/ERα` is {SFN, ESR1}. Order does not matter:
+#      `14-3-3σ/ERα` and `ERα/14-3-3σ` give the same set.
+#   4. 14-3-3 paralogs are distinguished, since the glue series target
+#      different ones: beta=YWHAB, gamma=YWHAG, zeta=YWHAZ, eta=YWHAH,
+#      sigma=SFN. Only those five appear in these tables.
+#   5. Non-human targets are tagged `non_human`. They are real measurements but
+#      share no chemistry axis with the human panel.
+#   6. `ambiguous` means the protein could not be identified from the string
+#      with confidence. Those rows are EXCLUDED from the pooled table and the
+#      exclusion is printed and recorded in PROVENANCE.json, never silent. A
+#      string absent from this file is a different matter: the builder RAISES,
+#      because it means the map is out of date.
+#
+# Columns: raw <TAB> symbols (semicolon-separated) <TAB> kind <TAB> note
+# `kind` is one of: poi, non_human, ambiguous, unspecified.
+# Built 2026-10-26 from the 88 distinct PROTAC and 88 distinct MG
+# `Target Symbols` values in data/raw/tpddb (MANIFEST retrieved 2026-10-17).
+raw	symbols	kind	note
+.	-	unspecified	TPDdb's placeholder for no recorded target; 5,396 PROTAC and 1,281 MG rows. Carries no target and is dropped.
+# --- Androgen receptor -------------------------------------------------------
+AR	AR	poi
+Androgen receptor	AR	poi	Trivial name for the same protein as AR; the two spellings split one target across 1,567 and 1,554 rows.
+AR L702H	AR	poi	Resistance mutation in the ligand-binding domain.
+AR T878A	AR	poi	Resistance mutation (also written T877A in the older numbering).
+AR L702H and T878A	AR	poi	Double mutant.
+AR-V7	AR	poi	Splice variant lacking the ligand-binding domain; still the AR gene.
+AR/AR-V7	AR	poi	Full-length and splice variant measured together.
+# --- Estrogen receptor -------------------------------------------------------
+ERα	ESR1	poi	Estrogen receptor alpha.
+ER	ESR1	poi	Estrogen receptor; in a degrader corpus this is ESR1, not the endoplasmic reticulum.
+# --- RAS/RAF/MEK -------------------------------------------------------------
+KRAS	KRAS	poi
+KRAS G12D	KRAS	poi
+KRAS G12C	KRAS	poi
+KRAS G12V	KRAS	poi
+KRAS G13D	KRAS	poi
+KRAS/CRAF	KRAS;RAF1	poi	CRAF is RAF1. Expanding both is what merges this with the KRAS and RAF1 groups.
+KRAS/SOS1	KRAS;SOS1	poi
+KRAS G12C/SOS1	KRAS;SOS1	poi
+KRAS-RAF	KRAS;RAF1	poi	RAF unqualified; read as CRAF/RAF1, which is the isoform in the KRAS-RAF glue series.
+SOS1	SOS1	poi
+BRAF	BRAF	poi
+BRAF V600E	BRAF	poi
+MEK1/ARAF	MAP2K1;ARAF	poi	MEK1 is MAP2K1.
+MEK1/BRAF	MAP2K1;BRAF	poi
+MEK1/CRAF	MAP2K1;RAF1	poi
+pERK	MAPK1;MAPK3	ambiguous	Phospho-ERK does not say ERK1 (MAPK3) or ERK2 (MAPK1); both listed but the row is excluded.
+# --- EGFR family -------------------------------------------------------------
+EGFR	EGFR	poi
+EGFR L858R	EGFR	poi
+EGFR L858R/T790M	EGFR	poi
+EGFR L858R/C797S	EGFR	poi
+EGFR L858R/T790M/C797S	EGFR	poi
+EGFR del19/T790M/C797S	EGFR	poi
+EGFR e19d	EGFR	poi	Exon 19 deletion.
+HER2	ERBB2	poi
+HER3	ERBB3	poi
+# --- Kinases -----------------------------------------------------------------
+BTK	BTK	poi
+BTK C481S	BTK	poi	Ibrutinib-resistance mutation.
+BTK (WT)	BTK	poi
+BTK (C481S)	BTK	poi
+IRAK4	IRAK4	poi
+IRAK3	IRAK3	poi
+HPK1	MAP4K1	poi	Hematopoietic progenitor kinase 1.
+HPK2	-	ambiguous	No standard protein is named HPK2; possibly MAP4K2 or a typo for HPK1. 14 rows, excluded rather than guessed.
+Wee1	WEE1	poi
+WEE1	WEE1	poi	Same protein as Wee1; case differs between the PROTAC and MG tables.
+AURKA	AURKA	poi
+CDK2	CDK2	poi
+CDK4	CDK4	poi
+CDK6	CDK6	poi
+CDK7	CDK7	poi
+CDK8	CDK8	poi
+CDK9	CDK9	poi
+CDK12	CDK12	poi
+CCNK	CCNK	poi	Cyclin K.
+CDK12/CCNK	CDK12;CCNK	poi
+CCNK/CDK12	CDK12;CCNK	poi	Same complex, written in the other order; the symbol set makes the two identical.
+FGFR1	FGFR1	poi
+FGFR3	FGFR3	poi
+FLT3	FLT3	poi
+LCK	LCK	poi
+TEC	TEC	poi
+AXL	AXL	poi
+ALK	ALK	poi
+EML4-ALK L1196M/G1202R	ALK;EML4	poi	Fusion oncoprotein; both partners listed so it groups with ALK.
+BCR-ABL	BCR;ABL1	poi	Fusion oncoprotein.
+TGFBR1	TGFBR1	poi
+CAMKK2	CAMKK2	poi
+NEK7	NEK7	poi
+PKCα1	PRKCA	poi	Protein kinase C alpha.
+TrkA	NTRK1	poi
+# --- Phosphatases and metabolic enzymes --------------------------------------
+PTPN1	PTPN1	poi	PTP1B.
+PTPN2	PTPN2	poi	TC-PTP.
+NUDT5	NUDT5	poi
+DPP9	DPP9	poi
+DHFR	DHFR	poi
+G6PD	G6PD	poi
+PARP1	PARP1	poi
+GCase	GBA1	poi	Glucocerebrosidase.
+PDE3A	PDE3A	poi
+PDE6D	PDE6D	poi
+SIRT6	SIRT6	poi
+REV1	REV1	poi
+USP7	USP7	poi
+# --- Chromatin and transcription --------------------------------------------
+SMARCA2	SMARCA2	poi
+SMARCA4	SMARCA4	poi	Reserved for protac_selectivity; a distinct gene from SMARCA2 and a distinct group.
+BRD2	BRD2	poi
+BRD4	BRD4	poi
+BRD4 long	BRD4	poi	Long isoform.
+BRD4 short	BRD4	poi	Short isoform.
+CBP	CREBBP	poi	CREB-binding protein.
+P300	EP300	poi
+KAT2A	KAT2A	poi	GCN5.
+KAT2B	KAT2B	poi	PCAF.
+HDAC1	HDAC1	poi
+HDAC2	HDAC2	poi
+HDAC3	HDAC3	poi
+HDAC8	HDAC8	poi
+HDAC1/HDAC2	HDAC1;HDAC2	poi
+BCL6	BCL6	poi
+MLLT1	MLLT1	poi	ENL.
+MLLT3	MLLT3	poi	AF9.
+WIZ	WIZ	poi
+ZBTB16	ZBTB16	poi
+E2F2	E2F2	poi
+c-Myc	MYC	poi
+p53	TP53	poi
+MDM2	MDM2	poi
+MDMX	MDM4	poi	MDMX is MDM4.
+MDMX/MDM2	MDM4;MDM2	poi
+FXRα	NR1H4	poi	Farnesoid X receptor alpha.
+# --- IKZF family and the glue neo-substrates --------------------------------
+IKZF1	IKZF1	poi
+IKZF2	IKZF2	poi	Helios.
+IKZF3	IKZF3	poi	Aiolos.
+GSPT1	GSPT1	poi	eRF3a.
+VAV1	VAV1	poi	One of the three settled molecular-glue targets.
+GSPT2	GSPT2	poi	A distinct gene from GSPT1; the paralogs are not merged.
+eRF1	ETF1	poi	Distinct from eRF3a/GSPT1.
+RBM39	RBM39	poi
+RBM23	RBM23	poi
+CK1α	CSNK1A1	poi	Casein kinase 1 alpha.
+# --- Apoptosis ---------------------------------------------------------------
+BCL2L1	BCL2L1	poi
+BCL-xL	BCL2L1	poi	Same gene as BCL2L1; three spellings split one target.
+BCL-XL	BCL2L1	poi	Same gene as BCL2L1, differing only in case.
+BCL-2	BCL2	poi	A distinct gene from BCL2L1.
+# --- 14-3-3 scaffolds and their partners ------------------------------------
+14-3-3β	YWHAB	poi	14-3-3 beta.
+14-3-3γ	YWHAG	poi	14-3-3 gamma.
+14-3-3ζ	YWHAZ	poi	14-3-3 zeta.
+14-3-3η	YWHAH	poi	14-3-3 eta.
+14-3-3σ	SFN	poi	14-3-3 sigma is stratifin.
+14-3-3γ/SLP76	YWHAG;LCP2	poi	SLP76 is LCP2.
+14-3-3γ/p65	YWHAG;RELA	poi	p65 is RELA.
+14-3-3σ/CRAF	SFN;RAF1	poi
+14-3-3σ/FOXO1	SFN;FOXO1	poi
+14-3-3σ/ERα	SFN;ESR1	poi
+ERα/14-3-3σ	SFN;ESR1	poi	Same complex in the other order.
+14-3-3ζ/p27	YWHAZ;CDKN1B	poi	p27 is CDKN1B.
+14-3-3ζ/Gab2	YWHAZ;GAB2	poi
+14-3-3ζ/TASK-3	YWHAZ;KCNK9	poi	TASK-3 is KCNK9.
+14-3-3β/CFTR	YWHAB;CFTR	poi
+14-3-3β/ChREBP	YWHAB;MLXIPL	poi	ChREBP is MLXIPL.
+14-3-3η/ERα	YWHAH;ESR1	poi
+# --- Immune and membrane targets --------------------------------------------
+PD-L1	CD274	poi
+PD-1/PD-L1	PDCD1;CD274	poi
+LFA-1	ITGAL;ITGB2	poi	Heterodimer of the alphaL and beta2 integrin chains.
+TLR8	TLR8	poi
+STING	STING1	poi
+LOX-1	OLR1	poi	Lectin-like oxidized LDL receptor 1.
+SLP76	LCP2	poi
+# --- Immunophilins -----------------------------------------------------------
+FKBP12	FKBP1A	poi
+FKBP12.6	FKBP1B	poi	A distinct gene from FKBP12.
+FKBP51	FKBP5	poi
+FKBP52	FKBP4	poi
+# --- Other -------------------------------------------------------------------
+Tau	MAPT	poi
+α-syn	SNCA	poi	Alpha-synuclein.
+β-Catenin	CTNNB1	poi
+TTR	TTR	poi	Transthyretin.
+TAZ	WWTR1	poi	In a glue context TAZ is the Hippo coactivator WWTR1, not tafazzin (TAFAZZIN).
+SMAD4/SMAD3	SMAD4;SMAD3	poi
+p65	RELA	poi
+CRBN	CRBN	poi	Cereblon measured as the degraded protein. It is the recruited ligase in most other rows; here it is the target, so it is a POI group of its own.
+CDC34A/Polyubiquitin-C	CDC34;UBC	poi	CDC34A read as the E2 CDC34 (UBE2R1); Polyubiquitin-C is UBC.
+# --- Non-human ---------------------------------------------------------------
+MERS-CoV N-NTD	MERS-CoV-N	non_human	N-terminal domain of the MERS coronavirus nucleocapsid protein.
+HIV-1 Integrase	HIV1-IN	non_human
+14-3-3-like protein E/PMA2	PLANT-14-3-3E;PLANT-PMA2	non_human	Plant 14-3-3 isoform E with the H+-ATPase PMA2; a Nicotiana/Arabidopsis system.
+HCMV	-	ambiguous	Names the human cytomegalovirus, not a protein. 3 rows, excluded.

@@ -22,14 +22,26 @@
 # The script is written and runnable so the counts reproduce in one command,
 # and so it works unchanged the day a larger glue activity set exists. It is
 # deliberately not named in any goal-directed config.
+# PANEL updated 2026-10-26 to the settled GSPT1/VAV1/CK1a trio from CLAUDE.md;
+# it looped over GSPT1/IKZF1/IKZF3/RBM39, which were chosen on molecule count.
+# All three settled targets sit below the ~100-compound floor, which is why
+# these fits are reported with their denominators and named in no reward.
+#
+# No --cv grouped: a glue has no warhead to group by, and with 30 compounds for
+# the largest target a five-fold grouped k-fold would report five numbers from
+# six molecules each. The single split's denominator is already the finding.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 HERE=experiments/surrogate_mg_optimization
 python scripts/download_data.py --source tpddb
 
-for TARGET in GSPT1 IKZF1 IKZF3 RBM39; do
-  LOWER=$(echo "$TARGET" | tr '[:upper:]' '[:lower:]')
+# The target string must match TPDdb's `Target Symbols` value exactly, and
+# TPDdb writes casein kinase 1 alpha with a Greek alpha. The path slug is
+# separate and ASCII, so no artifact filename carries a non-ASCII character.
+for PAIR in "GSPT1:gspt1" "VAV1:vav1" "CK1α:ck1a"; do
+  TARGET="${PAIR%%:*}"
+  LOWER="${PAIR##*:}"
   for ENDPOINT in pdc50 dmax; do
     python scripts/tpddb-activity-labels.py --modality glue \
         --target "$TARGET" --endpoint "$ENDPOINT" \

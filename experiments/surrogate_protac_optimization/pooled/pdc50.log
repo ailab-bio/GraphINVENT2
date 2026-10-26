@@ -1,0 +1,55 @@
+* Read 1584 rows from data/surrogates/pooled_pdc50.tsv
+  one-hot columns: ['cell_line', 'ligase', 'poi']
+  feature width 2105: 2048 fingerprint (count) + 9 descriptors + 48 indicators
+* random split: 1267 train / 317 test
+* Held-out performance
+  RMSE    : 0.487   (mean-prediction baseline 0.784)
+  Spearman: 0.778
+  margin over baseline: 0.296 [95% bootstrap 0.221, 0.378] over 294 held-out compounds in 317 rows (clustered on compound)
+  beats the mean-prediction baseline: YES
+  R^2     : 0.613 against the mean-prediction baseline (the stated kill criterion); 0.609 against the test mean (sklearn r2_score)
+  MAE     : 0.343
+* Label noise floor: within-(compound, target) SD 0.384 against a total label SD of 0.776, over 315 (compound, target) pairs measured more than once
+  so R^2 for this label is capped at 0.755, not 1.0; read the held-out R^2 against that ceiling
+* 5-fold CV grouped by poi: 18 groups over 1584 rows, largest 344, median 21
+  this estimates the error for a target the model has NEVER seen; for an unseen POI the one-hot column is all zeros, so this estimate is honest and pessimistic
+  fold 1: n=  344  RMSE 0.673 (baseline 0.622)  R^2 -0.172  rho +0.251  (1 groups held out)
+  fold 2: n=  310  RMSE 0.700 (baseline 0.611)  R^2 -0.313  rho -0.112  (2 groups held out)
+  fold 3: n=  308  RMSE 1.011 (baseline 0.905)  R^2 -0.247  rho +0.564  (4 groups held out)
+  fold 4: n=  309  RMSE 0.775 (baseline 0.817)  R^2 +0.102  rho +0.028  (5 groups held out)
+  fold 5: n=  313  RMSE 1.036 (baseline 0.980)  R^2 -0.118  rho +0.025  (6 groups held out)
+  across folds: RMSE 0.839 (0.173)   margin -0.052 (0.058)   R^2 -0.150 (0.159)
+  folds beating the mean-prediction baseline: 1 of 5   <- a fold that does not beat its baseline is a FAILED FIT on that fold and is reported as one, not averaged away
+  against the 0.755 label-noise ceiling, that is -20% of the achievable variance
+  per group, pooled over the folds that held it out:
+    AR                     n=  344  RMSE 0.673  (its own label SD 0.613)
+    EGFR                   n=  300  RMSE 0.669  (its own label SD 0.574)
+    SMARCA2                n=  241  RMSE 1.125  (its own label SD 0.851)
+    BTK                    n=  189  RMSE 0.748  (its own label SD 0.628)
+    SMARCA4                n=  123  RMSE 1.306  (its own label SD 0.690)
+    KRAS                   n=   89  RMSE 0.514  (its own label SD 0.435)
+    IRAK4                  n=   86  RMSE 0.576  (its own label SD 0.524)
+    BCL2L1                 n=   53  RMSE 0.667  (its own label SD 0.431)
+    MAP4K1                 n=   34  RMSE 0.372  (its own label SD 0.377)
+    PTPN2                  n=   21  RMSE 0.443  (its own label SD 0.601)
+    PTPN1                  n=   21  RMSE 1.056  (its own label SD 0.653)
+    LCK                    n=   19  RMSE 0.796  (its own label SD 0.511)
+    BRD4                   n=   18  RMSE 1.528  (its own label SD 1.015)
+    KAT2A                  n=   13  RMSE 1.717  (its own label SD 0.743)
+    PARP1                  n=   12  RMSE 0.307  (its own label SD 0.269)
+    CDK4                   n=   10  RMSE 1.336  (its own label SD 0.878)
+    CDK6                   n=    9  RMSE 1.224  (its own label SD 0.513)
+    IRAK3                  n=    2  RMSE 0.625  (its own label SD 0.213)
+* Wrote experiments/surrogate_protac_optimization/pooled/pdc50.pickle
+
+Use it by adding this to the 'oracles' block of a goal_directed config:
+  "pdc50": {
+      "type": "sklearn",
+      "path": "experiments/surrogate_protac_optimization/pooled/pdc50.pickle",
+      "output": "predict",
+      "transform": {"type": "clipped_linear", "low": 4.6, "high": 10.2},
+      "direction": "maximize"
+  }
+and naming it in 'score_components'. The featurization is stored in the pickle and the oracle reads it, so there is nothing to keep in sync by hand.
+
+THE TRANSFORM IS REQUIRED for a regression output and the oracle raises without one: the raw value is not a desirability, and the identity transform clamps to [0, 1] while this fit's labels span 4.57 to 10.24. Choose low and high on the label scale as a modeling decision and state them in the write-up; the bounds below are this fit's label range, not advice. Then re-derive success_threshold on the transformed [0, 1] scale, because success_rate compares the transformed composite.

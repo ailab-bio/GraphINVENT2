@@ -1,12 +1,17 @@
-# SEED 2 OF 3. CLAUDE.md reports every number as a mean and standard
-# deviation over three seeds, and in a `generate` job the seed controls
-# sampling from a fixed checkpoint, so the three seeds are three jobs against
-# the same checkpoint. `scripts/aggregate-seeds.py` writes the aggregate.
-# Identical to generate_transfer/config.yaml except for the seed.
+# SEED 2 OF 3. The seed here is the TRAINING seed: this job samples the
+# checkpoint that transfer_arm_seed2 produced, not seed 1's checkpoint resampled.
+# Until 2026-10-26 all three of these jobs named one checkpoint, so Table 2's
+# interval was the spread of sampling from a single training run. A seed
+# controls the training run, so the three arms are three training jobs and each
+# sampling job reads the arm that matches it.
+# `scripts/aggregate-seeds.py` groups on the _seed<N> suffix and writes the
+# aggregate.
+# Identical to generate_transfer/config.yaml except for the seed and the
+# checkpoint it reads.
 job_type: generate
 sample_mode: generate
 dataset_dir: tpddb_protac
-pretrained_model_path: experiments/protac_transfer/jobs/transfer_arm/checkpoints/model_restart_20.pth
+pretrained_model_path: experiments/protac_transfer/jobs/transfer_arm_seed2/checkpoints/model_restart_20.pth
 n_samples: 10000
 batch_size: 500
 device: cuda

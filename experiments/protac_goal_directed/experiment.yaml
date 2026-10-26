@@ -41,10 +41,20 @@ property_window:
 # between molecules. `clipped_linear` from 5.0 to 10.0 makes the score linear
 # in pDC50 across the whole label range: 5.0 (DC50 = 10 uM, inactive) scores 0
 # and 10.0 (DC50 = 0.1 nM, beyond what the data resolves) scores 1.
+# THE ARTIFACT NAME. `smarca2/pdc50.pickle` is the fit `fit.sh` writes, one
+# name per (target, endpoint). It replaces `smarca2/optimization.pickle`, the
+# superseded name from the two-surrogate design, and it carries the five
+# warhead-scaffold-grouped cross-validation fold models as well as the
+# full-data fit. Those fold models are what makes the ensemble-disagreement
+# reward-hacking detector a real measurement: their per-molecule spread is
+# disagreement between models fitted on different rows, where the old pickle
+# could only offer the spread across one forest's trees, which all saw the
+# same rows. Held-out numbers and their fold spread are in
+# experiments/surrogate_protac_optimization/smarca2/PERFORMANCE.md.
 oracles:
   smarca2_pdc50_activity:
     type: sklearn
-    path: experiments/surrogate_protac_optimization/smarca2/optimization.pickle
+    path: experiments/surrogate_protac_optimization/smarca2/pdc50.pickle
     output: predict
     direction: maximize
     transform:

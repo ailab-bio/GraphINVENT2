@@ -182,6 +182,25 @@ class SklearnOracle(BaseOracle):
             self._descriptors = spec.get("descriptors") or None
             self._categorical_vocab = spec.get("categorical_vocab") or None
             self._categorical_values = spec.get("categorical_defaults") or None
+            # The cross-validation fold models, when the fit was run with
+            # --cv grouped. These are the reward-hacking detector: models
+            # fitted on DIFFERENT data disagree where the data runs out, which
+            # is the signal CLAUDE.md specifies. The spread across one
+            # forest's trees is not that signal -- every tree saw the same
+            # rows, so its spread measures the bootstrap of a fixed dataset
+            # and is roughly flat wherever the model is confident for the
+            # wrong reason.
+            self._fold_models = list(loaded.get("models") or [])
+            self._cv = loaded.get("cv")
+            for position, fold in enumerate(self._fold_models):
+                if not hasattr(fold, "predict"):
+                    raise ValueError(
+                        f"Pickle at '{path}' holds a 'models' entry whose "
+                        f"element {position} is a {type(fold).__name__} with "
+                        "no predict method. 'models' must be the fitted "
+                        "cross-validation fold estimators, written by "
+                        "scripts/train-surrogate.py --cv grouped."
+                    )
         elif isinstance(loaded, dict):
             if model_key not in loaded:
                 raise KeyError(
@@ -248,8 +267,32 @@ class SklearnOracle(BaseOracle):
 
     @property
     def _sub_estimators(self) -> list:
-        """Component estimators of an ensemble, or an empty list."""
+        """
+        The models whose disagreement is reported, and an empty list if none.
+
+        Cross-validation fold models first, when the pickle has them. They were
+        fitted on different subsets of the data, so where they disagree the
+        prediction depends on which rows the model happened to see -- which is
+        what it means for a molecule to be outside the data, and what RL
+        exploits. The trees of one forest are the fallback: they all saw the
+        same rows, so their spread is the bootstrap variance of a fixed fit and
+        can be small exactly where the model is confidently extrapolating.
+        `uncertainty_source` records which of the two was used, because the two
+        numbers are not comparable and a reader must not average them.
+        """
+        folds = list(getattr(self, "_fold_models", []) or [])
+        if folds:
+            return folds
         return list(getattr(self.model, "estimators_", []) or [])
+
+    @property
+    def uncertainty_source(self) -> str:
+        """Which ensemble the per-molecule spread came from."""
+        if list(getattr(self, "_fold_models", []) or []):
+            return "cv_fold_models"
+        if list(getattr(self.model, "estimators_", []) or []):
+            return "forest_trees"
+        return "none"
 
     @property
     def supports_uncertainty(self) -> bool:
@@ -284,8 +327,21 @@ class SklearnOracle(BaseOracle):
 
         values = [self.invalid_value] * len(smiles)
         uncertainties = [0.0] * len(smiles)
+        # The same feature block `predict` builds. This call used to pass only
+        # the fingerprint settings, so on any pickle this repository's trainer
+        # writes it offered 2048 columns to a model fitted on 2048 + 9
+        # descriptors + the assay indicators, and raised an sklearn
+        # feature-count error the moment uncertainty modulation was switched
+        # on. The two paths must featurize identically or the uncertainty is
+        # not the uncertainty of the score.
         features, valid_idx = _featurize(
-            smiles, self.radius, self.n_bits, self.use_counts
+            smiles,
+            self.radius,
+            self.n_bits,
+            self.use_counts,
+            descriptors=getattr(self, "_descriptors", None),
+            categorical_vocab=getattr(self, "_categorical_vocab", None),
+            categorical_values=getattr(self, "_categorical_values", None),
         )
         if len(valid_idx) == 0:
             return values, uncertainties
@@ -296,12 +352,17 @@ class SklearnOracle(BaseOracle):
                 per_member.append(np.asarray(member.predict_proba(features))[:, 1])
             else:
                 per_member.append(np.asarray(member.predict(features)).ravel())
-        stacked = np.vstack(per_member)
+        stds = np.vstack(per_member).std(axis=0)
 
-        means = stacked.mean(axis=0)
-        stds = stacked.std(axis=0)
-        for position, mean, std in zip(valid_idx, means, stds):
-            values[position] = float(mean)
+        # The VALUE is the wrapped model's own prediction, not the mean over
+        # members. For the trees of one forest the two are the same number, so
+        # this used to be harmless; for cross-validation fold models they are
+        # not, and averaging them would mean that switching uncertainty
+        # modulation on silently changed the reward the policy optimizes. The
+        # spread is what the folds are for; the score stays the full-data fit.
+        predictions = self._raw_predict(features)
+        for position, prediction, std in zip(valid_idx, predictions, stds):
+            values[position] = float(prediction)
             uncertainties[position] = float(std)
         return values, uncertainties
 

@@ -1,0 +1,49 @@
+# SEED 2 OF 3. In a TRAINING job the seed controls the run itself, not a
+# resampling of a finished checkpoint, so three seeds must be three separate
+# training runs. Table 2 reports mean (standard deviation) over seeds 1, 2
+# and 3, and until this job existed the only per-seed jobs in this experiment
+# were generate_transfer_seed2/3, which sampled ONE finished checkpoint three
+# times. The reported interval was therefore sampling noise presented as
+# training noise -- the same defect already fixed in the goal-directed
+# experiments by giving each seed its own rl_* job.
+#
+# What the seed controls in THIS arm: the weights come from the prior, so it
+# controls batch order, dropout and the sampling rounds -- not initialization.
+# The prior is NOT re-seeded; one prior, three fine-tunings. That makes this
+# the variance of the transfer STEP, which is what the transfer claim is about.
+#
+# Identical to transfer_arm/config.yaml except for the seed and
+# control_job_dir. The control is seed-matched on purpose: epochs_to_match and
+# the overlaid control curve are per-seed quantities, and pairing this arm
+# against seed 1's control would mix two sources of variance in one number.
+
+job_type: unconditional
+resume_from: experiments/mg_prior/jobs/prior_zinc/checkpoints/model_restart_40.pth
+epochs: 20
+batch_size: 500
+accumulation_steps: 4
+sample_every: 5
+n_samples: 10000
+device: cuda
+# WALLTIME AND MEMORY DERIVED, NOT MEASURED ON THE CLUSTER. By the
+# RUN.md Part 1 procedure, from the CPU per-unit costs in RUN.md and
+# manuscript/experiment-plan.md, times 1.5, rounded up to the hour:
+#   20 epochs x 99,294 subgraphs (corpus x train_frac) x 1.61 ms; +5 evaluation rounds
+#   = 1.19 h x 1.5 -> 2 h
+# This is a CPU extrapolation. Training will finish well inside it on a
+# GPU; generation gains much less, because it is a sequential
+# autoregressive loop with a Python-level decode. Re-measure on
+# Arrhenius and replace these two numbers with what was observed.
+slurm:
+  time: "02:00:00"
+  memory: 19G
+  gpus: 1
+
+# THE FROM-SCRATCH CONTROL for this arm. Two things read it and neither worked
+# without it: `epochs_to_match`, which is the transfer claim's whole content --
+# the control's final validation loss, reached in fewer epochs -- and the
+# training figure's overlaid control curve, which is the only way one figure
+# can show that claim. The figure's own guard, that equal first-epoch losses
+# would mean the checkpoint was not loaded, also cannot fire without it.
+control_job_dir: experiments/mg_transfer/jobs/scratch_control_seed2
+seed: 2
