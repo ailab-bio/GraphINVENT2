@@ -45,7 +45,9 @@ from sklearn.metrics import (
 )
 
 
-def read_table(path: Path, smiles_column: str, label_column: str, extra=()):
+def read_table(
+    path: Path, smiles_column: str, label_column: str, extra=(), optional=()
+):
     """
     Read SMILES, labels and any extra columns from a CSV/TSV, in ONE pass.
 
@@ -56,10 +58,14 @@ def read_table(path: Path, smiles_column: str, label_column: str, extra=()):
     context by one, silently, and a group column read the same way would have
     inherited it. Everything the fit needs now comes out of the same loop and
     the same skip.
+
+    `extra` columns must exist; `optional` ones are read when the table has
+    them and omitted from the result when it does not, which is how the noise
+    floor gets a target column from the tables that carry one without
+    breaking the fits whose tables have no target at all.
     """
     delimiter = "\t" if path.suffix.lower() in (".tsv", ".txt") else ","
     smiles, labels = [], []
-    extras: dict[str, list] = {name: [] for name in extra}
     with open(path, newline="") as f:
         reader = csv.DictReader(f, delimiter=delimiter)
         if reader.fieldnames is None:
@@ -69,13 +75,20 @@ def read_table(path: Path, smiles_column: str, label_column: str, extra=()):
                 raise ValueError(
                     f"Column '{column}' not in {path}; found {reader.fieldnames}."
                 )
+        # Deduplicated: a column named in both `extra` and `optional` would
+        # otherwise be appended twice per row, so every value after the first
+        # would belong to a different molecule than the index says.
+        present = list(
+            dict.fromkeys([*extra, *(c for c in optional if c in reader.fieldnames)])
+        )
+        extras: dict[str, list] = {name: [] for name in present}
         for row in reader:
             value = row[label_column]
             if value is None or value == "":
                 continue
             smiles.append(row[smiles_column])
             labels.append(float(value))
-            for name in extra:
+            for name in present:
                 extras[name].append(row.get(name, ""))
     return smiles, np.asarray(labels, dtype=float), extras
 
@@ -596,16 +609,54 @@ def run_grouped_cv(
             flush=True,
         )
         if r2_ceiling is not None and summary["r2_train_mean_mean"] is not None:
-            print(
-                f"  against the {r2_ceiling:.3f} label-noise ceiling, that is "
-                f"{summary['r2_train_mean_mean'] / r2_ceiling:.0%} of the "
-                "achievable variance",
-                flush=True,
-            )
             summary["r2_ceiling"] = r2_ceiling
-            summary["fraction_of_achievable"] = float(
-                summary["r2_train_mean_mean"] / r2_ceiling
-            )
+            mean_r2 = summary["r2_train_mean_mean"]
+            if r2_ceiling <= 0:
+                # noise_sd == total_sd: the label is all noise and no model of
+                # it can explain anything. A fraction of zero is undefined, so
+                # it is said rather than divided.
+                print(
+                    "  the label-noise ceiling is zero or below, so this label "
+                    "carries no explainable variance and no fraction of it is "
+                    "defined",
+                    flush=True,
+                )
+                summary["fraction_of_achievable"] = None
+            elif mean_r2 < 0:
+                # A negative mean R^2 is worse than predicting the training
+                # mean. Printing it as a percentage of the achievable variance
+                # read as "-20% of achievable" -- a fraction of a quantity it
+                # does not have any of.
+                print(
+                    f"  the {r2_ceiling:.3f} label-noise ceiling is not the "
+                    f"binding constraint here: a mean R^2 of {mean_r2:.3f} is "
+                    "below zero, so the fit does not beat predicting the "
+                    "training mean and explains none of the achievable variance",
+                    flush=True,
+                )
+                summary["fraction_of_achievable"] = None
+            else:
+                fraction = mean_r2 / r2_ceiling
+                print(
+                    f"  against the {r2_ceiling:.3f} label-noise ceiling, that "
+                    f"is {fraction:.0%} of the achievable variance",
+                    flush=True,
+                )
+                if fraction > 1.0:
+                    # Exceeding the ceiling is not a better-than-perfect fit:
+                    # it means the ceiling is underestimated. The within-group
+                    # SD underestimates independent assay error on a bounded,
+                    # saturating label like Dmax, where many replicates sit at
+                    # the same clipped value and agree for that reason rather
+                    # than because the assay is precise.
+                    print(
+                        "  a fraction above 100% means the CEILING is wrong, "
+                        "not that the fit beat it: on a bounded saturating "
+                        "label the within-group SD understates assay error, so "
+                        "read this fit against the fold spread instead",
+                        flush=True,
+                    )
+                summary["fraction_of_achievable"] = float(fraction)
 
         # Per-TARGET performance, because a pooled R^2 can look healthy while
         # one target sits at zero. Only for a POI grouping: on a scaffold
@@ -724,12 +775,23 @@ def main() -> int:
 
     RDLogger.DisableLog("rdApp.*")
 
+    # The group column is read whenever the table has one, not only when POI
+    # grouping asks for it: the label noise floor keys replicates on
+    # (compound, target), and requesting the column only for `--group-by poi`
+    # silently degraded that key to compound alone for every other scheme. On
+    # the pooled table that reported the achievable R^2 ceiling as 0.410 when
+    # it is 0.755, because one compound measured against two proteins became
+    # its own replicate pair.
     wanted = list(dict.fromkeys(args.categorical))
     if args.cv == "grouped" and args.group_by == "poi":
         wanted = list(dict.fromkeys([*wanted, args.group_column]))
     try:
         smiles, labels, extras = read_table(
-            args.input, args.smiles_column, args.label_column, extra=wanted
+            args.input,
+            args.smiles_column,
+            args.label_column,
+            extra=wanted,
+            optional=(args.group_column,),
         )
     except ValueError as error:
         print(error, file=sys.stderr)
@@ -838,12 +900,22 @@ def main() -> int:
                 f"compounds in {report['n']} rows (clustered on compound)",
                 flush=True,
             )
-            print(
-                f"  beats the mean-prediction baseline: "
-                f"{'YES' if report['rmse'] < report['rmse_baseline'] else 'NO'}"
-                f"{'' if lo > 0 else '  (interval includes zero)'}",
-                flush=True,
-            )
+            # The verdict reads the INTERVAL, not the point estimate. It used
+            # to print an unqualified YES whenever the point margin was
+            # positive and then parenthesize "(interval includes zero)" after
+            # it, so a fit whose advantage was indistinguishable from nothing
+            # was recorded as beating its baseline.
+            if report["rmse"] >= report["rmse_baseline"]:
+                verdict = "NO -- worse than predicting the training mean"
+            elif lo > 0:
+                verdict = "YES"
+            else:
+                verdict = (
+                    "NOT ESTABLISHED -- the point margin is positive but the "
+                    "95% interval includes zero, so this fit does not clear "
+                    "the kill criterion on this split"
+                )
+            print(f"  beats the mean-prediction baseline: {verdict}", flush=True)
             print(
                 f"  R^2     : {report['r2_train_mean']:.3f} against the "
                 f"mean-prediction baseline (the stated kill criterion); "
@@ -865,14 +937,27 @@ def main() -> int:
         if targets
         else list(compound_of)
     )
+    unit = "(compound, target)" if targets else "compound"
     noise_sd, total_sd, ceiling, n_repeated = label_noise_floor(labels, noise_keys)
     if not is_classification and noise_sd is not None:
         print(
-            f"* Label noise floor: within-(compound, target) SD {noise_sd:.3f} "
+            f"* Label noise floor: within-{unit} SD {noise_sd:.3f} "
             f"against a total label SD of {total_sd:.3f}, over {n_repeated} "
-            f"(compound, target) pairs measured more than once",
+            f"{unit} group(s) measured more than once",
             flush=True,
         )
+        if not targets:
+            # Naming the omission, because on a multi-target table keyed on
+            # compound alone the ceiling is wrong in the flattering direction:
+            # a genuine biological difference between two proteins is counted
+            # as assay noise, which inflates the apparent noise and lowers the
+            # apparent ceiling.
+            print(
+                f"  NOTE: no '{args.group_column}' column in this table, so "
+                "replicates are keyed on compound alone. If the table pools "
+                "several targets, this ceiling is not trustworthy.",
+                flush=True,
+            )
         print(
             f"  so R^2 for this label is capped at {ceiling:.3f}, not 1.0; read "
             "the held-out R^2 against that ceiling",
@@ -891,6 +976,23 @@ def main() -> int:
             model_cls,
             ceiling,
         )
+        # The shipped model is refitted on EVERY row. CLAUDE.md specifies an
+        # oracle "fitted on all available data", and with grouped CV in hand
+        # the held-out error estimate no longer comes from the single split,
+        # so there is nothing left for the 20% to do but be withheld from the
+        # reward. Before this it was fitted on train_idx alone while the fold
+        # models each saw 80% of ALL rows, so the reward came from a narrower
+        # fit than the disagreement reported beside it.
+        print(
+            f"* Refitting on all {len(labels)} rows for the shipped model; the "
+            "error estimate above comes from the grouped folds, not from the "
+            "single split",
+            flush=True,
+        )
+        model = model_cls(
+            n_estimators=args.n_estimators, random_state=args.seed, n_jobs=-1
+        )
+        model.fit(features, labels)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, "wb") as f:
@@ -902,13 +1004,14 @@ def main() -> int:
         pickle.dump(
             {
                 "model": model,
-                # The fold models, in fold order. `model` stays the full-data
-                # fit and is what predicts; these exist so the oracle can
-                # report per-molecule disagreement between models fitted on
-                # DIFFERENT data, which is the reward-hacking detector
-                # CLAUDE.md specifies. Empty when --cv none, and the oracle
-                # then falls back to one forest's trees and records which
-                # source it used.
+                # The fold models, in fold order. `model` is what predicts:
+                # the all-rows fit under --cv grouped, the train-split fit
+                # under --cv none, where the split is the only held-out
+                # estimate there is. These exist so the oracle can report
+                # per-molecule disagreement between models fitted on DIFFERENT
+                # data, which is the reward-hacking detector CLAUDE.md
+                # specifies. Empty when --cv none, and the oracle then falls
+                # back to one forest's trees and records which source it used.
                 "models": [] if args.no_store_folds else fold_models,
                 "cv": cv_summary,
                 "featurization": {

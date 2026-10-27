@@ -1,0 +1,36 @@
+* Read 71 rows from data/surrogates/kras_dmax.tsv
+  one-hot columns: ['cell_line', 'ligase']
+  feature width 2061: 2048 fingerprint (count) + 9 descriptors + 4 indicators
+* Decomposing for a warhead_scaffold split (cached under tools/)
+* warhead_scaffold split: 59 train / 12 test
+* Held-out performance
+  RMSE    : 0.117   (mean-prediction baseline 0.123)
+  Spearman: -0.036
+  margin over baseline: 0.006 [95% bootstrap -0.001, 0.015] over 12 held-out compounds in 12 rows (clustered on compound)
+  beats the mean-prediction baseline: NOT ESTABLISHED -- the point margin is positive but the 95% interval includes zero, so this fit does not clear the kill criterion on this split
+  R^2     : 0.097 against the mean-prediction baseline (the stated kill criterion); -0.660 against the test mean (sklearn r2_score)
+  MAE     : 0.087
+* Decomposing for a warhead_scaffold split (cached under tools/)
+* 5-fold CV grouped by warhead_scaffold: 13 groups over 71 rows, largest 30, median 1
+  this estimates the error on novel molecules for a target the model has seen, which is what the reward does
+  fold 1: n=   30  RMSE 0.031 (baseline 0.047)  R^2 +0.556  rho -0.032  (1 groups held out)
+  fold 2: n=   14  RMSE 0.019 (baseline 0.032)  R^2 +0.671  rho +nan  (1 groups held out)
+  fold 3: n=   11  RMSE 0.120 (baseline 0.071)  R^2 -1.905  rho -0.023  (1 groups held out)
+  fold 4: n=    8  RMSE 0.071 (baseline 0.105)  R^2 +0.544  rho +0.761  (5 groups held out)
+  fold 5: n=    8  RMSE 0.066 (baseline 0.099)  R^2 +0.555  rho +0.878  (5 groups held out)
+  across folds: RMSE 0.061 (0.040)   margin 0.009 (0.034)   R^2 +0.084 (1.113)
+  folds beating the mean-prediction baseline: 4 of 5   <- a fold that does not beat its baseline is a FAILED FIT on that fold and is reported as one, not averaged away
+* Refitting on all 71 rows for the shipped model; the error estimate above comes from the grouped folds, not from the single split
+* Wrote experiments/surrogate_protac_optimization/kras/dmax.pickle
+
+Use it by adding this to the 'oracles' block of a goal_directed config:
+  "dmax": {
+      "type": "sklearn",
+      "path": "experiments/surrogate_protac_optimization/kras/dmax.pickle",
+      "output": "predict",
+      "transform": {"type": "clipped_linear", "low": 0.7, "high": 1.0},
+      "direction": "maximize"
+  }
+and naming it in 'score_components'. The featurization is stored in the pickle and the oracle reads it, so there is nothing to keep in sync by hand.
+
+THE TRANSFORM IS REQUIRED for a regression output and the oracle raises without one: the raw value is not a desirability, and the identity transform clamps to [0, 1] while this fit's labels span 0.70 to 1.00. Choose low and high on the label scale as a modeling decision and state them in the write-up; the bounds below are this fit's label range, not advice. Then re-derive success_threshold on the transformed [0, 1] scale, because success_rate compares the transformed composite.

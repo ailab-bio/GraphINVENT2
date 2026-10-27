@@ -1,0 +1,72 @@
+smiles	dmax	cell_line	ligase	poi	poi_raw	n_replicates
+C=C1CN2[C@H](COC(=O)N3CCC4(CC3)CC(CNC(=O)C[C@H](NC(=O)[C@@H]3C[C@@H](O)CN3C(=O)C(c3cc(C)no3)C(C)C)c3ccc(-c5scnc5C)cc3)C4)CC[C@@]2(COc2nc(N3CCC[C@@](C)(O)C3)c3cnc(-c4cc(O)cc5ccc(F)c(CC)c45)c(F)c3n2)C1	0.9500	ags	vhl	KRAS	KRAS G12D	1
+C=C1CN2[C@H](COC(=O)NCC34CC(c5cn([C@H](C(=O)N6C[C@H](O)C[C@H]6C(=O)N[C@@H](C)c6ccc(-c7scnc7C)cc6)C(C)C)nn5)(C3)C4)CC[C@@]2(COc2nc(N3CCC[C@@](C)(O)C3)c3cnc(-c4cc(O)cc5ccc(F)c(CC)c45)cc3n2)C1	0.9500	ags	vhl	KRAS	KRAS G12D	1
+C=C1CN2[C@H](COCc3ccc(-c4cn([C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)C)nn4)cc3)CC[C@@]2(COc2nc(N3CCC[C@@](C)(O)C3)c3cnc(-c4cc(O)cc5ccc(F)c(CC)c45)cc3n2)C1	0.9500	ags	vhl	KRAS	KRAS G12D	1
+C=C1CN2[C@H](COCc3cnnn3[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)C)CC[C@@]2(COc2nc(N3CCC[C@@](C)(O)C3)c3cnc(-c4cc(O)cc5ccc(F)c(CC)c45)c(F)c3n2)C1	0.9500	ags	vhl	KRAS	KRAS G12D	1
+C=C1CN2[C@H](COc3cc(-c4cn([C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)C)nn4)ccn3)CC[C@@]2(COc2nc(N3CCC[C@@](C)(O)C3)c3cnc(-c4cc(O)cc5ccc(F)c(CC)c45)c(F)c3n2)C1	0.9500	ags	vhl	KRAS	KRAS G12D	1
+C=C1CN2[C@H](COc3ccc(-c4cn([C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)C)nn4)cn3)CC[C@@]2(COc2nc(N3CCC[C@@](C)(O)C3)c3cnc(-c4cc(O)cc5ccc(F)c(CC)c45)c(F)c3n2)C1	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCC(C)(O)C5)nc(OC[C@]56CCCN5[C@@H](COC(=O)N5CCC7(CC5)CC(C(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c8scnc8C)cc5)C(C)(C)C)C7)CC6)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CCN(c8cc([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)on8)CC7)C6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CC7CCN(c8cc([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)on8)CC7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CN7CCN(c8cc([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)on8)CC7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(COc7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cc7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(F)(COc7cc([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)on7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N(C)c7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CC(c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)C7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CCC(c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)CC7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CCN(c8cc([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)on8)CC7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(NC(=O)c7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cc7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(Nc7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(OCc7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cc7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(Oc7cc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)ccn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(Oc7cc([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)on7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(Oc7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(Oc7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)nc7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(Oc7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](CO)c9ccc(-c%10ccnn%10CC)cc9)C(C)C)nn8)cn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(Oc7cnc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(c7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(c7cn([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)nn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(n7cc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(Oc6cc([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)on6)C7)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(Oc6ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cc6)C7)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(c6cn([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)nn6)C7)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CCN(c6cc([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)on6)CC7)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CN(c6cc([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)on6)C7)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CN(c6ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cc6)C7)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CN(c6ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cn6)C7)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(C78CC(c9cn([C@H](C(=O)N%10C[C@H](O)C[C@H]%10C(=O)N[C@@H](C)c%10ccc(-c%11scnc%11C)cc%10)C(C)C)nn9)(C7)C8)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(C7CN(c8cc([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)on8)C7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(CC78CC(c9cn([C@H](C(=O)N%10C[C@H](O)C[C@H]%10C(=O)N[C@@H](C)c%10ccc(-c%11scnc%11C)cc%10)C(C)C)nn9)(C7)C8)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(CC7CCN(c8cc([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)on8)CC7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(Cc7cn([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)nn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(Cc7nc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cs7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(Cc7ncc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)s7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(c7cc(C(C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)on7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(c7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cc7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(c7ccc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(c7cnc(-c8cn([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)nn8)cn7)CC6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6C[C@@H]7CN(c8cc([C@H](C(=O)N9C[C@H](O)C[C@H]9C(=O)N[C@@H](C)c9ccc(-c%10scnc%10C)cc9)C(C)C)on8)C[C@@H]7C6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCCN5CCC(CCOc6cc([C@H](C(=O)N7C[C@H](O)C[C@H]7C(=O)N[C@@H](C)c7ccc(-c8scnc8C)cc7)C(C)C)on6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCCN5CCC(COc6cc([C@H](C(=O)N7C[C@H](O)C[C@H]7C(=O)N[C@@H](C)c7ccc(-c8scnc8C)cc7)C(C)C)on6)CC5)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCCN5CCC(COc6ccc(-c7cn([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)nn7)cc6)CC5)nc4c3F)c12	0.7800	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OC[C@]56CCCN5[C@@H](COc5ccc(-c7cn([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)nn7)cn5)CC6)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OC[C@]56CCCN5[C@@H](COc5cnc(-c7cn([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)nn7)cn5)CC6)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OC[C@]56CCCN5[C@@H](COc5ncc(-c7cn([C@H](C(=O)N8C[C@H](O)C[C@H]8C(=O)N[C@@H](C)c8ccc(-c9scnc9C)cc8)C(C)C)nn7)cn5)CC6)nc4c3F)c12	0.9500	ags	vhl	KRAS	KRAS G12D	1
+CO[C@@H](C)COc1cc(OC2CN(C(=O)NCCN(C)C)C2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CCN(Cc5ccc6c(N7CCC(=O)NC7=O)nn(C)c6c5)C[C@@H]4C)cc3)c2n1	0.7800	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1cc(OC2CN(C(=O)NCCN(C)C)C2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CCN(Cc5ccc6c(c5)n(C)c(=O)n6C5CCC(=O)NC5=O)C[C@@H]4C)cc3)c2n1	0.7000	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(N2CC(C#N)C2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CC5(CN(Cc6ccc7c(N8CCC(=O)NC8=O)nn(C)c7c6)C5)C4)cc3)c2n1	0.9500	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(N2CC(C#N)C2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CCN(Cc5ccc6c(N7CCC(=O)NC7=O)nn(C)c6c5)CC4)cc3)c2n1	0.8700	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(N2CC(C#N)C2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CCN(Cc5ccc6c(N7CCC(=O)NC7=O)nn(C)c6c5)C[C@@H]4C)cc3)c2n1	1.0000	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(N2CC(C#N)C2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CCN(Cc5ccc6c(c5)n(C)c(=O)n6C5CCC(=O)NC5=O)C[C@@H]4C)cc3)c2n1	0.8900	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(N2CC(C#N)C2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CC[C@H](CN(C)Cc5ccc6c(N7CCC(=O)NC7=O)nn(C)c6c5)C4)cc3)c2n1	0.8500	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(N2CC[C@@H](N)[C@@H](F)C2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CCN(Cc5ccc6c(c5)n(C)c(=O)n6C5CCC(=O)NC5=O)C[C@@H]4C)cc3)c2n1	0.7400	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(N2CC[C@H]2C(N)=O)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CCN(Cc5ccc6c(N7CCC(=O)NC7=O)nn(C)c6c5)C[C@@H]4C)cc3)c2n1	0.9700	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(N2CC[C@H]2C(N)=O)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(CN4CCN(Cc5ccc6c(N7CCC(=O)NC7=O)nn(C)c6c5)CC4=O)cc3)c2n1	0.8500	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(N2CC[C@H]2C(N)=O)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(CN4CCN(Cc5ccc6c(N7CCC(=O)NC7=O)nn(C)c6c5)C[C@@H]4C)cc3)c2n1	0.7800	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(NCc2cccnc2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CCN(Cc5ccc6c(c5)n(C)c(=O)n6C5CCC(=O)NC5=O)C[C@@H]4C)cc3)c2n1	0.8300	pa-tu-8902	crbn	KRAS	KRAS	1
+CO[C@@H](C)COc1nc(OC2CN(C(=O)NCCN(C)C)C2)c2cc(C3CC3)c(-c3c(C)c(F)cc4[nH]ncc34)c(OCc3ccc(C(=O)N4CCN(Cc5ccc6c(c5)n(C)c(=O)n6C5CCC(=O)NC5=O)C[C@@H]4C)cc3)c2n1	0.7700	pa-tu-8902	crbn	KRAS	KRAS	1
+Cc1c(F)cc2[nH]ncc2c1-c1c(C2CC2)cc2c(N3CC(C#N)C3)nc(OCC(C)(C)CN(C)C)nc2c1OCc1ccc(C(=O)N2CCN(Cc3ccc4c(N5CCC(=O)NC5=O)nn(C)c4c3)C[C@@H]2C)cc1	0.8800	pa-tu-8902	crbn	KRAS	KRAS	1
+Cc1c(F)cc2[nH]ncc2c1-c1c(C2CC2)cc2c(N3CC(C#N)C3)nc(OCC(C)(C)CN(C)C)nc2c1OCc1ccc(C(=O)N2CCN(Cc3ccc4c(c3)n(C)c(=O)n4C3CCC(=O)NC3=O)C[C@@H]2C)cc1	0.8800	pa-tu-8902	crbn	KRAS	KRAS	1
+Cc1c(F)cc2[nH]ncc2c1-c1c(C2CC2)cc2c(N3CCOCC3)nc(OCC(C)(C)CN(C)C)nc2c1OCc1ccc(C(=O)N2CCN(Cc3ccc4c(c3)n(C)c(=O)n4C3CCC(=O)NC3=O)C[C@@H]2C)cc1	0.8800	pa-tu-8902	crbn	KRAS	KRAS	1
+Cc1c(F)cc2[nH]ncc2c1-c1c(C2CC2)cc2c(N3CC[C@H]3C(N)=O)nc(OCC(C)(C)CN(C)C)nc2c1OCc1ccc(C(=O)N2CCN(Cc3ccc4c(c3)n(C)c(=O)n4C3CCC(=O)NC3=O)C[C@@H]2C)cc1	0.9900	pa-tu-8902	crbn	KRAS	KRAS	1
+Cc1c(F)cc2[nH]ncc2c1-c1c(C2CC2)cc2c(NC3CN(c4ncccn4)C3)nc(OCC(C)(C)CN(C)C)nc2c1OCc1ccc(C(=O)N2CCN(Cc3ccc4c(c3)n(C)c(=O)n4C3CCC(=O)NC3=O)C[C@@H]2C)cc1	0.8100	pa-tu-8902	crbn	KRAS	KRAS	1

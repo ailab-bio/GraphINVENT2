@@ -203,7 +203,7 @@ inconsistency to tidy up; write it down in each `instructions.md`.
 
 | Program | Downstream models start from | Why |
 |---|---|---|
-| PROTAC | `protac_transfer/scratch_control` | 21,407 real degraders train a competent model alone, and `protac_goal_directed` additionally runs a scratch-vs-transfer comparison on all three targets, so both checkpoints are wanted |
+| PROTAC | `protac_transfer/transfer_arm` | the synthetic library's 1,298,401 recombinations buy a better starting point than the 21,407 real degraders alone, and `protac_goal_directed` additionally runs a scratch-vs-transfer comparison on all three targets, so both checkpoints are built and `scratch_control` stays the control rather than the starting point. Seed 1 is the designated checkpoint; the seed 2 and 3 arms exist for Table 2's interval |
 | MG | `mg_transfer/transfer_arm` | ZINC250k is too far from glue chemistry to use directly. Measured: of `tpddb_glue`'s 2,538 Murcko scaffolds, 10 appear in a 25,000-molecule ZINC sample, median maximum ECFP4 Tanimoto 0.287, nothing above 0.6 |
 | battery | `battery_prior/prior_battslm` | prior and downstream share one corpus, so there is no transfer step to start from |
 
@@ -218,7 +218,7 @@ numeric endpoint:
 
 | Program | Targets | pDC50 / Dmax / both | Note |
 |---|---|---|---|
-| PROTAC | SMARCA2, AR, KRAS | 186/152/126, 179/324/111, 69/53/53 | AR merges its aliases and mutants; KRAS's labels come from `KRAS G12D` rows while the conditional class is `KRAS`, which is a recorded approximation. SMARCA4 is reserved for `protac_selectivity` and is not a fourth target |
+| PROTAC | SMARCA2, AR, KRAS | 186/152/126, 187/363/127, 89/71/71 | re-measured 2026-10-26, after label selection began resolving through `data/surrogates/target_symbol_map.tsv` rather than matching the raw string. AR merges `AR`, `AR L702H`, `AR T878A`, `AR L702H and T878A`, `AR-V7` and `Androgen receptor`, which is what this line always claimed and is now true of the code that builds the labels. KRAS merges eight spellings including the G12C/G12D/G12V/G13D mutants and the `KRAS/CRAF`, `KRAS/SOS1` and `KRAS G12C/SOS1` composites, so its conditional class and its label set now mean the same thing and the recorded approximation is gone. SMARCA2 has one spelling and is unchanged. SMARCA4 is reserved for `protac_selectivity` and is not a fourth target |
 | MG | GSPT1, VAV1, CK1α | 30/30/18, 49/49/49, 10/29/9 | all three below the ~100-compound floor, and VAV1 and CK1α below 300 molecules for a conditional class. Reported with their denominators, not omitted |
 
 BTK and EGFR are the tempting alternatives on molecule count and fail on pairing: BTK's pDC50 and
@@ -885,7 +885,7 @@ and which only 18.8% of real degraders reach.
 property per program, fitted on all available data: an XGBoost over a 2048-bit Morgan2 fingerprint
 plus one-hot POI, E3 ligase and cell line, trained across every target at once rather than one model
 per target. Pooling is what makes the fit possible at all — the PROTAC training sets are 1,701 rows
-for pDC50 and 1,467 for Dmax across 88 targets, against 186 compounds for SMARCA2 alone — and the
+for pDC50 and 1,467 for Dmax across 18 canonical POIs, against 186 compounds for SMARCA2 alone — and the
 POI one-hot is only informative because the model sees more than one POI. Both endpoints are fitted
 separately and combined, equally weighted, into the single composite reward the policy trains on.
 
@@ -1093,10 +1093,15 @@ document and the code, in dependency order.
   require, and the conditional panels still name the superseded targets.
 - **The surrogates are four directories in the old optimization/evaluation
   shape**, holding one per-target SMARCA2 random forest, against three pooled
-  ensemble oracles. The POI, E3 ligase and cell line identifiers need expert
-  normalization first: 88 target strings with composites like
-  `SMARCA2;SMARCA4`, the AR alias family, `BCL2L1` and `BCL-xL` indexing one
-  protein across disjoint record sets, and cell lines not case-normalized.
+  ensemble oracles. **The POI normalization this entry asked for exists**, at
+  `data/surrogates/target_symbol_map.tsv`: 165 curated rows covering all 176
+  raw `Target Symbols` strings, resolving the AR alias family, the KRAS
+  mutants, `BCL-xL`/`BCL2L1` and the composites, tagging non-human and
+  ambiguous strings, and raising on an unmapped one. Label selection and fold
+  grouping both resolve through it. The 88 that used to be quoted here was the
+  raw-string count including TPDdb's `.` placeholder; the pooled pDC50 table
+  holds **18** canonical POIs from 25 raw strings. Cell lines are still only
+  lowercased, and the E3 ligase column is still not normalized.
 - **`evaluate_external_sample` is not implemented and no `reinvent4_*`
   experiment directory exists**, so the REINVENT4 arm of every goal-directed
   experiment is specified and unrunnable. Its mirroring also needs revisiting

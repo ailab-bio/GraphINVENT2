@@ -10,7 +10,7 @@
   beats the mean-prediction baseline: YES
   R^2     : 0.416 against the mean-prediction baseline (the stated kill criterion); 0.342 against the test mean (sklearn r2_score)
   MAE     : 0.386
-* Label noise floor: within-(compound, target) SD 0.405 against a total label SD of 0.851, over 55 (compound, target) pairs measured more than once
+* Label noise floor: within-(compound, target) SD 0.405 against a total label SD of 0.851, over 55 (compound, target) group(s) measured more than once
   so R^2 for this label is capped at 0.774, not 1.0; read the held-out R^2 against that ceiling
 * Decomposing for a warhead_scaffold split (cached under tools/)
 * 5-fold CV grouped by warhead_scaffold: 72 groups over 241 rows, largest 104, median 1
@@ -23,6 +23,7 @@
   across folds: RMSE 0.535 (0.130)   margin 0.289 (0.154)   R^2 +0.540 (0.248)
   folds beating the mean-prediction baseline: 5 of 5
   against the 0.774 label-noise ceiling, that is 70% of the achievable variance
+* Refitting on all 241 rows for the shipped model; the error estimate above comes from the grouped folds, not from the single split
 * Wrote experiments/surrogate_protac_optimization/smarca2/pdc50.pickle
 
 Use it by adding this to the 'oracles' block of a goal_directed config:

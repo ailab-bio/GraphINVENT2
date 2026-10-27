@@ -1,156 +1,843 @@
-smiles	grade	grade_rank	cell_line	ligase
-CC(C)N(CC1CCN(CCCCn2c(=O)n(-c3ccc(C#N)c(C(F)(F)F)c3)c3ccccc32)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	D	3	vcap&lncap	crbn
-CC(C)N(CC1CCN(CCCn2c(=O)n(-c3ccc(C#N)c(C(F)(F)F)c3)c3ccccc32)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	D	3	vcap&lncap	crbn
-CC(C)N(CC1CCN(Cc2ccc(-n3c(=O)n(-c4ccc(C#N)c(C(F)(F)F)c4)c4ccccc43)cc2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	B	1	vcap&lncap	crbn
-CC(C)N(CC1CCN(c2ccc(CCn3c(=O)n(-c4ccc(C#N)c(C(F)(F)F)c4)c4ccccc43)cc2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	C	2	vcap&lncap	crbn
-CC(C)N(CC1CCN(c2ccc(Cn3c(=O)n(-c4ccc(C#N)c(C(F)(F)F)c4)c4ccccc43)cc2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	D	3	vcap&lncap	crbn
-CC(C)N(CC1CCN(c2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C34CCC4)cn2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	B	1	vcap&lncap	crbn
-CC(C)N(C[C@H]1C[C@H](Oc2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C34CCC4)cn2)C1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	B	1	vcap&lncap	crbn
-CC1(C)C(=O)N(c2ccc(C#N)c(C(F)(F)F)c2)C(=S)N1Cc1ccc(N2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)nc1	A	0	vcap&lncap	crbn
-CC1(C)C(=O)N(c2ccc(C#N)c(C(F)(F)F)c2)C(=S)N1Cc1ccc(OCCN2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)nc1	B	1	vcap&lncap	crbn
-CCN(CC1CCN(CCOc2ccc(CN3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cn2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	B	1	vcap&lncap	crbn
-CCN(CC1CCN(c2ccc(CN3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cn2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	A	0	vcap&lncap	crbn
-CCN(c1cc(-c2ccc(CCCOCCCCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(CCCOCCCCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(CCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(CCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(CCCOCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(CCOCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(CN3CCC(CN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(CN3CCN(CC4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(CN3CCN(CCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(CN3CCN(CCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(CN3CCN(CCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(CN3CCN(CCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(COCCOc3ccc4c(c3)C(=O)N([C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(N3CCN(CCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(N3CCN(CCCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCCCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)cc2)cc(C(=O)NCC2C(=O)NC(C)=CC2C)c1C)C1CCOCC1	B	1	vcap	crbn
-CCN(c1cc(-c2ccc(OCCCCOC3C=C4C(=O)N(C(C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)C)CC4=CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOC3C=C4C(=O)N([C@@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)C)CC4=CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOC3C=C4C(=O)N([C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)C)CC4=CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCCOc3ccc4c(c3)C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	crbn
-CCN(c1cc(-c2ccc(OCCCN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn
-CCN(c1cc(-c2ccc(OCCCOCC(=O)N[C@H](C(=O)N3CC(=O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOCCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3CC4C=CC=CC4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOc3ccc4c(c3)C(=O)N([C@@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCCOc3ccc4c(c3)C(=O)N([C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	crbn
-CCN(c1cc(-c2ccc(OCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCCOc3ccc4c(c3)C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	crbn
-CCN(c1cc(-c2ccc(OCCOCCOCC(=O)N[C@H](C(=O)N3C[C@@H](O)C[C@@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCN[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOc3ccc(-c4coc([C@@H]5CCCN5C(=O)[C@@H](NC(=O)[C@H](C)NC)C5CCCCC5)n4)c4ccccc34)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOc3ccc(CCN4CC[C@@H]5CCN(C(=O)[C@@H](NC(=O)[C@H](C)NC)C6CCCCC6)[C@@H]5C4)cc3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOc3ccc(-c4coc([C@@H]5CCCN5C(=O)[C@@H](NC(=O)[C@H](C)NC)C5CCCCC5)n4)c4ccccc34)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOCCOc3ccc(CCN4CC[C@@H]5CCN(C(=O)C(NC(=O)C(C)NC)C6CCCCC6)[C@@H]5C4)cc3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOCCOc3ccc4c(c3)C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn
-CCN(c1cc(-c2ccc(OCCOCc3ccc4c(c3)C(=O)N([C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccc(OCCOc3ccc4c(c3)C(=O)N([C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CCN(c1cc(-c2cccc(OCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)c2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CCN(c1cc(-c2ccccc2OCCOCCOCCOCCOCCOCCNc2cccc3c2C(=O)N(C2CCC(=O)NC2=O)C3=O)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn
-CCN(c1cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)cc(-c2ccc(OCCCOCCCOc3ccc4c(c3)C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)c1)C1CCOCC1	B	1	vcap	crbn
-CCn1c2c(c3ccc(C4=CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-CCn1c2c(c3ccc(C4=CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-CCn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cc6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-CCn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-CCn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-CCn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn
-CCn1c2c(c3ccc(C4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCC(CN5CCC(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCC5(CC4)CN(CC4CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC4)C5)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cc6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	D	3	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cc6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N([C@H]1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ncc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	D	3	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ncc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-CCn1c2c(c3ccc(N4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn
-CNC(c1cc(-c2ccc(OCCCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CNC(c1cc(-c2ccc(OCCCOCCCOCCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CNC(c1cc(-c2ccc(OCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn
-CNC(c1cc(-c2ccc(OCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn
-CNC(c1cc(-c2ccc(OCCOCCOCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CNC(c1cc(-c2ccc(OCCOCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-CNC(c1cc(-c2ccc(OCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl
-CNC(c1cc(-c2ccc(OCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl
-COc1cc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)c(F)c3)C2=S)ccc1C#N	B	1	vcap&lncap	crbn
-COc1cc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)C2=S)ccc1C#N	B	1	vcap&lncap	crbn
-Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(N2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)cc1	D	3	vcap&lncap	crbn
-Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(OCCCN2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)cc1	D	3	vcap&lncap	crbn
-Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(OCCN2CCC(CN3CCN(C4=CC5C(=O)N(C6CCC(=O)NC6=O)C(=O)C5C=C4)CC3)CC2)cc1	D	3	vcap&lncap	crbn
-Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(OCCOCCN2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)cc1	D	3	vcap&lncap	crbn
-Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(OCCOCCOCCN2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)cc1	D	3	vcap&lncap	crbn
-Cc1cc(C)c(CCC(=O)c2cc(-c3ccc(CN4CCN(CCOCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(=O)C2c3ccccc3N(C(C)C3CCN(C(=O)COCCOCCOCCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)CC4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)C2C)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(=O)c2c(C)n(C(C)C3CCN(C(=O)COCCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)c3ccccc23)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(=O)c2c(C)n(C(C)C3CCN(C(=O)COCCOCCOCCNc4cccc5c4C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)c3ccccc23)c(=O)[nH]1	B	1	vcap	crbn
-Cc1cc(C)c(CNC(=O)c2c(C)n(C(C)C3CCN(C(=O)COCCOCCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)c3ccccc23)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(=O)c2c(C)n(C(C)C3CCN(C(=O)COCCOCCOCCOCCC(=O)c4cccc5c4C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)c3ccccc23)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCCCCCOCCCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCCCCOCCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCCCOCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl
-Cc1cc(C)c(CNC(O)C2c3ccccc3N(C(C)C3CCN(C(=O)COCCOCCOCCOCCOCCNc4cccc5c4C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)C2C)c(=O)[nH]1	B	1	vcap	vhl
-Cn1c2c(c3cc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)ccc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-Cn1c2c(c3cc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)ccc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	D	3	lncap fgc	crbn
-Cn1c2c(c3cc(N4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)ccc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-Cn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn
-Cn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-Cn1c2c(c3ccc(C4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn
-Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn
-Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn
-Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ncc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn
-Cn1c2c(c3ccc(N4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn
-N#Cc1ccc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7)CC5)CC4)cc3)C2=S)cc1Cl	B	1	vcap&lncap	crbn
-N#Cc1ccc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)c(F)c3)C2=S)cc1Cl	A	0	vcap&lncap	crbn
-N#Cc1ccc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)C2=S)cc1Cl	B	1	vcap&lncap	crbn
-N#Cc1ncc(N2C(=O)C3(CCC3)N(c3ccc(CCCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2=S)cc1Cl	A	0	vcap&lncap	crbn
-N#Cc1ncc(N2C(=O)C3(CCC3)N(c3ccc(OC4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)c(F)c3)C2=S)cc1Cl	B	1	vcap&lncap	crbn
-N#Cc1ncc(N2C(=O)C3(CCC3)N(c3ccc(OC4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)nc3)C2=S)cc1C(F)(F)F	B	1	vcap&lncap	crbn
-N#Cc1ncc(N2C(=O)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7)CC5)CC4)cc3)C3(CCC3)C2=O)cc1Cl	A	0	vcap&lncap	crbn
+smiles	grade	grade_rank	cell_line	ligase	poi	poi_raw
+C#CCCC(=O)OC(CCOCCCOCC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)N[C@@H](C)c1ccc(-c2scnc2C)cc1)C(C)(C)C)CCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+C/C(=N\OCCN1CCN(CC(=O)N[C@H](C(=O)N2C[C@@H](O)C[C@H]2C(=O)N[C@@H](C)c2ccc(-c3scnc3C)cc2)C(C)(C)C)CC1)c1cc(C(=O)N[C@H](C)Cn2ccc(-c3ccc(C#N)c(Cl)c3)n2)n[nH]1	A	0	vcap	vhl	AR	Androgen receptor
+C=C(C#CC(C)CCN(C)c1cccc2c1CN(C1CCC(=O)NC1=O)C2=O)/C=C\C(=C)Cn1nc(-c2ccc(C#N)c(Cl)c2)c(C)c1C	D	3	lncap	crbn	AR	Androgen receptor
+C=C(C#CC1CCC(CN2CC(C#Cc3ccc(C(=O)NC4CCC(=O)NC4=O)cc3)C2)CC1)/C=C/C(=C)Cn1nc(-c2ccc(C#N)c(Cl)c2)c(C)c1C	D	3	mda-mb-453	crbn	AR	Androgen receptor
+C=C(C#CC1CCC(N2CC(C#Cc3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)C2)CC1)/C=C\C(=C)Cn1nc(-c2ccc(C#N)c(Cl)c2)c(C)c1C	C	2	lncap	crbn	AR	Androgen receptor
+C=C(C#CC1CCC(N2CC(C#Cc3cccc4c3CN(C3CCC(=O)NC3=O)C4=O)C2)CC1)/C=C\C(=C)Cn1nc(-c2ccc(C#N)c(Cl)c2)c(C)c1C	D	3	lncap	crbn	AR	Androgen receptor
+C=C(C#CC1CCN(CC2CCC(C#Cc3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)CC1)C=CC(=C)Cn1nc(-c2ccc(C#N)c(Cl)c2)c(C)c1C	D	3	lncap	crbn	AR	Androgen receptor
+C=C(C#CC1CCN(CC2CCC(C#Cc3cccc4c3CN(C3CCC(=O)NC3=O)C4=O)CC2)CC1)C=CC(=C)Cn1nc(-c2ccc(C#N)c(Cl)c2)c(C)c1C	D	3	lncap	crbn	AR	Androgen receptor
+C=C(C#Cc1ccc(CN2CC(C#Cc3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)C2)cc1)/C=C\C(=C)Cn1nc(-c2ccc(C#N)c(Cl)c2)c(C)c1C	D	3	lncap	crbn	AR	Androgen receptor
+C=C(C#Cc1ccc(CN2CC(C#Cc3cccc4c3CN(C3CCC(=O)NC3=O)C4=O)C2)cc1)/C=C\C(=C)Cn1nc(-c2ccc(C#N)c(Cl)c2)c(C)c1C	D	3	lncap	crbn	AR	Androgen receptor
+C=C/C(=C\C=C(/C)[C@H](C)NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@H](C(C)C)n1cc(OCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)cn1)c1scnc1C	C	2	vcap	vhl	AR	Androgen receptor
+C=C/C(=C\C=C\N1C(=S)N(c2ccc(C#N)c(C(F)(F)F)c2)C(=O)C1(C)C)C1CCN(CCOCCCC(=O)N[C@H](C(=O)N2C[C@H](O)C[C@H]2C(=O)NCc2ccc(-c3scnc3C)cc2)C(C)(C)C)CC1	C	2	lncap	vhl	AR	Androgen receptor
+C=C/C(=C\C=C\N1C(=S)N(c2ccc(C#N)c(C(F)(F)F)c2)C(=O)C1(C)C)C1CCN(CCOCCCC(=O)N[C@H](C(=O)N2C[C@H](O)C[C@H]2C(=O)NCc2ccc(-c3scnc3C)cc2)C(C)(C)C)CC1	A	0	vcap	vhl	AR	Androgen receptor
+C=C1C(=O)N(C2CCC(=O)NC2=O)C(=O)/C1=C/C(=C)N(C)CCC(C)N(C)CCC(C)C#Cc1ccc(Cn2nc(-c3ccc(C#N)c(Cl)c3)c(C)c2C)cc1	A	0	mda-mb-453	crbn	AR	Androgen receptor
+C=C1N(c2ccc(C#N)c(Cl)c2)C(=O)C(C)(C)N1c1ccc(OCCCCOCCCOCC(=O)N[C@H](C(=O)N2C[C@H](O)C[C@H]2C(=O)NCc2ccc(-c3cnco3)cc2)C(C)(C)C)cc1F	A	0	vcap	vhl	AR	Androgen receptor
+C=CC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1OCCOCCOCCOc1ccc(N2C(=O)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(C)(C)C	C	2	lncap	vhl	AR	Androgen receptor
+C=CC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1OCCOCCOCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(C)(C)C	B	1	lncap	vhl	AR	Androgen receptor
+CC(=O)NCC(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1OCCOCCOCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+CC(=O)N[C@@H](C)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1OCCOCCOCCOc1ccc(N2C(=O)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+CC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1OCCOCCOCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(C)(C)C	B	1	lncap	vhl	AR	Androgen receptor
+CC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1OCCOCCOCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(C)C	C	2	lncap	vhl	AR	Androgen receptor
+CC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)N[C@@H](C)c1ccc(-c2scnc2C)cc1)[C@@H](C)OCCCN(C)CCc1ccc(C(=O)NC2C(C)(C)C(Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(=O)O[C@@H]1C[C@@H](C(=O)N[C@@H](C)c2ccc(-c3scnc3C)cc2)N(C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)C1	A	0	vcap	vhl	AR	Androgen receptor
+CC(=O)O[C@@H]1C[C@@H](C(=O)N[C@H](C)c2ccc(-c3scnc3C)cc2)N(C(=O)[C@H](C(C)C)N2Cc3ccc(OCCN4CCN(c5ccc(C(=O)NC6C(C)(C)C(Oc7ccc(C#N)c(Cl)c7)C6(C)C)cn5)CC4)cc3C2=O)C1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)CNCCCCCNc1ccc(C(=O)N[C@H]2C(C)(C)[C@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(C#N)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)CNCCNc1ccc(-c2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)cn1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(C#N)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCNc1ccc(C(=O)N[C@H]2C(C)(C)C[C@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(C2=CCNCC2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCNc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C(=O)O)cc1	B	1	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCNc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2N)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCNc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-n2cnnn2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCNc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-n2ncnn2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCNc1ccc(C(=O)N[C@H]2C(C)(C)[C@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(C(=O)O)cc1	B	1	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCNc1ccc(C(=O)N[C@H]2C(C)(C)[C@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCNc1ccc(C(=O)N[C@H]2C(C)(C)[C@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cn1)C(=O)N1C[C@H](O)C[C@H]1C(=O)N[C@@H](Cc1ccc(C#N)cc1)C(=O)O	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCOCCn1cc(C(=O)N[C@H]2C(C)(C)[C@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cn1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCCOc1ccc(C(=O)N[C@H]2C(C)(C)[C@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)O	B	1	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCNc1ccc(C(=O)N[C@H]2CC3=C(C2)c2c(ccc(C#N)c2Cl)OCC3)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(C#N)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOC1CCN(C(=O)c2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)CC1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	B	1	lncap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOCCCCOc1ccc(N2C(=O)N(c3ccc(C#N)c(Cl)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)c(F)c2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2ccn[nH]2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)c(F)c2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)c(F)c2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)c(F)c1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)nc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2F)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C34CCC4)cc2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4F)C(=O)C3(C)C)cc2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(F)c4)C(=O)C3(C)C)cc2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(C#N)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2ccccc2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCOc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-n2cccn2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCCn1cc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)cn1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@@H](O)C[C@H]1C(=O)NCc1ccc(C#N)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(Cl)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(CN2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	B	1	lncap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(CN2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C#N)c3)C(=O)C2(C)C)cc1F)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	lncap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(Cl)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(Cl)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(Cl)c3)C(=O)C2(C)C)cc1F)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)c(F)c1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(Cl)c3)C(=O)C2(C)C)cc1F)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(Cl)c3)C(=O)C2(C)C)cc1F)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3cnc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1F)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCCn1cc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)cn1)C(=O)N1C[C@H](O)C[C@H]1C(=O)N[C@@H](Cc1ccc(-c2cnco2)cc1)C(=O)O	B	1	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCN1CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(C2CCOCC2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCN1CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)COCCOc1ccc(-c2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)(C)[C@H](NC(=O)c1ccc(OCCOC2CCN(C(=O)c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CC2)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	C	2	lncap	vhl	AR	Androgen receptor
+CC(C)(C)c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)C[C@@H](C(=O)N[C@@H](C)C(=O)N1C[C@H](O)C[C@H]1C(=O)N[C@@H](C)c1ccc(Cl)cc1)N1CCN(CCCc2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)CC1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)C[C@H](NC(=O)CCCN1CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(=O)N[C@@H](C)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)C[C@H](OCCN1CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1)C(C)C	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)C[C@H](OCCN1CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(=O)N[C@@H](C)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)C[C@H](OCCN1CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1)C(C)(C)C	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)N(CC1CCN(CCCCn2c(=O)n(-c3ccc(C#N)c(C(F)(F)F)c3)c3ccccc32)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	D	3	vcap&lncap	crbn	AR	AR
+CC(C)N(CC1CCN(CCCn2c(=O)n(-c3ccc(C#N)c(C(F)(F)F)c3)c3ccccc32)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	D	3	vcap&lncap	crbn	AR	AR
+CC(C)N(CC1CCN(Cc2ccc(-n3c(=O)n(-c4ccc(C#N)c(C(F)(F)F)c4)c4ccccc43)cc2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	B	1	vcap&lncap	crbn	AR	AR
+CC(C)N(CC1CCN(c2ccc(CCn3c(=O)n(-c4ccc(C#N)c(C(F)(F)F)c4)c4ccccc43)cc2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	C	2	vcap&lncap	crbn	AR	AR
+CC(C)N(CC1CCN(c2ccc(Cn3c(=O)n(-c4ccc(C#N)c(C(F)(F)F)c4)c4ccccc43)cc2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	D	3	vcap&lncap	crbn	AR	AR
+CC(C)N(CC1CCN(c2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C34CCC4)cn2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	B	1	vcap&lncap	crbn	AR	AR
+CC(C)N(C[C@H]1C[C@H](Oc2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C34CCC4)cn2)C1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	B	1	vcap&lncap	crbn	AR	AR
+CC(C)[C@@H](C(=O)N1C[C@@H](O)C[C@H]1C(=O)NCc1ccc(C#N)cc1)N1Cc2ccc(N3CCN(CCCc4ccc(C(=O)N[C@H]5C(C)(C)[C@H](Oc6ccc(C#N)c(C(F)(F)F)c6)C5(C)C)cc4)CC3)cc2C1=O	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)[C@@H](C(=O)N1C[C@@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1OCCN1CCN(c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)N1Cc2ccccc2C1=O	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)[C@@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1N1CCN(CCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)CC1)N1Cc2ccccc2C1=O	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1)N1Cc2ccc(N3CCN(CCCc4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(C(F)(F)F)c6)C5(C)C)cc4)CC3)cc2C1=O	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)N[C@@H](C)c1ccc(C#N)cc1)c1cc(OCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)no1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)N[C@@H](C)c1ccc(C#N)cc1)c1cc(OCCN2CCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)no1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)[C@H](NC(=O)COCCCCOC1=CC=C(c2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)CC1)C(=O)N1CC(O)C[C@H]1C(=O)NCc1ccc(-c2ocnc2Cl)cc1	B	1	vcap	vhl	AR	Androgen receptor
+CC(C)[C@H](NC(=O)COCCCOCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(Cl)c3)C(=O)C2(C)C)cc1)C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2cncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC(C)[C@H](NC(=O)[C@H](C)NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@H](C)NCc1ccc(Cl)cc1)C(=O)OCCN1CCN(c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)[C@H](OCCN1CCN(c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(Cl)cc1)C(C)(C)C	C	2	vcap	vhl	AR	Androgen receptor
+CC(C)c1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC1(C)C(=O)N(c2ccc(C#N)c(C(F)(F)F)c2)C(=S)N1Cc1ccc(N2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)nc1	A	0	vcap&lncap	crbn	AR	AR
+CC1(C)C(=O)N(c2ccc(C#N)c(C(F)(F)F)c2)C(=S)N1Cc1ccc(OCCN2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)nc1	B	1	vcap&lncap	crbn	AR	AR
+CC1(C)C(NC(=O)c2ccc(-c3ccc(OCCNCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(C#N)cc4)C(C)(C)C)cc3)cc2)C(C)(C)C1Oc1ccc(C#N)c(Cl)c1	A	0	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2ccc(-c3ccc(OCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(C#N)cc4)C(C)(C)C)cc3)cc2)C(C)(C)C1Oc1ccc(C#N)c(Cl)c1	A	0	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2ccc(C#Cc3ccc(NCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(C#N)cc4)C(C)(C)C)nc3)cc2)C(C)(C)C1Oc1ccc(C#N)c(Cl)c1	A	0	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2ccc(N3CCN(CCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(C#N)cc4)C(C)(C)C)CC3)nc2)C(C)(C)C1Oc1ccc(C#N)c(Cl)c1	A	0	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2ccc(N3CCN(CCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(C5CCC5)cc4)C(C)(C)C)CC3)nc2)C(C)(C)C1Oc1ccc(C#N)c(Cl)c1	C	2	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2ccc(N3CCN(CCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(C5CCCC5)cc4)C(C)(C)C)CC3)nc2)C(C)(C)C1Oc1cc(Cl)c(C#N)cn1	C	2	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2ccc(NCCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4ncns4)cc3)C(C)(C)C)cc2)C(C)(C)C1Oc1ccc(C#N)c(Cl)c1	A	0	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2ccc(NCCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C4CC4)cc3)C(C)(C)C)cc2)C(C)(C)C1Oc1ccc(C#N)c(Cl)c1	A	0	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2ccc(NCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](Cc3ccc(-c4scnc4C4CC4)cc3)C(=O)O)C(C)(C)C)cc2)C(C)(C)C1Oc1ccc(C#N)c(Cl)c1	A	0	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2cnc(N3CCN(CCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(C5CC5)cc4)C(C)(C)C)CC3)nc2)C(C)(C)C1Oc1cc(Cl)c(C#N)cn1	C	2	vcap	vhl	AR	Androgen receptor
+CC1(C)C(NC(=O)c2cnn(CCOCCCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4cncs4)cc3)C(C)(C)C)c2)C(C)(C)C1Oc1ccc(C#N)c(Cl)c1	A	0	vcap	vhl	AR	Androgen receptor
+CC1(C)CN(C(=O)c2ccc(N3CCN(CC4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)CC[C@H]1Oc1ccc(C#N)c(Cl)c1	A	0	mda-mb-453	crbn	AR	Androgen receptor
+CC1(C)[C@H](Oc2ccc(C#N)c(Cl)c2)C(C)(C)[C@@H]1N1Cc2cc(C(=O)N3CCN(C4CC5(C4)CN(c4ccc6c(c4)C(=O)N(C4CCC(=O)NC4=O)C6=O)C5)CC3)ccc2C1=O	A	0	vcap	crbn	AR	Androgen receptor
+CC1(C)[C@H](Oc2ccc(C#N)c(Cl)c2)C(C)(C)[C@@H]1N1Cc2cc(C(=O)N3CCN(C4CN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)C4)CC3)ccc2C1=O	B	1	vcap	crbn	AR	Androgen receptor
+CC1(C)[C@H](Oc2ccc(C#N)c(Cl)c2)C(C)(C)[C@@H]1N1Cc2cc(N3CCN(CC4(F)CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)ccc2C1=O	A	0	mda-mb-453	crbn	AR	Androgen receptor
+CC1(CN2CCN(c3ccc4c(c3)CN([C@H]3CC[C@H](Oc5cnc(C#N)c(C(F)(F)F)c5)CC3)C4=O)CC2)CCN(c2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)CC1	D	3	mda-mb-453	crbn	AR	Androgen receptor
+CC1[C@H](NC(=O)c2ccc(N3CCN(CCOCC(=O)N[C@H](C(=O)N4C[C@@H](O)C[C@H]4C(=O)NCc4cc(F)ccc4F)C(C)(C)C)CC3)nc2)C(C)[C@@H]1Oc1ccc(C#N)c(Cl)c1	C	2	vcap	vhl	AR	Androgen receptor
+CCN(CC1CCN(CCOc2ccc(CN3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cn2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	B	1	vcap&lncap	crbn	AR	AR
+CCN(CC1CCN(c2ccc(CN3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cn2)CC1)[C@H]1C[C@H](Oc2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)C1	A	0	vcap&lncap	crbn	AR	AR
+CCN(c1cc(-c2ccc(CCCOCCCCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CCCOCCCCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CCCOCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CCOCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CN3CCC(CN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CN3CCN(CC4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CN3CCN(CCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CN3CCN(CCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CN3CCN(CCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(CN3CCN(CCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(COCCOc3ccc4c(c3)C(=O)N([C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(N3CCN(CCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(N3CCN(CCCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCCCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)cc2)cc(C(=O)NCC2C(=O)NC(C)=CC2C)c1C)C1CCOCC1	B	1	vcap	crbn	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOC3C=C4C(=O)N(C(C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)C)CC4=CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOC3C=C4C(=O)N([C@@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)C)CC4=CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOC3C=C4C(=O)N([C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)C)CC4=CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCCOc3ccc4c(c3)C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	crbn	AR	AR
+CCN(c1cc(-c2ccc(OCCCN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn	AR	AR
+CCN(c1cc(-c2ccc(OCCCOCC(=O)N[C@H](C(=O)N3CC(=O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOCCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOCCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3CC4C=CC=CC4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOc3ccc4c(c3)C(=O)N([C@@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCCOc3ccc4c(c3)C(=O)N([C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	crbn	AR	AR
+CCN(c1cc(-c2ccc(OCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCCCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCCOc3ccc4c(c3)C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	crbn	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCC(=O)N[C@H](C(=O)N3C[C@@H](O)C[C@@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCN[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)NCc3ccc(-c4scnc4C)cc3)C(C)(C)C)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOc3ccc(-c4coc([C@@H]5CCCN5C(=O)[C@@H](NC(=O)[C@H](C)NC)C5CCCCC5)n4)c4ccccc34)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOCCOCCOc3ccc(CCN4CC[C@@H]5CCN(C(=O)[C@@H](NC(=O)[C@H](C)NC)C6CCCCC6)[C@@H]5C4)cc3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOc3ccc(-c4coc([C@@H]5CCCN5C(=O)[C@@H](NC(=O)[C@H](C)NC)C5CCCCC5)n4)c4ccccc34)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOCCOc3ccc(CCN4CC[C@@H]5CCN(C(=O)C(NC(=O)C(C)NC)C6CCCCC6)[C@@H]5C4)cc3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOc3cc(C(C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)C)on3)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOCCOc3ccc4c(c3)C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn	AR	AR
+CCN(c1cc(-c2ccc(OCCOCc3ccc4c(c3)C(=O)N([C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOc3cc(-c4scnc4C)ccc3CNC(=O)C3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccc(OCCOc3ccc4c(c3)C(=O)N([C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c5scnc5C)cc3)C(C)C)C4)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CCN(c1cc(-c2cccc(OCCOCCOCCOCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)c2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CCN(c1cc(-c2ccccc2OCCOCCOCCOCCOCCOCCNc2cccc3c2C(=O)N(C2CCC(=O)NC2=O)C3=O)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn	AR	AR
+CCN(c1cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)cc(-c2ccc(OCCCOCCCOc3ccc4c(c3)C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)c1)C1CCOCC1	B	1	vcap	crbn	AR	AR
+CCO/N=C(/CCCCC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)N[C@@H](C)c1ccc(-c2scnc2C)cc1)C(C)(C)C)CCCc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)nc1	B	1	vcap	vhl	AR	Androgen receptor
+CCOC(=O)c1ncsc1-c1ccc(CN(C)C(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCN1CCN(c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(C)(C)C)c1ccc(-c2scnc2C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CC[C@H](NC(C)=O)C(=O)N1C[C@@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1OCCOCCOCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+CCc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CCn1c2c(c3ccc(C4=CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(C4=CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cc6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(C4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCC(CN5CCC(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCC5(CC4)CN(CC4CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC4)C5)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cc6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	D	3	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cc6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N([C@H]1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ncc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	D	3	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CCN(c6ncc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+CCn1c2c(c3ccc(N4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn	AR	AR
+CN(C)C(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCCCOc1ccc(C(=O)N[C@H]2C(C)(C)[C@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(C)(C)C	A	0	vcap	vhl	AR	Androgen receptor
+CN(C)C1=NCC(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)C=C1	C	2	vcap	vhl	AR	Androgen receptor
+CNC(=O)[C@@H]1CCCN1C(=O)C(NC(=O)COCCN1CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(C)(C)C	C	2	vcap	vhl	AR	Androgen receptor
+CNC(=O)c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N[C@@H]3[C@H](C(C)(C)C)Oc4ccc(C#N)cc4C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+CNC(c1cc(-c2ccc(OCCCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CNC(c1cc(-c2ccc(OCCCOCCCOCCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CNC(c1cc(-c2ccc(OCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn	AR	AR
+CNC(c1cc(-c2ccc(OCCOCCOCCNc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	crbn	AR	AR
+CNC(c1cc(-c2ccc(OCCOCCOCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CNC(c1cc(-c2ccc(OCCOCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CNC(c1cc(-c2ccc(OCCOCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	A	0	vcap	vhl	AR	AR
+CNC(c1cc(-c2ccc(OCCOCCOc3cc(-c4scnc4C)ccc3CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@H](C(C)C)N3Cc4ccccc4C3=O)cc2)cc(C(=O)NCc2c(C)cc(C)[nH]c2=O)c1C)C1CCOCC1	B	1	vcap	vhl	AR	AR
+CNCC(NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCCCOc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(C)(C)C)c1ccc(-c2scnc2C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+COCCOCC(=O)NC(C(=O)N1C[C@@H](OC(=O)CCc2cn(CCCCCC(=O)OC(CCCOCCOCC(=O)N[C@H](C(=O)N3C[C@H](O)C[C@H]3C(=O)N[C@@H](C)c3ccc(-c4scnc4C)cc3)C(C)(C)C)CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)nn2)C[C@H]1C(=O)N[C@@H](C)c1ccc(-c2scnc2C)cc1)C(C)(C)C	B	1	vcap	vhl	AR	Androgen receptor
+CO[C@@H]1C[C@@H](C(=O)N[C@H](C)c2ccc(-c3scnc3C)cc2)N(C(=O)[C@@H](NC(=O)CN2CCN(CCCc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)C(C)(C)C)C1	C	2	vcap	vhl	AR	Androgen receptor
+CO[C@@H]1C[C@H](C(=O)N(C)Cc2ccc(-c3scnc3C)cc2)N(C(=O)[C@@H](N(C)C(=O)COCCCCCN(C)c2ccc(C(=O)N(C)[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(C(F)(F)F)c4)C3(C)C)nc2)C(C)(C)C)C1	C	2	vcap	vhl	AR	Androgen receptor
+CO[C@@H]1C[C@H](C(=O)N(C)Cc2ccc(-c3scnc3C)cc2)N(C(=O)[C@@H](N(C)C(=O)COCCCCCN(C)c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(C(F)(F)F)c4)C3(C)C)nc2)C(C)(C)C)C1	C	2	vcap	vhl	AR	Androgen receptor
+COc1cc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)ccc1OCCCCOCC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1)C(C)(C)C	A	0	vcap	vhl	AR	Androgen receptor
+COc1cc(-c2scnc2C)ccc1CNC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCN1CCN(c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(C)(C)C	A	0	vcap	vhl	AR	Androgen receptor
+COc1cc(C#N)ccc1CNC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCCCNc1ccc(C(=O)NC2C(C)(C)C(Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(C)(C)C	A	0	vcap	vhl	AR	Androgen receptor
+COc1cc(C#N)ccc1[C@H](C)NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)C(NC(=O)CCCCN1CCN(c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(C)(C)C	C	2	vcap	vhl	AR	Androgen receptor
+COc1cc(C#N)ccc1[C@H](C)NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)C(NC(=O)COCCN1CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(C)(C)C	A	0	vcap	vhl	AR	Androgen receptor
+COc1cc(N2C(=O)C(C)(C)N(c3ccc(-c4ccc(OCCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6ocnc6C)cc5)C(C)(C)C)cc4)cc3)C2=S)ccc1C#N	A	0	vcap	vhl	AR	Androgen receptor
+COc1cc(N2C(=O)C(C)(C)N(c3ccc(OCCCCCOCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)cc3)C2=S)ccc1C#N	A	0	lncap	vhl	AR	Androgen receptor
+COc1cc(N2C(=O)C(C)(C)N(c3ccc(OCCCCOCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5cnco5)cc4)C(C)(C)C)c(F)c3)C2=S)ccc1C#N	A	0	vcap	vhl	AR	Androgen receptor
+COc1cc(N2C(=O)C(C)(C)N(c3ccc(OCCCCOCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)c(F)c3)C2=S)ccc1C#N	A	0	vcap	vhl	AR	Androgen receptor
+COc1cc(N2C(=O)C(C)(C)N(c3ccc(OCCCCOCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)cc3)C2=S)ccc1C#N	A	0	lncap	vhl	AR	Androgen receptor
+COc1cc(N2C(=O)C(C)(C)N(c3ccc(OCCCCOCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)cc3)C2=S)ccc1C#N	A	0	vcap	vhl	AR	Androgen receptor
+COc1cc(N2C(=O)C(C)(C)N(c3ccc(OCCOc4ccc(OCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)cc4)c(F)c3)C2=S)ccc1C#N	A	0	vcap	vhl	AR	Androgen receptor
+COc1cc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)c(F)c3)C2=S)ccc1C#N	B	1	vcap&lncap	crbn	AR	AR
+COc1cc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)C2=S)ccc1C#N	B	1	vcap&lncap	crbn	AR	AR
+COc1cc(OCCCCOCC(=O)N[C@H](C(=O)N2C[C@H](O)C[C@H]2C(=O)NCc2ccc(-c3scnc3C)cc2)C(C)C)ccc1-c1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@@H]1CCN(c2ccc(C(=O)N3CCN(C4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)CCN1c1ccc(C#N)cc1	D	3	vcap	crbn	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)C(NC(=O)COCCCCCc1ccc(C(=O)NC2C(C)(C)C(Oc3cc(Cl)c(C#N)c(Cl)c3)C2(C)C)cc1)C(C)(C)C)c1ccc(Cl)cc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)CN1CCN(CCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)CC1)C(C)(C)C)c1ccc(Cl)cc1	C	2	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCCOc1ccc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)cc1)C(C)(C)C)c1ccc(-c2cnco2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCCOc1ccc(C(=O)NC2C(C)(C)C(Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(C)(C)C)c1ccc(Cl)cc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCCOc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(C)(C)C)c1ccc(-c2ncon2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCCOc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(C)(C)C)c1ccc(-c2nncs2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCCOc1ccc(C(=O)N[C@H]2C[C@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C(C)(C)C)c1ccc(C#N)cc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCOCCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(C)(C)C)C1C=CC(c2nccn2C)=CC1	C	2	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCCOCCCCCOc1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1)C(C)(C)C)c1ccc(-n2ccnc2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCN1CC2CC1CN2c1ccc(C(=O)NC2C(C)(C)C(Oc3ccc(C#N)c(Cl)c3)C2(C)C)cn1)C(C)(C)C)c1ccc(-c2scnc2CO)cc1	B	1	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCN1CCN(c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(C(F)(F)F)c4)C3(C)C)cn2)CC1)C(C)(C)C)c1ccccc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCN1CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)CC1)C(C)(C)C)c1ccc(-c2scnc2CO)cc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@H](NC(=O)[C@@H]1C[C@@H](O)CN1C(=O)[C@@H](NC(=O)COCCOc1ccc(-c2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)cc1)C(C)(C)C)c1ccc(C#N)cc1	A	0	vcap	vhl	AR	Androgen receptor
+C[C@H]1CCN(c2ccc(C(=O)N3CCN(C4CN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)C4)CC3)cc2)CCN1c1ccc(C#N)cc1	D	3	vcap	crbn	AR	Androgen receptor
+C[C@H]1CCN(c2ccc(C(=O)N3CCN(CC4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)CCN1c1ccc(C#N)c(Cl)c1	C	2	vcap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC(C)CCN(C)c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)cc2)c1C	D	3	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC(C(=O)N4CC(C#Cc5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)C4)CC3)cc2)c1C	D	3	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC(C(=O)N4CC(C#Cc5cccc6c5CN(C5CCC(=O)NC5=O)C6=O)C4)CC3)cc2)c1C	D	3	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC(C(=O)N4CCC(C#Cc5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)c1C	D	3	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC(C(=O)N4CCC(C#Cc5cccc6c5CN(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)c1C	B	1	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC(CN4CC(C#Cc5cc6c(cc5F)CN(C5CCC(=O)NC5=O)C6=O)C4)CC3)cc2)c1C	D	3	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC(CN4CC(C#Cc5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6)C4)CC3)cc2)c1C	A	0	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC(CN4CC(C#Cc5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6)C4)CC3)cc2)c1C	A	0	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC(CN4CC(C#Cc5cccc6c5CN(C5CCC(=O)NC5=O)C6=O)C4)CC3)cc2)c1C	C	2	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC(N4CC(C#Cc5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6)C4)CC3)cc2)c1C	C	2	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCC4(CC3)CN(C3CCC(C#Cc5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6)CC3)C4)cc2)c1C	D	3	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCN(C(=O)C4CCC(C#Cc5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6)CC4)CC3)cc2)c1C	C	2	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCN(C(=O)C4CCC(C#Cc5cccc6c5CN(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)c1C	D	3	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCN(C(=O)C4CCC(C#Cc5cccc6c5CN(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)c1C	D	3	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCN(CCC#Cc4cccc5c4CN(C4CCC(=O)NC4=O)C5=O)CC3)cc2)c1C	C	2	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCN(CCCC#Cc4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5)CC3)cc2)c1C	C	2	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CC3CCN(CCCC#Cc4ccc5c(c4)CN(C4CCC(=O)NC4=O)C5=O)CC3)cc2)c1C	C	2	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#CCCC(=O)N3CCC(C#Cc4cccc5c4CN(C4CCC(=O)NC4=O)C5=O)CC3)cc2)c1C	C	2	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C#Cc3ccc(CN4CC(C#Cc5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6)C4)cc3)cc2)c1C	C	2	lncap	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C(=O)N3CCC(CN4CCC(C#Cc5cccc6c5C(=O)N(C5CCC(=O)NC5=O)C6)CC4)CC3)cc2)c1C	D	3	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(C(=O)NC3CCN(C4CCC(C#Cc5cccc6c5C(=O)N(C5CCC(=O)NC5=O)C6)CC4)CC3)cc2)c1C	D	3	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(-c2ccc(C#N)c(Cl)c2)nn(Cc2ccc(N3CCN(CC4CCN(c5cccc6c5C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)c1C	D	3	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(-c2nn(Cc3ccc(C#CC4CCC(CN5CC(C#Cc6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7)C5)CC4)cc3)c(C)c2C)ccc(C#N)c1Cl	A	0	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(-c2nn(Cc3ccc(C#CC4CCC(CN5CCC(Oc6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7)CC5)CC4)cc3)c3c2CCC3)ccc(C#N)c1Cl	A	0	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(N2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)cc1	D	3	vcap&lncap	crbn	AR	AR
+Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(OCCCN2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)cc1	D	3	vcap&lncap	crbn	AR	AR
+Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(OCCN2CCC(CN3CCN(C4=CC5C(=O)N(C6CCC(=O)NC6=O)C(=O)C5C=C4)CC3)CC2)cc1	D	3	vcap&lncap	crbn	AR	AR
+Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(OCCOCCN2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)cc1	D	3	vcap&lncap	crbn	AR	AR
+Cc1c(C#N)c(-c2ccc(C#N)cc2)c(C)n1Cc1ccc(OCCOCCOCCN2CCC(CN3CCN(c4ccc5c(c4)C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)CC2)cc1	D	3	vcap&lncap	crbn	AR	AR
+Cc1c(OC2CCN(C(=O)c3ccc(C4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)ccc(C#N)c1Cl	A	0	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(OC2CCN(C(=O)c3ccc(N4CC5(CN(CC6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)C5)C4)cc3)CC2)ccc(C#N)c1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+Cc1c(OC2CCN(C(=O)c3ccc(N4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)ccc(C#N)c1Cl	A	0	mda-mb-453	crbn	AR	Androgen receptor
+Cc1cc(-c2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)ccc1OCCCCOCC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCc1ccc(-c2scnc2C)cc1)C(C)(C)C	A	0	vcap	vhl	AR	Androgen receptor
+Cc1cc(C(C(=O)N2C[C@H](O)C[C@H]2C(=O)NCc2ccc(Cl)cc2OCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)C)on1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1cc(C)c(CCC(=O)c2cc(-c3ccc(CN4CCN(CCOCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(=O)C2c3ccccc3N(C(C)C3CCN(C(=O)COCCOCCOCCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)CC4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)C2C)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(=O)c2c(C)n(C(C)C3CCN(C(=O)COCCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)c3ccccc23)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(=O)c2c(C)n(C(C)C3CCN(C(=O)COCCOCCOCCNc4cccc5c4C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)c3ccccc23)c(=O)[nH]1	B	1	vcap	crbn	AR	AR
+Cc1cc(C)c(CNC(=O)c2c(C)n(C(C)C3CCN(C(=O)COCCOCCOCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)CC3)c3ccccc23)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(=O)c2c(C)n(C(C)C3CCN(C(=O)COCCOCCOCCOCCC(=O)c4cccc5c4C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)c3ccccc23)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCCCCCOCCCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCCCCOCCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(=O)c2cc(-c3ccc(CN4CCN(CCOCCCOCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)cc3)cc3c2ccn3C2CCCC2)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(C)c(CNC(O)C2c3ccccc3N(C(C)C3CCN(C(=O)COCCOCCOCCOCCOCCNc4cccc5c4C(=O)N(C4CCC(=O)NC4=O)C5=O)CC3)C2C)c(=O)[nH]1	B	1	vcap	vhl	AR	AR
+Cc1cc(N2C(=O)C(C)(C)N(c3ccc(-c4ccc(OCCCCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)NCc5ccc(-c6cnco6)cc5)C(C)(C)C)cc4)cc3)C2=S)ccc1C#N	A	0	vcap	vhl	AR	Androgen receptor
+Cc1cc(N2C(=O)C(C)(C)N(c3ccc(OCCCCCOCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)NCc4ccc(-c5scnc5C)cc4)C(C)(C)C)cc3)C2=S)cc(C)c1C#N	A	0	lncap	vhl	AR	Androgen receptor
+Cc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCN(CCOCC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)nc3)C2(C)C)ccc1C#N	A	0	vcap	vhl	AR	Androgen receptor
+Cc1cc(OCCCCOCC(=O)N[C@H](C(=O)N2C[C@H](O)C[C@H]2C(=O)NCc2ccc(-c3scnc3C)cc2)C(C)(C)C)ccc1-c1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1cn(-c2ccc([C@H](C)NC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)COCCOCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)C(C)(C)C)cc2)cn1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1nc(-c2ccn(C[C@H](C)NC(=O)c3cc(COCCCN4CCN(CC(=O)N[C@H](C(=O)N5C[C@H](O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)(C)C)CC4)[nH]n3)n2)ccc1C#N	C	2	vcap	vhl	AR	Androgen receptor
+Cc1nc(N2CC(Oc3ccc4cc(C(=O)N[C@H](C(=O)N5C[C@](C)(O)C[C@H]5C(=O)N[C@@H](C)c5ccc(-c6scnc6C)cc5)C(C)(C)C)oc4c3)C2)ncc1C(=O)NC1C(C)(C)C(Oc2ccc(C#N)c(Cl)c2)C1(C)C	A	0	vcap	vhl	AR	Androgen receptor
+Cc1nc(O[C@H]2C(C)(C)[C@@H](NC(=O)c3ccc(N4CCN(CCCN5CCN(CC(=O)N[C@H](C(=O)N6C[C@H](O)C[C@H]6C(=O)N[C@@H](C)c6ccc(-c7scnc7C)cc6)C(C)(C)C)CC5)CC4)nc3)C2(C)C)ccc1C#N	C	2	vcap	vhl	AR	Androgen receptor
+Cc1nccn1-c1ccc([C@@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](C(C)C)n2cc(-c3ccc(OC4CCN(c5ccc(N6C(=S)N(c7ccc(C#N)c(C(F)(F)F)c7)C(=O)C6(C)C)cn5)CC4)nc3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1nccn1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](C(C)C)n2cc(OCCCOCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)nc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1nccn1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CNC(=O)c2ccc(Oc3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1nccn1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)nn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1nccn1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCNc2ccc(-c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1nccn1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOc2ccc(-c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1nccn1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCCCOCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCC(=O)Nc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)c(F)c3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3F)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C45CCC5)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(Cl)c5)C(=O)C4(C)C)c(F)c3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(Cl)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(Oc3ccc(N4C(=S)N(c5cnc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCNC(=O)c2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4cnc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOc2ccc(Oc3ccc(N4C(=S)N(c5cnc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccccc2OCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc([C@H](C)NC(=O)[C@@H]2CC(F)(F)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC2(F)CC3(C2)CC(F)(COc2ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc2)C3)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCNc2ccc(-c3ccc(N4C(=S)N(c5cnc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCNc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)c(F)c3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCCCOCCC(O)CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncoc1C12CC(CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)COCCCOCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)C(C)(C)C)(C1)C2	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(C(C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cnc(CCCCOCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(C(C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](c2cc(OCCN3CCN(c4ccc(C(=O)N[C@H]5C(C)(C)[C@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)no2)C(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(C(NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cn3)CC2)C(C)(C)C)C2COC2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2CC(O)CN2C(=O)[C@H](C(C)C)n2cc(Oc3cccc(OCCCCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)c3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)CCCCCOCCCCOCCCC#Cc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)COCCCCOc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)nc3)C(=O)C2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C([C@H](C)O)N2Cc3ccccc3C2=O)c(OCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cn3)CC2)c1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)C(C)(C)C(O)CCCOCCCCCOc2ccc(N3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)C(C)(C)C)C(C)(C)C)c(OCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)C(C)C)C(C)(C)C)c(OCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)C2=CC(OCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CC=C2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)C2=CC(OCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CC=C2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CC(=O)CCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCOc2ccc(CCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOCCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOCCOCCNC(=O)c2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOc2ccc(CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOc2ccc(CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCN2CCC(OCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CC2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCNC(=O)CCCc2ccc(N3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCOCCN2CCC(COc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCOCCOCCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCOCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCOCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)nc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCOc2ccc(CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCOc2ccc(CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCc2ccc(OCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCc2ccc(OCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCc2ccc(OCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCc2ccc(OCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN(C)CCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCC(OCCOc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCC3(CC2)CCN(c2ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn2)CC3)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCc3cn(-c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(C(F)(F)F)c6)C5(C)C)cc4)nn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCOc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCOc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CNC(=O)CCCOc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CNCCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CNCCNc2ccc(-c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COC/C=C/COCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC#CCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC(O)C(O)COc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC(O)CCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC(O)[C@H](O)COc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC2CC(Oc3ccc(-c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)cc3)C2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC2CC(Oc3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)C2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC2CCN(c3ccc(-c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)cn3)CC2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC2CCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCC(O)COc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCC2CCN(CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CC2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCC2CCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCC(=O)N2CC=C(c3ccc(N4C(=S)N(c5ccc(C#N)c(Cl)c5)C(=O)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCCCCCCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOC2CCN(C(=O)c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CC2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOC2CCN(C(=O)c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CC2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCS(=O)(=O)c2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCN(C)C(=O)c2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCNc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCNc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCNc2ccc(-c3ccc(N4C(=S)N(c5cnc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCNc2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCCOc2cccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)c2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)c(F)c3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c(F)c2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c(O)c2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2O)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3F)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cn3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C45CCC5)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(Cl)c5)C(=O)C4(C)C)c(F)c3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(Cl)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(Oc3ccc(N4C(=S)N(c5cnc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCN(C)CC2CC(Oc3ccc(N4C(=S)N(c5cnc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)C2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCNC(=O)c2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOC2CCN(C(=O)c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CC2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCC(C)(C)CCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCC(O)CCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCC(O)CCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)[C@@H]3C)cc2)C(C)(C)C)nc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc([N+](=O)[O-])c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4cccc(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCNc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCNc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C34CCOCC4)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4cnc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2cccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)c2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCOc2ccc(CN3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCOc2ccc(CN3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CC3CC2CN3c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cn3)C(=O)C2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCNc2ccc(-c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCNc2ccc(-c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCNc2ccc(-c3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cn2)C(C)(C)C)nc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCC#CCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCC(=O)NCCCc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCCCCOc2ccc(N3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCCCCOc2ccc(N3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCOCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCOc2ccc(N3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCOc2ccc(N3C(=S)N(c4ccc([N+](=O)[O-])c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOc2cccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOc2cccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCO[C@H](C)[C@@H](C)OCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOc2ccc(-c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOc2cccc(CCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOc2cccc(CCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COC[C@H](O)CCOc2ccc(C3=CC=C(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)CC3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COC[C@H](O)[C@@H](O)COc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COC[C@H](O)[C@@H](O)COc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CO[C@@H](C)CCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CO[C@@H](C)c2ccc(Oc3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CO[C@H](C)[C@@H](C)OCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CO[C@H](C)[C@@H](C)OCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CO[C@H](C)c2ccc(Oc3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COc2ccc(OCC#Cc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COc2ccc(Oc3cccc(-c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)c3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COc2cccc(Oc3ccc(-c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)cc3)c2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COc2ccccc2CCCOc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CS(=O)(=O)CCOc2ccc(-c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)Cc2cccc(OCCCOCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)Cc2cccc(OCCCOCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)OCCOCCCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(C3CCN(CCCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)CC3)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(C3CCN(CCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)CC3)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(OCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(OCCCCOc3ccc(-c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)cc3)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(OCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(OCCCOc3ccc(-c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(OCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(OCCOCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(OCCOCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(OCCOCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccc(OCCOc3ccc(-c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)cc3)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2cccc(CCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2cccc(OCCOCCOc3ccc(N4C(=O)C(C)(C)N(c5cc(C(F)(F)F)c(C#N)c(C(F)(F)F)c5)C4=S)nc3)c2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccccc2OCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2ccccc2OCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2CC(OCCCOCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)=CC2=O)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2CC(OCCOCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)=CC2=O)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3c(CCCOCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)cccc3C2=O)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3c(CCCOCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)cccc3C2=O)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3cc(CCCCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)ccc3C2=O)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3cc(CCCCOCCCOc4ccc(N5C(=O)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5C)cc4)ccc3C2=O)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3cc(CCCCOCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)ccc3C2=O)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3cc(CCCOCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)ccc3C2=O)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccc(N4CCN(CCCc5ccc(C(=O)NC6C(C)(C)C(Oc7ccc(C#N)c(C(F)(F)F)c7)C6(C)C)cc5)CC4)cc3C2=O)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(N2CCN(CCCc3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)c1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCCCOCCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCCOCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)c1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCOCCOCCCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCOCCOCCOCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCOCCOCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCOCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCOCCOCCOc2ccc(N3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCOCCOc2ccc(N3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCO[C@@H]2CCCC[C@@H]2OCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCO[C@@H]2CCC[C@@H]2OCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OC3CCN(c4ccc(-c5ccc(N6C(=S)N(c7ccc(C#N)c(C(F)(F)F)c7)C(=O)C6(C)C)cc5)cn4)CC3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCCCOCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)nc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C)NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](OC(C)(C)C)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCOCCOCCOc2ccc(N3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)C(NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)C(NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2cccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)c2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C34CCN(C)CC4)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCC[C@@H](C)OC2=CC=C(C3=CC=C(N4C(=S)N(C5=CC(C(F)(F)F)C(C#N)C=C5)C(=O)C4(C)C)CC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCC[C@H](C)OC2=CC=C(C3=CC=C(N4C(=S)N(C5=CC(C(F)(F)F)C(C#N)C=C5)C(=O)C4(C)C)CC3)CC2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCOc2ccc(N3C(=O)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccc(N4CCN(CCCc5ccc(C(=O)N[C@H]6C(C)(C)[C@@H](Oc7ccc(C#N)c(Cl)c7)C6(C)C)cc5)CC4)cc3C2=O)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccc(N4CCN(CCCc5ccc(C(=O)N[C@H]6C(C)(C)[C@H](Oc7ccc(C#N)c(Cl)c7)C6(C)C)cc5)CC4)cc3C2=O)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(N2CCN(CCCc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)c1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCC#CC#CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(CNC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@H](C(C)C)n2cc(Oc3cccc(OCCCCCOc4ccc(N5C(=O)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)c3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc(NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccccc3C2=O)c(OCCCOCCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)c1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(-c3ccnc(OC4CN(c5ncc(C(=O)NC6C(C)(C)C(Oc7ccc(C#N)c(Cl)c7)C6(C)C)cn5)C4)c3)cn2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@@H](C)NC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@@H](CN(C)C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOc2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@@H](CN)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@@H](CN2CCCC2)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@@H](NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCc3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)C(C)(C)C)C2COC2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@@H](NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cn3)CC2)C(C)(C)C)C2COC2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)C2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCC3(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cc4)COC3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)C2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2[C@H](C)CN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)nc3)C[C@@H]2C)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2CC(O)CN2C(=O)[C@H](C(C)C)n2cc(Oc3cccc(OCCCCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)c3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2CCCN2C(=O)[C@@H](NC(=O)CN2CCN(CCCc3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](F)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)CCCCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)CCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)CCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)CN2CCOCCOCCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CCOCCOCC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)CN2CCO[C@@H](CN3CCOC(COc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)C3)C2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)COCCCCOc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(C(F)(F)F)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)COCCc2cn(-c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)nn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(NC(=O)OC(C)(C)C)[C@@H](C)OCCCN(C)CCc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)C(c2cc(OCCN3CCN(c4ccc(C(=O)N[C@H]5C(C)(C)[C@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)no2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](C(C)C)n2cc(-c3ccnc(N4CC[C@@H](Nc5ccc(C(=O)N[C@H]6C(C)(C)[C@@H](Oc7ccc(C#N)c(Cl)c7)C6(C)C)cc5)C4)c3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](C(C)C)n2cc(OCCCOCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)nc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](N)[C@@H](C)OCCCN(C)CCc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)C#Cc2ccc(OC3CCC(Oc4ccc(C(=O)N[C@H]5C(C)(C)[C@@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cc4)CC3)nc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)C(=O)N2CCN(CCOc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCC(F)(F)CN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCC2(N3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)COC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCCCCCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCCCCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCCCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCN2CC3CC2CN3c2ccc(C(=O)NC3CC(Oc4ccc(C#N)c(Cl)c4)C3)cn2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCc2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCN(C)C(=O)[C@@H](NC(=O)[C@H](C(C)C)N(C)CCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)C)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCN2C3CCC2CN(CCCc2ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc2)C3)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CC3CC2CN3CCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CC3CCC(C2)N3CCCc2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CC3CCC2CN3CCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCC(OCCOc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCC(O[C@H]3C[C@@H](Nc4ccc(C(=O)N[C@H]5C(C)(C)[C@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cc4F)C3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCC(O[C@H]3C[C@@H](Nc4ccc(C(=O)N[C@H]5C(C)(C)[C@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)C3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CC3(CNc4ccc(C(=O)N[C@H]5C(C)(C)[C@H](Oc6ccc(C#N)c(C(F)(F)F)c6)C5(C)C)cc4)COC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CC3(Cc4ccc(C(=O)N[C@H]5C(C)(C)[C@H](Oc6ccc(C#N)c(C(F)(F)F)c6)C5(C)C)cc4)COC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCC3(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(C(F)(F)F)c6)C5(C)C)cc4)COC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCCN3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(F)c6)C5(C)C)cn4)CC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCCc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCCc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCN3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(C#N)c6)C5(C)C)cn4)CC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCN3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(C(F)(F)F)c6)C5(C)C)cn4)CC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCN3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCOCc3cc(C(=O)N[C@@H](C)Cn4ccc(-c5ccc(C#N)c(C(F)(F)F)c5)n4)n[nH]3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCOCc3cc(C(=O)N[C@@H](C)Cn4ccc(-c5ccc(C#N)c(Cl)c5)n4)n[nH]3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C#N)c5)C4(C)C)cc3)CC2)C2COC2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C2COC2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCc3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCN3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCOCCN3CCN(c4ccc(C(=O)N[C@H]5C(C)(C)[C@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCOc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(C[C@@H](F)Cc3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCOC(CN3CCOC(COc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)C3)C2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCOC(COCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)C2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCOCCN(CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)CCOCC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCO[C@@H](CN3CCO[C@@H](COc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)C3)C2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCO[C@@H](CN3CCO[C@H](COc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)C3)C2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CNC(=O)c2ccc(Oc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CNC(=O)c2ccc(Oc3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)cc2)C(C)(C)C)nc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CNC2CC(N3CCN(c4ccc(C(=O)N[C@H]5C(C)(C)[C@@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)C2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CNCCNc2ccc(-c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COC2CCCC[C@@H]2N2CCN(CCOc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC#CCOc2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC(F)(F)C(F)(F)C(F)(F)COc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC(O)CCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCC2CCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCC2(CNc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)COC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCC2CCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCC2(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)COC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNC23CC(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)(C2)C3)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N(C)C3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(C(F)(F)F)n4)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)nc2)C(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4cnc(C#N)c(C(F)(F)F)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)nc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)c(F)c2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N[C@H]3C[C@H](Oc4ccc(C#N)c(Cl)c4)C3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ncc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)nn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCc2ccc(C(=O)NC3C(C)(C)C(Oc4cc(C(F)(F)F)c(C#N)cn4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCNc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)c(F)c3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cn3)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCC(CCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)OC(=O)CCc2cn(CCCCCC(=O)O[C@H](C)c3ccc(-c4scnc4C)cc3)nn2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCC(O)CCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCNc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2c(F)cc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2c(F)cc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4cc(C(F)(F)F)c(C#N)cn4)C(=O)C3(C)C)cc2)C2COC2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4cnc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN(C)CCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)nc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN(CCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)nc2)CCC(F)(F)F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CC3CC2CN3c2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(Cc3cc(C(=O)N[C@@H](C)Cn4ccc(-c5ccc(C#N)c(Cl)c5)n4)n[nH]3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C#N)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)nc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ncc(C#N)c(N)n5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Sc5ccc(C#N)c(Cl)c5)C4(C)C)nc3)C[C@H]2CO)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)nn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3cnc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCNc2ccc(-c3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cn2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOCCOCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	B	1	lncap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCOc2ccc(-c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCN2C3CCC2CN(c2ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn2)C3)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COC[C@H](O)CCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COC[C@H](O)[C@@H](O)COc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COC[C@H](O)[C@H](O)COc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CO[C@@H](C)CN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CO[C@@H]2CCCC[C@H]2N2CCN(CCOc3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CO[C@H](C)CN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COc2ccc(OC3C4CC5CC3CC(Oc3ccc(N6C(=S)N(c7ccc(C#N)c(C(F)(F)F)c7)C(=O)C6(C)C)cc3)(C5)C4)nc2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COc2ccc(OC3CCN(c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)CC3)nc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COc2ccc(OC3CCN(c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cn4)CC3)nc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)Cc2ccnc(N3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)c2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)OCCC2(CCOc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)COC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)OCc2ccccc2)[C@@H](C)OCCCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)[C@H](C)OCCN2CCN(c3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)[C@H](CO)N2CCN(CCOc3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)c2cc3ccc(OC[C@H]4C[C@H](COc5ccc(N6C(=S)N(c7ccc(C#N)c(C(F)(F)F)c7)C(=O)C6(C)C)cc5)C4)cc3o2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](c2ncc(CCCCCNc3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)nc3)n2C)C(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](c2ncc(CCCN3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)n2C)C(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](c2ncc(CCCN3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)n2C)C(C)O)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](c2ncc(COC3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cc4)CC3)o2)C(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)C2CC(N3CCN(CCCc4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cc4)CC3)=NO2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)C2CC(N3CCN(CCCc4ccc(C(=O)N[C@H]5C(C)(C)[C@@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cc4)CC3)=NO2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N(C)C(=O)CN2CCN(CCOc3ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccc(N4CCN(CCCc5ccc(C(=O)NC6C(C)(C)C(Oc7ccc(C#N)c(Cl)c7)C6(C)C)cc5)CC4)cc3C2=O)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccc(N4CCN(CCCc5ccc(C(=O)N[C@H]6C(C)(C)[C@@H](Oc7ccc(C#N)c(Cl)c7)C6(C)C)cc5)CC4)cc3C2=O)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)N2Cc3ccc(OCCN4CCN(c5ccc(C(=O)N[C@H]6C(C)(C)[C@H](Oc7ccc(C#N)c(Cl)c7)C6(C)C)cn5)CC4)cc3C2=O)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(-c3ccnc(N4CC[C@@H](Nc5ccc(C(=O)N[C@H]6C(C)(C)[C@@H](Oc7ccc(C#N)c(Cl)c7)C6(C)C)cc5)C4)c3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(-c3ccnc(N4CC[C@H](Oc5ccc(N6C(=S)N(c7ccc(C#N)c(C(F)(F)F)c7)C(=O)C6(C)C)cc5)C4)c3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(-c3ccnc(OC4CN(c5ccc(C(=O)N[C@H]6C(C)(C)[C@@H](Oc7ccc(C#N)c(Cl)c7)C6(C)C)cn5)C4)c3)cn2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(-c3ccnc(OC4CN(c5ccc(C(=O)N[C@H]6C(C)(C)[C@H](Oc7ccc(C#N)c(Cl)c7)C6(C)C)cn5)C4)c3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(-c3ccnc(OC4CN(c5ncc(C(=O)NC6C(C)(C)C(Oc7ccc(C#N)c(Cl)c7)C6(C)C)cn5)C4)c3)cn2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCC3CCN(c4ccc(C(=O)N[C@H]5C(C)(C)[C@@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cc4)CC3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCCCOCCC(O)CCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCCCOCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCCCOCCCCCOc3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cn2)nc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCCCOCCCn3cnc(-c4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)c3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(OCCCOCCCn3cnc(C4CCC(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)CC4)c3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(Oc3ccc(OC4CCC(Oc5ccc(N6C(=S)N(c7ccc(C#N)c(C(F)(F)F)c7)C(=O)C6(C)C)cc5)CC4)nc3)cn2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cc(Oc3cccc(OCCCCCOc4ccc(N5C(=S)N(c6ccc(C#N)c(C(F)(F)F)c6)C(=O)C5(C)C)cc4)c3)cn2)nc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2cnc(-c3ccnc(N4CCC(Oc5ccc(N6C(=S)N(c7ccc(C#N)c(C(F)(F)F)c7)C(=O)C6(C)C)cc5)C4)c3)c2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](C(C)C)n2nccc2OCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](NC(=O)CN2CCN(CCCc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C2COC2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@H](NC(=O)CN2CCN(CCCc3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(C#N)c5)C4(C)C)cc3)CC2)C2COC2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](OC(=O)C(C)C)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](OC(=O)CC/C=C/CCC(=O)O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCCCC(=O)OCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](OC(=O)CCC(=O)O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](OC(=O)CCCCCCC(=O)O)CN2C(=O)[C@@H](NC(=O)COCCCOCCC(CCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)OC(=O)CCCCCCC(=O)O)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](OC(=O)OC(C)C)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](OC(=O)[C@@H](N)CCCCN)CN2C(=O)[C@@H](NC(=O)COCCCOCCC(CCOc2ccc(N3C(=S)N(c4ccc(C#N)c(C(F)(F)F)c4)C(=O)C3(C)C)cc2)OC(=O)[C@@H](N)CCCCN)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](OC(=O)[C@@H]3CCCN3)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@@H](OCOC(=O)OC(C)C)CN2C(=O)[C@@H](NC(=O)COCCCCCNc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)CN2CC(N3CCN(c4ccc(C(=O)N[C@H]5C(C)(C)[C@@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)C2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(C3CN(c4ccc(C(=O)N[C@H]5C(C)(C)[C@@H](Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)C3)CC2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CC3CCN(c4ccc(C(=O)NC5C(C)(C)C(OC6=CC(Cl)=C(C#N)CC6)C5(C)C)cn4)CC3)CC2)C(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCC/C(CCCc2ccc(C(=O)N[C@H]3C(C)(C)[C@@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)nc2)=N\O)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCC(CCCc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)nc2)N2CCN(C)CC2)C(C)(C)C)cc1	B	1	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCCOc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4CC(Oc5ccc(C#N)c(Cl)c5)C4)cn3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](C)NC(=O)[C@H]2C[C@H](O)CN2C(=O)[C@@H](NC(=O)CN2C3CCC2CN(CCCOc2ccc(C(=O)N[C@H]4C(C)(C)[C@H](Oc5cc(Cl)c(C#N)cn5)C4(C)C)cc2)C3)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](CN(C)C)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOc2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](CN)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](CN2CCCC2)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCCOc2ccc(C(=O)NC3C(C)(C)C(Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](CO)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCC(F)(F)CN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](CO)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](CO)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](CO)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CC3CCN(c4ccc(C(=O)NC5C(C)(C)C(Oc6ccc(C#N)c(Cl)c6)C5(C)C)cn4)CC3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](CO)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCCc3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cc3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](CO)NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCN2CCN(c3ccc(C(=O)NC4C(C)(C)C(Oc5ccc(C#N)c(Cl)c5)C4(C)C)cn3)CC2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1-c1ccc([C@H](NC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CN2CCN(CCCc3ccc(C(=O)N[C@H]4C(C)(C)[C@@H](Oc5ccc(C#N)c(C(F)(F)F)c5)C4(C)C)cc3)CC2)C(C)(C)C)C2COC2)cc1	C	2	vcap	vhl	AR	Androgen receptor
+Cc1ncsc1C1C=CC(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)CO[C@H](C)CCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)=CC1	A	0	vcap	vhl	AR	Androgen receptor
+Cn1c2c(c3cc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)ccc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+Cn1c2c(c3cc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)ccc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	D	3	lncap fgc	crbn	AR	AR
+Cn1c2c(c3cc(N4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)ccc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+Cn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn	AR	AR
+Cn1c2c(c3ccc(C4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+Cn1c2c(c3ccc(C4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn	AR	AR
+Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	C	2	lncap fgc	crbn	AR	AR
+Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7C(C)(C)[C@H](Oc8ccc(C#N)c(Cl)c8)C7(C)C)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn	AR	AR
+Cn1c2c(c3ccc(N4CCN(CC5CCN(c6ncc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)cn6)CC5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	B	1	lncap fgc	crbn	AR	AR
+Cn1c2c(c3ccc(N4CCN(CC5CN(c6ccc(C(=O)N[C@H]7CC[C@H](Oc8ccc(C#N)c(Cl)c8)CC7)nn6)C5)CC4)cc31)C(=O)N(C1CCC(=O)NC1=O)C2=O	A	0	lncap fgc	crbn	AR	AR
+Cn1cncc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCCOc2ccc(-c3ccc(N4C(=S)N(c5ccc(C#N)c(C(F)(F)F)c5)C(=O)C4(C)C)cc3)cc2)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+Cn1nccc1-c1ccc(CNC(=O)[C@@H]2C[C@@H](O)CN2C(=O)[C@@H](NC(=O)COCCCOCCCCOc2ccc(N3C(=S)N(c4ccc(C#N)c(Cl)c4)C(=O)C3(C)C)cc2F)C(C)(C)C)cc1	A	0	vcap	vhl	AR	Androgen receptor
+N#Cc1ccc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7)CC5)CC4)cc3)C2=S)cc1Cl	B	1	vcap&lncap	crbn	AR	AR
+N#Cc1ccc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)c(F)c3)C2=S)cc1Cl	A	0	vcap&lncap	crbn	AR	AR
+N#Cc1ccc(N2C(=O)C3(CCC3)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)C2=S)cc1Cl	B	1	vcap&lncap	crbn	AR	AR
+N#Cc1ccc(N2CCC(Oc3ccc(C4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1Cl	A	0	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(N2CCC(Oc3ccc(C4CCN(CC5CCN(c6cccc7c6C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1Cl	B	1	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(N2CCC(Oc3ccc(C4CCN(CCC5CCN(c6cccc7c6C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2C3CCC2CN(C(=O)c2ccc(C#CC4CCN(C5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc2)C3)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2C3CCC2N(C(=O)c2ccc(C#CC4CCN(CC5CCN(c6cccc7c6C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc2)C3)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2C3CCC2N(C(=O)c2ccc(C#CC4CCN(CC5CN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc2)C3)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2C3CCC2N(C(=O)c2ccc(C#CC4CCN(CC5CN(c6cccc7c6C(=O)N(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc2)C3)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CC3CCC2N3C(=O)Oc2ccc(N3CCN(CC4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)CC3)cc2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)Oc3ccc(N4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(C4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1Cl	A	0	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(C4CN(C5CC6(CCN(c7cccc8c7C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)C5)C4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(C4CN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(C4CN(CC5CCN(c6cccc7c6C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(N4CCC(N5CC(C#Cc6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7)C5)CC4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(N4CCC(N5CC(C#Cc6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(N4CCC(N5CC(C#Cc6cccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(N4CCC5(CC4)CN(C4CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC4)C5)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(N4CCC5(CC4)CN(C4CCN(c6cccc7c6C(=O)N(C6CCC(=O)NC6=O)C7=O)CC4)C5)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(N4CCC5(CC4)CN(CC4CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC4)C5)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(N4CCC5(CC4)CN(CC4CCN(c6cccc7c6C(=O)N(C6CCC(=O)NC6=O)C7=O)CC4)C5)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(N4CCN(C5CC6(CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)C5)CC4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(OC2CCN(C(=O)c3ccc(N4CCN(C5CC6(CCN(c7cccc8c7C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)C5)CC4)cc3)CC2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(O[C@H]2CC[C@@H](N3Cc4cc(N5CCN(CC6(F)CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)ccc4C3=O)CC2)cc1Cl	B	1	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(O[C@H]2CC[C@@H](N3Cc4cc(N5CCN(CC6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)ccc4C3=O)CC2)cc1Cl	A	0	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ccc(O[C@H]2CC[C@H](N3Cc4cc(C(=O)N5CCN(CC6CN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)C6)CC5)ccc4C3=O)CC2)cc1Cl	B	1	vcap	crbn	AR	Androgen receptor
+N#Cc1ccc(O[C@H]2C[C@@H]3CN(C(=O)c4ccc(C5CCN(CC6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C[C@@H]3C2)cc1Cl	D	3	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ncc(N2C(=O)C3(CCC3)N(c3ccc(CCCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2=S)cc1Cl	A	0	vcap&lncap	crbn	AR	AR
+N#Cc1ncc(N2C(=O)C3(CCC3)N(c3ccc(OC4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)c(F)c3)C2=S)cc1Cl	B	1	vcap&lncap	crbn	AR	AR
+N#Cc1ncc(N2C(=O)C3(CCC3)N(c3ccc(OC4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)nc3)C2=S)cc1C(F)(F)F	B	1	vcap&lncap	crbn	AR	AR
+N#Cc1ncc(N2C(=O)N(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7)CC5)CC4)cc3)C3(CCC3)C2=O)cc1Cl	A	0	vcap&lncap	crbn	AR	AR
+N#Cc1ncc(N2CCC(Oc3ccc(N4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	A	0	mda-mb-453	crbn	AR	Androgen receptor
+N#Cc1ncc(O[C@H]2CC[C@@H](N3Cc4cc(N5CCN(CC6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)ccc4C3=O)CC2)cc1C(F)(F)F	C	2	mda-mb-453	crbn	AR	Androgen receptor
+[2H]C([2H])(Nc1ccc(C(=O)N[C@H]2C(C)(C)[C@@H](Oc3ccc(C#N)c(Cl)c3)C2(C)C)cc1)C([2H])([2H])C([2H])([2H])C([2H])([2H])C([2H])([2H])C([2H])([2H])OCC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)N[C@@H](C)c1ccc(-c2scnc2C)cc1)C(C)(C)C	A	0	vcap	vhl	AR	Androgen receptor
+[C-]#[N+]c1ccc(N2C(=O)C(C)(C)N(c3ccc(OC4CCC(Oc5ccc(Oc6cnn([C@H](C(=O)N7C[C@H](O)C[C@H]7C(=O)N[C@@H](C)c7ccc(-c8scnc8C)cc7)C(C)C)c6)cn5)CC4)cc3)C2=S)cc1C(F)(F)F	C	2	vcap	vhl	AR	Androgen receptor
+[C-]#[N+]c1ccc(O[C@H]2C(C)(C)[C@@H](NC(=C)c3ccc(NCCCCCOCC(=O)N[C@H](C(=O)N4C[C@H](O)C[C@H]4C(=O)N[C@@H](C)c4ccc(-c5scnc5C)cc4)C(C)(C)C)cc3)C2(C)C)cc1Cl	C	2	vcap	vhl	AR	Androgen receptor

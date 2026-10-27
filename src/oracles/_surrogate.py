@@ -182,6 +182,28 @@ class SklearnOracle(BaseOracle):
             self._descriptors = spec.get("descriptors") or None
             self._categorical_vocab = spec.get("categorical_vocab") or None
             self._categorical_values = spec.get("categorical_defaults") or None
+            # The target column is not an assay context that can be defaulted.
+            # A cell line or a ligase has to be filled with something for a
+            # generated molecule, and pinning it is the documented design. The
+            # POI is what a campaign VARIES: a pooled fit carries one one-hot
+            # column per target, and filling it from the training mode would
+            # score every molecule of every campaign against whichever target
+            # happened to be most common -- `ar`, in the pooled PROTAC fit, on
+            # an 18-target vocabulary, with nothing raising. There is no config
+            # key that can set it, so a pooled fit cannot yet be used as a
+            # reward and says so here rather than producing numbers.
+            vocab = self._categorical_vocab or {}
+            defaults = self._categorical_values or {}
+            if len(vocab.get("poi", ())) > 1 and "poi" in defaults:
+                raise ValueError(
+                    f"The pickle at '{path}' is a pooled fit: its 'poi' one-hot "
+                    f"has {len(vocab['poi'])} targets "
+                    f"({', '.join(sorted(vocab['poi']))}) and inference would "
+                    f"pin every molecule to '{defaults['poi']}', whatever "
+                    "target the campaign optimizes. Use a single-target fit, "
+                    "or extend this oracle with a way for the experiment to "
+                    "name its target before pooling becomes the reward."
+                )
             # The cross-validation fold models, when the fit was run with
             # --cv grouped. These are the reward-hacking detector: models
             # fitted on DIFFERENT data disagree where the data runs out, which
@@ -359,7 +381,8 @@ class SklearnOracle(BaseOracle):
         # this used to be harmless; for cross-validation fold models they are
         # not, and averaging them would mean that switching uncertainty
         # modulation on silently changed the reward the policy optimizes. The
-        # spread is what the folds are for; the score stays the full-data fit.
+        # spread is what the folds are for; the score stays whatever the
+        # shipped `model` predicts.
         predictions = self._raw_predict(features)
         for position, prediction, std in zip(valid_idx, predictions, stds):
             values[position] = float(prediction)

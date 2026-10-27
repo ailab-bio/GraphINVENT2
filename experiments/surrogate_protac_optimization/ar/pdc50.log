@@ -1,0 +1,39 @@
+* Read 344 rows from data/surrogates/ar_pdc50.tsv
+  one-hot columns: ['cell_line', 'ligase']
+  feature width 2060: 2048 fingerprint (count) + 9 descriptors + 3 indicators
+* Decomposing for a warhead_scaffold split (cached under tools/)
+* warhead_scaffold split: 279 train / 65 test
+* Held-out performance
+  RMSE    : 0.817   (mean-prediction baseline 0.847)
+  Spearman: 0.286
+  margin over baseline: 0.030 [95% bootstrap -0.015, 0.099] over 37 held-out compounds in 65 rows (clustered on compound)
+  beats the mean-prediction baseline: NOT ESTABLISHED -- the point margin is positive but the 95% interval includes zero, so this fit does not clear the kill criterion on this split
+  R^2     : 0.070 against the mean-prediction baseline (the stated kill criterion); -0.032 against the test mean (sklearn r2_score)
+  MAE     : 0.485
+* Label noise floor: within-(compound, target) SD 0.347 against a total label SD of 0.613, over 157 (compound, target) group(s) measured more than once
+  so R^2 for this label is capped at 0.679, not 1.0; read the held-out R^2 against that ceiling
+* Decomposing for a warhead_scaffold split (cached under tools/)
+* 5-fold CV grouped by warhead_scaffold: 35 groups over 344 rows, largest 97, median 2
+  this estimates the error on novel molecules for a target the model has seen, which is what the reward does
+  fold 1: n=   97  RMSE 0.494 (baseline 0.552)  R^2 +0.199  rho +0.451  (1 groups held out)
+  fold 2: n=   74  RMSE 0.490 (baseline 0.738)  R^2 +0.559  rho +0.756  (1 groups held out)
+  fold 3: n=   58  RMSE 0.755 (baseline 0.803)  R^2 +0.115  rho +0.599  (9 groups held out)
+  fold 4: n=   58  RMSE 0.572 (baseline 0.505)  R^2 -0.284  rho +0.423  (12 groups held out)
+  fold 5: n=   57  RMSE 0.543 (baseline 0.479)  R^2 -0.282  rho +0.171  (12 groups held out)
+  across folds: RMSE 0.571 (0.109)   margin 0.045 (0.128)   R^2 +0.061 (0.356)
+  folds beating the mean-prediction baseline: 3 of 5   <- a fold that does not beat its baseline is a FAILED FIT on that fold and is reported as one, not averaged away
+  against the 0.679 label-noise ceiling, that is 9% of the achievable variance
+* Refitting on all 344 rows for the shipped model; the error estimate above comes from the grouped folds, not from the single split
+* Wrote experiments/surrogate_protac_optimization/ar/pdc50.pickle
+
+Use it by adding this to the 'oracles' block of a goal_directed config:
+  "pdc50": {
+      "type": "sklearn",
+      "path": "experiments/surrogate_protac_optimization/ar/pdc50.pickle",
+      "output": "predict",
+      "transform": {"type": "clipped_linear", "low": 5.5, "high": 9.0},
+      "direction": "maximize"
+  }
+and naming it in 'score_components'. The featurization is stored in the pickle and the oracle reads it, so there is nothing to keep in sync by hand.
+
+THE TRANSFORM IS REQUIRED for a regression output and the oracle raises without one: the raw value is not a desirability, and the identity transform clamps to [0, 1] while this fit's labels span 5.51 to 9.00. Choose low and high on the label scale as a modeling decision and state them in the write-up; the bounds below are this fit's label range, not advice. Then re-derive success_threshold on the transformed [0, 1] scale, because success_rate compares the transformed composite.

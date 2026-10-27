@@ -1,0 +1,40 @@
+* Read 502 rows from data/surrogates/ar_dmax.tsv
+  one-hot columns: ['cell_line', 'ligase']
+  feature width 2062: 2048 fingerprint (count) + 9 descriptors + 5 indicators
+* Decomposing for a warhead_scaffold split (cached under tools/)
+* warhead_scaffold split: 405 train / 97 test
+* Held-out performance
+  RMSE    : 0.164   (mean-prediction baseline 0.201)
+  Spearman: 0.474
+  margin over baseline: 0.036 [95% bootstrap 0.009, 0.063] over 76 held-out compounds in 97 rows (clustered on compound)
+  beats the mean-prediction baseline: YES
+  R^2     : 0.330 against the mean-prediction baseline (the stated kill criterion); 0.328 against the test mean (sklearn r2_score)
+  MAE     : 0.115
+* Label noise floor: within-(compound, target) SD 0.171 against a total label SD of 0.227, over 139 (compound, target) group(s) measured more than once
+  so R^2 for this label is capped at 0.432, not 1.0; read the held-out R^2 against that ceiling
+* Decomposing for a warhead_scaffold split (cached under tools/)
+* 5-fold CV grouped by warhead_scaffold: 66 groups over 502 rows, largest 115, median 2
+  this estimates the error on novel molecules for a target the model has seen, which is what the reward does
+  fold 1: n=  115  RMSE 0.120 (baseline 0.154)  R^2 +0.397  rho +0.290  (1 groups held out)
+  fold 2: n=   97  RMSE 0.098 (baseline 0.200)  R^2 +0.759  rho +0.291  (13 groups held out)
+  fold 3: n=   97  RMSE 0.196 (baseline 0.366)  R^2 +0.713  rho +0.711  (15 groups held out)
+  fold 4: n=   97  RMSE 0.136 (baseline 0.200)  R^2 +0.535  rho +0.541  (18 groups held out)
+  fold 5: n=   96  RMSE 0.130 (baseline 0.239)  R^2 +0.704  rho +0.803  (19 groups held out)
+  across folds: RMSE 0.136 (0.036)   margin 0.096 (0.051)   R^2 +0.622 (0.152)
+  folds beating the mean-prediction baseline: 5 of 5
+  against the 0.432 label-noise ceiling, that is 144% of the achievable variance
+  a fraction above 100% means the CEILING is wrong, not that the fit beat it: on a bounded saturating label the within-group SD understates assay error, so read this fit against the fold spread instead
+* Refitting on all 502 rows for the shipped model; the error estimate above comes from the grouped folds, not from the single split
+* Wrote experiments/surrogate_protac_optimization/ar/dmax.pickle
+
+Use it by adding this to the 'oracles' block of a goal_directed config:
+  "dmax": {
+      "type": "sklearn",
+      "path": "experiments/surrogate_protac_optimization/ar/dmax.pickle",
+      "output": "predict",
+      "transform": {"type": "clipped_linear", "low": 0.0, "high": 1.0},
+      "direction": "maximize"
+  }
+and naming it in 'score_components'. The featurization is stored in the pickle and the oracle reads it, so there is nothing to keep in sync by hand.
+
+THE TRANSFORM IS REQUIRED for a regression output and the oracle raises without one: the raw value is not a desirability, and the identity transform clamps to [0, 1] while this fit's labels span 0.00 to 1.00. Choose low and high on the label scale as a modeling decision and state them in the write-up; the bounds below are this fit's label range, not advice. Then re-derive success_threshold on the transformed [0, 1] scale, because success_rate compares the transformed composite.

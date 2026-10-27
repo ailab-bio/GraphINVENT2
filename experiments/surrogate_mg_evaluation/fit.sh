@@ -35,7 +35,9 @@ python scripts/download_data.py --source tpddb
 # The target string must match TPDdb's `Target Symbols` value exactly, and
 # TPDdb writes casein kinase 1 alpha with a Greek alpha. The path slug is
 # separate and ASCII, so no artifact filename carries a non-ASCII character.
-for PAIR in "GSPT1:gspt1" "VAV1:vav1" "CK1α:ck1a"; do
+# --target takes the canonical HGNC symbol; CK1alpha is CSNK1A1. See the note
+# in surrogate_mg_optimization/fit.sh.
+for PAIR in "GSPT1:gspt1" "VAV1:vav1" "CSNK1A1:ck1a"; do
   TARGET="${PAIR%%:*}"
   LOWER="${PAIR##*:}"
   for ENDPOINT in pdc50 dmax; do

@@ -1,0 +1,503 @@
+smiles	dmax	cell_line	ligase	poi	poi_raw	n_replicates
+CC(F)(F)C1=C(C#N)C=CC(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)nc3)CC2)C1	0.8600	lncap	crbn	AR	AR	1
+CC(F)(F)c1cc(N2CCC(c3ccc(N4CCC5(CCN(CC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)CC4)cc3)CC2)ccc1C#N	0.8800	lncap	crbn	AR	AR	1
+CC(F)(F)c1cc(N2CCC(c3ccc(OCCC(F)(F)CCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)ccc1C#N	0.7800	lncap	crbn	AR	AR	1
+CC(F)(F)c1cc(N2CCC(c3ccc(OCCCCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)ccc1C#N	0.8600	lncap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(C(F)(F)F)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)cc21	0.8900	lncap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(C(F)(F)F)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)cc21	0.6000	vcap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(C(F)(F)F)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)nc3F)cc21	0.6700	lncap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(Cl)c2)c2ccc(-c3ccc(-c4cnn(CCCN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)c4)cc3)cc21	1.0000	lncap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(Cl)c2)c2ccc(-c3ccc(-c4cnn(CCN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)c4)cc3)cc21	0.7500	lncap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(Cl)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6cc7c(cc6F)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)cc21	0.7500	lncap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(Cl)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)cc21	0.8200	lncap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(Cl)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)cc21	0.6800	vcap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(Cl)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)nc3F)cc21	0.9300	lncap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(Cl)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)nc3F)cc21	0.8500	vcap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(Cl)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)cc21	0.9100	lncap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2ccc(C#N)c(Cl)c2)c2ccc(C3=CC=C(N4CC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)NC3)cc21	0.5600	vcap	crbn	AR	AR	1
+CC1(C)C(=O)N(c2cnc(C#N)c(Cl)c2)c2ccc(-c3ccc(N4CC(CN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)cc21	0.7400	lncap	crbn	AR	AR	1
+CC1(C)CN(c2ccc(C#N)c(C(F)(F)F)c2)CC[C@@H]1c1ccc(OCCCCN2CCN(c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)cc1	0.9500	lncap	crbn	AR	AR	1
+CC1(C)CN(c2ccc(C#N)c(C(F)(F)F)c2)CC[C@@H]1c1ccc(OCCCCN2CCN(c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)cc1	0.7200	lncap (l702h)	crbn	AR	AR L702H	1
+CC1(C)CN(c2ccc(C#N)c(C(F)(F)F)c2)CC[C@H]1c1ccc(OCCCCN2CCN(c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)cc1	0.9200	lncap	crbn	AR	AR	1
+CC1(C)CN(c2ccc(C#N)c(C(F)(F)F)c2)CC[C@H]1c1ccc(OCCCCN2CCN(c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)cc1	0.6500	lncap (l702h)	crbn	AR	AR L702H	1
+CC1(C)[C@H](NC(=O)c2ccc(N3CCC(CN4CCC5(CCC6C=C(C(=O)N[C@H]7CCC(=O)NC7=O)C(F)=CC6O5)CC4)CC3)nc2)C(C)(C)[C@H]1Oc1ccc(C#N)c(Cl)c1	0.8200	lncap fgc	crbn	AR	AR	2
+CC1(C)[C@H](NC(=O)c2ccc(N3CCC(CN4CCC5(CCC6C=C(C(=O)N[C@H]7CCC(=O)NC7=O)C(F)=CC6O5)CC4)CC3)nc2)C(C)(C)[C@H]1Oc1ccc(C#N)c(Cl)c1	0.8550	vcap	crbn	AR	AR	2
+CC1(C)[C@H](NC(=O)c2ccc(N3CCC(CN4CCC5(CCc6cc(C(=O)N[C@H]7CCC(=O)NC7=O)c(F)cc6O5)CC4)CC3)nc2)C(C)(C)[C@H]1Oc1ccc(C#N)c(C(F)(F)F)c1	0.6850	lncap fgc	crbn	AR	AR	2
+CC1(C)[C@H](NC(=O)c2ccc(N3CCC(CN4CCC5(CCc6cc(C(=O)N[C@H]7CCC(=O)NC7=O)c(F)cc6O5)CC4)CC3)nc2)C(C)(C)[C@H]1Oc1ccc(C#N)c(C(F)(F)F)c1	0.6050	vcap	crbn	AR	AR	2
+CC1(C)[C@H](NC(=O)c2ccc(N3CCC(CN4CCN5c6ccc(C(=O)N[C@H]7CCC(=O)NC7=O)cc6OC[C@H]5C4)CC3)cc2)C(C)(C)[C@H]1Oc1ccc(C#N)c(Cl)c1	0.4100	lncap fgc	crbn	AR	AR	2
+CC1(CN2CCC3(CCc4cc(C(=O)N[C@H]5CCC(=O)NC5=O)c(F)cc4O3)CC2)CCN(c2ccc(C(=O)N[C@H]3C(C)(C)[C@H](Oc4ccc(C#N)c(Cl)c4)C3(C)C)cc2)CC1	0.1500	lncap fgc	crbn	AR	AR	1
+CC1CC2(CCN(c3ccc(C(=O)N4CCC(CN5CCN6c7ccc(C(=O)N[C@H]8CCC(=O)NC8=O)cc7OC[C@H]6C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.6750	lncap fgc	crbn	AR	AR	2
+CC1CC2(CCN(c3ccc(C(=O)N4CCC(CN5CCN6c7ccc(C(=O)N[C@H]8CCC(=O)NC8=O)cc7OC[C@H]6C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.1900	vcap	crbn	AR	AR	2
+CCN(CCCc1ccc(N2CCC(CN3C[C@H]4C[C@@H]3CN4c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)cc1)c1ccc(C#N)c(C(F)(F)F)c1	0.8800	lncap	crbn	AR	AR	1
+CCc1c(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)ccc(C#N)c1C(F)(F)F	0.8900	lncap (l702h)	crbn	AR	AR L702H	1
+CN(CCCCN1CCN(c2ccc3c(c2)C(=O)N(C2CCC(=O)NC2=O)C3=O)CC1)c1ccc(C2CCN(c3ccc(C#N)c(C(F)(F)F)c3)CC2)cc1	0.9500	lncap	crbn	AR	AR	1
+COCc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC5(CC4)CC(N4CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC4)C5)cc3)C2(C)C)ccc1C#N	0.3700	vcap	crbn	AR	AR	2
+COc1c(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC2)ccc2c1CN(C1CCC(=O)NC1=O)C2=O	0.9100	lncap	crbn	AR	AR	1
+COc1c(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC2)ccc2c1CN(C1CCC(=O)NC1=O)C2=O	0.7600	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)ccc1C#N	0.6800	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4cc(F)c(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6F)CC5)c(F)c4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8000	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9100	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6F)CC5)c(F)c4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	1.0000	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6F)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9700	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6F)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.7400	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C#N)c(C7CC7)c6)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8500	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)c[nH]c67)CC5)c(F)c4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9800	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)c[nH]c67)CC5)c(F)c4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9500	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)c[nH]c67)CC5)c(F)c4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2=O	0.9400	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)c[nH]c67)CC5)c(F)c4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2=O	0.9700	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9700	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8500	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)n[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9600	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)n[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9100	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9800	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2=O	0.9100	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2=O	0.9700	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N([C@H]1CCC(=O)NC1=O)C2	1.0000	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)nc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9300	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)nc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.5700	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)cn(C)c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8700	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(F)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9400	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CC3CCN(c4ccc(N5CCN(c6ccc(C#N)c(C(F)(F)F)c6)[C@H](C)C5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.7900	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc(N5CCN(c6ccc(C#N)c(C(F)(F)F)c6F)C[C@@H]5C)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	1.0000	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CC3CCN(c4ccc([C@H]5CCN(c6ccc(C#N)c(C(F)(F)F)c6F)C[C@H]5C)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9100	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CCC(F)(F)CCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8200	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCC3CC(Oc4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)cc4)C3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9000	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCC3CCN(c4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8400	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCC3CN(c4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)cc4)C3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8300	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9400	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3cc(F)c(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)c(F)c3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.7400	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(C)(F)F)c5F)CC4)c(F)c3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.7400	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)c(C)c3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9700	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)c(F)c3)CC2)c(Cl)c2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9700	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)c(F)c3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9800	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9400	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC2)nc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9000	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5F)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9200	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C6CC6)c5)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9200	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C)c6c(C#N)c[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9900	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C)c6c(C#N)c[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.7500	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C)c6c(C#N)c[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2=O	0.9700	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C)c6c(C#N)c[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2=O	0.9900	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C)c6c(C#N)n[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9900	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C)c6c(C#N)n[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8900	lncap	crbn	AR	AR L702H	1
+COc1cc(N2CCN(CCCCOc3ccc(C4CCN(c5cnc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.7500	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCCOc3cnc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)nc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8400	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(CCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.7900	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(C[C@H]3C[C@@H](COc4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)cc4)C3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9900	lncap	crbn	AR	AR	1
+COc1cc(N2CCN(C[C@H]3C[C@@H](COc4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)cc4)C3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8400	lncap (l702h)	crbn	AR	AR L702H	1
+COc1cc(N2CCN(C[C@H]3C[C@H](COc4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)cc4)C3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9800	lncap	crbn	AR	AR	1
+COc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.2500	lncap fgc	crbn	AR	AR	2
+COc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.7750	vcap	crbn	AR	AR	2
+COc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCC(F)(CN5CCC6(CCc7cc(F)c(C(=O)N[C@H]8CCC(=O)NC8=O)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.1550	vcap	crbn	AR	AR	2
+COc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCC(N5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.4700	lncap fgc	crbn	AR	AR	2
+COc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCC(N5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.6950	vcap	crbn	AR	AR	2
+COc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCC5(CC4)CC(N4CCC6(CC4)COc4cc7c(cc46)n(C)c(=O)n7C4CCC(=O)NC4=O)C5)cc3)C2(C)C)ccc1C#N	0.5350	lncap fgc	crbn	AR	AR	2
+COc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCC5(CC4)CC(N4CCC6(CC4)COc4cc7c(cc46)n(C)c(=O)n7C4CCC(=O)NC4=O)C5)cc3)C2(C)C)ccc1C#N	0.6400	vcap	crbn	AR	AR	2
+COc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCC5(CC4)CC(N4CCC6(CC4)COc4cc7c(cc46)n(C)c(=O)n7C4CCC(=O)NC4=O)C5)nn3)C2(C)C)ccc1C#N	0.3400	lncap fgc	crbn	AR	AR	2
+COc1cc(OC2C(C)(C)C(NC(=O)c3ccc(N4CCC5(CC4)CC(N4CCC6(CC4)COc4cc7c(cc46)n(C)c(=O)n7C4CCC(=O)NC4=O)C5)nn3)C2(C)C)ccc1C#N	0.7250	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)C2(C)C)ccc1C#N	0.7850	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)C2(C)C)ccc1C#N	0.6400	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CC5)COc5c6ccc(C(=O)N[C@H]6CCC(=O)NC6=O)c5F)CC4)cc3)C2(C)C)ccc1C#N	0.2350	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CC5)COc5c6ccc(C(=O)N[C@H]6CCC(=O)NC6=O)c5F)CC4)cc3)C2(C)C)ccc1C#N	0.2600	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.3900	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.7450	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.5900	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.4100	vcap	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cn3)C2(C)C)ccc1C#N	0.2150	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cn3)C2(C)C)ccc1C#N	0.3250	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)nc3)C2(C)C)ccc1C#N	0.5500	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)nc3)C2(C)C)ccc1C#N	0.4500	vcap	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)nn3)C2(C)C)ccc1C#N	0.5400	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(C)(CN5CCC6(CCc7cc(F)c(C(=O)N[C@H]8CCC(=O)NC8=O)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.0000	lncap fgc	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)C2(C)C)ccc1C#N	0.6450	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)C2(C)C)ccc1C#N	0.7000	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5c6ccc(C(=O)N[C@H]6CCC(=O)NC6=O)c5F)(OC)CC4)cc3)C2(C)C)ccc1C#N	0.3800	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5c6ccc(C(=O)N[C@H]6CCC(=O)NC6=O)c5F)(OC)CC4)cc3)C2(C)C)ccc1C#N	0.0100	vcap	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5c6ccc(C(=O)N[C@H]6CCC(=O)NC6=O)c5F)CC4)cc3)C2(C)C)ccc1C#N	0.5300	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5c6ccc(C(=O)N[C@H]6CCC(=O)NC6=O)c5F)CC4)cc3)C2(C)C)ccc1C#N	0.5100	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5c6ccc(C(=O)N[C@H]6CCC(=O)NC6=O)c5OC)CC4)cc3)C2(C)C)ccc1C#N	0.1400	lncap fgc	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5c6ccc6c5n(C)c(=O)n6C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.4800	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5c6ccc6c5n(C)c(=O)n6C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.8000	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5c6ccc6c5n(C)c(=O)n6C5CCC(=O)NC5=O)CC4)nn3)C2(C)C)ccc1C#N	0.4300	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5c6ccc6c5n(C)c(=O)n6C5CCC(=O)NC5=O)CC4)nn3)C2(C)C)ccc1C#N	0.7900	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)(OC)CC4)cc3)C2(C)C)ccc1C#N	0.6100	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)(OC)CC4)cc3)C2(C)C)ccc1C#N	0.2700	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.5950	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.5350	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)nc3)C2(C)C)ccc1C#N	0.8450	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)nc3)C2(C)C)ccc1C#N	0.7000	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)nn3)C2(C)C)ccc1C#N	0.7850	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)nn3)C2(C)C)ccc1C#N	0.2350	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(F)c(C(=O)N[C@H]8CCC(=O)NC8=O)cc7O6)CC5)(OC)CC4)cc3)C2(C)C)ccc1C#N	0.3600	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(F)c(C(=O)N[C@H]8CCC(=O)NC8=O)cc7O6)CC5)(OC)CC4)cc3)C2(C)C)ccc1C#N	0.1000	vcap	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(F)c(C(=O)N[C@H]8CCC(=O)NC8=O)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.3050	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(F)c(C(=O)N[C@H]8CCC(=O)NC8=O)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.0900	vcap	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCN6c7cc(F)c(C(=O)N[C@H]8CCC(=O)NC8=O)cc7OC[C@H]6C5)CC4)cc3)C2(C)C)ccc1C#N	0.4750	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCN6c7ccc(C(=O)N[C@H]8CCC(=O)NC8=O)cc7OC[C@@H]6C5)CC4)cc3)C2(C)C)ccc1C#N	0.7000	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCN6c7ccc(C(=O)N[C@H]8CCC(=O)NC8=O)cc7OC[C@@H]6C5)CC4)cc3)C2(C)C)ccc1C#N	0.4500	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCN6c7ccc(N[C@H]8CCC(=O)NC8=O)cc7OC[C@@H]6C5)CC4)cc3)C2(C)C)ccc1C#N	0.2450	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(CN5CCN6c7ccc(N[C@H]8CCC(=O)NC8=O)cc7OC[C@@H]6C5)CC4)cc3)C2(C)C)ccc1C#N	0.2100	vcap	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(F)(CN5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)C2(C)C)ccc1C#N	0.5250	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(F)(CN5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)C2(C)C)ccc1C#N	0.5550	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(F)(CN5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.3350	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(F)(CN5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.6050	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(F)(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.2300	lncap fgc	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(F)(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.1400	vcap	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(F)(CN5CCCOc6c(ccc(C(=O)N[C@H]7CCC(=O)NC7=O)c6F)CC5)CC4)cc3)C2(C)C)ccc1C#N	0.3300	lncap fgc	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(N5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)C2(C)C)ccc1C#N	0.4300	lncap fgc	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(N5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)C2(C)C)ccc1C#N	0.6650	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(N5CCC6(CC5)COc5c6ccc6c5n(C)c(=O)n6C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.0600	lncap fgc	crbn	AR	AR	1
+COc1cc(O[C@H]2C(C)(C)[C@H](NC(=O)c3ccc(N4CCC(N5CCC6(CC5)COc5c6ccc6c5n(C)c(=O)n6C5CCC(=O)NC5=O)CC4)cc3)C2(C)C)ccc1C#N	0.6900	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2CC[C@H](NC(=O)C3=NNC(N4CCC(CN5CCC6(CC5)COc5c6ccc6c5n(C)c(=O)n6C5CCC(=O)NC5=O)CC4)C=C3)CC2)ccc1C#N	0.3650	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2CC[C@H](NC(=O)C3=NNC(N4CCC(CN5CCC6(CC5)COc5c6ccc6c5n(C)c(=O)n6C5CCC(=O)NC5=O)CC4)C=C3)CC2)ccc1C#N	0.7650	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)nn3)CC2)ccc1C#N	0.0100	lncap fgc	crbn	AR	AR	1
+COc1cc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(CN5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)nn3)CC2)ccc1C#N	0.7800	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(N5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)nn3)CC2)ccc1C#N	0.2700	lncap fgc	crbn	AR	AR	2
+COc1cc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(N5CCC6(CC5)COc5cc7c(cc56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)nn3)CC2)ccc1C#N	0.7450	vcap	crbn	AR	AR	2
+COc1cc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC5(CC4)CC(N4CCC6(CC4)COc4cc7c(cc46)n(C)c(=O)n7C4CCC(=O)NC4=O)C5)nn3)CC2)ccc1C#N	0.5400	lncap fgc	crbn	AR	AR	2
+COc1cc2c(cc1C(=O)N[C@H]1CCC(=O)NC1=O)C1(CCN(CC3CCN(C(=O)c4ccc(N5CCC6(CC5)C[C@H](C)N(c5ccc(C#N)c(Cl)c5)C6)cc4)CC3)CC1)CO2	0.6900	lncap fgc	crbn	AR	AR	2
+COc1cc2c(cc1C(=O)N[C@H]1CCC(=O)NC1=O)C1(CCN(CC3CCN(c4ccc(N5CCC6(CC5)C[C@H](C)N(c5ccc(C#N)c(Cl)c5)C6)cc4)CC3)CC1)CO2	0.3000	lncap fgc	crbn	AR	AR	1
+COc1cc2c(cc1C(=O)N[C@H]1CCC(=O)NC1=O)CCC1(CCN(CC3CCN(c4ccc(N5CCC6(CC5)C[C@H](C)N(c5ccc(C#N)c(Cl)c5)C6)cc4)CC3)CC1)O2	0.5700	lncap fgc	crbn	AR	AR	2
+COc1cc2c(cc1C(=O)N[C@H]1CCC(=O)NC1=O)OCC21CCN(CC2CCN(c3ccc(N4CCC5(CC4)C[C@H](C)N(c4ccc(C#N)c(Cl)c4)C5)cc3)CC2)CC1	0.4750	lncap fgc	crbn	AR	AR	2
+COc1cc2c(cc1N1CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC1)CN(C1CCC(=O)NC1=O)C2=O	0.9500	lncap	crbn	AR	AR	1
+COc1nc(N2CCC(CN3CCC(c4ccc(N5CCCC(c6ccc(Cl)c7c(C#N)c[nH]c67)C5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.4000	lncap	crbn	AR	AR	1
+COc1nc(N2CCC(CN3CCC(c4ccc(N5CCCC(c6ccc(Cl)c7c(C#N)c[nH]c67)C5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8300	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(C3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9400	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(C3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9900	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4cc(F)c(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)c(F)c4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.7600	lncap (l702h)	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9600	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6F)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9300	lncap (l702h)	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9800	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8300	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9800	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N([C@@H]1CCC(=O)NC1=O)C2	0.8400	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N([C@@H]1CCC(=O)NC1=O)C2	0.9100	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)nc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9400	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)nc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.6500	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(F)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9000	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(F)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	1.0000	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(F)c7c(C#N)n[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9700	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(F)c7c(C#N)n[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.7500	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4ccc(N5CCCC(c6ccc(Cl)c7c(C#N)c[nH]c67)C5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	1.0000	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc(N5CCCC(c6ccc(Cl)c7c(C#N)c[nH]c67)C5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	1.0000	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4ccc([C@@H]5CCCN(c6ccc(Cl)c7c(C#N)c[nH]c67)C5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9700	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc([C@@H]5CCCN(c6ccc(Cl)c7c(C#N)c[nH]c67)C5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9500	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CC3CCN(c4ccc([C@H]5CCCN(c6ccc(Cl)c7c(C#N)c[nH]c67)C5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8400	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CC3CCN(c4ccc([C@H]5CCCN(c6ccc(Cl)c7c(C#N)c[nH]c67)C5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	1.0000	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CCC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9500	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CCC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9400	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CCCC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9600	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CCCC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9900	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9000	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C)c6c(C#N)c[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9400	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(C)c6c(C#N)c[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.8800	lncap	crbn	AR	AR L702H	1
+COc1nc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(Cl)c6c(C#N)c[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	0.9900	lncap	crbn	AR	AR	1
+COc1nc(N2CCN(CCCCOc3ccc(C4CCN(c5ccc(Cl)c6c(C#N)c[nH]c56)CC4)cc3)CC2)cc2c1C(=O)N(C1CCC(=O)NC1=O)C2	1.0000	lncap	crbn	AR	AR L702H	1
+C[C@@H]1CN(c2ccc(C#N)c(C(F)(F)F)c2)CCN1c1ccc(OCCCCN2CCN(c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)cc1	0.7000	lncap	crbn	AR	AR	1
+C[C@H]1CC2(CCN(c3ccc(C(=O)N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.6550	lncap fgc	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(C(=O)N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.1350	vcap	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(C(=O)N4CCC(CN5CCN6c7ccc(C(=O)NC8CCC(=O)NC8=O)cc7OC[C@@H]6C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.6550	lncap fgc	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(C(=O)N4CCC(CN5CCN6c7ccc(C(=O)NC8CCC(=O)NC8=O)cc7OC[C@@H]6C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.1800	vcap	crbn	AR	AR	1
+C[C@H]1CC2(CCN(c3ccc(C(=O)N4CCC(CN5CCN6c7ccc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)c7OC[C@H]6C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.5950	lncap fgc	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(N4CCC(CN5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.5900	lncap fgc	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(N4CCC(CN5CCC6(CC5)CCC5(CC6)COc6c5ccc5c6CN(C6CCC(=O)NC6=O)C5=O)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.6300	lncap fgc	crbn	AR	AR	1
+C[C@H]1CC2(CCN(c3ccc(N4CCC(CN5CCC6(CC5)COc5ccc7c(c56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.5650	lncap fgc	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(N4CCC(CN5CCC6(CC5)COc5ccc7c(c56)n(C)c(=O)n7C5CCC(=O)NC5=O)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.1800	vcap	crbn	AR	AR	1
+C[C@H]1CC2(CCN(c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.6050	lncap fgc	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(N4CCC(CN5CCN6c7ccc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)c7OC[C@H]6C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.5150	lncap fgc	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(N4CCC(CN5CCN6c7ccc(C(=O)N[C@H]8CCC(=O)NC8=O)cc7OC[C@@H]6C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.5750	lncap fgc	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(N4CCC(CN5CCN6c7ccc(C(=O)N[C@H]8CCC(=O)NC8=O)cc7OC[C@H]6C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.7500	lncap fgc	crbn	AR	AR	2
+C[C@H]1CC2(CCN(c3ccc(N4CCC(CN5CCN6c7ccc(C(=O)N[C@H]8CCC(=O)NC8=O)cc7OC[C@H]6C5)CC4)cc3)CC2)CN1c1ccc(C#N)c(Cl)c1	0.2450	vcap	crbn	AR	AR	2
+C[C@H]1CN(c2ccc(C#N)c(C(F)(F)F)c2)CCN1c1ccc(OCCCCN2CCN(c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)cc1	0.8700	lncap	crbn	AR	AR	1
+Cc1c(N2CCC(c3ccc(N4CCC(CN5CCC(c6cc7ccc(N8CCC(=O)NC8=O)cc7n6C)CC5)CC4)cc3)CC2)ccc(C#N)c1C(F)(F)F	0.9200	lncap (l702h)	crbn	AR	AR L702H	1
+Cc1cc(N2CCC(=O)NC2=O)cc2ccn(C3CCN(CC4CCN(c5ccc(C6CCN(c7ccc(Cl)c8c(C#N)c[nH]c78)CC6)cc5)CC4)CC3)c12	0.8600	lncap	crbn	AR	AR	1
+Cc1cc(OCCCCN2CCN(c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)ccc1C1CCN(c2ccc(C#N)c(C(F)(F)F)c2)CC1	0.9800	lncap	crbn	AR	AR	1
+Cc1cc2c(N3CCC(=O)NC3=O)cccc2n1C1CCN(CC2CCN(c3ccc(C4CCN(c5ccc(Cl)c6c(C#N)c[nH]c56)CC4)cc3)CC2)CC1	0.9500	lncap	crbn	AR	AR	1
+Cc1cc2c(N3CCC(=O)NC3=O)cccc2n1C1CCN(CC2CCN(c3ccc(C4CCN(c5ccc(F)c6c(C#N)c[nH]c56)CC4)cc3)CC2)CC1	0.9500	lncap	crbn	AR	AR	1
+Cc1ccc(C2CCCN(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)C2)c2[nH]cc(C#N)c12	1.0000	lncap	crbn	AR	AR	1
+Cc1ccc(C2CCCN(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2)c2[nH]cc(C#N)c12	0.9200	lncap	crbn	AR	AR	1
+Cc1ccc(C2CCCN(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2)c2[nH]cc(C#N)c12	0.7900	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCC(NC(=O)c3ccc(N4CCC(CN5CCN(c6cc7c(cc6F)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cn3)CC2)c2[nH]cc(C#N)c12	0.9600	lncap	crbn	AR	AR	1
+Cc1ccc(N2CCC(NC(=O)c3ccc(N4CCC(CN5CCN(c6cc7c(cc6F)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cn3)CC2)c2[nH]cc(C#N)c12	0.8500	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCC(NC(=O)c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cn3)CC2)c2[nH]cc(C#N)c12	0.9400	lncap	crbn	AR	AR	1
+Cc1ccc(N2CCC(NC(=O)c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cn3)CC2)c2[nH]cc(C#N)c12	0.9400	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCC(n6ccc7c(N8CCC(=O)NC8=O)cccc76)CC5)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.9900	lncap	crbn	AR	AR	1
+Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCC(n6ccc7c(N8CCC(=O)NC8=O)cccc76)CC5)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.9600	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(Cc6cccc7c6n(C)c(=O)n7C6CCC(=O)NC6=O)CC5)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.9200	lncap	crbn	AR	AR	1
+Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(Cc6cccc7c6n(C)c(=O)n7C6CCC(=O)NC6=O)CC5)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.9400	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCC(c3ccc(OCCCCN4CCC(n5ccc6c(N7CCC(=O)NC7=O)cccc65)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.9400	lncap	crbn	AR	AR	1
+Cc1ccc(N2CCC(c3ccc(OCCCCN4CCC(n5ccc6c(N7CCC(=O)NC7=O)cccc65)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.7400	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5cc6c(cc5F)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.9800	lncap	crbn	AR	AR	1
+Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5cc6c(cc5F)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.9400	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.9400	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2)c2[nH]cc(C#N)c12	0.6700	lncap	crbn	AR	AR	1
+Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2)c2[nH]cc(C#N)c12	0.4200	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.9600	lncap	crbn	AR	AR	1
+Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.8300	lncap	crbn	AR	AR L702H	1
+Cc1ccc(N2CCN(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)c2[nH]cc(C#N)c12	0.5400	lncap	crbn	AR	AR	1
+Cc1ccc([C@@H]2CCCN(c3cccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)c3)C2)c2[nH]cc(C#N)c12	1.0000	lncap	crbn	AR	AR L702H	1
+Cc1nc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)ccc1C#N	0.6400	lncap	crbn	AR	AR	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cc3c(cc21)C1(CCN(C2CC4(CCN(c5ccc(C(=O)N[C@H]6CC[C@H](Oc7ccc(C#N)c(Cl)c7)CC6)nn5)CC4)C2)CC1)CO3	0.3250	lncap fgc	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cc3c(cc21)C1(CCN(C2CC4(CCN(c5ccc(C(=O)N[C@H]6CC[C@H](Oc7ccc(C#N)c(Cl)c7)CC6)nn5)CC4)C2)CC1)CO3	0.8800	vcap	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cc3c(cc21)C1(CCN(C2CCN(c4ccc(C(=O)N[C@H]5CC[C@H](Oc6ccc(C#N)c(Cl)c6)CC5)nn4)CC2)CC1)CO3	0.2350	lncap fgc	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cc3c(cc21)C1(CCN(C2CCN(c4ccc(C(=O)N[C@H]5CC[C@H](Oc6ccc(C#N)c(Cl)c6)CC5)nn4)CC2)CC1)CO3	0.8250	vcap	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cc3c(cc21)C1(CCN(CC2CCN(c4ccc(C(=O)N[C@H]5CC[C@H](Oc6ccc(C#N)c(Cl)c6)CC5)nn4)CC2)CC1)CO3	0.2600	lncap fgc	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cc3c(cc21)C1(CCN(CC2CCN(c4ccc(C(=O)N[C@H]5CC[C@H](Oc6ccc(C#N)c(Cl)c6)CC5)nn4)CC2)CC1)CO3	0.7650	vcap	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2ccc(N3CCN(CC4CCN(c5ccc(C6CCN(c7ccc(C#N)c(C(F)(F)F)c7)CC6)cc5)CC4)CC3)cc21	0.6800	lncap	crbn	AR	AR	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2ccc(N3CCN(CCCCOc4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)cc4)CC3)cc21	0.9200	lncap	crbn	AR	AR	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2ccc3c(c21)OCC31CCN(C2CC3(CCN(c4ccc(C(=O)N[C@H]5CC[C@H](Oc6ccc(C#N)c(Cl)c6)CC5)nn4)CC3)C2)CC1	0.4450	lncap fgc	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2ccc3c(c21)OCC31CCN(C2CC3(CCN(c4ccc(C(=O)N[C@H]5CC[C@H](Oc6ccc(C#N)c(Cl)c6)CC5)nn4)CC3)C2)CC1	0.9050	vcap	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2ccc3c(c21)OCC31CCN(C2CCN(c3ccc(C(=O)N[C@H]4CC[C@H](Oc5ccc(C#N)c(CI)c5)CC4)nn3)CC2)CC1	0.2550	lncap fgc	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2ccc3c(c21)OCC31CCN(C2CCN(c3ccc(C(=O)N[C@H]4CC[C@H](Oc5ccc(C#N)c(CI)c5)CC4)nn3)CC2)CC1	0.7950	vcap	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2ccc3c(c21)OCC31CCN(CC2CCN(c3ccc(C(=O)N[C@H]4CC[C@H](Oc5ccc(C#N)c(Cl)c5)CC4)nn3)CC2)CC1	0.3900	lncap fgc	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2ccc3c(c21)OCC31CCN(CC2CCN(c3ccc(C(=O)N[C@H]4CC[C@H](Oc5ccc(C#N)c(Cl)c5)CC4)nn3)CC2)CC1	0.8500	vcap	crbn	AR	AR	2
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(C3CCN(CC4CCN(c5ccc(C6CCN(c7ccc(C#N)c(C(F)(F)F)c7F)CC6)cc5)CC4)CC3)c21	0.8000	lncap (l702h)	crbn	AR	AR L702H	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(CN3CCN(CC4CCN(c5ccc(C6CCN(c7ccc(C#N)c(C(F)(F)F)c7F)CC6)cc5)CC4)CC3)c21	0.9400	lncap (l702h)	crbn	AR	AR L702H	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(CN3CCN(CC4CCN(c5ccc(C6CCN(c7ccc(Cl)c8c(C#N)c[nH]c78)CC6)cc5)CC4)CC3)c21	0.9700	lncap	crbn	AR	AR	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(CN3CCN(CC4CCN(c5ccc(C6CCN(c7ccc(F)c8c(C#N)c[nH]c78)CC6)cc5)CC4)CC3)c21	0.8400	lncap	crbn	AR	AR	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(CN3CCN(CC4CCN(c5ccc(C6CCN(c7ccc(F)c8c(C#N)c[nH]c78)CC6)cc5)CC4)CC3)c21	0.9400	lncap	crbn	AR	AR L702H	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(CN3CCN(CC4CCN(c5ccc([C@@H]6CCCN(c7ccc(Cl)c8c(C#N)c[nH]c78)C6)cc5)CC4)CC3)c21	0.9300	lncap	crbn	AR	AR	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(CN3CCN(CC4CCN(c5ccc([C@@H]6CCCN(c7ccc(Cl)c8c(C#N)c[nH]c78)C6)cc5)CC4)CC3)c21	0.9000	lncap	crbn	AR	AR L702H	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(CN3CCN(CC4CCN(c5ccc([C@@H]6CCCN(c7ccc(F)c8c(C#N)c[nH]c78)C6)cc5)CC4)CC3)c21	0.9300	lncap	crbn	AR	AR	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(CN3CCN(CC4CCN(c5ccc([C@@H]6CCCN(c7ccc(F)c8c(C#N)c[nH]c78)C6)cc5)CC4)CC3)c21	0.7000	lncap	crbn	AR	AR L702H	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(N3CCN(CC4CCN(c5ccc(C(=O)NC6CCN(c7ccc(Cl)c8c(C#N)c[nH]c78)CC6)c(F)c5)CC4)CC3)c21	0.9700	lncap	crbn	AR	AR	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(N3CCN(CC4CCN(c5ccc(C(=O)NC6CCN(c7ccc(Cl)c8c(C#N)c[nH]c78)CC6)c(F)c5)CC4)CC3)c21	0.9600	lncap	crbn	AR	AR L702H	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(N3CCN(CC4CCN(c5ccc(C6CCN(c7ccc(Cl)c8c(C#N)c[nH]c78)CC6)cc5)CC4)CC3)c21	0.9100	lncap	crbn	AR	AR	1
+Cn1c(=O)n(C2CCC(=O)NC2=O)c2cccc(N3CCN(CC4CCN(c5ccc(C6CCN(c7ccc(Cl)c8c(C#N)c[nH]c78)CC6)cc5)CC4)CC3)c21	0.9200	lncap	crbn	AR	AR L702H	1
+Cn1c(C2CCN(CC3CCN(c4cc(F)c(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6)CC5)c(F)c4)CC3)CC2)cc2ccc(N3CCC(=O)NC3=O)cc21	0.9400	lncap (l702h)	crbn	AR	AR L702H	1
+Cn1c(C2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(C#N)c(C(F)(F)F)c6F)CC5)cc4)CC3)CC2)cc2ncc(N3CCC(=O)NC3=O)cc21	0.7300	lncap (l702h)	crbn	AR	AR L702H	1
+Cn1c(C2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2ccc(N3CCC(=O)NC3=O)cc21	0.9900	lncap	crbn	AR	AR	1
+Cn1c(C2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(Cl)c7c(C#N)c[nH]c67)CC5)cc4)CC3)CC2)cc2ncc(N3CCC(=O)NC3=O)cc21	0.8500	lncap	crbn	AR	AR	1
+Cn1c(C2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(F)c7c(C#N)n[nH]c67)CC5)cc4)CC3)CC2)cc2ccc(N3CCC(=O)NC3=O)cc21	0.8800	lncap	crbn	AR	AR	1
+Cn1c(C2CCN(CC3CCN(c4ccc(C5CCN(c6ccc(F)c7c(C#N)n[nH]c67)CC5)cc4)CC3)CC2)cc2ccc(N3CCC(=O)NC3=O)cc21	0.5600	lncap	crbn	AR	AR L702H	1
+Cn1c(C2CCN(CC3CCN(c4ccc([C@H]5CCCN(c6ccc(Cl)c7c(C#N)n[nH]c67)C5)cc4)CC3)CC2)cc2ccc(N3CCC(=O)NC3=O)cc21	0.9800	lncap	crbn	AR	AR	1
+Cn1c(C2CCN(CCCCOc3ccc(C4CCN(c5ccc(C#N)c(C(F)(F)F)c5)CC4)c(F)c3)CC2)cc2ccc(N3CCC(=O)NC3=O)cc21	1.0000	lncap (l702h)	crbn	AR	AR L702H	1
+N#CC1=C(C(F)(F)F)CC(N2CCC(c3ccc(NCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)C=C1	0.7800	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cn4)CC3)ccc(Cl)c12	1.0000	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4F)CC3)ccc(Cl)c12	0.9500	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4F)CC3)ccc(Cl)c12	0.9800	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.8600	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.9400	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCN(c7ccc(C(=O)NC8CCC(=O)NC8=O)c(F)c7)CC6)CC5)cc4F)CC3)ccc(Cl)c12	0.8100	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCN(c7ccc(C(=O)NC8CCC(=O)NC8=O)c(F)c7)CC6)CC5)cc4F)CC3)ccc(Cl)c12	0.7900	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.8700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.9600	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6Cc7cc8c(cc7C6)C(=O)N(C6CCC(=O)NC6=O)C8=O)CC5)cc4F)CC3)ccc(Cl)c12	0.8000	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6Cc7cc8c(cc7C6)C(=O)N(C6CCC(=O)NC6=O)C8=O)CC5)cc4F)CC3)ccc(Cl)c12	0.8200	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(N6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.8500	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(N6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.9200	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(NC(=O)c4ncc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.4000	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(C(=O)N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.8900	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(C(=O)N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.9800	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(C(=O)N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.8300	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(CN5CCN(CC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.9300	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CC6(CCC(CN7CCC(n8ccc9c(N%10CCC(=O)NC%10=O)cccc98)CC7)CC6)C5)cc4)CC3)ccc(F)c12	0.9100	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CC6(CCC(CN7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)C5)cc4)CC3)ccc(Cl)c12	0.9500	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CC6(CCC(CN7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)C5)cc4)CC3)ccc(Cl)c12	0.9900	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)CC3)ccc(F)c12	1.0000	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)CC3)cccc12	0.8800	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)CC3)cccc12	0.9500	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.9900	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.7100	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)nn4)CC3)ccc(Cl)c12	0.9400	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)nn4)CC3)ccc(Cl)c12	0.6300	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8cc(N9CCC(=O)NC9=O)ccc87)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.8700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8cc(N9CCC(=O)NC9=O)ccc87)CC6)CC5)cc4)CC3)ccc(F)c12	0.7000	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8cc(N9CCC(=O)NC9=O)ccc87)CC6)CC5)cc4)CC3)ccc(F)c12	0.9700	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.9600	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.9300	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.9700	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc(C(=O)NC8CCC(=O)NC8=O)c(F)c7)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.9700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc(C(=O)NC8CCC(=O)NC8=O)c(F)c7)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.9300	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc(C(=O)NC8CCC(=O)NC8=O)c(F)c7)CC6)CC5)cc4)CC3)ccc(F)c12	0.8900	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc(C(=O)NC8CCC(=O)NC8=O)c(F)c7)CC6)CC5)cc4)CC3)ccc(F)c12	0.9500	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.9900	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.9900	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(Cl)c12	1.0000	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.9600	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4)CC3)ccc(Cl)c12	0.9700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4)CC3)ccc(Cl)c12	0.9600	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nn4)CC3)ccc(Cl)c12	0.8300	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nn4)CC3)ccc(Cl)c12	0.5600	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6Cc7cc8c(cc7C6)C(=O)N(C6CCC(=O)NC6=O)C8=O)CC5)cc4)CC3)ccc(Cl)c12	0.6800	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(CN6Cc7cc8c(cc7C6)C(=O)N(C6CCC(=O)NC6=O)C8=O)CC5)cc4)CC3)ccc(Cl)c12	0.8300	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(N6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.9900	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(N6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.8800	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCC(N6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(Cl)c12	0.9700	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCN(CC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.8000	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCN(CC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.8100	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCO[C@H](CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)C5)cc4)CC3)ccc(Cl)c12	1.0000	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(N5CCO[C@H](CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)C5)cc4)CC3)ccc(F)c12	0.9800	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OC5CCN(CC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.9700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OC5CCN(CC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.8700	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCC(n6ccc7c(N8CCC(=O)NC8=O)cccc76)CC5)cc4)CC3)ccc(Cl)c12	0.9800	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCC(n6ccc7c(N8CCC(=O)NC8=O)cccc76)CC5)cc4)CC3)ccc(F)c12	0.9700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCC(n6ccc7c(N8CCC(=O)NC8=O)cccc76)CC5)cc4)CC3)ccc(F)c12	0.9000	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCC(n6ccc7c(N8CCC(=O)NC8=O)cccc76)CC5)cc4)CC3)cccc12	0.9600	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCC(n6ccc7c(N8CCC(=O)NC8=O)cccc76)CC5)cc4)CC3)cccc12	0.7800	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)cc4)CC3)ccc(Cl)c12	0.9600	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)cc4)CC3)ccc(Cl)c12	0.9500	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)cc4)CC3)ccc(F)c12	0.9500	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)cc4)CC3)ccc(F)c12	0.9600	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)cc4)CC3)cccc12	0.8700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4ccc(OCCCCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)cc4)CC3)cccc12	0.7900	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4cccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)c4)CC3)ccc(Cl)c12	0.9200	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4cccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)c4)CC3)ccc(Cl)c12	0.7600	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4cnc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.9800	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4cnc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.8700	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4cnc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)nc4)CC3)ccc(Cl)c12	0.9300	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4cnc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.9700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4cnc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)CC3)ccc(Cl)c12	0.8400	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC(c4cnc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4)CC3)ccc(Cl)c12	0.9500	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC(c4cnc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4)CC3)ccc(Cl)c12	0.9300	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)nc4)C3)ccc(Cl)c12	0.9700	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](NC(=O)c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)C3)ccc(Cl)c12	0.9400	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](NC(=O)c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)C3)ccc(Cl)c12	0.8800	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CC6(CCC(CN7CCC(n8ccc9c(N%10CCC(=O)NC%10=O)cccc98)CC7)CC6)C5)cc4)C3)ccc(Cl)c12	0.9400	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CC6(CCC(CN7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)C5)cc4)C3)ccc(Cl)c12	0.9900	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CC6(CCC(CN7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)C5)cc4)C3)ccc(Cl)c12	0.7800	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)C3)ccc(F)c12	1.0000	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)C3)ccc(F)c12	0.9400	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)nn4)C3)ccc(Cl)c12	0.8100	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)nn4)C3)ccc(Cl)c12	0.9800	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9900	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCN(c7ccc(C(=O)NC8CCC(=O)NC8=O)c(F)c7)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9800	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCN(c7ccc(C(=O)NC8CCC(=O)NC8=O)c(F)c7)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9700	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9500	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9700	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(F)c12	1.0000	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(F)c12	0.8300	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6Cc7cc8c(cc7C6)C(=O)N(C6CCC(=O)NC6=O)C8=O)CC5)cc4)C3)ccc(Cl)c12	0.7900	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6Cc7cc8c(cc7C6)C(=O)N(C6CCC(=O)NC6=O)C8=O)CC5)cc4)C3)ccc(Cl)c12	0.6900	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@H](NC(=O)c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)C3)ccc(Cl)c12	0.9500	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@H](NC(=O)c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cn4)C3)ccc(Cl)c12	0.9500	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@H](c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9200	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@H](c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cn4)C3)ccc(Cl)c12	0.9700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@H](c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cn4)C3)ccc(Cl)c12	0.9400	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@H](c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(Cl)c12	0.7700	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCC[C@H](c4ccc(N5CCC(CN6CCN(c7cc8c(cc7F)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9700	lncap	crbn	AR	AR L702H	1
+N#Cc1c[nH]c2c(N3CCC[C@H](c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9200	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCOC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)C3)ccc(Cl)c12	0.8900	lncap	crbn	AR	AR	1
+N#Cc1c[nH]c2c(N3CCOC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)C3)ccc(Cl)c12	0.8400	lncap	crbn	AR	AR L702H	1
+N#Cc1cc(OCCCCN2CCN(c3ccc4c(c3)CN(C3CCC(=O)NC3=O)C4=O)CC2)ccc1C1CCN(c2ccc(C#N)c(C(F)(F)F)c2F)CC1	0.8300	lncap (l702h)	crbn	AR	AR L702H	1
+N#Cc1cc2c(cc1Cl)CC1(CCN(c3ccc(C(=O)N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)CC1)CO2	0.1200	lncap fgc	crbn	AR	AR	1
+N#Cc1cc2c(cc1Cl)OC1(CCN(c3ccc(C(=O)N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)CC1)CO2	0.0950	lncap fgc	crbn	AR	AR	2
+N#Cc1cc2c(cc1Cl)OCC1(CCN(C(=O)c3ccc(N4CCC(CN5CCC6(CCc7cc(C(=O)N[C@H]8CCC(=O)NC8=O)c(F)cc7O6)CC5)CC4)cc3)CC1)O2	0.1450	lncap fgc	crbn	AR	AR	2
+N#Cc1ccc(N2CCC(C3=CC=C(OCCCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)NC3)CC2)cc1C(F)(F)F	0.8800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3c(F)cc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3F)CC2)cc1C(F)(F)F	0.8400	lncap (l702h)	crbn	AR	AR L702H	1
+N#Cc1ccc(N2CCC(c3ccc(CCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.7900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(CN4CCC(N5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.9200	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)CC2)cc1C(F)(F)F	0.8800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.8700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCC(Oc6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.8200	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCC6(CC5)CCN(c5ccc7c(c5)CN(C5CCC(=O)NC5=O)C7=O)CC6)CC4)cc3)CC2)cc1C(F)(F)F	0.6700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.8300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(CC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.7300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6cc7c(cn6)C(=O)N(C6CCC(=O)NC6=O)C7)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.9500	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)C2)cc1C(F)(F)F	0.6700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)c(F)c1C(F)(F)F	0.9300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)c(F)c1C(F)(F)F	0.6600	lncap (l702h)	crbn	AR	AR L702H	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.8800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C1CC1	0.8700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cn3)CC2)cc1C(F)(F)F	0.8800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(n6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)c(F)c1C(F)(F)F	0.7500	lncap (l702h)	crbn	AR	AR L702H	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(n6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.9000	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccn7c(=O)n(C8CCC(=O)NC8=O)nc7c6)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.9800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CN5C[C@@H]6CN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)C[C@@H]6C5)CC4)cc3)CC2)cc1C(F)(F)F	1.0000	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(CNC5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.8000	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCC(N5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.6300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCN(C5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.8300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCN(CC5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.6800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCN(CC5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.8200	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCN(CCCCOc5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.7500	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCN(CCCOc5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.7900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(N4CCN(CCOc5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.6700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(NCCCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.7400	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(NCCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.5500	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(NCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.8100	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(NCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.8100	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(NCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.6600	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(NCCOCCOCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.4500	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OC4CCN(CC5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.8900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCC4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.8800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9500	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9600	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9500	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)nc3)CC2)cc1C(F)(F)F	0.8700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCCN4CCN(c5ccn6c(=O)n(C7CCC(=O)NC7=O)nc6c5)CC4)cc3)CC2)cc1C(F)(F)F	0.9300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CC=C(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCC(Oc5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCC(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9100	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCC(n5ccc6c(N7CCC(=O)NC7=O)cccc65)CC4)cc3F)CC2)cc1C(F)(F)F	1.0000	lncap (l702h)	crbn	AR	AR L702H	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCC(n5ccc6cc(N7CCC(=O)NC7=O)ccc65)CC4)cc3F)CC2)cc1C(F)(F)F	1.0000	lncap (l702h)	crbn	AR	AR L702H	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5cc(Cl)c6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9000	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5cc6c(c(OC(F)F)c5)C(=O)N(C5CCC(=O)NC5=O)C6)CC4)cc3)CC2)cc1C(F)(F)F	0.9300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5cc6c(cc5F)C(=O)N(C5CCC(=O)NC5=O)C6)CC4)cc3)CC2)cc1C(F)(F)F	0.9200	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5cc6c(cc5F)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	1.0000	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5cc6c(cc5F)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)nc3)CC2)cc1C(F)(F)F	0.9900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CCN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)c(F)c3)CC2)cc1C(F)(F)F	0.9000	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)c(F)c1C(F)(F)F	0.9700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)c(F)c1C(F)(F)F	0.7800	lncap (l702h)	crbn	AR	AR L702H	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)c2ncccc12	0.9500	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9500	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C1CC1	0.9300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1Cl	0.9700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3F)CC2)c(F)c1C(F)(F)F	0.8800	lncap (l702h)	crbn	AR	AR L702H	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3F)CC2)cc1C(F)(F)F	0.9900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cn3)CC2)cc1C(F)(F)F	0.8400	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)nc3)CC2)cc1C(F)(F)F	0.8300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)oc(=O)n6C5CCC(=O)NC5=O)CC4)cc3)CC2)cc1C(F)(F)F	0.8900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(n5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9400	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(n5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3F)CC2)cc1C(F)(F)F	1.0000	lncap (l702h)	crbn	AR	AR L702H	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(n5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cn3)CC2)cc1C(F)(F)F	0.8000	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(n5)CN(C5CCC(=O)NC5=O)C6=O)CC4)nc3)CC2)cc1C(F)(F)F	0.7400	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccn6c(=O)n(C7CCC(=O)NC7=O)nc6c5)CC4)cc3)CC2)cc1C(F)(F)F	0.9700	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCN(c5ccn6c(=O)n(C7CCC(=O)NC7=O)nc6n5)CC4)cc3)CC2)cc1C(F)(F)F	0.8600	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCCN4CCOC5(CC4)CCN(c4ccc6c(c4)CN(C4CCC(=O)NC4=O)C6=O)CC5)cc3)CC2)cc1C(F)(F)F	0.9600	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.8900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)F	0.7900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C1CC1	0.8500	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.8200	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)nc3)CC2)cc1C(F)(F)F	0.6800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCCN4CCN(c5ccn6c(=O)n(C7CCC(=O)NC7=O)nc6c5)CC4)cc3)CC2)cc1C(F)(F)F	0.9200	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.7900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.9000	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OCCOCCOCCNc4cccc5c4CN(C4CCC(=O)NC4=O)C5=O)cc3)CC2)cc1C(F)(F)F	0.5200	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OC[C@H]4C[C@@H](CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)CC2)cc1C(F)(F)F	0.9300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(OC[C@H]4C[C@H](CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)CC2)cc1C(F)(F)F	0.9400	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(O[C@H]4C[C@@H](CCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)CC2)cc1C(F)(F)F	0.9300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ccc(O[C@H]4C[C@H](CCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)C4)cc3)CC2)cc1C(F)(F)F	0.9900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCC(c3ncc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cn3)CC2)cc1C(F)(F)F	0.7900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.8900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCN(c3ccc(OCCCCN4CCN(c5ccc6c(c5)C(=O)N(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.8200	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CCN(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.6900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CC[C@@H](c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2)cc1C(F)(F)F	0.6300	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CC[C@@H](c3ccc(OCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2)cc1C(F)(F)F	0.7800	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CC[C@H](c3ccc(N4CCC(CCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)C2)cc1C(F)(F)F	0.5900	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CC[C@H](c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)C2)cc1C(F)(F)F	0.6400	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CC[C@H](c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2)cc1C(F)(F)F	0.8400	lncap	crbn	AR	AR	1
+N#Cc1ccc(N2CC[C@H](c3ccc(OCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)C2)cc1C(F)(F)F	0.6200	lncap	crbn	AR	AR	1
+N#Cc1ccc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(N5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)nn3)CC2)cc1Cl	0.5700	lncap fgc	crbn	AR	AR	2
+N#Cc1ccc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(N5CC6(CCC7(CC6)COc6c7ccc7c6CN(C6CCC(=O)NC6=O)C7=O)C5)CC4)nn3)CC2)cc1Cl	0.7550	vcap	crbn	AR	AR	2
+N#Cc1ccc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(N5CCC6(CC5)CCC5(CC6)COc6c5ccc5c6CC(C6C=CC(=O)NC6=O)C5=O)CC4)nn3)CC2)cc1Cl	0.2900	lncap fgc	crbn	AR	AR	2
+N#Cc1ccc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(N5CCC6(CC5)CCC5(CC6)COc6c5ccc5c6CC(C6C=CC(=O)NC6=O)C5=O)CC4)nn3)CC2)cc1Cl	0.3650	vcap	crbn	AR	AR	2
+N#Cc1ccc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(N5CCC6(CC5)CCC5(CC6)COc6c5ccc5c6CN(C6CCC(=O)NC6=O)C5=O)CC4)nn3)CC2)cc1Cl	0.8000	lncap fgc	crbn	AR	AR	2
+N#Cc1ccc(O[C@H]2CC[C@H](NC(=O)c3ccc(N4CCC(N5CCC6(CC5)CCC5(CC6)COc6c5ccc5c6CN(C6CCC(=O)NC6=O)C5=O)CC4)nn3)CC2)cc1Cl	0.8400	vcap	crbn	AR	AR	2
+N#Cc1n[nH]c2c(N3CCC(NC(=O)c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cn4)CC3)ccc(Cl)c12	1.0000	lncap	crbn	AR	AR	1
+N#Cc1n[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)CC3)ccc(Cl)c12	1.0000	lncap	crbn	AR	AR	1
+N#Cc1n[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)CC3)ccc(F)c12	0.9600	lncap	crbn	AR	AR L702H	1
+N#Cc1n[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.9800	lncap	crbn	AR	AR	1
+N#Cc1n[nH]c2c(N3CCC(c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)CC3)ccc(F)c12	0.7000	lncap	crbn	AR	AR L702H	1
+N#Cc1n[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)C3)ccc(F)c12	0.9400	lncap	crbn	AR	AR L702H	1
+N#Cc1n[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9600	lncap	crbn	AR	AR	1
+N#Cc1n[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)cc4)C3)ccc(F)c12	0.9700	lncap	crbn	AR	AR L702H	1
+N#Cc1n[nH]c2c(N3CCC[C@@H](c4ccc(N5CCC(CN6Cc7cc8c(cc7C6)C(=O)N(C6CCC(=O)NC6=O)C8=O)CC5)cc4)C3)ccc(Cl)c12	0.9200	lncap	crbn	AR	AR	1
+N#Cc1n[nH]c2c(N3CCC[C@H](c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9200	lncap	crbn	AR	AR	1
+N#Cc1n[nH]c2c(N3CCOC(c4ccc(N5CCC(CN6CCC(n7ccc8c(N9CCC(=O)NC9=O)cccc87)CC6)CC5)cc4)C3)ccc(Cl)c12	0.9000	lncap	crbn	AR	AR L702H	1
+N#Cc1ncc(N2CCC(c3ccc(N4CCC(CN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)CC4)cc3)CC2)cc1C(F)(F)F	0.8500	lncap	crbn	AR	AR	1
+N#Cc1ncc(N2CCC(c3ccc(OCCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.8100	lncap	crbn	AR	AR	1
+N#Cc1ncc(N2CCC(c3ccc(OCCCCN4CCN(c5ccc6c(c5)CN(C5CCC(=O)NC5=O)C6=O)CC4)cc3)CC2)cc1C(F)(F)F	0.7900	lncap	crbn	AR	AR	1

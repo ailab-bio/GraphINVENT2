@@ -2,21 +2,25 @@
   "activity_type_kept": "DC50 (exact match only)",
   "censored_rows": "dropped, which truncates the label distribution at the inactive end; the retained range is the model's applicability window",
   "counts": {
+    "  of which multi-target rows naming SMARCA2": 0,
     "distinct canonical POIs": 1,
     "distinct cell lines": 3,
     "distinct compounds": 186,
     "distinct raw target strings": 1,
+    "dropped: above 100 percent": 0,
     "dropped: censored": 2,
     "dropped: conflicting grades": 0,
+    "dropped: negative": 0,
     "dropped: no parseable parent SMILES": 0,
     "dropped: non-positive": 0,
-    "dropped: target not a resolved human protein": 0,
+    "dropped: target not a resolved human protein": 5410,
+    "dropped: unparseable": 0,
     "dropped: unparseable or no unit": 0,
     "graded rows written": 0,
     "letter grades": 0,
     "numeric kept": 241,
     "pdc50 rows": 243,
-    "rows for this target": 523,
+    "rows resolving to SMARCA2": 523,
     "rows written": 241
   },
   "endpoint": "pDC50 = -log10(DC50 in molar)",
@@ -66,5 +70,8 @@
   "target": "SMARCA2",
   "target_map": "data/surrogates/target_symbol_map.tsv",
   "target_map_sha256": "d8ad4cd006f017bcc7002d865833d9bf434545a84e418ede692f1cb252f7a661",
-  "targets_excluded": {}
+  "targets_excluded": {
+    "ambiguous: HPK2": 14,
+    "unspecified: .": 5396
+  }
 }

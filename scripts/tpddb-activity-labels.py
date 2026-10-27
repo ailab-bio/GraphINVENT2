@@ -117,6 +117,18 @@ def load_target_map(path: Path) -> dict[str, tuple[frozenset[str], str]]:
                 "poi, non_human, ambiguous, unspecified."
             )
         resolved = frozenset(s for s in symbols.split(";") if s and s != "-")
+        if raw in table and table[raw] != (resolved, kind):
+            # This file is the leakage guard. Two rows for one string with
+            # different symbol sets would silently change fold membership
+            # depending on which came last, so the collision is fatal rather
+            # than last-one-wins.
+            previous, previous_kind = table[raw]
+            raise SystemExit(
+                f"{path}:{number} maps {raw!r} to "
+                f"{sorted(resolved)} ({kind}), but an earlier row maps it to "
+                f"{sorted(previous)} ({previous_kind}). One string cannot have "
+                "two canonical symbol sets; delete the wrong row."
+            )
         table[raw] = (resolved, kind)
     return table
 
@@ -185,19 +197,17 @@ def main() -> int:
     pooled = args.target.lower() == "all"
 
     counts = defaultdict(int)
-    if pooled:
-        rows = list(act_rows)
-    else:
-        rows = [
-            r
-            for r in act_rows
-            if (r.get("Target Symbols") or "").strip().lower() == args.target.lower()
-        ]
-    counts["rows for this target"] = len(rows)
+    rows = list(act_rows)
 
-    # Resolve every row's target to a canonical symbol set before anything
-    # else, so an out-of-date map fails here rather than producing a `poi`
-    # column that silently splits one protein across two groups.
+    # Resolve every row's target to a canonical symbol set BEFORE selecting a
+    # target, so selection and grouping agree about what a target is. Filtering
+    # on the raw string first and canonicalizing afterward meant `--target AR`
+    # kept the rows spelled exactly `AR` and dropped `AR L702H`, `AR T878A` and
+    # `AR-V7`, which this map resolves to AR -- so the per-target tables and the
+    # pooled table disagreed, and CLAUDE.md's "AR merges its aliases and
+    # mutants" was false of the code that built AR's labels. An out-of-date map
+    # fails here rather than producing a `poi` column that silently splits one
+    # protein across two groups.
     excluded_kinds = defaultdict(int)
     kept_rows = []
     for r in rows:
@@ -225,12 +235,46 @@ def main() -> int:
         # one string and the trainer's union-find sees one edge.
         r["__poi__"] = ";".join(sorted(symbols))
         r["__poi_raw__"] = raw_target
+        r["__symbols__"] = symbols
         kept_rows.append(r)
     if excluded_kinds:
         counts["dropped: target not a resolved human protein"] = sum(
             excluded_kinds.values()
         )
     rows = kept_rows
+
+    if not pooled:
+        # Selection is membership in the row's canonical symbol set, so a
+        # composite like `SMARCA2;SMARCA4` is a SMARCA2 measurement and lands
+        # in SMARCA2's table. The composites are counted separately below
+        # because a per-target label built partly from dual-degrader rows is
+        # worth seeing rather than inferring.
+        known = {
+            s for symbols, kind in target_map.values() if kind == "poi" for s in symbols
+        }
+        wanted_symbol = next(
+            (s for s in known if s.lower() == args.target.lower()), None
+        )
+        if wanted_symbol is None:
+            raise SystemExit(
+                f"{args.target!r} is not a canonical symbol in "
+                f"{args.target_map}. Selection resolves through the map, so "
+                "the target must be a canonical gene symbol rather than a raw "
+                "TPDdb string. The symbols that exist are: "
+                f"{', '.join(sorted(known))}."
+            )
+        selected_rows = [r for r in rows if wanted_symbol in r["__symbols__"]]
+        counts[f"rows resolving to {wanted_symbol}"] = len(selected_rows)
+        composites = sum(1 for r in selected_rows if len(r["__symbols__"]) > 1)
+        if composites:
+            counts[f"  of which multi-target rows naming {wanted_symbol}"] = composites
+        spellings = sorted({r["__poi_raw__"] for r in selected_rows})
+        print(
+            f"* {wanted_symbol}: {len(selected_rows)} rows from "
+            f"{len(spellings)} raw spelling(s): {', '.join(spellings)}",
+            flush=True,
+        )
+        rows = selected_rows
     # DC50, DC50_1, DC50_2 and DC50(SMARCA2) are all DC50 measurements,
     # suffixed by replicate or assay. DIC50 is a different endpoint and Dmax
     # a different quantity, so neither is pooled in.
@@ -351,7 +395,14 @@ def main() -> int:
 
     print(f"* {'all targets (pooled)' if pooled else args.target}", flush=True)
     for key in (
-        "rows for this target",
+        *(
+            ()
+            if pooled
+            else (
+                f"rows resolving to {wanted_symbol}",
+                f"  of which multi-target rows naming {wanted_symbol}",
+            )
+        ),
         f"{args.endpoint} rows",
         # This used to print "exact DC50 rows" and "numeric with a unit",
         # neither of which any code path sets, so the count that survives
@@ -360,6 +411,12 @@ def main() -> int:
         "letter grades",
         "dropped: censored",
         "dropped: target not a resolved human protein",
+        # The three dmax-only counters. Without them a `--endpoint dmax` run
+        # with out-of-range percentages shows `dmax rows` and `numeric kept`
+        # differing with nothing accounting for the gap.
+        "dropped: unparseable",
+        "dropped: above 100 percent",
+        "dropped: negative",
         "dropped: unparseable or no unit",
         "dropped: non-positive",
         "dropped: no parseable parent SMILES",

@@ -1,0 +1,385 @@
+smiles	grade	grade_rank	cell_line	ligase	poi	poi_raw
+C#CC1=C(F)C=CC2=CC(O)=CC(c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CC7(CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)C6)CC5)nc4c3F)C21	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#CC1c2c(cccc2/C=C(\F)c2nc(OCCN3CCC4(CC3)CCN(CC3CCN(c5ccc6c(c5F)CN(C5CCC(=O)NC5=O)C6=O)CC3)CC4)nc(N3CC4CCC(C3)N4)c2/C=N\C)C=CC1F	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2c1C(c1ncc3c(N4CC5CCC(C4)N5)nc(OCC4(CN5CCC(CC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)CC4)nc3c1F)CC(O)=C2	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(N)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(N)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ccc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ccc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ccc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ccc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ccc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ccc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7F)n(C)c(=O)n8C7CCC(=O)NC7=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ccc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5(C)C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ccc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5CC[C@@H](COC(=O)N6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)N5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3cnc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5C=CNCC5)nc(OC[C@@]56CCCN5[C@H](CN5CCN(CC7CCN(C8=CCC9C(=O)N(C%10CCC(=O)NC%10=O)CC9=C8)CC7)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(N(C)CCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(N5CC[C@@H](N6CCC(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)C5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC(CC7CCN(CC8CCN(c9ccc%10c(c9)n(C)c(=O)n%10C9CCC(=O)NC9=O)CC8)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC(CC7CCN(CC8CN(c9ccc%10c(c9)n(C)c(=O)n%10C9CCC(=O)NC9=O)C8)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC(CC7CCN(c8ccc9c(c8Cl)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8Cl)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC7(CCN(CC8CCN(c9ccc%10c(c9)n(C)c(=O)n%10C9CCC(=O)NC9=O)CC8)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCN(CC7CCN(c8ccc9c(c8Cl)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(C(F)(F)C6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(C)(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(C)(CN6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6(F)CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6(F)CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7(F)CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cc(C)c9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cc(F)c9c(c8F)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cc(F)cc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)C(=O)N(C8CCC(=O)NC8=O)C9)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)C(=O)N(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)CN(C8(C)CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)CN([C@@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8Cl)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)CN([C@@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8C(=O)N(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)C7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7ccc8c(c7)n(C(C)C)c(=O)n8C7CCC(=O)NC7=O)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7ccc8c(c7)n(C)c(=O)n8C7CCC(=O)NC7=O)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7cccc8c7n(C)c(=O)n8C7CCC(=O)NC7=O)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CCC6CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CC7(CCN(c8cc(C)c9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)C6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CC7(CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)C6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8cc(C)c9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8ccc9c(c8Cl)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8ccc9c(c8F)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8ccc9c(c8F)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CN7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC7(CC6)CCN(c6ccc8c(c6)CN(C6CCC(=O)NC6=O)C8=O)CC7)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC7(CC6)CCN(c6ccc8c(c6F)CN(C6CCC(=O)NC6=O)C8=O)CC7)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8cc(C)c9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8Cl)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)C(C)(C)C6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6(C)C)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5(C)C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8F)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(F)(CC6CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(F)(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(F)(CC6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(F)(CN6CCC(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(F)(CN6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(OC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5(F)CCN(c7ccc8c(c7F)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7cc(C)c8c(c7F)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7)n(C(C)C)c(=O)n8C7CCC(=O)NC7=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7)n(C)c(=O)n8C7CCC(=O)NC7=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7Cl)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7F)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7F)n(C(C)C)c(=O)n8C7CCC(=O)NC7=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)cc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7cccc8c7n(C)c(=O)n8C7CCC(=O)NC7=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CN(CC5(F)CCN(c7ccc8c(c7F)CN(C7CCC(=O)NC7=O)C8=O)CC5)C6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CN(CC5CCN(c7cc(C)c8c(c7F)CN(C7CCC(=O)NC7=O)C8=O)CC5)C6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CN(CC5CCN(c7ccc8c(c7F)CN(C7CCC(=O)NC7=O)C8=O)CC5)C6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CN(CC5CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC5)C6)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5(C)C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(CC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5(C)C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H](C)N5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H](C)N5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5CC[C@@H](CN6CCN(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)N5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5CC[C@@H](CN6CCN(c7ccc8c(c7)n(C(C)C)c(=O)n8C7CCC(=O)NC7=O)CC6)N5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5CC[C@@H](COC(=O)N6CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC6)N5C)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7(F)CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8cc(C)c9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8cc(F)c9c(c8F)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5CC)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8Cl)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8F)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8F)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)C7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(c7ccc8c(c7F)CN(C7CCC(=O)NC7=O)C8=O)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@H](C)N5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@H](C)N5CCC(CC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5[C@H](CN5CCN(CC7CCN(C8=CC=C9C(=O)N(C%10CCC(=O)NC%10=O)CC9C8)CC7)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5[C@H](CN5CCN(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5[C@H](CN5CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(OI)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cc(OI)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCC5(CN6CCC(F)(CN7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CC7(CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)C6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@]56CCCN5[C@H](CN5CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@]56CCCN5[C@H](CN5CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@]56CCCN5[C@H](CN5CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@]56CCCN5[C@H](CN5CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5[C@H](CN5CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(F)ccc2cccc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5[C@H](CN5CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1c(N)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C#Cc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7F)n(C)c(=O)n8C7CCC(=O)NC7=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C=C1CCC(N2Cc3cc(N4CCC(N5CCC(OC6CCN(CC7(COc8nc(N9CCC[C@@](C)(O)C9)c9cnc(-c%10cc(O)cc%11ccc(F)c(CC)c%10%11)c(F)c9n8)CC7)CC6)CC5)CC4)ccc3C2=O)C(=O)N1	A	0	sw620	crbn	KRAS	KRAS
+C=C1NC(=O)CC[C@@H]1N1Cc2cc(N3CCN(CC4CCN(CC5(COc6nc(N7CCNC(=O)CC7)c7cnc(-c8cc(O)cc9cccc(CC)c89)c(F)c7n6)CC5)CC4)CC3)ccc2C1=O	C	2	sw620	crbn	KRAS	KRAS
+CCC1=CC=CC2CC(O)=CC(c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5[C@@H](COC(=O)N5CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)=C12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(C)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)C6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(N)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(N)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(C)(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(C)(CN6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(F)(CC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(F)(CN6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7)n(C)c(=O)n8C7CCC(=O)NC7=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8)n(C(C)C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8)n(C)c(=O)n9C8CCC(=O)NC8=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8Cl)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8F)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC(O)CC5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC(O)CC5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC=CCC5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCC(C)(F)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCC6(CC(O)C6)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCC6(CC(O)C6)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCC6(CCO6)C5)nc(OCC5(CN6CCC(CN7CC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCC6(CCO6)C5)nc(OCC5(CN6CCC(CN7CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCC6(CCO6)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCC6(CCO6)C5)nc(OCC5(CN6CCC(F)(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCNC(=O)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCNC(=O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCOC6CC65)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCOC6CC65)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@H](O)CC5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@H](O)CC5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(CN7CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)C6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(F)(CN7CC8(CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CC(CN8CCN(c9ccc%10c(c9)CN([C@@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CC8(CN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)C8)C7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CCC8(CC7)CN(c7ccc9c(c7)CN(C7CCC(=O)NC7=O)C9=O)C8)C6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CCC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)CC7)C6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CC(CN8CCN(c9ccc%10c(c9)CN([C@@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CCC(CN8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CCC(F)(CN8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)C6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CCC(F)(CN8CCN(c9ccc(C(=O)N[C@H]%10CCC(=O)NC%10=O)c(F)c9)CC8)CC7)C6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CCC(N8CCN(c9cc(F)c(C%10CCC(=O)NC%10=O)c(F)c9)CC8)CC7)C6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)C6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CCN(C8CN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)C8)CC7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(C#N)(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(C)(CN7CC8(CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(C)(CN7CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(C)(CN7CCN(C8CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(C)(CN7CCN(c8cc(F)c(C9CCC(=O)NC9=O)c(F)c8)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(C)(CN7CCN(c8ccc9c(c8)C(=O)N([C@@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CN7CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc(C9CCC(=O)NC9=O)cc8)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)(OC)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(F)(CN7CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(F)(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CC(CN8CCN(c9ccc(C%10CCC(=O)NC%10=O)cc9)CC8)C7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CC8(CCN(c9cc(F)c(C%10CCC(=O)NC%10=O)c(F)c9)CC8)C7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CC8(CN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)C8)C7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CCC8(CC7)CN(c7ccc9c(c7)CN(C7CCC(=O)NC7=O)C9=O)C8)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CCC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(O)(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(OC7CCC8(CC7)CN(c7ccc9c(c7)CN(C7CCC(=O)NC7=O)C9=O)C8)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(C)(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(C)(N6CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(C6CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8cc(F)c(C9CCC(=O)NC9=O)c(F)c8)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6Cc8ccc(C9CCC(=O)NC9=O)cc8C6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(F)(C6CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(F)(CN6CCN(c8cc(F)c(C9CCC(=O)NC9=O)c(F)c8)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(F)(CN6CCN(c8ccc(C(=O)N[C@H]9CCC(=O)NC9=O)c(F)c8)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(F)(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(N6CCN(c8cc(F)c(C9CCC(=O)NC9=O)c(F)c8)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(N6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(OC6CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CCN(C6CN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)C6)CC7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CN(C6CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CN(C6CN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)C6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CCC(N8CCN(c9cc(F)c(C%10CCC(=O)NC%10=O)c(F)c9)CC8)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CCN(CCc8cc(F)c(C9CCC(=O)NC9=O)c(F)c8)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(C7CC8(C7)CN(c7ccc9c(c7)CN(C7CCC(=O)NC7=O)C9=O)C8)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(C7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(C7CCC8(CC7)CCN(c7ccc9c(c7)CN(C7CCC(=O)NC7=O)C9=O)CC8)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(CC7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCN(CC7CN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)C7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(OC)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@@]6(CCO6)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@](C)(O)C5)nc(OCC5(CN6CCC(OC7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CCC(C)(N6CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC6)CC7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@]6(C5)C[C@@H](O)C6)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@]6(C5)C[C@H](O)C6)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@]6(CCO6)C5)nc(OCC5(CN6CC7(CCC(N8CCN(c9cc(F)c(C%10CCC(=O)NC%10=O)c(F)c9)CC8)CC7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@]6(CCO6)C5)nc(OCC5(CN6CCC(C)(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@]6(CCO6)C5)nc(OCC5(CN6CCC(CN7CCN(c8cc(F)c(C9CCC(=O)NC9=O)c(F)c8)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@]6(CCO6)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCC[C@]6(CCO6)C5)nc(OCC5(CN6CCC(F)(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCn6nc(C(=O)N(C)C)c(Cl)c6C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCCn6nc(C(=O)N(C)C)c(Cl)c6C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCOCC(C)(O)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCOCC(C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCOCC6(CCO6)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCOC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCOC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(F)(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCOC[C@](C)(O)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5CCOC[C@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5C[C@@H]6C[C@H](C5)[C@H](O)C6)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(N5C[C@@H]6C[C@H](C5)[C@H](O)C6)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1c(F)ccc2cc(O)cc(-c3ncc4c(NCC5(N(C)C)CCC5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc(/C=C(O)\C=C\c2ncc3c(N4CC5CCC(C4)N5)nc(OCCN4CCC(CN(C)[C@H]5C[C@H](Oc6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)C5)CC4)nc3c2F)c1	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2c(F)c(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N(C)C5CC5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N(C)C5C[C@H]5F)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N(C)[C@@H]5C[C@H]5F)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(C(C)(C)N6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(C6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(C7=CC=C8C(=O)N(C9CCC(=O)NC9=O)C(=O)C8C7)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8C(=O)N(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8CN(C8(C)CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)N(C)C8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7cccc8c7C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7cccc8c7CN(C7(C)CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7cccc8c7CN(C7CCC(=O)N(C)C7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CC6CCN(c7cccc8c7n(C)c(=O)n8C7CCC(=O)NC7=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CCC6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CCCN6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CCN6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CC7(C6)CN(c6ccc8c(c6)C(=O)N(C6CCC(=O)NC6=O)C8=O)C7)CC5)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CC7(CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)C6)CC5)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(Oc7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC(Oc7cccc8c7C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC7(CC6)CCN(c6ccc8c(c6)C(=O)N(C6CCC(=O)NC6=O)C8=O)CC7)CC5)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCC7(CC6)CN(c6cccc8c6CN(C6CCC(=O)NC6=O)C8=O)C7)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(CC7CCN(c8ccc9c(c8)C(=O)N(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(CN6CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(COCC6CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(F)(CC6CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(O[C@H]6CC[C@H](OC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(O[C@H]6C[C@H](OC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)C6)CC5)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(CC5CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CCN(c5ccc7c(c5)C(=O)N(C5CCC(=O)NC5=O)C7=O)CC6)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCC6(CC5)CN(c5cccc7c5CN(C5CCC(=O)NC5=O)C7=O)C6)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(CC6CCN(C(=O)c7ccc(OC)c(N8CCC(=O)NC8=O)c7)CC6)CC5)nc4c3N)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(CC6CCN(c7ccc(F)c(C(=O)NC8CCC(=O)NC8=O)c7)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(CC6CCN(c7ccc(N8CCC(=O)NC8=O)c(F)c7)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(CC6CCN(c7ccc(OC)c(C(=O)NC8CCC(=O)NC8=O)c7)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(CCN(C)[C@H]6C[C@H](Oc7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)C6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN([C@H]6CC[C@H](Nc7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(c6cc(N7CCN(c8ccc9c(c8)C(=O)N(C8CCC(=O)NC8=O)C9=O)CC7)ncn6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(c6cc(OC)c7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(c6ccc(C(=O)NC7CCC(=O)NC7=O)c(F)c6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(c6ccc7c(c6)C(=O)N(C6CCC(=O)NC6=O)C7=O)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OCCN5CCOC(CN6CCN(CC7CCN(c8ccc9c(c8)C(=O)N(C8CCC(=O)NC8=O)C9=O)CC7)CC6)C5)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC6)CN5C)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@H]5C[C@@H](OC6CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC6)CN5C)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@]56CCCN5[C@H](COC(=O)N5CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@]56CCCN5[C@H](COC(=O)N5CCN(c7ccc8c(c7)CN(C7CCC(=O)N(C)C7=O)C8=O)CC5)CC6)nc4c3F)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@]56CCCN5[C@H](COC(=O)N5CCN(c7cccc8c7C(=O)N(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@]56CCCN5[C@H](COC(=O)N5CCN(c7cccc8c7CN(C7CCC(=O)N(C)C7=O)C8=O)CC5)CC6)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@@]56CCCN5[C@H](COC(=O)N5CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5C(OC(=O)N5CCN(c7ccc8c(c7)C(=O)N(C7CCC(=O)N(I)C7=O)C8=O)CC5)CC6)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5[C@@H](COC(=O)N5CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	B	1	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5[C@@H](COC(=O)N5CCN(c7cccc8c7C(=O)N(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6)nc(OC[C@]56CCCN5[C@@H](COC(=O)N5CCN(c7cccc8c7CN(C7CCC(=O)N(C)C7=O)C8=O)CC5)CC6)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6C)nc(OCCN5CCC(CC6CCN(CC7CCN(c8cccc9c8CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6C)nc(OCCN5CCC(CC6CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC6)CC5)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6C)nc(OC[C@@]56CCCN5[C@H](COC(=O)N5CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	C	2	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6C)nc(OC[C@@]56CCCN5[C@H](COC(=O)N5CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6C)nc(OC[C@]56CCCN5[C@@H](COC(=O)N5CCN(c7ccc8c(c7)CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CC6CCC(C5)N6C)nc(OC[C@]56CCCN5[C@@H](COC(=O)N5CCN(c7cccc8c7CN(C7CCC(=O)NC7=O)C8=O)CC5)CC6)nc4c3F)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCCOCC5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCCOCC5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(CN7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC(N7CC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CCC(N8CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)CC7)C6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC7(CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)C6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CN7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(F)(CN7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(F)(CN7CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(N7CC8(CCN(c9ccc%10c(c9)CN([C@H]9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC(OC7CCN(c8ccc9c(c8)CN(C8CCC(=O)NC8=O)C9=O)CC7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)C(=O)N(C8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(F)(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(N6CCN(c8ccc9c(c8)C(=O)N(C8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(N6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CCN(c6ccc8c(c6)CN(C6CCC(=O)NC6=O)C8=O)CC7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC[C@@H](CN7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@@](C)(O)C5)nc(OCC5(CN6CC[C@H](CN7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)C6)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCC[C@](C)(O)C5)nc(OCC5(CN6CCC(OC7CC8(CCN(c9ccc%10c(c9)CN(C9CCC(=O)NC9=O)C%10=O)CC8)C7)CC6)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCCn6nc(C(=O)N(C)C)c(Cl)c6C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCNC(=O)CC5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCOC[C@@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	B	1	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5CCOC[C@](C)(O)C5)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	C	2	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(N5C[C@@H]6C[C@H](C5)[C@H](O)C6)nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c3F)c12	A	0	sw620	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(-c3ncc4c(c3F)N=C(OC[C@@]35CCCN3[C@H](COC(=O)N3CCN(c6ccc7c(c6)CN(C6CCC(=O)NC6=O)C7=O)CC3)CC5)NC4N3CC4CCC(C3)N4)c12	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+CCc1cccc2cc(O)cc(C3=C(F)c4nc(OCCN5CCC(Cn6cccc(CN7CCC(=O)NC7=O)c6=O)CC5)nc(N5CC6CCC(C5)N6)c4CN3)c12	D	3	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CC(N5CC(N6CCN(c7ccc8c(c7)CN([C@H]7CCC(=O)NC7=O)C8=O)CC6)C5)C4)CC3)nc3c(F)c(-c4cc(O)cc5ccc(F)c(F)c45)ncc23)C1	C	2	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CC5(CCC(F)(CN6CCN(c7ccc8c(c7)CN([C@H]7CCC(=O)NC7=O)C8=O)CC6)CC5)C4)CC3)nc3c(F)c(-c4cc(O)cc5ccc(F)c(F)c45)ncc23)C1	C	2	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC(CN5CCN(c6ccc7c(c6)CN([C@H]6CCC(=O)NC6=O)C7=O)CC5)CC4)CC3)nc3c(F)c(-c4cc(O)cc5ccc(F)c(Cl)c45)ncc23)C1	A	0	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC(CN5CCN(c6ccc7c(c6)CN([C@H]6CCC(=O)NC6=O)C7=O)CC5)CC4)CC3)nc3c(F)c(-c4cc(O)cc5ccc(F)c(F)c45)ncc23)C1	B	1	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC(CN5CCN(c6ccc7c(c6)CN([C@H]6CCC(=O)NC6=O)C7=O)CC5)CC4)CC3)nc3c(F)c(-c4cc(O)cc5cccc(Cl)c45)ncc23)C1	B	1	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC5(CC4)CC(CN4CCN(c6ccc7c(c6)CN([C@H]6CCC(=O)NC6=O)C7=O)CC4)C5)CC3)nc3c(F)c(-c4cc(N)cc(Cl)c4C(F)(F)F)ncc23)C1	B	1	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC5(CC4)CC(CN4CCN(c6ccc7c(c6)CN([C@H]6CCC(=O)NC6=O)C7=O)CC4)C5)CC3)nc3c(F)c(-c4cc(O)cc5ccc(F)c(Cl)c45)ncc23)C1	A	0	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC5(CC4)CC(CN4CCN(c6ccc7c(c6)CN([C@H]6CCC(=O)NC6=O)C7=O)CC4)C5)CC3)nc3c(F)c(-c4cc(O)cc5ccc(F)c(F)c45)ncc23)C1	A	0	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC5(CC4)CC(CN4CCN(c6ccc7c(c6)CN([C@H]6CCC(=O)NC6=O)C7=O)CC4)C5)CC3)nc3c(F)c(-c4cc(O)cc5cccc(Cl)c45)ncc23)C1	A	0	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC5(CC4)CC(F)(CN4CCN(c6ccc7c(c6)CN([C@H]6CCC(=O)NC6=O)C7=O)CC4)C5)CC3)nc3c(F)c(-c4cc(O)cc5ccc(F)c(F)c45)ncc23)C1	A	0	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC5(CC4)CC(N4CCN(c6ccc7c(c6)CN([C@H]6CCC(=O)NC6=O)C7=O)CC4)C5)CC3)nc3c(F)c(-c4cc(O)cc5ccc(F)c(F)c45)ncc23)C1	B	1	sw620	crbn	KRAS	KRAS
+C[C@@]1(O)CCCN(c2nc(OCC3(CN4CCC5(CCC(N6CCN(c7ccc8c(c7)CN([C@H]7CCC(=O)NC7=O)C8=O)CC6)CC5)CC4)CC3)nc3c(F)c(-c4cc(N)cc5ccc(F)c(F)c45)ncc23)C1	C	2	sw620	crbn	KRAS	KRAS
+Cc1cc(N)nc(-c2c(Cl)c3c4c(nc(OCC5(CN6CCC7(CC6)CC(CN6CCN(c8ccc9c(c8)CN([C@H]8CCC(=O)NC8=O)C9=O)CC6)C7)CC5)nc4c2F)N(C(C)c2cccnc2N)CCO3)c1C(F)(F)F	C	2	sw620	crbn	KRAS	KRAS
+Cc1nc(N)cc(-c2ncc3c(N4CCC[C@@](C)(O)C4)nc(OCC4(CN5CCC6(CC5)CC(CN5CCN(c7ccc8c(c7)CN([C@H]7CCC(=O)NC7=O)C8=O)CC5)C6)CC4)nc3c2F)c1C(F)(F)F	C	2	sw620	crbn	KRAS	KRAS
+O=C1CCC(N2Cc3c(ccc(N4CCC(CN5CCC(CC6CCN(CCOc7nc(N8CC9CCC(C8)N9)c8cnc(-c9cc(O)cc(Cl)c9C9CC9)c(F)c8n7)CC6)CC5)CC4)c3F)C2=O)C(=O)N1	A	0	aspc-1hibit-krasg12d cells	crbn	KRAS	KRAS

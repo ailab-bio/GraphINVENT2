@@ -9,7 +9,7 @@
   beats the mean-prediction baseline: YES
   R^2     : 0.613 against the mean-prediction baseline (the stated kill criterion); 0.609 against the test mean (sklearn r2_score)
   MAE     : 0.343
-* Label noise floor: within-(compound, target) SD 0.384 against a total label SD of 0.776, over 315 (compound, target) pairs measured more than once
+* Label noise floor: within-(compound, target) SD 0.384 against a total label SD of 0.776, over 315 (compound, target) group(s) measured more than once
   so R^2 for this label is capped at 0.755, not 1.0; read the held-out R^2 against that ceiling
 * 5-fold CV grouped by poi: 18 groups over 1584 rows, largest 344, median 21
   this estimates the error for a target the model has NEVER seen; for an unseen POI the one-hot column is all zeros, so this estimate is honest and pessimistic
@@ -20,7 +20,7 @@
   fold 5: n=  313  RMSE 1.036 (baseline 0.980)  R^2 -0.118  rho +0.025  (6 groups held out)
   across folds: RMSE 0.839 (0.173)   margin -0.052 (0.058)   R^2 -0.150 (0.159)
   folds beating the mean-prediction baseline: 1 of 5   <- a fold that does not beat its baseline is a FAILED FIT on that fold and is reported as one, not averaged away
-  against the 0.755 label-noise ceiling, that is -20% of the achievable variance
+  the 0.755 label-noise ceiling is not the binding constraint here: a mean R^2 of -0.150 is below zero, so the fit does not beat predicting the training mean and explains none of the achievable variance
   per group, pooled over the folds that held it out:
     AR                     n=  344  RMSE 0.673  (its own label SD 0.613)
     EGFR                   n=  300  RMSE 0.669  (its own label SD 0.574)
@@ -40,6 +40,7 @@
     CDK4                   n=   10  RMSE 1.336  (its own label SD 0.878)
     CDK6                   n=    9  RMSE 1.224  (its own label SD 0.513)
     IRAK3                  n=    2  RMSE 0.625  (its own label SD 0.213)
+* Refitting on all 1584 rows for the shipped model; the error estimate above comes from the grouped folds, not from the single split
 * Wrote experiments/surrogate_protac_optimization/pooled/pdc50.pickle
 
 Use it by adding this to the 'oracles' block of a goal_directed config:

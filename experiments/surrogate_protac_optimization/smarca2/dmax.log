@@ -1,0 +1,39 @@
+* Read 208 rows from data/surrogates/smarca2_dmax.tsv
+  one-hot columns: ['cell_line', 'ligase']
+  feature width 2062: 2048 fingerprint (count) + 9 descriptors + 5 indicators
+* Decomposing for a warhead_scaffold split (cached under tools/)
+* warhead_scaffold split: 167 train / 41 test
+* Held-out performance
+  RMSE    : 0.092   (mean-prediction baseline 0.105)
+  Spearman: 0.503
+  margin over baseline: 0.013 [95% bootstrap -0.002, 0.026] over 31 held-out compounds in 41 rows (clustered on compound)
+  beats the mean-prediction baseline: NOT ESTABLISHED -- the point margin is positive but the 95% interval includes zero, so this fit does not clear the kill criterion on this split
+  R^2     : 0.230 against the mean-prediction baseline (the stated kill criterion); 0.204 against the test mean (sklearn r2_score)
+  MAE     : 0.059
+* Label noise floor: within-(compound, target) SD 0.095 against a total label SD of 0.120, over 56 (compound, target) group(s) measured more than once
+  so R^2 for this label is capped at 0.372, not 1.0; read the held-out R^2 against that ceiling
+* Decomposing for a warhead_scaffold split (cached under tools/)
+* 5-fold CV grouped by warhead_scaffold: 47 groups over 208 rows, largest 104, median 2
+  this estimates the error on novel molecules for a target the model has seen, which is what the reward does
+  fold 1: n=  104  RMSE 0.092 (baseline 0.090)  R^2 -0.044  rho +0.367  (1 groups held out)
+  fold 2: n=   26  RMSE 0.131 (baseline 0.092)  R^2 -1.039  rho +0.478  (9 groups held out)
+  fold 3: n=   26  RMSE 0.191 (baseline 0.238)  R^2 +0.351  rho +0.515  (11 groups held out)
+  fold 4: n=   26  RMSE 0.062 (baseline 0.080)  R^2 +0.404  rho +0.605  (13 groups held out)
+  fold 5: n=   26  RMSE 0.102 (baseline 0.110)  R^2 +0.149  rho +0.470  (13 groups held out)
+  across folds: RMSE 0.116 (0.049)   margin 0.006 (0.031)   R^2 -0.036 (0.588)
+  folds beating the mean-prediction baseline: 3 of 5   <- a fold that does not beat its baseline is a FAILED FIT on that fold and is reported as one, not averaged away
+  the 0.372 label-noise ceiling is not the binding constraint here: a mean R^2 of -0.036 is below zero, so the fit does not beat predicting the training mean and explains none of the achievable variance
+* Refitting on all 208 rows for the shipped model; the error estimate above comes from the grouped folds, not from the single split
+* Wrote experiments/surrogate_protac_optimization/smarca2/dmax.pickle
+
+Use it by adding this to the 'oracles' block of a goal_directed config:
+  "dmax": {
+      "type": "sklearn",
+      "path": "experiments/surrogate_protac_optimization/smarca2/dmax.pickle",
+      "output": "predict",
+      "transform": {"type": "clipped_linear", "low": 0.2, "high": 1.0},
+      "direction": "maximize"
+  }
+and naming it in 'score_components'. The featurization is stored in the pickle and the oracle reads it, so there is nothing to keep in sync by hand.
+
+THE TRANSFORM IS REQUIRED for a regression output and the oracle raises without one: the raw value is not a desirability, and the identity transform clamps to [0, 1] while this fit's labels span 0.16 to 1.00. Choose low and high on the label scale as a modeling decision and state them in the write-up; the bounds below are this fit's label range, not advice. Then re-derive success_threshold on the transformed [0, 1] scale, because success_rate compares the transformed composite.

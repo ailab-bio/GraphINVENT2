@@ -74,7 +74,13 @@ oracles:
 # reported its own misconfiguration as an absent dependency.
 evaluation_oracle:
   type: sklearn
-  path: experiments/surrogate_protac_optimization/smarca2/evaluation.pickle
+  # Written by experiments/surrogate_protac_evaluation/fit.sh. This used to
+  # name surrogate_protac_optimization/smarca2/evaluation.pickle, which no
+  # script writes: the file on disk was an artifact of the superseded
+  # two-surrogate layout, so eval_oracle_top10_mean was computed against a
+  # pickle nobody could regenerate and would have raised FileNotFoundError
+  # the moment it was cleaned up.
+  path: experiments/surrogate_protac_evaluation/smarca2_pdc50.pickle
   output: predict
   direction: maximize
   transform:

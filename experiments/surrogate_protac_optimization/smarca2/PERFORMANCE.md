@@ -190,13 +190,25 @@ baseline, because near analogues sit on both sides of it.
 
 ## The pair
 
-`pdc50.pickle` is fitted on the split above and is the reinforcement learning
-reward; it supersedes `optimization.pickle`, the superseded name from the
-two-surrogate design, and `experiments/protac_goal_directed/experiment.yaml`
-names it. `evaluation.pickle` is the same featurization and model class refitted
-on all 241 rows and only ever scores final molecules. A large gap between them
-on optimized molecules, when they agree on held-out real molecules, is evidence
-of exploitation rather than success.
+`pdc50.pickle` is the reinforcement learning reward, and
+`experiments/protac_goal_directed/experiment.yaml` names it. Its shipped
+estimator is **refitted on all 241 rows**: with grouped CV in place the
+held-out estimate comes from the folds, so there is nothing left for the
+single split's 20% to do but be withheld from the reward, and `CLAUDE.md`
+specifies an oracle "fitted on all available data". Before 2026-10-26 it was
+fitted on the 194 training rows alone while each fold model saw 80% of all 241,
+so the reward came from a narrower fit than the disagreement reported beside
+it. It supersedes `optimization.pickle`, the name from the two-surrogate
+design, which is still on disk and referenced by nothing.
+
+The evaluation oracle is
+`experiments/surrogate_protac_evaluation/smarca2_pdc50.pickle`, which is what
+`experiments/surrogate_protac_evaluation/fit.sh` writes. Both goal-directed
+configs used to name `smarca2/evaluation.pickle` instead — a path no script
+writes, left over from the two-surrogate layout, so `eval_oracle_top10_mean`
+was computed against a pickle nobody could regenerate. A large gap between the
+two on optimized molecules, when they agree on held-out real molecules, is
+evidence of exploitation rather than success.
 
 `CLAUDE.md` replaces this pair with **one pooled ensemble** whose fold
 disagreement is the detector, which removes the gap there is to read. Half of
@@ -205,4 +217,37 @@ disagreement. The other half — making the pooled fit the reward — is not don
 and the POI-grouped result above is the reason to think twice about it rather
 than a reason to hurry: switching the reward would change every goal-directed
 number, and the pooled model's only demonstrated advantage is on a split that
-leaks. It is a one-line change to `oracles.path` when that is settled.
+leaks.
+
+**It is no longer a one-line change to `oracles.path`, and that was a real
+trap.** The pooled fit carries an 18-target POI one-hot whose inference default
+is the training mode, `ar`. Nothing in `SklearnOracle` can set it per campaign,
+so repointing the reward at the pooled pickle would have scored every molecule
+of every campaign against AR, whatever target the campaign optimizes, with
+nothing raising. `src/oracles/_surrogate.py` now refuses to load a pickle whose
+`poi` vocabulary has more than one entry, naming the targets and saying what is
+missing. Making the pooled fit the reward therefore needs a way for an
+experiment to declare its target first; that is a design decision, not a
+repoint.
+
+## `dmax`
+
+**FAILED FIT.** 3 of 5 warhead-scaffold-grouped folds beat their own
+mean-prediction baseline; across folds R^2 is **-0.036 (SD 0.588)** over 208
+rows in 47 groups, the largest holding 104. Two folds come in at -0.044 and
+-1.039. The single split's margin is 0.013 [95% bootstrap -0.002, 0.026],
+clustered on compound, so it does not clear the kill criterion there either.
+
+`dmax.pickle` exists because `fit.sh` fits both endpoints, and it is reported
+here rather than used. `CLAUDE.md` says the two endpoints are "combined,
+equally weighted" into one composite reward; on this evidence the Dmax half
+would contribute noise, and the combination rule still names no function. The
+configs declare the pDC50 component alone, which is the right thing to have
+done by accident.
+
+Its label-noise ceiling is 0.372, which is low because Dmax is bounded and
+saturating: many replicates sit at the same clipped value and agree for that
+reason rather than because the assay is precise. The same effect puts AR's
+Dmax fold R^2 *above* its own ceiling, which means that ceiling is
+underestimated rather than beaten. Dmax ceilings on this data should not be
+read as assay precision.

@@ -301,3 +301,132 @@ def test_every_fold_holds_out_whole_groups(tmp_path):
         assert "groups held out" in line
         held = int(line.split("(")[-1].split(" groups")[0])
         assert held >= 1, f"a fold that holds out nothing is not a fold: {line}"
+
+
+# --- Added 2026-10-26, after a code review found four further silent failures.
+# Each is mutation-tested the same way: break the thing, confirm the failure,
+# revert.
+
+
+def test_a_column_in_both_extra_and_optional_is_read_once(tmp_path):
+    """
+    The duplication bug this guards was introduced and caught in one session,
+    and it is the worst kind: `read_table` appended a column named in both
+    `extra` and `optional` twice per row, so every value after the first
+    belonged to a different molecule than its index said. Nothing raised. The
+    POI group count fell from 18 to 12 and the label-noise ceiling moved from
+    0.755 to 0.418 -- numbers that look like a modeling result.
+    """
+    table = tmp_path / "t.tsv"
+    table.write_text(
+        "smiles\tpdc50\tpoi\n" "CCO\t7.0\tSMARCA2\n" "CCC\t8.0\tAR\n" "CCN\t9.0\tKRAS\n"
+    )
+    smiles, labels, extras = train_surrogate.read_table(
+        table, "smiles", "pdc50", extra=("poi",), optional=("poi",)
+    )
+    assert len(smiles) == 3
+    assert len(extras["poi"]) == 3, "the column was appended once per request"
+    assert extras["poi"] == ["SMARCA2", "AR", "KRAS"], "row alignment survived"
+
+
+def test_an_absent_optional_column_is_omitted_rather_than_fatal(tmp_path):
+    """
+    The noise floor wants a target column from the tables that have one. Making
+    it mandatory would break every fit whose table has no target at all, which
+    is how it came to be requested only for POI grouping -- and that silently
+    degraded the replicate key to compound alone everywhere else.
+    """
+    table = tmp_path / "t.tsv"
+    table.write_text("smiles\tpdc50\nCCO\t7.0\nCCC\t8.0\n")
+    _, _, extras = train_surrogate.read_table(
+        table, "smiles", "pdc50", optional=("poi",)
+    )
+    assert "poi" not in extras
+    with pytest.raises(ValueError, match="poi"):
+        train_surrogate.read_table(table, "smiles", "pdc50", extra=("poi",))
+
+
+def test_a_pooled_poi_pickle_is_refused_as_an_oracle(tmp_path):
+    """
+    A pooled fit carries one one-hot column per target and an inference default
+    of the training mode. Nothing in SklearnOracle can set it per campaign, so
+    loading one as a reward would score every molecule of every campaign
+    against that one target -- `ar`, in the committed pooled PROTAC fit, over
+    an 18-target vocabulary -- with nothing raising and every number arriving
+    in the right units.
+    """
+    from sklearn.ensemble import RandomForestRegressor
+
+    model = RandomForestRegressor(n_estimators=2, random_state=0)
+    model.fit(np.zeros((4, 3)), [1.0, 2.0, 3.0, 4.0])
+    path = tmp_path / "pooled.pickle"
+    with open(path, "wb") as f:
+        pickle.dump(
+            {
+                "model": model,
+                "featurization": {
+                    "radius": 2,
+                    "n_bits": 3,
+                    "categorical_vocab": {"poi": ["ar", "smarca2", "kras"]},
+                    "categorical_defaults": {"poi": "ar"},
+                },
+            },
+            f,
+        )
+    with pytest.raises(ValueError, match="pooled fit"):
+        SklearnOracle(name="x", path=str(path), output="predict")
+
+
+def test_a_single_target_pickle_is_still_accepted(tmp_path):
+    """
+    The guard above must not reject the per-target fits, whose `poi` vocabulary
+    has exactly one entry and so cannot be pinned to the wrong target.
+    """
+    from sklearn.ensemble import RandomForestRegressor
+
+    model = RandomForestRegressor(n_estimators=2, random_state=0)
+    model.fit(np.zeros((4, 3)), [1.0, 2.0, 3.0, 4.0])
+    path = tmp_path / "one.pickle"
+    with open(path, "wb") as f:
+        pickle.dump(
+            {
+                "model": model,
+                "featurization": {
+                    "radius": 2,
+                    "n_bits": 3,
+                    "categorical_vocab": {"poi": ["smarca2"]},
+                    "categorical_defaults": {"poi": "smarca2"},
+                },
+            },
+            f,
+        )
+    oracle = SklearnOracle(
+        name="x",
+        path=str(path),
+        output="predict",
+        transform={"type": "clipped_linear", "low": 5.0, "high": 10.0},
+    )
+    assert oracle.uncertainty_source == "forest_trees"
+
+
+def test_the_target_map_refuses_two_rows_for_one_string(tmp_path):
+    """
+    This file is the leakage guard. Two rows for one raw string with different
+    symbol sets would change fold membership depending on which came last,
+    with nothing printed -- against the fail-loudly rule the rest of the loader
+    already follows.
+    """
+    labels = REPO / "scripts" / "tpddb-activity-labels.py"
+    spec = importlib.util.spec_from_file_location("tpddb_labels", labels)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    good = tmp_path / "map.tsv"
+    good.write_text("raw\tsymbols\tkind\tnote\nAR\tAR\tpoi\t\nAR-V7\tAR\tpoi\t\n")
+    table = module.load_target_map(good)
+    assert table["AR-V7"][0] == frozenset({"AR"})
+
+    clashing = tmp_path / "clash.tsv"
+    clashing.write_text("raw\tsymbols\tkind\tnote\nAR\tAR\tpoi\t\nAR\tESR1\tpoi\t\n")
+    with pytest.raises(SystemExit, match="two canonical symbol sets"):
+        module.load_target_map(clashing)
